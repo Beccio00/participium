@@ -3,6 +3,9 @@ import session from "express-session";
 import passport from "passport";
 import { configurePassport } from "./config/passport";
 import authRoutes from './routes/authRoutes';
+import * as Prisma from "@prisma/client";
+
+export const prisma = new Prisma.PrismaClient();
 
 const app: Express = express();
 const port = 4000;
@@ -45,6 +48,11 @@ app.get("/", (req: Request, res: Response) => {
 
 //API Routes
 app.use('/api/session', authRoutes);
+
+// close Prisma connection
+process.on("SIGTERM", async () => {
+  await prisma.$disconnect();
+});
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

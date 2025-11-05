@@ -1,11 +1,19 @@
 import { PrivateUser } from "../interfaces/User";
+import { PrismaClient } from "@prisma/client";
 
-// Placeholder
-export async function findByUsername(username: string): Promise<PrivateUser | null> {
-  throw new Error("findByUsername not implemented: replace with DB lookup (Prisma)");
+const prisma = new PrismaClient();
+
+// Find user by email (username in previous code). Returns PrivateUser or null.
+export async function findByEmail(email: string): Promise<PrivateUser | null> {
+  const u = await prisma.user.findUnique({ where: { email } });
+  if (!u) return null;
+  return new PrivateUser(u.id, u.email, u.first_name, u.last_name, u.password, u.salt, u.role);
 }
 
-// Placeholder
-export async function findById(id: string): Promise<PrivateUser | null> {
-  throw new Error("findById not implemented: replace with DB lookup (Prisma)");
+export async function findById(id: number): Promise<PrivateUser | null> {
+  const u = await prisma.user.findUnique({ where: { id } });
+  if (!u) return null;
+  return new PrivateUser(u.id, u.email, u.first_name, u.last_name, u.password, u.salt, u.role);
 }
+
+export default { findByEmail, findById };

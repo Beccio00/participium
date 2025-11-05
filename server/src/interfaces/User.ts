@@ -1,24 +1,36 @@
+// Public DTO: no password information
 export class PublicUser {
-	id: string;
-	username: string;
+	email: string;
+	firstName: string;
+	lastName: string;
+	role: string;
 
-	constructor(id: string, username: string) {
-		this.id = id;
-		this.username = username;
+	constructor(email: string, firstName: string, lastName: string, role: string) {
+		this.email = email;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.role = role;
 	}
 }
 
+// Private user stored in DB (includes hashed password + salt)
 export class PrivateUser {
-	id: string;
-	username: string;
-	hashedPassword: string;
+	id: number;
+	email: string;
+	firstName: string;
+	lastName: string;
+	password: string; // hashed password
 	salt: string;
+	role: string;
 
-	constructor(id: string, username: string, hashedPassword: string, salt: string) {
+	constructor(id: number, email: string, firstName: string, lastName: string, password: string, salt: string, role: string) {
 		this.id = id;
-		this.username = username;
-		this.hashedPassword = hashedPassword;
+		this.email = email;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.password = password;
 		this.salt = salt;
+		this.role = role;
 	}
 }
 
