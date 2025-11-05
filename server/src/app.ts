@@ -1,11 +1,50 @@
 import express, { Express, Request, Response } from "express";
+import session from "express-session";
+import passport from "passport";
+import { configurePassport } from "./config/passport";
+import authRoutes from './routes/authRoutes';
 
 const app: Express = express();
 const port = 4000;
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server");
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
 });
+
+// Session and Passport Middleware
+app.use(session({
+  secret: "shhhhh... it's a secret!",
+  resave: false,
+  saveUninitialized: false,
+}));
+configurePassport();
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Root endpoint
+app.get("/", (req: Request, res: Response) => {
+  res.json({ 
+    message: "Office Queue Management API",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/session"
+    }
+  });
+});
+
+//API Routes
+app.use('/api/session', authRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
