@@ -16,12 +16,116 @@ servers:
     description: Production server
 
 tags:
-  - name: Citizens
-    description: Citizen registration operations
   - name: Authentication
     description: Login, logout and session management operations
+  - name: Citizens
+    description: Citizen registration operations
 
 paths:
+  /sessions/:
+    post:
+      tags:
+        - Authentication
+      summary: Login to the system
+      description: |
+        Authenticate a user (citizen or municipality staff) and create a session.
+        A session cookie (JSESSIONID) will be set in the response headers.
+        The cookie is HTTP-only and secure (in production).
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: mario.rossi
+              password: SecurePass123!
+      responses:
+        '200':
+          description: |
+            Login successful. Session cookie set in Set-Cookie header.
+            Client must include credentials in subsequent requests.
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+                example: JSESSIONID=abc123xyz; Path=/; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Invalid username or password"
+                timestamp: "2025-11-05T10:30:00Z"
+
+  /sessions/current:
+    get:
+      tags:
+        - Authentication
+      summary: Get current session info
+      description: |
+        Returns information about the current authenticated user.
+        Useful to check if session is still valid and retrieve user data.
+      operationId: getSession
+      security:
+        - SessionAuth: []
+      responses:
+        '200':
+          description: Session is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          description: No active session or session expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Authentication
+      summary: Logout from the system
+      description: |
+        Invalidate the current session and clear the session cookie.
+        Requires an active session.
+      operationId: logout
+      security:
+        - SessionAuth: []
+      responses:
+        '200':
+          description: Logout successful. Session cookie invalidated.
+          headers:
+            Set-Cookie:
+              description: Session cookie cleared
+              schema:
+                type: string
+                example: JSESSIONID=; Path=/; Max-Age=0
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+        '401':
+          description: No active session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /citizens/register:
     post:
       tags:
@@ -94,111 +198,6 @@ paths:
                 $ref: '#/components/schemas/UsernameCheckResponse'
         '400':
           description: Invalid username format
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /auth/login:
-    post:
-      tags:
-        - Authentication
-      summary: Login to the system
-      description: |
-        Authenticate a user (citizen or municipality staff) and create a session.
-        A session cookie (JSESSIONID) will be set in the response headers.
-        The cookie is HTTP-only and secure (in production).
-      operationId: login
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-            example:
-              username: mario.rossi
-              password: SecurePass123!
-      responses:
-        '200':
-          description: |
-            Login successful. Session cookie set in Set-Cookie header.
-            Client must include credentials in subsequent requests.
-          headers:
-            Set-Cookie:
-              description: Session cookie
-              schema:
-                type: string
-                example: JSESSIONID=abc123xyz; Path=/; HttpOnly; Secure; SameSite=Strict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '401':
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Unauthorized"
-                message: "Invalid username or password"
-                timestamp: "2025-11-05T10:30:00Z"
-
-  /auth/logout:
-    post:
-      tags:
-        - Authentication
-      summary: Logout from the system
-      description: |
-        Invalidate the current session and clear the session cookie.
-        Requires an active session.
-      operationId: logout
-      security:
-        - SessionAuth: []
-      responses:
-        '200':
-          description: Logout successful. Session cookie invalidated.
-          headers:
-            Set-Cookie:
-              description: Session cookie cleared
-              schema:
-                type: string
-                example: JSESSIONID=; Path=/; Max-Age=0
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Logout successful"
-        '401':
-          description: No active session
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /auth/session:
-    get:
-      tags:
-        - Authentication
-      summary: Get current session info
-      description: |
-        Returns information about the current authenticated user.
-        Useful to check if session is still valid and retrieve user data.
-      operationId: getSession
-      security:
-        - SessionAuth: []
-      responses:
-        '200':
-          description: Session is valid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SessionResponse'
-        '401':
-          description: No active session or session expired
           content:
             application/json:
               schema:
