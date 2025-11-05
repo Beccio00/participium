@@ -1,132 +1,398 @@
 openapi: 3.0.3
-
 info:
-  title: API Template
+  title: Participium API - Citizen Registration
+  description: |
+    API for citizen registration and authentication (PT01).
+    Uses session-based authentication with HTTP-only cookies.
   version: 1.0.0
-  description: Minimal OpenAPI template for REST APIs
+  contact:
+    name: Municipality of Turin
+    email: support@participium.torino.it
 
 servers:
-  - url: https://api.example.com/v1
+  - url: http://localhost:8080/api
+    description: Development server
+  - url: https://participium.torino.it/api
+    description: Production server
+
+tags:
+  - name: Citizens
+    description: Citizen registration operations
+  - name: Authentication
+    description: Login, logout and session management operations
 
 paths:
-  /users:
-    get:
-      summary: List users
-      tags: [Users]
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 10
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-
+  /citizens/register:
     post:
-      summary: Create user
-      tags: [Users]
+      tags:
+        - Citizens
+      summary: Register a new citizen
+      description: Self-service registration for citizens. No authentication required.
+      operationId: registerCitizen
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserInput'
+              $ref: '#/components/schemas/CitizenRegistrationRequest'
+            example:
+              username: mario.rossi
+              firstName: Mario
+              lastName: Rossi
+              email: mario.rossi@example.com
+              password: SecurePass123!
       responses:
         '201':
-          description: Created
+          description: Registration successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/CitizenRegistrationResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid input"
+                message: "Password must be at least 8 characters"
+                timestamp: "2025-11-05T10:30:00Z"
+        '409':
+          description: Username or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                message: "Username already exists"
+                timestamp: "2025-11-05T10:30:00Z"
 
-  /users/{id}:
+  /citizens/check-username/{username}:
     get:
-      summary: Get user by ID
-      tags: [Users]
+      tags:
+        - Citizens
+      summary: Check username availability
+      description: Verify if a username is available for registration
+      operationId: checkUsername
       parameters:
-        - name: id
+        - name: username
           in: path
           required: true
+          description: Username to check
           schema:
             type: string
+            minLength: 3
+            maxLength: 30
       responses:
         '200':
-          description: Success
+          description: Username availability status
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '404':
-          description: Not found
+                $ref: '#/components/schemas/UsernameCheckResponse'
+        '400':
+          description: Invalid username format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-    put:
-      summary: Update user
-      tags: [Users]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to the system
+      description: |
+        Authenticate a user (citizen or municipality staff) and create a session.
+        A session cookie (JSESSIONID) will be set in the response headers.
+        The cookie is HTTP-only and secure (in production).
+      operationId: login
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserInput'
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: mario.rossi
+              password: SecurePass123!
       responses:
         '200':
-          description: Updated
+          description: |
+            Login successful. Session cookie set in Set-Cookie header.
+            Client must include credentials in subsequent requests.
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+                example: JSESSIONID=abc123xyz; Path=/; HttpOnly; Secure; SameSite=Strict
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Invalid username or password"
+                timestamp: "2025-11-05T10:30:00Z"
 
-    delete:
-      summary: Delete user
-      tags: [Users]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout from the system
+      description: |
+        Invalidate the current session and clear the session cookie.
+        Requires an active session.
+      operationId: logout
+      security:
+        - SessionAuth: []
       responses:
-        '204':
-          description: Deleted
+        '200':
+          description: Logout successful. Session cookie invalidated.
+          headers:
+            Set-Cookie:
+              description: Session cookie cleared
+              schema:
+                type: string
+                example: JSESSIONID=; Path=/; Max-Age=0
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+        '401':
+          description: No active session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/session:
+    get:
+      tags:
+        - Authentication
+      summary: Get current session info
+      description: |
+        Returns information about the current authenticated user.
+        Useful to check if session is still valid and retrieve user data.
+      operationId: getSession
+      security:
+        - SessionAuth: []
+      responses:
+        '200':
+          description: Session is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          description: No active session or session expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
+  securitySchemes:
+    SessionAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+      description: |
+        Session-based authentication using HTTP-only cookies.
+        The session cookie is automatically sent by the browser with each request.
+        Frontend must use 'credentials: include' in fetch/axios requests.
+
   schemas:
-    User:
+    CitizenRegistrationRequest:
+      type: object
+      required:
+        - username
+        - firstName
+        - lastName
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9._-]+$'
+          description: Unique username (alphanumeric, dots, dashes, underscores)
+          example: mario.rossi
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Citizen's first name
+          example: Mario
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Citizen's last name
+          example: Rossi
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          description: Valid email address (must be unique)
+          example: mario.rossi@example.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          format: password
+          description: Password (minimum 8 characters)
+          example: SecurePass123!
+
+    CitizenRegistrationResponse:
       type: object
       properties:
         id:
           type: string
+          format: uuid
+          description: Unique citizen ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        username:
+          type: string
+          example: mario.rossi
+        firstName:
+          type: string
+          example: Mario
+        lastName:
+          type: string
+          example: Rossi
         email:
           type: string
-        name:
+          example: mario.rossi@example.com
+        role:
           type: string
+          enum: [CITIZEN]
+          example: CITIZEN
         createdAt:
           type: string
           format: date-time
+          example: "2025-11-05T10:30:00Z"
 
-    UserInput:
+    LoginRequest:
       type: object
-      required: [email, name]
+      required:
+        - username
+        - password
       properties:
+        username:
+          type: string
+          description: Username
+          example: mario.rossi
+        password:
+          type: string
+          format: password
+          description: Password
+          example: SecurePass123!
+
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Login successful"
+        user:
+          $ref: '#/components/schemas/UserInfo'
+
+    SessionResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+          example: true
+        user:
+          $ref: '#/components/schemas/UserInfo'
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        username:
+          type: string
+          example: mario.rossi
+        firstName:
+          type: string
+          example: Mario
+        lastName:
+          type: string
+          example: Rossi
         email:
           type: string
-        name:
+          example: mario.rossi@example.com
+        role:
           type: string
+          enum:
+            - CITIZEN
+            - MUNICIPAL_PR_OFFICER
+            - MUNICIPAL_ADMINISTRATOR
+            - TECHNICAL_OFFICE_STAFF
+          description: User role in the system
+          example: CITIZEN
+        photo:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to user's profile photo
+          example: null
+        telegramUsername:
+          type: string
+          nullable: true
+          description: Telegram username for bot notifications
+          example: null
+        emailNotificationsEnabled:
+          type: boolean
+          description: Whether email notifications are enabled
+          example: true
+
+    UsernameCheckResponse:
+      type: object
+      properties:
+        available:
+          type: boolean
+          description: True if username is available
+          example: true
+        username:
+          type: string
+          example: mario.rossi
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Username already exists"
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+          example: "2025-11-05T10:30:00Z"
+
+# Security requirements for protected endpoints
+security:
+  - SessionAuth: []
