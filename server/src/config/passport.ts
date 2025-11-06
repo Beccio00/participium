@@ -1,18 +1,18 @@
 import passport from "passport";
-import { Strategy as LocalStrategy, IVerifyOptions } from "passport-local";
+import { Strategy as LocalStrategy } from "passport-local";
 import { PublicUser, PrivateUser } from "../interfaces/User";
 import { verifyPassword } from "../services/passwordService";
 import { findByEmail } from "../services/userService";
 
 export function configurePassport() {
   passport.use(
-    new LocalStrategy({ usernameField: "email" }, async (email: string, password: string, done: (err: Error | null, user?: PublicUser | false, info?: IVerifyOptions) => void) => {
+    new LocalStrategy({ usernameField: "email" }, async (email: string, password: string, done: (err: Error | null, user?: PublicUser | false) => void) => {
       try {
         const dbUser: PrivateUser | null = await findByEmail(email);
-        if (!dbUser) return done(null, false, { message: "Incorrect email" });
+        if (!dbUser) return done(null, false);
 
         const valid = await verifyPassword(dbUser, password);
-        if (!valid) return done(null, false, { message: "Incorrect password" });
+        if (!valid) return done(null, false);
 
         const publicUser = new PublicUser(dbUser.email, dbUser.firstName, dbUser.lastName, dbUser.role);
         return done(null, publicUser);

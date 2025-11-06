@@ -1,13 +1,12 @@
 import passport from "passport";
 import { PublicUser } from "../interfaces/User";
 import { Request } from "express";
-import { IVerifyOptions } from "passport-local";
 
 export async function authenticate(req: Request): Promise<PublicUser> {
   return new Promise((resolve, reject) => {
-    passport.authenticate("local", (err: Error | null, user?: PublicUser | false, info?: IVerifyOptions) => {
+    passport.authenticate("local", (err: Error | null, user?: PublicUser | false) => {
       if (err) return reject(err);
-      if (!user) return reject(new Error(info?.message || "Invalid credentials"));
+      if (!user) return reject(new Error("Invalid credentials"));
       resolve(new PublicUser(user.email, user.firstName, user.lastName, user.role));
     })(req);
   });
