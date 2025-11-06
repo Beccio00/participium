@@ -43,7 +43,7 @@ node_modules
 src/generated
 openapitools.json
 
-/src/generated/prisma
+../prisma/generated
 
 /prisma/dev.db
 
