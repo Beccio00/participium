@@ -1,5 +1,5 @@
 import passport from "passport";
-import type { UserDTO } from "../interfaces/User";
+import type { UserDTO } from "../interfaces/UserDTO";
 import { Request } from "express";
 import { InvalidCredentialsError } from "../interfaces/errors/InvalidCredentialsError";
 

@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { toUserDTO, UserDTO } from "../interfaces/User";
+import { toUserDTO, UserDTO } from "../interfaces/UserDTO";
 import type { User as PrismaUser } from "../../prisma/generated/client";
 import { verifyPassword } from "../services/passwordService";
 import { findByEmail } from "../services/userService";
