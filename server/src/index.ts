@@ -5,6 +5,7 @@ import passport from "passport";
 import cors from "cors";
 import { configurePassport } from "./config/passport";
 import authRoutes from './routes/authRoutes';
+import citizenRoutes from './routes/citizenRoutes';
 import { PrismaClient } from "../prisma/generated/client";
 
 export const prisma = new PrismaClient();
@@ -46,6 +47,7 @@ app.get("/", (req: Request, res: Response) => {
 
 //API Routes
 app.use('/api/session', authRoutes);
+app.use('/api/citizen', citizenRoutes);
 
 // close Prisma connection
 process.on("SIGTERM", async () => {
