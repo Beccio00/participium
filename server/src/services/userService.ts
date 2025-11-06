@@ -1,5 +1,5 @@
 import { PrivateUser } from "../interfaces/User";
-import { PrismaClient } from "../generated/client";
+import { PrismaClient } from "../../prisma/generated/client";
 
 const prisma = new PrismaClient();
 

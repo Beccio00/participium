@@ -3,7 +3,7 @@ import session from "express-session";
 import passport from "passport";
 import { configurePassport } from "./config/passport";
 import authRoutes from './routes/authRoutes';
-import { PrismaClient } from "./generated/client";
+import { PrismaClient } from "../prisma/generated/client";
 
 export const prisma = new PrismaClient();
 
