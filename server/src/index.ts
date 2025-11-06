@@ -3,9 +3,9 @@ import session from "express-session";
 import passport from "passport";
 import { configurePassport } from "./config/passport";
 import authRoutes from './routes/authRoutes';
-import * as Prisma from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
-export const prisma = new Prisma.PrismaClient();
+export const prisma = new PrismaClient();
 
 const app: Express = express();
 const port = 4000;
