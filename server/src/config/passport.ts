@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy, IVerifyOptions } from "passport-local";
 import { PublicUser, PrivateUser } from "../interfaces/User";
 import { verifyPassword } from "../services/passwordService";
-import { findByEmail, findById } from "../services/userService";
+import { findByEmail } from "../services/userService";
 
 export function configurePassport() {
   passport.use(

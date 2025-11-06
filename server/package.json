@@ -11,6 +11,7 @@
     "@prisma/client": "^6.19.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "prisma": "^6.19.0"
   },
   "devDependencies": {
@@ -18,9 +19,11 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/express-session": "^1.18.2",
+    "@types/node": "^24.10.0",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   },
   "scripts": {
