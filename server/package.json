@@ -21,7 +21,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "npx prisma migrate reset && npm run seed && npx prisma db push && nodemon src/index.ts",
+    "dev": "npx prisma migrate reset && npx prisma db push && npm run seed && nodemon src/index.ts",
     "seed": "ts-node prisma/seed.ts",
     "db:reset": "npx prisma db push --force-reset && npm run seed",
     "generate:api": "openapi-generator-cli generate -i ../docs/swagger.yaml -g typescript-fetch -o ./src/generated"
