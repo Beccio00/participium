@@ -28,7 +28,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     } else {
       return res.status(500).json({
         error: "InternalServerError",
-        message: err instanceof Error ? err.message : "An unexpected error occurred"
+        message: "An unexpected error occurred"
       });
     }
   }
