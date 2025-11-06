@@ -3,6 +3,14 @@ import { authenticate, getSession } from "../services/authService";
 import { InvalidCredentialsError } from "../interfaces/errors/InvalidCredentialsError";
 
 export async function login(req: Request, res: Response, next: NextFunction) {
+
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return res.status(400).json({ 
+      error: 'BadRequest', 
+      message: 'Already logged in' 
+    });
+  }
+
   try {
     const user = await authenticate(req);
 
@@ -20,25 +28,33 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     } else {
       return res.status(500).json({
         error: "InternalServerError",
-        message: "An internal server error occurred"
+        message: err instanceof Error ? err.message : "An unexpected error occurred"
       });
     }
   }
 }
 
 export function logout(req: Request, res: Response) {
-  try {
-    req.logout?.(() => {});
-  } catch (e) {
-    // ignore
+  if (!(req.isAuthenticated && req.isAuthenticated()) || !req.session) {
+    return res.status(400).json({ 
+      error: 'BadRequest', 
+      message: 'Already logged out' 
+    });
   }
 
-  if (req.session) {
-    req.session.destroy(() => {
-      res.json({ message: "Logged out" });
+  try {
+    req.logout((err) => {
+      if (err) throw err;
+      req.session.destroy((err) => {
+        if (err) throw err;
+        return res.json({ message: 'Logged out' });
+      });
     });
-  } else {
-    res.json({ message: "Logged out" });
+  } catch (e) {
+    return res.status(500).json({ 
+      error: 'InternalServerError', 
+      message: 'Logout failed' 
+    });
   }
 }
 

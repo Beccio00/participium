@@ -1,6 +1,5 @@
 import express from "express";
 import { login, logout, getSessionInfo } from "../controllers/authController";
-import { isLoggedIn } from "../middleware/rights";
 
 const router = express.Router();
 
@@ -9,6 +8,6 @@ router.post("/", login);
 // DELETE /session/current
 router.delete("/current", logout);
 // GET /session/current
-router.get("/current", isLoggedIn, getSessionInfo);
+router.get("/current", getSessionInfo);
 
 export default router;
