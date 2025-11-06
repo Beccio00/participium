@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id      Int     @id @default(autoincrement())
+  email   String  @unique
+  first_name    String
+  last_name String
+  password String
+  salt     String
+  role Role @default(CITIZEN)
+  telegram_username String? 
+  email_notifications_enabled Boolean @default(true)
+}
+
+enum Role {
+  CITIZEN
+  PUBLIC_RELATIONS
+  ADMINISTRATOR
+  TECHNICAL_OFFICE
+}
