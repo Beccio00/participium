@@ -145,7 +145,7 @@ export default function Signup({ onBackToHome }: SignupProps) {
     return (
       <>
         <Header 
-          user={null}
+          userHeader={null}
           isAuthenticated={false}
           onShowLogin={() => {}}
           onShowSignup={() => {}}
@@ -172,7 +172,7 @@ export default function Signup({ onBackToHome }: SignupProps) {
   return (
     <>
       <Header 
-        user={null}
+        userHeader={null}
         isAuthenticated={false}
         onShowLogin={() => {}}
         onShowSignup={() => {}}
