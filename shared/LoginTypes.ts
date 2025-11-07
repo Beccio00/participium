@@ -1,3 +1,14 @@
+//Here we have to implement the interface useful whether client or server
+
+export interface User {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  telegramUsername: string | null;
+  emailNotificationsEnabled: boolean;
+}
+
 export interface LoginFormData {
   email: string;
   password: string;

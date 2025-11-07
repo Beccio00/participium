@@ -5,7 +5,7 @@ import type {
   SessionInfo, 
   ErrorResponse,
   User 
-} from '../types/LoginTypes';
+} from '../../../shared/LoginTypes';
 import '../styles/Login.css';
 
 export default function Login() {
