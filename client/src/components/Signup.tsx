@@ -4,15 +4,17 @@ import type {
   SignupResponse, 
   SignupErrorResponse,
   SignupFormErrors 
-} from '../types/SignupTypes';
+} from '../../../shared/SignupTypes';
+import { SignupValidator } from '../validators/SignupValidator';
 import Header from './Header';
 import '../styles/Signup.css';
 
 interface SignupProps {
   onBackToHome: () => void;
+  onShowLogin: () => void;
 }
 
-export default function Signup({ onBackToHome }: SignupProps) {
+export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
   const [formData, setFormData] = useState<SignupFormData>({
     firstName: '',
     lastName: '',
@@ -24,36 +26,7 @@ export default function Signup({ onBackToHome }: SignupProps) {
   const [errors, setErrors] = useState<SignupFormErrors>({});
   const [success, setSuccess] = useState(false);
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
-
-  const validateForm = (): SignupFormErrors => {
-    const newErrors: SignupFormErrors = {};
-    
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
-    }
-    
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
-    }
-    
-    return newErrors;
-  };
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -80,8 +53,8 @@ export default function Signup({ onBackToHome }: SignupProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Client-side validation
-    const validationErrors = validateForm();
+    //client-side validation
+    const validationErrors = SignupValidator.validate(formData).errors;
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -108,10 +81,6 @@ export default function Signup({ onBackToHome }: SignupProps) {
         setFormData({ firstName: '', lastName: '', email: '', password: '' });
         console.log('Signup successful:', successData);
         
-        // Redirect to login after a short delay
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 3000);
         
       } else {
         const errorData = data as SignupErrorResponse;
@@ -158,10 +127,13 @@ export default function Signup({ onBackToHome }: SignupProps) {
             <h2>Registration Successful!</h2>
             <div className="success-message">
               <p>Your account has been created successfully.</p>
-              <p>You will be redirected to the login page in a few seconds...</p>
             </div>
             <div className="signup-links">
-              <a href="/login">Go to Login page now</a>
+               <button
+                  type="button"
+                  className="btn-link-login"
+                  onClick={onShowLogin}
+                      >Click here to Log In</button>
             </div>
           </div>
         </div>
@@ -283,7 +255,11 @@ export default function Signup({ onBackToHome }: SignupProps) {
         </form>
 
         <div className="signup-links">
-          <p>Already have an account? <a href="/login">Log in here</a></p>
+          <p>Already have an account? <button
+                  type="button"
+                  className="btn-link-login"
+                  onClick={onShowLogin}
+                      >Click here to Log In</button></p>
         </div>
       </div>
     </div>

@@ -11,13 +11,12 @@ type ViewType = 'home' | 'login' | 'signup'
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('home')
   const { user, isAuthenticated, loading, logout, checkAuth } = useAuth()
-  console.log('App user:', user)
 
   const handleShowLogin = () => setCurrentView('login')
   const handleShowSignup = () => setCurrentView('signup')
-  const handleBackToHome = () => {
+  const handleBackToHome = async () => {
     setCurrentView('home')
-    checkAuth()
+    await checkAuth()
   }
 
   const handleLogout = async () => {
@@ -51,7 +50,7 @@ function App() {
           </div>
         )
       case 'signup':
-        return <Signup onBackToHome={handleBackToHome} />
+        return <Signup onBackToHome={handleBackToHome} onShowLogin={handleShowLogin} />
       default:
         return (
           <Home 

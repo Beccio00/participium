@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { AuthUser } from '../types/AuthTypes';
+import type { AuthUser } from '../../../shared/AuthTypes';
 import type { LoginResponse, ErrorResponse } from '../../../shared/LoginTypes';
 
 export function useAuth() {

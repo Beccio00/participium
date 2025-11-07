@@ -37,17 +37,16 @@ export interface SessionInfo {
     emailNotificationsEnabled: boolean;
   };
 }
-
-export interface User {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  telegramUsername: string | null;
-  emailNotificationsEnabled: boolean;
-}
-
 export interface ErrorResponse {
   error: string;
   message: string;
 }
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: {
+    email?: string;
+    password?: string;
+  };
+}
+
