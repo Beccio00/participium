@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AuthUser } from '../types/AuthTypes';
-import type { LoginResponse, ErrorResponse } from '../types/LoginTypes';
+import type { LoginResponse, ErrorResponse } from '../../../shared/LoginTypes';
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);

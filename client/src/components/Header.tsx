@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { use, useState } from 'react';
 import type { AuthUser } from '../types/AuthTypes';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/Header.css';
 
 interface HeaderProps {
-  user: AuthUser | null;
+  userHeader: AuthUser | null;
   isAuthenticated: boolean;
   onShowLogin: () => void;
   onShowSignup: () => void;
@@ -13,8 +14,8 @@ interface HeaderProps {
 }
 
 export default function Header({ 
-  user, 
-  isAuthenticated, 
+  userHeader ,
+  isAuthenticated , 
   onShowLogin, 
   onShowSignup, 
   onLogout,
@@ -22,6 +23,7 @@ export default function Header({
   onBackToHome
 }: HeaderProps) {
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   const handleLogout = async () => {
     setLoading(true);

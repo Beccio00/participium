@@ -1,14 +1,20 @@
 import { useState } from 'react';
+import {useAuth} from '../hooks/useAuth';
+import { EyeFill, EyeSlashFill } from 'react-bootstrap-icons'
 import type { 
-  LoginFormData, 
-  LoginResponse, 
-  SessionInfo, 
+  LoginFormData,
   ErrorResponse,
   User 
 } from '../../../shared/LoginTypes';
 import '../styles/Login.css';
 
-export default function Login() {
+interface LoginProps {
+  onLoginSuccess: () => void;
+  onGoToSignup: () => void;
+}
+
+export default function Login({onLoginSuccess, onGoToSignup}: LoginProps) {
+  const{login,checkAuth} = useAuth(); 
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
@@ -16,23 +22,23 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [user, setUser] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const checkSession = async () => {
     try {
-      const response = await fetch('/api/session/current', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const sessionInfo: SessionInfo = await response.json();
-        if (sessionInfo.authenticated && sessionInfo.user) {
-          setUser(sessionInfo.user);
-        }
+       await checkAuth();
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
       }
     } catch (err) {
       console.error('Error checking session:', err);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
   };
   
   useState(() => {
@@ -54,31 +60,15 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
-      const response = await fetch('/api/session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', 
-        body: JSON.stringify(formData),
-      });
-
-      const data: LoginResponse | ErrorResponse = await response.json();
-
-      if (response.ok) {
-        const successData = data as LoginResponse;
-        setUser(successData.user);
-        setFormData({ email: '', password: '' });
-        console.log('Login successful:', successData);
-      } else {
-        const errorData = data as ErrorResponse;
-        setError(errorData.message || 'Login failed');
-      }
+      await login(formData.email, formData.password);
+      onLoginSuccess();
     } catch (err) {
-      setError('Network error. Please try again.');
-      console.error('Login error:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred during login');
+      }
     } finally {
       setLoading(false);
     }
@@ -153,7 +143,7 @@ export default function Login() {
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               name="password"
               value={formData.password}
@@ -162,6 +152,11 @@ export default function Login() {
               disabled={loading}
               placeholder="Enter your password"
             />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              onClick={togglePasswordVisibility}
+            >{showPassword ? <EyeSlashFill /> : <EyeFill />}</button>
           </div>
 
           {error && (
@@ -180,7 +175,15 @@ export default function Login() {
         </form>
 
         <div className="login-links">
-          <p>Don't have an account? <a href="/signup">Sign up here</a></p>
+          <p>Don't have an account? 
+            <button 
+              onClick={onGoToSignup} 
+              className="link-button"
+              disabled={loading}
+            >
+              Sign up here
+            </button>
+          </p>
         </div>
       </div>
     </div>
