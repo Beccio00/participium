@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {useAuth} from '../hooks/useAuth';
+import {LoginValidator} from '../validators/LoginValidator';
 import { EyeFill, EyeSlashFill } from 'react-bootstrap-icons'
 import type { 
   LoginFormData,
-  ErrorResponse,
   User 
 } from '../../../shared/LoginTypes';
 import '../styles/Login.css';
@@ -40,11 +40,6 @@ export default function Login({onLoginSuccess, onGoToSignup}: LoginProps) {
   const togglePasswordVisibility = () => {
     setShowPassword(prev => !prev);
   };
-  
-  useState(() => {
-    checkSession();
-  });
-
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -60,6 +55,14 @@ export default function Login({onLoginSuccess, onGoToSignup}: LoginProps) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    const validationResult = LoginValidator.validate(formData);
+    if (!validationResult.isValid) {
+      setError(validationResult.errors.email || validationResult.errors.password || '');
+      setLoading(false);
+      return;
+    }
+
     try {
       await login(formData.email, formData.password);
       onLoginSuccess();
@@ -74,52 +77,9 @@ export default function Login({onLoginSuccess, onGoToSignup}: LoginProps) {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/session/current', {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        setUser(null);
-        console.log('Logout successful');
-      } else {
-        const errorData: ErrorResponse = await response.json();
-        setError(errorData.message || 'Logout failed');
-      }
-    } catch (err) {
-      setError('Network error during logout');
-      console.error('Logout error:', err);
-    }
-  };
-
-  //when user already logged, show info and logout button
-  if (user) {
-    return (
-      <div className="login-container">
-        <div className="login-card">
-          <h2>Welcome back!</h2>
-          <div className="user-info">
-            <p><strong>Name:</strong> {user.firstName} {user.lastName}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Role:</strong> {user.role}</p>
-            {user.telegramUsername && (
-              <p><strong>Telegram:</strong> {user.telegramUsername}</p>
-            )}
-            <p><strong>Email Notifications:</strong> {user.emailNotificationsEnabled ? 'Enabled' : 'Disabled'}</p>
-          </div>
-          <button 
-            onClick={handleLogout}
-            className="logout-btn"
-            disabled={loading}
-          >
-            {loading ? 'Logging out...' : 'Logout'}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useState(() => {
+    checkSession();
+  });
 
   return (
     <div className="login-container">

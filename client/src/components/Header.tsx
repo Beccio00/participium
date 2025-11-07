@@ -1,5 +1,5 @@
 import { use, useState } from 'react';
-import type { AuthUser } from '../types/AuthTypes';
+import type { AuthUser } from '../../../shared/AuthTypes';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/Header.css';
 
