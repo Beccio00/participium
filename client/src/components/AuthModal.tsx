@@ -2,12 +2,13 @@ import '../styles/AuthModal.css';
 
 interface AuthModalProps {
   isOpen: boolean;
+  isAuthenticated: boolean;
   onClose: () => void;
   onLogin: () => void;
   onSignup: () => void;
 }
 
-export default function AuthModal({ isOpen, onClose, onLogin, onSignup }: AuthModalProps) {
+export default function AuthModal({ isOpen, isAuthenticated, onClose, onLogin, onSignup }: AuthModalProps) {
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -24,28 +25,53 @@ export default function AuthModal({ isOpen, onClose, onLogin, onSignup }: AuthMo
         </button>
         
         <div className="modal-content">
-          <div className="modal-icon">🔐</div>
-          <h2>Authentication Required</h2>
-          <p>You need to be registered and logged in to submit reports to the municipality.</p>
-          
-          <div className="modal-buttons">
-            <button 
-              onClick={onLogin}
-              className="modal-btn login-modal-btn"
-            >
-              Login
-            </button>
-            <button 
-              onClick={onSignup}
-              className="modal-btn signup-modal-btn"
-            >
-              Sign Up
-            </button>
-          </div>
-          
-          <p className="modal-footer">
-            Don't have an account? <button onClick={onSignup} className="link-modal-btn">Create one here</button>
-          </p>
+          {!isAuthenticated ? (
+            // Contenuto per utenti non autenticati
+            <>
+              <div className="modal-icon">🔐</div>
+              <h2>Authentication Required</h2>
+              <p>You need to be registered and logged in to submit reports to the municipality.</p>
+              
+              <div className="modal-buttons">
+                <button 
+                  onClick={onLogin}
+                  className="modal-btn login-modal-btn"
+                >
+                  Login
+                </button>
+                <button 
+                  onClick={onSignup}
+                  className="modal-btn signup-modal-btn"
+                >
+                  Sign Up
+                </button>
+              </div>
+              
+              <p className="modal-footer">
+                Don't have an account? <button onClick={onSignup} className="link-modal-btn">Create one here</button>
+              </p>
+            </>
+          ) : (
+            // Contenuto per utenti autenticati
+            <>
+              <div className="modal-icon">🚧</div>
+              <h2>Feature Coming Soon</h2>
+              <p>The report submission functionality is currently under development and will be available soon.</p>
+              
+              <div className="modal-buttons">
+                <button 
+                  onClick={onClose}
+                  className="modal-btn login-modal-btn"
+                >
+                  Got it
+                </button>
+              </div>
+              
+              <p className="modal-footer">
+                Thank you for your patience as we work to improve the platform.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

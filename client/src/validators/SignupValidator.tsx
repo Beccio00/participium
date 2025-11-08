@@ -1,7 +1,7 @@
-import type { ValidationResult } from '../../../shared/LoginTypes';
 import type { 
   SignupFormData,
-  SignupFormErrors 
+  SignupFormErrors,
+  SignupValidationResult 
 } from '../../../shared/SignupTypes';
 
 export const SignupValidator = {
@@ -9,7 +9,7 @@ export const SignupValidator = {
     //teoretically the control on the field required is reduntant 
     //since the button is disabled until both fields are filled
     //but it's better to have multiple layers of validation 
-  validate(formData: SignupFormData): ValidationResult {
+  validate(formData: SignupFormData): SignupValidationResult {
     const errors: SignupFormErrors = {};
 
     //first name

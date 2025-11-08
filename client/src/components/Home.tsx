@@ -12,12 +12,8 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   const handleAddReport = () => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-    } else {
-      // TODO: Navigate to add report page when implemented
-      alert("Add report functionality will be implemented in the next story!");
-    }
+    // Sempre mostra il modal, che gestirà i due casi diversi
+    setShowAuthModal(true);
   };
 
   const handleModalLogin = () => {
@@ -100,6 +96,7 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
       {/* Auth Modal */}
       <AuthModal
         isOpen={showAuthModal}
+        isAuthenticated={isAuthenticated}
         onClose={handleCloseModal}
         onLogin={handleModalLogin}
         onSignup={handleModalSignup}

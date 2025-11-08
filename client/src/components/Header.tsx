@@ -1,4 +1,4 @@
-import { use, useState } from 'react';
+import { useState } from 'react';
 import type { AuthUser } from '../../../shared/AuthTypes';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/Header.css';
@@ -14,7 +14,6 @@ interface HeaderProps {
 }
 
 export default function Header({ 
-  userHeader ,
   isAuthenticated , 
   onShowLogin, 
   onShowSignup, 
@@ -54,19 +53,22 @@ export default function Header({
             </button>
           ) : isAuthenticated && user ? (
             <div className="user-menu">
-              <div className="user-info">
-                <span className="user-name">
-                  {user.firstName} {user.lastName}
-                </span>
-                <span className="user-role">{user.role}</span>
+              <div className="user-profile">
+                <div className="user-avatar">
+                  👤
+                </div>
+                <div className="user-details">
+                  <div className="user-name">{user.firstName}</div>
+                  <div className="user-surname">{user.lastName}</div>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  disabled={loading}
+                  className="logout-btn"
+                >
+                  {loading ? 'Logging out...' : 'Logout'}
+                </button>
               </div>
-              <button 
-                onClick={handleLogout}
-                disabled={loading}
-                className="header-btn"
-              >
-                {loading ? 'Logging out...' : 'Logout'}
-              </button>
             </div>
           ) : (
             <div className="auth-buttons">

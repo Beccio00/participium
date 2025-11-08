@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import type { 
   SignupFormData, 
-  SignupResponse, 
-  SignupErrorResponse,
   SignupFormErrors 
 } from '../../../shared/SignupTypes';
 import { SignupValidator } from '../validators/SignupValidator';
+import { useAuth } from '../hooks/useAuth';
 import Header from './Header';
 import '../styles/Signup.css';
 
@@ -15,6 +14,8 @@ interface SignupProps {
 }
 
 export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
+  const { signup } = useAuth();
+  
   const [formData, setFormData] = useState<SignupFormData>({
     firstName: '',
     lastName: '',
@@ -54,9 +55,9 @@ export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
     e.preventDefault();
     
     //client-side validation
-    const validationErrors = SignupValidator.validate(formData).errors;
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    const validationResult = SignupValidator.validate(formData);
+    if (!validationResult.isValid) {
+      setErrors(validationResult.errors);
       return;
     }
     
@@ -64,38 +65,24 @@ export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
     setErrors({});
 
     try {
-      const response = await fetch('/api/citizen/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      const data: SignupResponse | SignupErrorResponse = await response.json();
-
-      if (response.ok) {
-        const successData = data as SignupResponse;
-        setSuccess(true);
-        setFormData({ firstName: '', lastName: '', email: '', password: '' });
-        console.log('Signup successful:', successData);
-        
-        
-      } else {
-        const errorData = data as SignupErrorResponse;
-        
-        // Handle specific error types
-        if (response.status === 409) {
-          setErrors({ email: 'This email is already registered. Try logging in instead.' });
-        } else if (response.status === 400) {
-          setErrors({ general: errorData.message || 'Please fill in all required fields correctly.' });
-        } else {
-          setErrors({ general: errorData.message || 'Registration failed. Please try again.' });
-        }
-      }
+      const result = await signup(formData);
+      setSuccess(true);
+      setFormData({ firstName: '', lastName: '', email: '', password: '' });
+      console.log('Signup successful:', result);
+      
     } catch (err) {
-      setErrors({ general: 'Network error. Please check your connection and try again.' });
+      // Handle errors thrown by the signup function
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      
+      // Map specific error messages to form fields if possible
+      if (errorMessage.includes('Email already in use') || errorMessage.includes('already registered')) {
+        setErrors({ email: 'This email is already registered. Try logging in instead.' });
+      } else if (errorMessage.includes('Missing required fields')) {
+        setErrors({ general: 'Please fill in all required fields correctly.' });
+      } else {
+        setErrors({ general: errorMessage });
+      }
+      
       console.error('Signup error:', err);
     } finally {
       setLoading(false);
@@ -103,11 +90,16 @@ export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
   };
 
   const isFormValid = () => {
-    return formData.firstName.trim() && 
-           formData.lastName.trim() && 
-           formData.email.trim() && 
-           formData.password.trim() &&
-           Object.keys(errors).length === 0;
+    // Check if all required fields are filled
+    const hasAllFields = formData.firstName.trim() && 
+                        formData.lastName.trim() && 
+                        formData.email.trim() && 
+                        formData.password.trim();
+    
+    // Check if there are any actual error messages (not undefined)
+    const hasErrors = Object.values(errors).some(error => error !== undefined && error !== '');
+    
+    return hasAllFields && !hasErrors;
   };
 
   if (success) {

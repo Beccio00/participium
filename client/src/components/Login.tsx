@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {useAuth} from '../hooks/useAuth';
 import {LoginValidator} from '../validators/LoginValidator';
 import { EyeFill, EyeSlashFill } from 'react-bootstrap-icons'
+import Header from './Header';
 import type { 
   LoginFormData,
   User 
@@ -11,9 +12,10 @@ import '../styles/Login.css';
 interface LoginProps {
   onLoginSuccess: () => void;
   onGoToSignup: () => void;
+  onBackToHome: () => void;
 }
 
-export default function Login({onLoginSuccess, onGoToSignup}: LoginProps) {
+export default function Login({onLoginSuccess, onGoToSignup, onBackToHome}: LoginProps) {
   const{login,checkAuth} = useAuth(); 
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -82,10 +84,20 @@ export default function Login({onLoginSuccess, onGoToSignup}: LoginProps) {
   });
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h2>Login</h2>
-        <form onSubmit={handleSubmit} className="login-form">
+    <>
+      <Header 
+        userHeader={null}
+        isAuthenticated={false}
+        onShowLogin={() => {}}
+        onShowSignup={() => {}}
+        onLogout={async () => {}}
+        showBackToHome={true}
+        onBackToHome={onBackToHome}
+      />
+      <div className="login-container">
+        <div className="login-card">
+          <h2>Login</h2>
+          <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -147,5 +159,6 @@ export default function Login({onLoginSuccess, onGoToSignup}: LoginProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }

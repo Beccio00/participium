@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { AuthUser } from '../../../shared/AuthTypes';
 import type { LoginResponse, ErrorResponse } from '../../../shared/LoginTypes';
+import type { SignupFormData, SignupResponse, SignupErrorResponse } from '../../../shared/SignupTypes';
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -28,6 +29,26 @@ export function useAuth() {
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const signup = async (formData: SignupFormData): Promise<SignupResponse> => {
+    const response = await fetch('/api/citizen/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(formData),
+    });
+
+    const data: SignupResponse | SignupErrorResponse = await response.json();
+
+    if (response.ok) {
+      return data as SignupResponse;
+    } else {
+      const errorData = data as SignupErrorResponse;
+      throw new Error(errorData.message || 'Signup failed');
     }
   };
 
@@ -79,6 +100,7 @@ export function useAuth() {
     user,
     isAuthenticated: !!user,
     loading,
+    signup,
     login,
     logout,
     checkAuth

@@ -40,14 +40,11 @@ function App() {
     switch (currentView) {
       case 'login':
         return (
-          <div className="auth-page">
-            <div className="back-navigation">
-              <button onClick={handleBackToHome} className="back-btn">
-                ← Back to Home
-              </button>
-            </div>
-            <Login onLoginSuccess={handleBackToHome} onGoToSignup={handleShowSignup} />
-          </div>
+          <Login 
+            onLoginSuccess={handleBackToHome} 
+            onGoToSignup={handleShowSignup}
+            onBackToHome={handleBackToHome}
+          />
         )
       case 'signup':
         return <Signup onBackToHome={handleBackToHome} onShowLogin={handleShowLogin} />
@@ -63,8 +60,8 @@ function App() {
   }
 
   return (
-    <div className={`app ${currentView !== 'signup' ? 'with-header' : ''}`}>
-      {currentView !== 'signup' && (
+    <div className={`app ${currentView === 'home' ? 'with-header' : ''}`}>
+      {currentView === 'home' && (
         <Header
           userHeader={user}
           isAuthenticated={isAuthenticated}
