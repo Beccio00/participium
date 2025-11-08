@@ -326,17 +326,17 @@ paths:
                 items:
                   $ref: '#/components/schemas/MunicipalityUserResponse'
               example:
-                - id: "123e4567-e89b-12d3-a456-426614174000"
+                - id: 123
                   firstName: "Giuseppe"
                   lastName: "Verdi"
                   email: "giuseppe.verdi@comune.torino.it"
                   role: "PUBLIC_RELATIONS"
-                - id: "987f6543-e21c-34d5-b678-789012345678"
+                - id: 456
                   firstName: "Maria"
                   lastName: "Rossi"
                   email: "maria.rossi@comune.torino.it"
                   role: "ADMINISTRATOR"
-                - id: "456d1234-a56b-78c9-d012-345678901234"
+                - id: 789
                   firstName: "Franco"
                   lastName: "Bianchi"
                   email: "franco.bianchi@comune.torino.it"
@@ -377,8 +377,8 @@ paths:
           required: true
           description: ID of the municipality user
           schema:
-            type: string
-            format: uuid
+            type: integer
+            format: int64
       responses:
         '200':
           description: Municipality user details retrieved successfully
@@ -430,8 +430,8 @@ paths:
           required: true
           description: ID of the municipality user to update
           schema:
-            type: string
-            format: uuid
+            type: integer
+            format: int64
       requestBody:
         required: true
         content:
@@ -504,8 +504,8 @@ paths:
           required: true
           description: ID of the municipality user to delete
           schema:
-            type: string
-            format: uuid
+            type: integer
+            format: int64
       responses:
         '204':
           description: Municipality user deleted successfully
@@ -737,10 +737,10 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
           description: Unique identifier for the user
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: 123
         firstName:
           type: string
           example: Giuseppe
