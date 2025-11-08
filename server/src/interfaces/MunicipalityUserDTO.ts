@@ -1,7 +1,7 @@
 import type { User as PrismaUser } from "../../prisma/generated/client";
 
 export type MunicipalityUserDTO = {
-  id: string;
+  id: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -26,7 +26,7 @@ export type MunicipalityUserUpdateRequest = {
 
 export function toMunicipalityUserDTO(u: PrismaUser): MunicipalityUserDTO {
   return {
-    id: u.id.toString(),
+    id: u.id,
     firstName: u.first_name,
     lastName: u.last_name,
     email: u.email,
