@@ -107,13 +107,13 @@ export default function Signup() {
             <div className="success-message">
               <p>Your account has been created successfully.</p>
             </div>
-            <div className="signup-links">
-               <button
-                  type="button"
-                  className="btn-link-login"
-                  onClick={() => navigate('/login')}
-                      >Click here to Log In</button>
-            </div>
+        <div className="signup-links">
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => navigate('/login')}
+               >Click here to Log In</button>
+        </div>
           </div>
         </div>
       </>
@@ -226,9 +226,9 @@ export default function Signup() {
         </form>
 
         <div className="signup-links">
-      <p>Already have an account? <button
+      <p>Already have an account? <br /> <button
           type="button"
-          className="btn-link-login"
+          className="link-btn"
           onClick={() => navigate('/login')}
             >Click here to Log In
             </button></p>

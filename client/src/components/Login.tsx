@@ -118,10 +118,10 @@ export default function Login() {
         </form>
 
         <div className="login-links">
-          <p>Don't have an account? 
+          <p>Don't have an account?  <br />
             <button 
               onClick={() => navigate('/signup')} 
-              className="link-button"
+              className="link-btn"
               disabled={loading}
             >
               Sign up here

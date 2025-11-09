@@ -41,9 +41,9 @@ export default function Home() {
                 <p>Municipality territory view</p>
               </div>
               <div className="map-content">
-                <div className="map-icon"><Map color='black'/></div>
+                <div className="map-icon"><Map /></div>
                 <h3>Map will be displayed here</h3>
-                <p>This area will contain an interactive map showing:</p>
+                <p className='subtitle'>This area will contain an interactive map showing:</p>
                 <ul>
                     <li><GeoAltFill className="inline-icon" /> Report locations</li>
                     <li><Building className="inline-icon" /> Municipal buildings</li>
