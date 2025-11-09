@@ -7,9 +7,6 @@ import { configurePassport } from "./config/passport";
 import authRoutes from './routes/authRoutes';
 import citizenRoutes from './routes/citizenRoutes';
 
-/**
- 
- */
 export function createApp(): Express {
   const app: Express = express();
 

@@ -1,21 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router'
 import {useAuth} from '../hooks/useAuth';
 import {LoginValidator} from '../validators/LoginValidator';
 import { EyeFill, EyeSlashFill } from 'react-bootstrap-icons'
-import Header from './Header';
-import type { 
-  LoginFormData,
-  User 
-} from '../../../shared/LoginTypes';
+import type { LoginFormData } from '../../../shared/LoginTypes';
 import '../styles/Login.css';
 
-interface LoginProps {
-  onLoginSuccess: () => void;
-  onGoToSignup: () => void;
-  onBackToHome: () => void;
-}
-
-export default function Login({onLoginSuccess, onGoToSignup, onBackToHome}: LoginProps) {
+export default function Login() {
+  const navigate = useNavigate()
   const{login,checkAuth} = useAuth(); 
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -23,21 +15,7 @@ export default function Login({onLoginSuccess, onGoToSignup, onBackToHome}: Logi
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [user, setUser] = useState<User | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-
-  const checkSession = async () => {
-    try {
-       await checkAuth();
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
-    } catch (err) {
-      console.error('Error checking session:', err);
-    }
-  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(prev => !prev);
@@ -67,7 +45,8 @@ export default function Login({onLoginSuccess, onGoToSignup, onBackToHome}: Logi
 
     try {
       await login(formData.email, formData.password);
-      onLoginSuccess();
+      // after successful login navigate home
+      navigate('/', { replace: true })
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -79,21 +58,13 @@ export default function Login({onLoginSuccess, onGoToSignup, onBackToHome}: Logi
     }
   };
 
-  useState(() => {
-    checkSession();
-  });
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   return (
     <>
-      <Header 
-        userHeader={null}
-        isAuthenticated={false}
-        onShowLogin={() => {}}
-        onShowSignup={() => {}}
-        onLogout={async () => {}}
-        showBackToHome={true}
-        onBackToHome={onBackToHome}
-      />
+      {/* Header is rendered by App; navigation handled locally */}
       <div className="login-container">
         <div className="login-card">
           <h2>Login</h2>
@@ -149,7 +120,7 @@ export default function Login({onLoginSuccess, onGoToSignup, onBackToHome}: Logi
         <div className="login-links">
           <p>Don't have an account? 
             <button 
-              onClick={onGoToSignup} 
+              onClick={() => navigate('/signup')} 
               className="link-button"
               disabled={loading}
             >

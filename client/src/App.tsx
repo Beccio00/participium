@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Routes, Route, useNavigate, useLocation } from 'react-router'
 import './styles/App.css'
 import { useAuth } from './hooks/useAuth'
 import Header from './components/Header'
@@ -6,23 +6,20 @@ import Home from './components/Home'
 import Login from './components/Login'
 import Signup from './components/Signup'
 
-type ViewType = 'home' | 'login' | 'signup'
-
 function App() {
-  const [currentView, setCurrentView] = useState<ViewType>('home')
-  const { user, isAuthenticated, loading, logout, checkAuth } = useAuth()
-
-  const handleShowLogin = () => setCurrentView('login')
-  const handleShowSignup = () => setCurrentView('signup')
-  const handleBackToHome = async () => {
-    setCurrentView('home')
-    await checkAuth()
-  }
+  const { loading, logout, checkAuth } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = async () => {
     try {
       await logout()
-      setCurrentView('home')
+      try {
+        await checkAuth()
+      } catch (err) {
+        console.warn('Failed to refresh auth after logout:', err)
+      }
+      navigate('/', { replace: true })
     } catch (err) {
       console.error('Logout failed:', err)
     }
@@ -36,41 +33,14 @@ function App() {
     )
   }
 
-  const renderView = () => {
-    switch (currentView) {
-      case 'login':
-        return (
-          <Login 
-            onLoginSuccess={handleBackToHome} 
-            onGoToSignup={handleShowSignup}
-            onBackToHome={handleBackToHome}
-          />
-        )
-      case 'signup':
-        return <Signup onBackToHome={handleBackToHome} onShowLogin={handleShowLogin} />
-      default:
-        return (
-          <Home 
-            isAuthenticated={isAuthenticated}
-            onShowLogin={handleShowLogin}
-            onShowSignup={handleShowSignup}
-          />
-        )
-    }
-  }
-
   return (
-    <div className={`app ${currentView === 'home' ? 'with-header' : ''}`}>
-      {currentView === 'home' && (
-        <Header
-          userHeader={user}
-          isAuthenticated={isAuthenticated}
-          onShowLogin={handleShowLogin}
-          onShowSignup={handleShowSignup}
-          onLogout={handleLogout}
-        />
-      )}
-      {renderView()}
+    <div className={`app with-header`}>
+      <Header onLogout={handleLogout} showBackToHome={location.pathname !== '/'} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+      </Routes>
     </div>
   )
 }
