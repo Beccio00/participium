@@ -1,0 +1,375 @@
+openapi: 3.0.3
+info:
+  title: Participium API - Citizen Registration
+  description: |
+    API for citizen registration and authentication (PT01).
+    Uses session-based authentication with HTTP-only cookies.
+  version: 1.0.0
+  contact:
+    name: Municipality of Turin
+    email: support@participium.torino.it
+
+servers:
+  - url: http://localhost:4000/api
+    description: Development server
+  - url: https://participium.torino.it/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: Login, logout and session management operations
+  - name: Citizens
+    description: Citizen registration operations
+
+paths:
+  /session:
+    post:
+      tags:
+        - Authentication
+      summary: Login to the system
+      description: |
+        Authenticate a user (citizen or municipality staff) and create a session.
+        A session cookie (connect.sid) will be set in the response headers.
+        The cookie is HTTP-only and secure (in production).
+        Uses email and password for authentication via Passport.js local strategy.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: mario.rossi@example.com
+              password: SecurePass123!
+      responses:
+        '200':
+          description: |
+            Login successful. Session cookie set in Set-Cookie header.
+            Client must include credentials in subsequent requests.
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+                example: connect.sid=s%3Axxx.yyy; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Already logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "BadRequest"
+                message: "Already logged in"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Invalid username or password"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "An unexpected error occurred"
+
+  /session/current:
+    get:
+      tags:
+        - Authentication
+      summary: Get current session info
+      description: |
+        Returns information about the current authenticated user.
+        Always returns 200 OK with authenticated flag (true/false).
+        No authentication required - this endpoint is used to check session status.
+      operationId: getSession
+      responses:
+        '200':
+          description: Session info retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+              examples:
+                authenticated:
+                  summary: User is authenticated
+                  value:
+                    authenticated: true
+                    user:
+                      firstName: Mario
+                      lastName: Rossi
+                      email: mario.rossi@example.com
+                      role: CITIZEN
+                      telegramUsername: null
+                      emailNotificationsEnabled: true
+                notAuthenticated:
+                  summary: User is not authenticated
+                  value:
+                    authenticated: false
+
+    delete:
+      tags:
+        - Authentication
+      summary: Logout from the system
+      description: |
+        Invalidate the current session and clear the session cookie.
+        Requires an active session.
+      operationId: logout
+      security:
+        - SessionAuth: []
+      responses:
+        '200':
+          description: Logout successful. Session cookie invalidated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out"
+        '400':
+          description: Already logged out / No active session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "BadRequest"
+                message: "Already logged out"
+        '500':
+          description: Logout failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "Logout failed"
+
+  /citizen/signup:
+    post:
+      tags:
+        - Citizens
+      summary: Register a new citizen
+      description: |
+        Self-service registration for citizens. No authentication required.
+        Email must be unique in the system.
+      operationId: registerCitizen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CitizenRegistrationRequest'
+            example:
+              firstName: Mario
+              lastName: Rossi
+              email: mario.rossi@example.com
+              password: SecurePass123!
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenRegistrationResponse'
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "BadRequest"
+                message: "Missing required fields: email, password"
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                message: "Email already in use"
+        '500':
+          description: Unable to create user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "Unable to create user"
+
+components:
+  securitySchemes:
+    SessionAuth:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: |
+        Session-based authentication using HTTP-only cookies with Passport.js.
+        The session cookie is automatically sent by the browser with each request.
+        Frontend must use 'credentials: include' in fetch/axios requests.
+
+  schemas:
+    CitizenRegistrationRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Citizen's first name
+          example: Mario
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Citizen's last name
+          example: Rossi
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          description: Valid email address (must be unique)
+          example: mario.rossi@example.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          format: password
+          description: Password (minimum 8 characters)
+          example: SecurePass123!
+
+    CitizenRegistrationResponse:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: Mario
+        lastName:
+          type: string
+          example: Rossi
+        email:
+          type: string
+          example: mario.rossi@example.com
+        role:
+          type: string
+          enum: [CITIZEN]
+          example: CITIZEN
+        telegramUsername:
+          type: string
+          nullable: true
+          description: Telegram username for bot notifications
+          example: null
+        emailNotificationsEnabled:
+          type: boolean
+          description: Whether email notifications are enabled
+          example: true
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: mario.rossi@example.com
+        password:
+          type: string
+          format: password
+          description: Password
+          example: SecurePass123!
+
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Login successful"
+        user:
+          $ref: '#/components/schemas/UserInfo'
+
+    SessionResponse:
+      type: object
+      required:
+        - authenticated
+      properties:
+        authenticated:
+          type: boolean
+          description: Whether the user is authenticated
+          example: true
+        user:
+          allOf:
+            - $ref: '#/components/schemas/UserInfo'
+          description: User information (only present when authenticated is true)
+          nullable: true
+
+    UserInfo:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: Mario
+        lastName:
+          type: string
+          example: Rossi
+        email:
+          type: string
+          example: mario.rossi@example.com
+        role:
+          type: string
+          enum:
+            - CITIZEN
+            - MUNICIPAL_PR_OFFICER
+            - MUNICIPAL_ADMINISTRATOR
+            - TECHNICAL_OFFICE_STAFF
+          description: User role in the system
+          example: CITIZEN
+        telegramUsername:
+          type: string
+          nullable: true
+          description: Telegram username for bot notifications
+          example: null
+        emailNotificationsEnabled:
+          type: boolean
+          description: Whether email notifications are enabled
+          example: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type (BadRequest, Unauthorized, Conflict, InternalServerError)
+          example: "BadRequest"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Missing required fields: email, password"
+
+# Security requirements for protected endpoints
+security:
+  - SessionAuth: []

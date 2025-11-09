@@ -1,34 +1,77 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './styles/App.css'
+import { useAuth } from './hooks/useAuth'
+import Header from './components/Header'
+import Home from './components/Home'
+import Login from './components/Login'
+import Signup from './components/Signup'
+
+type ViewType = 'home' | 'login' | 'signup'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentView, setCurrentView] = useState<ViewType>('home')
+  const { user, isAuthenticated, loading, logout, checkAuth } = useAuth()
+
+  const handleShowLogin = () => setCurrentView('login')
+  const handleShowSignup = () => setCurrentView('signup')
+  const handleBackToHome = async () => {
+    setCurrentView('home')
+    await checkAuth()
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      setCurrentView('home')
+    } catch (err) {
+      console.error('Logout failed:', err)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    )
+  }
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'login':
+        return (
+          <Login 
+            onLoginSuccess={handleBackToHome} 
+            onGoToSignup={handleShowSignup}
+            onBackToHome={handleBackToHome}
+          />
+        )
+      case 'signup':
+        return <Signup onBackToHome={handleBackToHome} onShowLogin={handleShowLogin} />
+      default:
+        return (
+          <Home 
+            isAuthenticated={isAuthenticated}
+            onShowLogin={handleShowLogin}
+            onShowSignup={handleShowSignup}
+          />
+        )
+    }
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className={`app ${currentView === 'home' ? 'with-header' : ''}`}>
+      {currentView === 'home' && (
+        <Header
+          userHeader={user}
+          isAuthenticated={isAuthenticated}
+          onShowLogin={handleShowLogin}
+          onShowSignup={handleShowSignup}
+          onLogout={handleLogout}
+        />
+      )}
+      {renderView()}
+    </div>
   )
 }
 

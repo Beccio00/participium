@@ -1,12 +1,18 @@
-import express, { Express, Request, Response } from "express";
+import "dotenv/config";
+import { createApp } from "./app";
+import { PrismaClient } from "../prisma/generated/client";
 
-const app: Express = express();
-const port = 4000;
+export const prisma = new PrismaClient();
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server");
+const app = createApp();
+const port = process.env.PORT || 4000;
+
+// close Prisma connection on shutdown
+process.on("SIGTERM", async () => {
+  await prisma.$disconnect();
 });
 
+// Start server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
