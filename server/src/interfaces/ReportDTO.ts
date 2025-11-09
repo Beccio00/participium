@@ -1,0 +1,80 @@
+import { UserDTO } from './UserDTO';
+
+
+export type ReportDTO = {
+  id: number;
+  title: string;
+  description: string;
+  category: ReportCategory;
+  latitude: number;
+  longitude: number;
+  isAnonymous: boolean;
+  status: ReportStatus;
+  userId: number;
+  user?: UserDTO;
+  messages: ReportMessageDTO[];
+  rejectedReason?: string | null;
+  photos: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReportMessageDTO = {
+  id: number;
+  content: string;
+  createdAt: string;
+  senderId: number;
+};
+
+export enum ReportStatus {
+    PENDING_APPROVAL,
+    ASSIGNED,
+    IN_PROGRESS,
+    SUSPENDED,
+    REJECTED,
+    RESOLVED
+}
+
+export enum ReportCategory {
+    WATER_SUPPLY_DRINKING_WATER,
+    ARCHITECTURAL_BARRIERS,
+    SEWER_SYSTEM,
+    PUBLIC_LIGHTING,
+    WASTE,
+    ROAD_SIGNS_TRAFFIC_LIGHTS,
+    ROADS_URBAN_FURNISHINGS,
+    PUBLIC_GREEN_AREAS_PLAYGROUNDS,
+    OTHER
+}
+
+export function toReportDTO(r: any): ReportDTO {
+    return {
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        category: r.category,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        isAnonymous: r.isAnonymous,
+        status: r.status,
+        userId: r.userId,
+        user: r.user ? {
+            firstName: r.user.first_name,
+            lastName: r.user.last_name,
+            email: r.user.email,
+            role: String(r.user.role),
+            telegramUsername: r.user.telegram_username ?? null,
+            emailNotificationsEnabled: r.user.email_notifications_enabled ?? true,
+        } : undefined,
+        messages: r.messages.map((m: any) => ({
+            id: m.id,
+            content: m.content,
+            createdAt: m.createdAt,
+            senderId: m.senderId,
+        })),
+        rejectedReason: r.rejectionReason ?? null,
+        photos: r.photos,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+    };
+}
