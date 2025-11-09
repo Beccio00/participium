@@ -8,7 +8,7 @@ import { authenticate, getSession } from "../../../src/services/authService";
 import { InvalidCredentialsError } from "../../../src/interfaces/errors/InvalidCredentialsError";
 import type { UserDTO } from "../../../src/interfaces/UserDTO";
 
-// Mock delle dipendenze
+
 jest.mock("../../../src/services/authService");
 const mockAuthenticate = authenticate as jest.MockedFunction<
   typeof authenticate

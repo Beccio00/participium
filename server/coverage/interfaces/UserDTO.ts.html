@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for services/authService.ts</title>
+    <title>Code coverage report for interfaces/UserDTO.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../prettify.css" />
     <link rel="stylesheet" href="../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../index.html">All files</a> / <a href="index.html">services</a> authService.ts</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">interfaces</a> UserDTO.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>12/12</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
@@ -84,47 +84,47 @@
 <a name='L19'></a><a href='#L19'>19</a>
 <a name='L20'></a><a href='#L20'>20</a>
 <a name='L21'></a><a href='#L21'>21</a>
-<a name='L22'></a><a href='#L22'>22</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<a name='L22'></a><a href='#L22'>22</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import passport from "passport";
-import type { UserDTO } from "../interfaces/UserDTO";
-import { Request } from "express";
-import { InvalidCredentialsError } from "../interfaces/errors/InvalidCredentialsError";
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { User as PrismaUser } from "../../prisma/generated/client";
 &nbsp;
-export async function authenticate(req: Request): Promise&lt;UserDTO&gt; {
-  return new Promise((resolve, reject) =&gt; {
-    passport.authenticate("local", (err: Error | null, user?: UserDTO | false) =&gt; {
-      if (err) return reject(err);
-      if (!user) return reject(new InvalidCredentialsError());
-      resolve(user as UserDTO);
-    })(req);
-  });
-}
+export type UserDTO = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  telegramUsername: string | null;
+  emailNotificationsEnabled: boolean;
+};
 &nbsp;
-export function getSession(req: Request): UserDTO | null {
-  if (req.isAuthenticated &amp;&amp; req.isAuthenticated() &amp;&amp; req.user) {
-    return req.user as UserDTO;
-  }
-  return null;
+export function toUserDTO(u: PrismaUser): UserDTO {
+  return {
+    firstName: u.first_name,
+    lastName: u.last_name,
+    email: u.email,
+    role: String(u.role),
+    telegramUsername: u.telegram_username ?? null,
+    emailNotificationsEnabled: u.email_notifications_enabled ?? true,
+  };
 }
 &nbsp;</pre></td></tr></table></pre>
 
