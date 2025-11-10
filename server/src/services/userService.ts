@@ -34,7 +34,8 @@ export async function createUser(data: {
       salt: data.salt,
       role: data.role as any,
       telegram_username: data.telegram_username ?? null,
-      email_notifications_enabled: data.email_notifications_enabled ?? undefined,
+      email_notifications_enabled:
+        data.email_notifications_enabled ?? undefined,
     },
   });
   return created;

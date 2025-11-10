@@ -1,14 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { Map, GeoAltFill, Building, ExclamationTriangleFill, CheckCircleFill, Clipboard, Pencil } from 'react-bootstrap-icons';
 import AuthModal from './AuthModal';
 import '../styles/Home.css';
+import { useAuth } from '../hooks/useAuth';
 
-interface HomeProps {
-  isAuthenticated: boolean;
-  onShowLogin: () => void;
-  onShowSignup: () => void;
-}
-
-export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: HomeProps) {
+export default function Home() {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   const handleAddReport = () => {
@@ -18,12 +17,12 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
 
   const handleModalLogin = () => {
     setShowAuthModal(false);
-    onShowLogin();
+    navigate('/login')
   };
 
   const handleModalSignup = () => {
     setShowAuthModal(false);
-    onShowSignup();
+    navigate('/signup')
   };
 
   const handleCloseModal = () => {
@@ -42,14 +41,14 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
                 <p>Municipality territory view</p>
               </div>
               <div className="map-content">
-                <div className="map-icon">🗺️</div>
+                <div className="map-icon"><Map /></div>
                 <h3>Map will be displayed here</h3>
-                <p>This area will contain an interactive map showing:</p>
+                <p className='subtitle'>This area will contain an interactive map showing:</p>
                 <ul>
-                  <li>📍 Report locations</li>
-                  <li>🏢 Municipal buildings</li>
-                  <li>🚧 Active issues</li>
-                  <li>✅ Resolved reports</li>
+                    <li><GeoAltFill className="inline-icon" /> Report locations</li>
+                    <li><Building className="inline-icon" /> Municipal buildings</li>
+                    <li><ExclamationTriangleFill className="inline-icon" /> Active issues</li>
+                    <li><CheckCircleFill className="inline-icon" /> Resolved reports</li>
                 </ul>
               </div>
             </div>
@@ -64,7 +63,7 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
             
             <div className="reports-content">
               <div className="reports-placeholder">
-                <div className="placeholder-icon">📋</div>
+                <div className="placeholder-icon"><Clipboard /></div>
                 <p>No reports yet</p>
                 <small>Reports will appear here once submitted by citizens.</small>
               </div>
@@ -76,15 +75,15 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
                 onClick={handleAddReport}
                 className="add-report-btn"
               >
-                <span className="btn-icon">📝</span>
+                <span className="btn-icon"><Pencil /></span>
                 Add New Report
               </button>
               
               {!isAuthenticated && (
                 <p className="auth-reminder">
                   <small>
-                    You need to <button onClick={onShowLogin} className="link-btn">login</button> or{' '}
-                    <button onClick={onShowSignup} className="link-btn">sign up</button> to submit reports
+                    You need to <button onClick={() => navigate('/login')} className="link-btn">login</button> or{' '}
+                      <button onClick={() => navigate('/signup')} className="link-btn">sign up</button> to submit reports
                   </small>
                 </p>
               )}

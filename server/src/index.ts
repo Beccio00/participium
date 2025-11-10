@@ -11,8 +11,8 @@ import { PrismaClient } from "../prisma/generated/client";
 
 export const prisma = new PrismaClient();
 
-const app: Express = express();
-const port = 4000;
+const app = createApp();
+const port = process.env.PORT || 4000;
 
 // Middleware
 app.use(express.json());
@@ -56,6 +56,7 @@ process.on("SIGTERM", async () => {
   await prisma.$disconnect();
 });
 
+// Start server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

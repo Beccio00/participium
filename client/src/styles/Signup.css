@@ -4,7 +4,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, rgba(29,78,137,0.04) 0%, var(--bg) 40%);
   padding: 20px;
 }
 
@@ -16,7 +16,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, rgba(29,78,137,0.04) 0%, var(--bg) 40%);
   padding: 20px;
   padding-top: 100px; /* Space for the fixed header */
   overflow-y: auto;
@@ -25,12 +25,17 @@
 }
 
 .signup-card {
-  background: white;
+  /* Matching the login card: layered, soft background with subtle border/shadow */
+  background-color: rgba(255,255,255,0.97);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(247,249,252,0.92));
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 30px rgba(29,78,137,0.08);
+  border: 1px solid rgba(29,78,137,0.06);
   width: 100%;
-  max-width: 450px;
+  max-width: 480px;
+  position: relative;
+  z-index: 1;
 }
 
 .success-card {
@@ -43,6 +48,34 @@
   color: #333;
   font-size: 1.5rem;
   font-weight: 600;
+}
+
+/* small accent line to visually tie cards to the header */
+.signup-card::before {
+  content: '';
+  display: block;
+  height: 4px;
+  width: 64px;
+  margin: 0 auto 1rem auto;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 60%, var(--stone) 40%));
+}
+
+/* soft decorative wash behind the signup card for subtle depth */
+.signup-card::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  width: 200%;
+  height: 110%;
+  border-radius: 16px;
+  background: radial-gradient(circle at 30% 35%, color-mix(in srgb, var(--primary) 10%, white 90%), transparent 50%);
+  filter: blur(20px);
+  opacity: 0.6;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .signup-subtitle {
@@ -126,14 +159,14 @@
 
 .signup-btn {
   padding: 0.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.12s ease, transform 0.12s;
   margin-top: 0.5rem;
 }
 
