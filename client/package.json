@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "participium",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,8 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bootstrap-icons": "^1.13.1",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-bootstrap": "^2.10.10",
+    "react-bootstrap-icons": "^1.11.6",
+    "react-dom": "^19.1.1",
+    "react-router": "^7.9.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

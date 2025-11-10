@@ -1,0 +1,55 @@
+import type { LoginResponse, SessionInfo } from '../../../shared/LoginTypes';
+import type { SignupFormData, SignupResponse } from '../../../shared/SignupTypes';
+
+const API_PREFIX = '/api';
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : {};
+  if (res.ok) return data as T;
+  const err = (data && (data.message || data.error)) || res.statusText || 'Request failed';
+  throw new Error(err);
+}
+
+export async function getSession(): Promise<SessionInfo> {
+  const res = await fetch(`${API_PREFIX}/session/current`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return handleResponse<SessionInfo>(res);
+}
+
+export async function login(email: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(`${API_PREFIX}/session`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  return handleResponse<LoginResponse>(res);
+}
+
+export async function logout(): Promise<void> {
+  const res = await fetch(`${API_PREFIX}/session/current`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  await handleResponse<unknown>(res);
+}
+
+export async function signup(form: SignupFormData): Promise<SignupResponse> {
+  const res = await fetch(`${API_PREFIX}/citizen/signup`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(form),
+  });
+  return handleResponse<SignupResponse>(res);
+}
+
+export default {
+  getSession,
+  login,
+  logout,
+  signup,
+};

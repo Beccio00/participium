@@ -1,0 +1,68 @@
+/* App Global Styles */
+.app {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* When app has header + content layout */
+.app.with-header {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading State */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(28,46,68,0.03) 0%, rgba(220,201,182,0.4) 100%);
+}
+
+.loading-spinner {
+  padding: 2rem;
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  font-size: 1.1rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Auth Pages */
+.auth-page {
+  flex: 1;
+  position: relative;
+}
+
+.back-navigation {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.back-btn {
+  padding: 0.5rem 1rem;
+  background: var(--glass);
+  color: var(--text);
+  border: 1px solid rgba(34,49,63,0.06);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.back-btn:hover {
+  background: white;
+  transform: translateX(-2px);
+}
+
+/* Global Reset */
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}

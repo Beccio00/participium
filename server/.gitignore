@@ -42,3 +42,15 @@
 node_modules
 src/generated
 openapitools.json
+
+/prisma/generated
+
+/prisma/dev.db
+
+
+# Keep environment variables out of version control
+
+/generated/prisma
+
+# Ignore test database created by Jest globalSetup
+test/test.db

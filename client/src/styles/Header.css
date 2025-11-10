@@ -1,0 +1,214 @@
+/* Header Styles */
+.header {
+  /* More refined "Torino" inspired header: deep blue to slate gradient with a
+     delicate texture and slight glass effect for elegance. */
+  background-color: var(--primary);
+  /* Navbar gradient now based on the coral/rose accent requested (--navbar-accent)
+     blended with the primary brown for depth. */
+  background-image:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--navbar-accent) 85%, var(--primary) 15%) 0%,
+      color-mix(in srgb, var(--navbar-accent) 60%, var(--stone) 40%) 60%
+    ),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 8px);
+  color: var(--surface);
+  padding: 1rem 0;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  height: 80px;
+  box-sizing: border-box;
+  backdrop-filter: saturate(120%) blur(2px);
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+.logo-section h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  height: 100%;
+}
+
+/* Base style for all header buttons */
+.header-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid rgba(34,49,63,0.06);
+  box-shadow: 0 2px 8px rgba(34,49,63,0.06);
+}
+
+.header-btn:hover {
+  /* keep the same surface background, don't tint to primary on hover; keep translate for affordance */
+  background: var(--surface);
+  transform: translateY(-1px);
+  border-color: rgba(34,49,63,0.06);
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+}
+
+.user-avatar {
+  font-size: 2rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* make avatar icon clean: no extra white contour */
+  background: transparent;
+  border-radius: 50%;
+  border: none;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.user-profile .header-btn {
+  /* ensure logout button aligns vertically with avatar and details */
+  align-self: center;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+  margin-right: 30px;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: white;
+  margin: 0;
+}
+
+.user-surname {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.logout-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid rgba(34,49,63,0.06);
+}
+
+.logout-btn:hover:not(:disabled) {
+  /* keep logout button background stable on hover */
+  background: var(--surface);
+  border-color: rgba(34,49,63,0.06);
+}
+
+.logout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .logo-section {
+    text-align: center;
+  }
+  
+  .logo-section h1 {
+    font-size: 1.5rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .auth-buttons {
+    gap: 0.5rem;
+  }
+  
+  .auth-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
+  
+  .user-menu {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  
+  .user-profile {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .user-details {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .user-avatar {
+    font-size: 1.5rem;
+    width: 35px;
+    height: 35px;
+  }
+}
