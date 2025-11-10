@@ -1,11 +1,26 @@
 :root {
+  /* Typography */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+
+  /* New Pantone-based palette (user-provided). No blue primary. */
+  --primary: #C86E62;    /* PANTONE 16-3-3 C - Rosa terroso / Corallo tenue (primary) */
+  --primary-dark: color-mix(in srgb, var(--primary) 78%, black 22%);
+  --stone:   #C39973;    /* PANTONE 13-4-3 C - Beige caldo / Sabbia dorata */
+  --olive:   #95804D;    /* PANTONE 150-1-3 C - Verde oliva chiaro / Oro antico */
+  --navbar-accent: var(--primary); /* use primary as navbar accent */
+  --sand:    #AB8165;    /* PANTONE 479 C - Beige sabbia / Marrone chiaro rosato */
+  --bg:      #F6F5F3;    /* soft page background */
+  --surface: #FFFFFF;    /* card/surface */
+  --text:    #482F1D;    /* keep dark brown for primary text for legibility */
+  --muted:   #C39973;    /* muted / secondary text */
+  --glass:   rgba(255,255,255,0.6);
+
+  color: var(--text);
+  background-color: var(--bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,11 +30,11 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: color-mix(in srgb, var(--primary) 80%, black 20%);
 }
 
 body {
@@ -40,12 +55,15 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--surface);
+  color: var(--text);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, transform 0.12s;
+  box-shadow: 0 1px 4px rgba(34,49,63,0.06);
 }
 button:hover {
-  border-color: #646cff;
+  border-color: color-mix(in srgb, var(--primary) 60%, black 10%);
+  transform: translateY(-1px);
 }
 button:focus,
 button:focus-visible {
@@ -54,13 +72,43 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: var(--text);
+    background-color: var(--bg);
   }
   a:hover {
-    color: #747bff;
+    color: color-mix(in srgb, var(--primary) 70%, black 10%);
   }
   button {
-    background-color: #f9f9f9;
+    background-color: var(--surface);
   }
+}
+
+/* Override focus/active outlines: remove default black ring and use Torino blue */
+button:focus,
+button:focus-visible,
+.header-btn:focus,
+.link-btn:focus,
+.link-modal-btn:focus,
+.modal-close-btn:focus,
+.modal-btn:focus,
+.add-report-btn:focus,
+.login-btn:focus,
+.signup-btn:focus {
+  outline: none;
+  border-color: var(--primary);
+  /* focus ring matching primary tone */
+  box-shadow: 0 0 0 4px rgba(200,110,98,0.12);
+}
+
+button:active,
+.header-btn:active,
+.link-btn:active,
+.link-modal-btn:active,
+.modal-close-btn:active,
+.modal-btn:active,
+.add-report-btn:active,
+.login-btn:active,
+.signup-btn:active {
+  border-color: var(--primary);
+  box-shadow: none;
 }

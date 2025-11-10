@@ -1,9 +1,19 @@
 /* Header Styles */
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  /* More refined "Torino" inspired header: deep blue to slate gradient with a
+     delicate texture and slight glass effect for elegance. */
+  background-color: var(--primary);
+  /* Navbar gradient now based on the coral/rose accent requested (--navbar-accent)
+     blended with the primary brown for depth. */
+  background-image:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--navbar-accent) 85%, var(--primary) 15%) 0%,
+      color-mix(in srgb, var(--navbar-accent) 60%, var(--stone) 40%) 60%
+    ),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 8px);
+  color: var(--surface);
   padding: 1rem 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
   position: fixed;
   top: 0;
   left: 0;
@@ -12,6 +22,7 @@
   z-index: 1000;
   height: 80px;
   box-sizing: border-box;
+  backdrop-filter: saturate(120%) blur(2px);
 }
 
 .header-container {
@@ -57,15 +68,18 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.12s ease;
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid rgba(34,49,63,0.06);
+  box-shadow: 0 2px 8px rgba(34,49,63,0.06);
 }
 
 .header-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  /* keep the same surface background, don't tint to primary on hover; keep translate for affordance */
+  background: var(--surface);
+  transform: translateY(-1px);
+  border-color: rgba(34,49,63,0.06);
 }
 
 .user-menu {
@@ -89,9 +103,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
+  /* make avatar icon clean: no extra white contour */
+  background: transparent;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: none;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.user-profile .header-btn {
+  /* ensure logout button aligns vertically with avatar and details */
+  align-self: center;
 }
 
 .user-details {
@@ -99,6 +121,7 @@
   flex-direction: column;
   align-items: flex-start;
   line-height: 1.2;
+  margin-right: 30px;
 }
 
 .user-name {
@@ -120,15 +143,16 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.12s ease;
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid rgba(34,49,63,0.06);
 }
 
 .logout-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  /* keep logout button background stable on hover */
+  background: var(--surface);
+  border-color: rgba(34,49,63,0.06);
 }
 
 .logout-btn:disabled {

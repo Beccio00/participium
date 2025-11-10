@@ -52,20 +52,19 @@
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #adb5bd;
+  color: var(--muted);
   cursor: pointer;
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  border-radius: 0;
+  transition: color 0.12s ease;
 }
 
 .modal-close-btn:hover {
-  background: #f8f9fa;
-  color: #495057;
+  color: var(--text);
 }
 
 .modal-content {
@@ -77,6 +76,13 @@
   font-size: 3rem;
   margin-bottom: 1rem;
   opacity: 0.8;
+}
+
+.modal-icon svg,
+.modal-icon > * {
+  /* ensure the lock icon inherits the primary color */
+  color: var(--primary);
+  fill: var(--primary);
 }
 
 .modal-content h2 {
@@ -111,26 +117,37 @@
 }
 
 .login-modal-btn {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
-  border: 2px solid #667eea;
+  /* Make both modal action buttons use the same filled primary style */
+  background: var(--primary);
+  color: var(--surface);
+  border: 1px solid var(--primary);
 }
 
-.login-modal-btn:hover {
-  background: #667eea;
-  color: white;
+.login-modal-btn:hover,
+.login-modal-btn:focus {
+  /* keep the same filled color on hover/focus but retain the subtle translate for affordance */
+  background: var(--primary);
+  color: var(--surface);
+  border-color: var(--primary);
   transform: translateY(-1px);
+  box-shadow: none;
 }
 
 .signup-modal-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: 2px solid transparent;
+  /* Use the same filled primary style as login for consistency */
+  background: var(--primary);
+  color: var(--surface);
+  border: 1px solid var(--primary);
 }
 
-.signup-modal-btn:hover {
+.signup-modal-btn:hover,
+.signup-modal-btn:focus {
+  /* keep the same filled color on hover/focus but retain the subtle translate for affordance */
+  background: var(--primary);
+  color: var(--surface);
+  border-color: var(--primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: none;
 }
 
 .modal-footer {
@@ -142,7 +159,7 @@
 .link-modal-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--primary);
   text-decoration: underline;
   cursor: pointer;
   font-size: inherit;
@@ -150,8 +167,13 @@
   font-weight: 500;
 }
 
-.link-modal-btn:hover {
-  color: #535bf2;
+.link-modal-btn:hover,
+.link-modal-btn:focus,
+.link-modal-btn:active {
+  /* Keep modal link consistent with the site primary color instead of browser/default purple */
+  color: color-mix(in srgb, var(--primary) 85%, black 5%);
+  text-decoration: underline;
+  outline: none;
 }
 
 /* Responsive Design */
