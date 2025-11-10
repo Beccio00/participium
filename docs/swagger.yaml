@@ -719,6 +719,33 @@ paths:
                 - PUBLIC_RELATIONS
                 - ADMINISTRATOR
                 - TECHNICAL_OFFICE
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        "500":
+          description: Unable to retrieve roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "InternalServerError"
+                message: "Failed to retrieve roles"
 
 components:
   securitySchemes:
