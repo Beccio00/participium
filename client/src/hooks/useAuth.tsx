@@ -1,9 +1,20 @@
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AuthUser } from '../../../shared/AuthTypes';
 import type { SignupFormData, SignupResponse } from '../../../shared/SignupTypes';
 import * as api from '../api/api';
 
-export function useAuth() {
+type AuthContextType = {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  signup: (formData: SignupFormData) => Promise<SignupResponse>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,13 +54,20 @@ export function useAuth() {
     checkAuth();
   }, []);
 
-  return {
+  const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     loading,
     signup,
     login,
     logout,
-    checkAuth
   };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 }

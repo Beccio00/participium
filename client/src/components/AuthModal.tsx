@@ -47,10 +47,6 @@ export default function AuthModal({ isOpen, isAuthenticated, onClose, onLogin, o
                   Sign Up
                 </button>
               </div>
-              
-              <p className="modal-footer">
-                Don't have an account? <button onClick={onSignup} className="link-modal-btn">Create one here</button>
-              </p>
             </>
           ) : (
             // Contenuto per utenti autenticati

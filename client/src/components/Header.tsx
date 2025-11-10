@@ -4,12 +4,12 @@ import '../styles/Header.css';
 import { useAuth } from '../hooks/useAuth';
 import { PersonCircle } from 'react-bootstrap-icons';
 
+
 interface HeaderProps {
-  onLogout?: () => Promise<void>;
   showBackToHome?: boolean;
 }
 
-export default function Header({ onLogout, showBackToHome = false }: HeaderProps) {
+export default function Header({ showBackToHome = false }: HeaderProps) {
   const [loading, setLoading] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function Header({ onLogout, showBackToHome = false }: HeaderProps
     setLoading(true);
     try {
       await logout();
-      if (onLogout) await onLogout();
+      navigate('/', { replace: true });
     } catch (err) {
       console.error('Logout failed:', err);
     } finally {
@@ -57,7 +57,7 @@ export default function Header({ onLogout, showBackToHome = false }: HeaderProps
                 <button 
                   onClick={handleLogout}
                   disabled={loading}
-                  className="logout-btn"
+                  className="header-btn"
                 >
                   {loading ? 'Logging out...' : 'Logout'}
                 </button>

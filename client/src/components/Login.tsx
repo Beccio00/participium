@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router'
 import {useAuth} from '../hooks/useAuth';
 import {LoginValidator} from '../validators/LoginValidator';
@@ -8,7 +8,7 @@ import '../styles/Login.css';
 
 export default function Login() {
   const navigate = useNavigate()
-  const{login,checkAuth} = useAuth(); 
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
@@ -58,9 +58,6 @@ export default function Login() {
     }
   };
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
 
   return (
     <>

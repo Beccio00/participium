@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate, useLocation } from 'react-router'
+import { Routes, Route, useLocation } from 'react-router'
 import './styles/App.css'
 import { useAuth } from './hooks/useAuth'
 import Header from './components/Header'
@@ -7,23 +7,8 @@ import Login from './components/Login'
 import Signup from './components/Signup'
 
 function App() {
-  const { loading, logout, checkAuth } = useAuth()
-  const navigate = useNavigate()
+  const { loading } = useAuth()
   const location = useLocation()
-
-  const handleLogout = async () => {
-    try {
-      await logout()
-      try {
-        await checkAuth()
-      } catch (err) {
-        console.warn('Failed to refresh auth after logout:', err)
-      }
-      navigate('/', { replace: true })
-    } catch (err) {
-      console.error('Logout failed:', err)
-    }
-  }
 
   if (loading) {
     return (
@@ -35,7 +20,7 @@ function App() {
 
   return (
     <div className={`app with-header`}>
-      <Header onLogout={handleLogout} showBackToHome={location.pathname !== '/'} />
+      <Header showBackToHome={location.pathname !== '/'} />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
