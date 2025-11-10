@@ -1,5 +1,6 @@
 import type { LoginResponse, SessionInfo } from '../../../shared/LoginTypes';
 import type { SignupFormData, SignupResponse } from '../../../shared/SignupTypes';
+import type { MunicipalityUserRequest, MunicipalityUserResponse } from '../../../shared/MunicipalityUserTypes';
 
 const API_PREFIX = '/api';
 
@@ -47,9 +48,41 @@ export async function signup(form: SignupFormData): Promise<SignupResponse> {
   return handleResponse<SignupResponse>(res);
 }
 
+// ADMINISTRATION API
+
+export async function createMunicipalityUser(data: MunicipalityUserRequest): Promise<MunicipalityUserResponse> {
+  const res = await fetch(`${API_PREFIX}/admin/municipality-users`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<MunicipalityUserResponse>(res);
+}
+
+export async function listMunicipalityUsers(): Promise<MunicipalityUserResponse[]> {
+  const res = await fetch(`${API_PREFIX}/admin/municipality-users`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return handleResponse<MunicipalityUserResponse[]>(res);
+}
+
+
+export async function deleteMunicipalityUser(userId: number): Promise<void> {
+  const res = await fetch(`${API_PREFIX}/admin/municipality-users/${userId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  await handleResponse<unknown>(res);
+}
+
 export default {
   getSession,
   login,
   logout,
   signup,
+  createMunicipalityUser,
+  listMunicipalityUsers,
+  deleteMunicipalityUser,
 };
