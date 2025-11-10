@@ -42,7 +42,7 @@
     "seed": "ts-node prisma/seed.ts",
     "db:reset": "npx prisma db push --force-reset && npm run seed",
     "generate:api": "openapi-generator-cli generate -i ../docs/swagger.yaml -g typescript-fetch -o ./src/generated",
-    "test": "jest",
+    "test": "jest --runInBand",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",
     "test:verbose": "cross-env NODE_ENV=test jest --verbose"
