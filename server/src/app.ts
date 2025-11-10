@@ -6,10 +6,8 @@ import cors from "cors";
 import { configurePassport } from "./config/passport";
 import authRoutes from './routes/authRoutes';
 import citizenRoutes from './routes/citizenRoutes';
+import reportRoutes from './routes/reportRoutes';
 
-/**
- 
- */
 export function createApp(): Express {
   const app: Express = express();
 
@@ -50,6 +48,7 @@ export function createApp(): Express {
   // API Routes
   app.use('/api/session', authRoutes);
   app.use('/api/citizen', citizenRoutes);
+  app.use('/api/report', reportRoutes);
 
   return app;
 }

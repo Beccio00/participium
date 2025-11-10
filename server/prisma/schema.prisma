@@ -44,7 +44,7 @@ model Report {
   status        ReportStatus @default(PENDING_APPROVAL)
   user          User     @relation(fields: [userId], references: [id])
   userId        Int
-  photos        String//ReportPhoto[]
+  photos        ReportPhoto[]
   messages      ReportMessage[]
   rejectionReason String?
   createdAt     DateTime @default(now())
@@ -74,13 +74,13 @@ enum ReportStatus {
   RESOLVED
 }
 
-/* model ReportPhoto {
+ model ReportPhoto {
   id        Int      @id @default(autoincrement())
   url       String
   filename  String
   report    Report   @relation(fields: [reportId], references: [id])
   reportId  Int
-} */
+} 
 
 model ReportMessage {
   id        Int      @id @default(autoincrement())

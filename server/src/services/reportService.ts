@@ -1,34 +1,50 @@
-import prisma from '../utils/prismaClient';
+import {prisma} from '../index';
+import { 
+    ReportCategory as PrismaReportCategory, 
+    ReportStatus as PrismaReportStatus 
+} from '../../prisma/generated/client';
 import {
-     ReportDTO, 
-     ReportCategory, 
-     ReportStatus 
+     ReportDTO,
 } from '../interfaces/ReportDTO';
 
-export async function createReport(data: ReportDTO & { userId: number }) {
-  //validation: minimum one photo, maximum three photos
-  if (!data.photos || data.photos.length === 0) {
-    throw new Error("At least one photo is required");
-  }
-  if (data.photos.length > 3) {
-    throw new Error("Maximum 3 photos allowed");
-  }
+type PhotoInput = {
+    url: string;
+    filename: string;
+};
+
+
+//new type where we exclude fields that will not be provided by the useer
+type CreateReportData = 
+Omit<ReportDTO, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'messages' | 'user' | 'rejectedReason'> & {
+    userId: number; //add userId to link report to user
+    photos: PhotoInput[];
+    //here we can add photos handling later
+};
+
+
+export async function createReport(data: CreateReportData) {
+  //here ther should be validation for the photos
 
   const newReport = await prisma.report.create({
     data: {
       title: data.title,
       description: data.description,
-      category: data.category as ReportCategory,
+      category: data.category as PrismaReportCategory,
       latitude: data.latitude,
       longitude: data.longitude,
       isAnonymous: data.isAnonymous,
-      status: ReportStatus.PENDING_APPROVAL, // Sempre pending all'inizio
+      status: PrismaReportStatus.PENDING_APPROVAL, //new reports are always pending approval
       userId: data.userId,
-      //here we need to handle th photos, but not fot story4
+      photos:{
+        create: data.photos.map(photo =>({
+          url: photo.url,
+          filename: photo.filename
+        }))
+      }
     },
     include: {
       user: true,
-      //photos: true,
+      photos: true,
     },
   });
   
@@ -40,7 +56,7 @@ export async function getApprovedReports() {
   return prisma.report.findMany({
     where: {
       status: {
-        in: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED]
+        in: [PrismaReportStatus.ASSIGNED, PrismaReportStatus.IN_PROGRESS, PrismaReportStatus.RESOLVED]
       }
     },
     include: {
@@ -51,7 +67,9 @@ export async function getApprovedReports() {
           email: true
         }
       },
-      //photos: true,
     },
+    orderBy:{
+      createdAt: 'desc' //most recent first
+    }
   });
 }
