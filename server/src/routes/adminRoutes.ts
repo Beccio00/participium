@@ -1,18 +1,15 @@
 import { Router } from "express";
-import { isLoggedIn } from "../middleware/routeProtection";
-import { requireAdmin } from "../middleware/adminProtection";
+import { requireAdmin } from "../middleware/routeProtection";
 import {
   createMunicipalityUserController,
   listMunicipalityUsersController,
   getMunicipalityUserController,
   updateMunicipalityUserController,
   deleteMunicipalityUserController
-} from "../controllers/municipalityUserController";
+} from "../controllers/municipalityController";
 
 const router = Router();
 
-// All admin routes require authentication and admin privileges
-router.use(isLoggedIn);
 router.use(requireAdmin);
 
 // POST /admin/municipality-users - Create a new municipality user

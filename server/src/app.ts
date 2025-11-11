@@ -7,6 +7,7 @@ import cors from "cors";
 import { configurePassport } from "./config/passport";
 import authRoutes from './routes/authRoutes';
 import citizenRoutes from './routes/citizenRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 export function createApp(): Express {
   const app: Express = express();
@@ -40,7 +41,8 @@ export function createApp(): Express {
       version: "1.0.0",
       endpoints: {
         auth: "/api/session",
-        citizens: "/api/citizen"
+        citizens: "/api/citizen",
+        admin: "/api/admin"
       }
     });
   });
@@ -48,6 +50,7 @@ export function createApp(): Express {
   // API Routes
   app.use('/api/session', authRoutes);
   app.use('/api/citizen', citizenRoutes);
+  app.use('/api/admin', adminRoutes);
 
   return app;
 }

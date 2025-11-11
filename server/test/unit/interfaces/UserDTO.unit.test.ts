@@ -1,3 +1,22 @@
+import { toMunicipalityUserDTO, Roles } from "../../../src/interfaces/UserDTO";
+
+describe('UserDTO', () => {
+  describe('toMunicipalityUserDTO', () => {
+    it('maps user to municipality DTO correctly', () => {
+      const user = { id: 5, first_name: 'John', last_name: 'Doe', email: 'j@d.com', role: Roles.PUBLIC_RELATIONS } as any;
+      const dto = toMunicipalityUserDTO(user);
+      expect(dto).toMatchObject({ id: 5, firstName: 'John', lastName: 'Doe', email: 'j@d.com', role: Roles.PUBLIC_RELATIONS });
+    });
+
+    it('handles missing optional fields gracefully', () => {
+      const user = { id: 6, email: 'x@y.com', role: Roles.TECHNICAL_OFFICE } as any;
+      const dto = toMunicipalityUserDTO(user);
+      expect(dto.id).toBe(6);
+      expect(dto.email).toBe('x@y.com');
+      expect(dto.role).toBe(Roles.TECHNICAL_OFFICE);
+    });
+  });
+});
 import { toUserDTO, UserDTO } from "../../../src/interfaces/UserDTO";
 import { InvalidCredentialsError } from "../../../src/interfaces/errors/InvalidCredentialsError";
 

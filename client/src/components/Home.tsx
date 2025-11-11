@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Map, GeoAltFill, Building, ExclamationTriangleFill, CheckCircleFill, Clipboard, Pencil } from 'react-bootstrap-icons';
 import AuthModal from './AuthModal';
@@ -7,11 +7,16 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function Home() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'ADMINISTRATOR') {
+      navigate('/admin', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
+
   const handleAddReport = () => {
-    // Sempre mostra il modal, che gestirà i due casi diversi
     setShowAuthModal(true);
   };
 
@@ -33,7 +38,6 @@ export default function Home() {
     <>
       <div className="home-container">
         <main className="main-content">
-          {/* Map Section - Left 2/3 */}
           <div className="map-section">
             <div className="map-placeholder">
               <div className="map-header">
@@ -54,7 +58,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Reports Section - Right 1/3 */}
           <div className="reports-section">
             <div className="reports-header">
               <h3>Recent Reports</h3>
@@ -69,7 +72,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Add Report Button - Bottom Right */}
             <div className="add-report-section">
               <button 
                 onClick={handleAddReport}
@@ -92,7 +94,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Auth Modal */}
       <AuthModal
         isOpen={showAuthModal}
         isAuthenticated={isAuthenticated}

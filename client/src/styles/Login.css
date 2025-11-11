@@ -58,6 +58,33 @@
   pointer-events: none;
 }
 
+.test-accounts-info {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary);
+}
+
+.test-accounts-info p {
+  margin: 0 0 0.5rem 0;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.test-accounts-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.test-accounts-info li {
+  margin: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;

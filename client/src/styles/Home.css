@@ -208,6 +208,35 @@
   gap: 0.75rem;
 }
 
+/* Admin Link Section - For administrators only */
+.admin-link-section {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f8f9fa;
+  background: #f8f9fa;
+}
+
+.admin-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--text);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+  width: 100%;
+}
+
+.admin-link-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 .add-report-btn {
   display: flex;
   align-items: center;

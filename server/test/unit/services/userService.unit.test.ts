@@ -3,6 +3,7 @@ import {
   findById,
   createUser,
 } from "../../../src/services/userService";
+import { Roles } from "../../../src/interfaces/UserDTO";
 
 var mockPrisma: any;
 
@@ -96,7 +97,7 @@ describe("userService", () => {
         last_name: "Doe",
         password: "hashedpass",
         salt: "salt123",
-        role: "user",
+        role: Roles.CITIZEN,
         telegram_username: "johndoe",
         email_notifications_enabled: true,
       };
@@ -112,7 +113,7 @@ describe("userService", () => {
           last_name: "Doe",
           password: "hashedpass",
           salt: "salt123",
-          role: "user" as any,
+          role: Roles.CITIZEN as any,
           telegram_username: "johndoe",
           email_notifications_enabled: true,
         },
@@ -127,6 +128,7 @@ describe("userService", () => {
         last_name: "Doe",
         password: "hashedpass",
         salt: "salt123",
+        role: Roles.CITIZEN,
       };
       const mockCreatedUser = {
         id: 1,
@@ -145,7 +147,7 @@ describe("userService", () => {
           last_name: "Doe",
           password: "hashedpass",
           salt: "salt123",
-          role: undefined as any,
+          role: Roles.CITIZEN as any,
           telegram_username: null,
           email_notifications_enabled: undefined,
         },
@@ -160,6 +162,7 @@ describe("userService", () => {
         last_name: "Doe",
         password: "hashedpass",
         salt: "salt123",
+        role: Roles.CITIZEN,
       };
       const error = new Error("Database error");
       mockPrisma.user.create.mockRejectedValue(error);

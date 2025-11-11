@@ -27,7 +27,6 @@ export default function Login() {
       ...prev,
       [name]: value
     }));
-    //want to "clear" the error when user starts typing
     if (error) setError('');
   };
 
@@ -44,9 +43,12 @@ export default function Login() {
     }
 
     try {
-      await login(formData.email, formData.password);
-      // after successful login navigate home
-      navigate('/', { replace: true })
+      const response = await login(formData.email, formData.password);
+      if (response && response.role === 'ADMINISTRATOR') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -61,10 +63,20 @@ export default function Login() {
 
   return (
     <>
-      {/* Header is rendered by App; navigation handled locally */}
       <div className="login-container">
         <div className="login-card">
           <h2>Login</h2>
+          
+          <div className="test-accounts-info">
+            <p><strong>Test Accounts:</strong></p>
+            <ul>
+              <li><strong>Admin:</strong> admin@participium.com / adminpass</li>
+              <li><strong>Citizen:</strong> citizen@participium.com / citizenpass</li>
+              <li><strong>Public Relations:</strong> pr@participium.com / prpass</li>
+              <li><strong>Technical Office:</strong> tech@participium.com / techpass</li>
+            </ul>
+          </div>
+
           <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
