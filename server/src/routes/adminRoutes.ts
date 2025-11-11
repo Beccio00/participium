@@ -4,7 +4,6 @@ import {
   createMunicipalityUserController,
   listMunicipalityUsersController,
   getMunicipalityUserController,
-  updateMunicipalityUserController,
   deleteMunicipalityUserController,
   listRolesController
 } from "../controllers/municipalityController";
@@ -21,9 +20,6 @@ router.get('/municipality-users', listMunicipalityUsersController);
 
 // GET api/admin/municipality-users/:userId - Get specific municipality user
 router.get('/municipality-users/:userId', getMunicipalityUserController);
-
-// PUT api/admin/municipality-users/:userId - Update specific municipality user
-router.put('/municipality-users/:userId', updateMunicipalityUserController);
 
 // DELETE api/admin/municipality-users/:userId - Delete specific municipality user
 router.delete('/municipality-users/:userId', deleteMunicipalityUserController);
