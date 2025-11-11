@@ -1,4 +1,5 @@
 import '../styles/AuthModal.css';
+import { LockFill, GearFill } from 'react-bootstrap-icons';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ export default function AuthModal({ isOpen, isAuthenticated, onClose, onLogin, o
           {!isAuthenticated ? (
             // Contenuto per utenti non autenticati
             <>
-              <div className="modal-icon">🔐</div>
+              <div className="modal-icon"><LockFill /></div>
               <h2>Authentication Required</h2>
               <p>You need to be registered and logged in to submit reports to the municipality.</p>
               
@@ -46,15 +47,11 @@ export default function AuthModal({ isOpen, isAuthenticated, onClose, onLogin, o
                   Sign Up
                 </button>
               </div>
-              
-              <p className="modal-footer">
-                Don't have an account? <button onClick={onSignup} className="link-modal-btn">Create one here</button>
-              </p>
             </>
           ) : (
             // Contenuto per utenti autenticati
             <>
-              <div className="modal-icon">🚧</div>
+              <div className="modal-icon"><GearFill /></div>
               <h2>Feature Coming Soon</h2>
               <p>The report submission functionality is currently under development and will be available soon.</p>
               

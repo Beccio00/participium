@@ -16,16 +16,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, rgba(28,46,68,0.03) 0%, rgba(220,201,182,0.4) 100%);
 }
 
 .loading-spinner {
   padding: 2rem;
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   font-size: 1.1rem;
-  color: #667eea;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -44,14 +44,14 @@
 
 .back-btn {
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
-  border: 1px solid #ddd;
+  background: var(--glass);
+  color: var(--text);
+  border: 1px solid rgba(34,49,63,0.06);
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(6px);
 }
 
 .back-btn:hover {
