@@ -1,29 +1,28 @@
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AuthUser } from '../../../shared/AuthTypes';
-import type { LoginResponse, ErrorResponse } from '../../../shared/LoginTypes';
-import type { SignupFormData, SignupResponse, SignupErrorResponse } from '../../../shared/SignupTypes';
+import type { SignupFormData, SignupResponse } from '../../../shared/SignupTypes';
+import * as api from '../api/api';
 
-export function useAuth() {
+type AuthContextType = {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  signup: (formData: SignupFormData) => Promise<SignupResponse>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/session/current', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.authenticated && data.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+      const data = await api.getSession();
+      if (data.authenticated && data.user) setUser(data.user);
+      else setUser(null);
     } catch (err) {
       console.error('Error checking auth:', err);
       setUser(null);
@@ -33,59 +32,19 @@ export function useAuth() {
   };
 
   const signup = async (formData: SignupFormData): Promise<SignupResponse> => {
-    const response = await fetch('/api/citizen/signup', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(formData),
-    });
-
-    const data: SignupResponse | SignupErrorResponse = await response.json();
-
-    if (response.ok) {
-      return data as SignupResponse;
-    } else {
-      const errorData = data as SignupErrorResponse;
-      throw new Error(errorData.message || 'Signup failed');
-    }
+    return api.signup(formData);
   };
 
-  const login = async (email: string, password: string): Promise<void> => {
-    const response = await fetch('/api/session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data: LoginResponse | ErrorResponse = await response.json();
-
-    if (response.ok) {
-      const successData = data as LoginResponse;
-      setUser(successData.user);
-    } else {
-      const errorData = data as ErrorResponse;
-      throw new Error(errorData.message || 'Login failed');
-    }
+  const login = async (email: string, password: string): Promise<AuthUser> => {
+    const data = await api.login(email, password);
+    setUser(data.user);
+    return data.user;
   };
 
   const logout = async (): Promise<void> => {
     try {
-      const response = await fetch('/api/session/current', {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        setUser(null);
-      } else {
-        const errorData: ErrorResponse = await response.json();
-        throw new Error(errorData.message || 'Logout failed');
-      }
+      await api.logout();
+      setUser(null);
     } catch (err) {
       console.error('Logout error:', err);
       throw err;
@@ -96,13 +55,20 @@ export function useAuth() {
     checkAuth();
   }, []);
 
-  return {
+  const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     loading,
     signup,
     login,
     logout,
-    checkAuth
   };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 }

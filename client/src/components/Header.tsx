@@ -1,39 +1,40 @@
 import { useState } from 'react';
-import type { AuthUser } from '../../../shared/AuthTypes';
-import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router';
 import '../styles/Header.css';
+import { useAuth } from '../hooks/useAuth';
+import { PersonCircle } from 'react-bootstrap-icons';
+
 
 interface HeaderProps {
-  userHeader: AuthUser | null;
-  isAuthenticated: boolean;
-  onShowLogin: () => void;
-  onShowSignup: () => void;
-  onLogout: () => Promise<void>;
   showBackToHome?: boolean;
-  onBackToHome?: () => void;
 }
 
-export default function Header({ 
-  isAuthenticated , 
-  onShowLogin, 
-  onShowSignup, 
-  onLogout,
-  showBackToHome = false,
-  onBackToHome
-}: HeaderProps) {
+export default function Header({ showBackToHome = false }: HeaderProps) {
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await onLogout();
+      await logout();
+      navigate('/login', { replace: true });
     } catch (err) {
       console.error('Logout failed:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoToLogin = () => navigate('/login')
+  const handleGoToSignup = () => navigate('/signup')
+  const handleBackHome = () => {
+    if (user?.role === 'ADMINISTRATOR') {
+      handleLogout();
+    } else {
+      navigate('/');
+    }
+  }
 
   return (
     <header className="header">
@@ -46,17 +47,18 @@ export default function Header({
         <div className="auth-section">
           {showBackToHome ? (
             <button 
-              onClick={onBackToHome}
+              onClick={handleBackHome}
               className="header-btn"
+              disabled={loading}
             >
-              ← Back to Home
+              {user?.role === 'ADMINISTRATOR' 
+                ? (loading ? 'Logging out...' : '← Logout') 
+                : '← Back to Home'}
             </button>
           ) : isAuthenticated && user ? (
             <div className="user-menu">
               <div className="user-profile">
-                <div className="user-avatar">
-                  👤
-                </div>
+                <div className="user-avatar"><PersonCircle /></div>
                 <div className="user-details">
                   <div className="user-name">{user.firstName}</div>
                   <div className="user-surname">{user.lastName}</div>
@@ -64,26 +66,16 @@ export default function Header({
                 <button 
                   onClick={handleLogout}
                   disabled={loading}
-                  className="logout-btn"
+                  className="header-btn"
                 >
                   {loading ? 'Logging out...' : 'Logout'}
                 </button>
               </div>
             </div>
-          ) : (
+              ) : (
             <div className="auth-buttons">
-              <button 
-                onClick={onShowLogin}
-                className="header-btn"
-              >
-                Login
-              </button>
-              <button 
-                onClick={onShowSignup}
-                className="header-btn"
-              >
-                Sign Up
-              </button>
+              <button onClick={handleGoToLogin} className="header-btn">Login</button>
+              <button onClick={handleGoToSignup} className="header-btn">Sign Up</button>
             </div>
           )}
         </div>

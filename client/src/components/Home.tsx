@@ -1,29 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { Map, GeoAltFill, Building, ExclamationTriangleFill, CheckCircleFill, Clipboard, Pencil } from 'react-bootstrap-icons';
 import AuthModal from './AuthModal';
 import '../styles/Home.css';
+import { useAuth } from '../hooks/useAuth';
 
-interface HomeProps {
-  isAuthenticated: boolean;
-  onShowLogin: () => void;
-  onShowSignup: () => void;
-}
-
-export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: HomeProps) {
+export default function Home() {
+  const navigate = useNavigate()
+  const { isAuthenticated, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'ADMINISTRATOR') {
+      navigate('/admin', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
+
   const handleAddReport = () => {
-    // Sempre mostra il modal, che gestirà i due casi diversi
     setShowAuthModal(true);
   };
 
   const handleModalLogin = () => {
     setShowAuthModal(false);
-    onShowLogin();
+    navigate('/login')
   };
 
   const handleModalSignup = () => {
     setShowAuthModal(false);
-    onShowSignup();
+    navigate('/signup')
   };
 
   const handleCloseModal = () => {
@@ -34,7 +38,6 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
     <>
       <div className="home-container">
         <main className="main-content">
-          {/* Map Section - Left 2/3 */}
           <div className="map-section">
             <div className="map-placeholder">
               <div className="map-header">
@@ -42,20 +45,19 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
                 <p>Municipality territory view</p>
               </div>
               <div className="map-content">
-                <div className="map-icon">🗺️</div>
+                <div className="map-icon"><Map /></div>
                 <h3>Map will be displayed here</h3>
-                <p>This area will contain an interactive map showing:</p>
+                <p className='subtitle'>This area will contain an interactive map showing:</p>
                 <ul>
-                  <li>📍 Report locations</li>
-                  <li>🏢 Municipal buildings</li>
-                  <li>🚧 Active issues</li>
-                  <li>✅ Resolved reports</li>
+                    <li><GeoAltFill className="inline-icon" /> Report locations</li>
+                    <li><Building className="inline-icon" /> Municipal buildings</li>
+                    <li><ExclamationTriangleFill className="inline-icon" /> Active issues</li>
+                    <li><CheckCircleFill className="inline-icon" /> Resolved reports</li>
                 </ul>
               </div>
             </div>
           </div>
 
-          {/* Reports Section - Right 1/3 */}
           <div className="reports-section">
             <div className="reports-header">
               <h3>Recent Reports</h3>
@@ -64,27 +66,26 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
             
             <div className="reports-content">
               <div className="reports-placeholder">
-                <div className="placeholder-icon">📋</div>
+                <div className="placeholder-icon"><Clipboard /></div>
                 <p>No reports yet</p>
                 <small>Reports will appear here once submitted by citizens.</small>
               </div>
             </div>
 
-            {/* Add Report Button - Bottom Right */}
             <div className="add-report-section">
               <button 
                 onClick={handleAddReport}
                 className="add-report-btn"
               >
-                <span className="btn-icon">📝</span>
+                <span className="btn-icon"><Pencil /></span>
                 Add New Report
               </button>
               
               {!isAuthenticated && (
                 <p className="auth-reminder">
                   <small>
-                    You need to <button onClick={onShowLogin} className="link-btn">login</button> or{' '}
-                    <button onClick={onShowSignup} className="link-btn">sign up</button> to submit reports
+                    You need to <button onClick={() => navigate('/login')} className="link-btn">login</button> or{' '}
+                      <button onClick={() => navigate('/signup')} className="link-btn">sign up</button> to submit reports
                   </small>
                 </p>
               )}
@@ -93,7 +94,6 @@ export default function Home({ isAuthenticated, onShowLogin, onShowSignup }: Hom
         </main>
       </div>
 
-      {/* Auth Modal */}
       <AuthModal
         isOpen={showAuthModal}
         isAuthenticated={isAuthenticated}

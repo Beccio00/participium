@@ -444,111 +444,6 @@ paths:
                 error: "InternalServerError"
                 message: "Failed to retrieve user"
 
-    put:
-      tags:
-        - Administration
-      summary: Update municipality user
-      description: |
-        Update information for a specific municipality user.
-        Only administrators can perform this operation.
-      operationId: updateMunicipalityUser
-      security:
-        - SessionAuth: []
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          description: ID of the municipality user to update
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MunicipalityUserRequest"
-            example:
-              firstName: Giuseppe
-              lastName: Verdi
-              email: giuseppe.verdi@comune.torino.it
-              password: NewPassword123!
-              role: ADMINISTRATOR
-      responses:
-        "200":
-          description: Municipality user updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MunicipalityUserResponse"
-        "400":
-          description: Invalid input data
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                invalidUserId:
-                  summary: Invalid user ID parameter
-                  value:
-                    error: "BadRequest"
-                    message: "Invalid user ID format"
-                missingFields:
-                  summary: Missing required fields
-                  value:
-                    error: "BadRequest"
-                    message: "Missing required fields: firstName, lastName, email, password, role"
-                invalidRole:
-                  summary: Invalid role value
-                  value:
-                    error: "BadRequest"
-                    message: "Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE"
-        "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
-        "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Forbidden"
-                message: "Administrator privileges required"
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "NotFound"
-                message: "Municipality user not found"
-        "409":
-          description: Email already in use by another user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Conflict"
-                message: "Email already in use"
-        "500":
-          description: Unable to update user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "InternalServerError"
-                message: "Failed to update user"
-
     delete:
       tags:
         - Administration
@@ -616,86 +511,6 @@ paths:
                 error: "InternalServerError"
                 message: "Failed to delete user"
 
-  /admin/municipality-users/{userId}/role:
-    patch:
-      tags:
-        - Administration
-      summary: Update the role to a municipality user
-      description: |
-        Update the municipality user by assigning or updating the `role` field. Only administrators can perform this operation.
-        Uses patch instead of put to avoid sending the full user payload when only updating the role.
-      operationId: patchMunicipalityUserRole
-      security:
-        - SessionAuth: []
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          description: ID of the municipality user to update
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AssignRoleRequest"
-            example:
-              role: ADMINISTRATOR
-      responses:
-        "200":
-          description: Role assigned successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MunicipalityUserResponse"
-        "400":
-          description: Invalid role or userId
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "BadRequest"
-                message: "Invalid role value"
-        "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
-        "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Forbidden"
-                message: "Administrator privileges required"
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "NotFound"
-                message: "Municipality user not found"
-        "500":
-          description: Unable to assign role
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "InternalServerError"
-                message: "Failed to assign role"
-
   /admin/roles:
     get:
       tags:
@@ -717,7 +532,6 @@ paths:
                   $ref: "#/components/schemas/MunicipalityRole"
               example:
                 - PUBLIC_RELATIONS
-                - ADMINISTRATOR
                 - TECHNICAL_OFFICE
         "401":
           description: Not authenticated
@@ -873,14 +687,7 @@ components:
           type: string
           example: mario.rossi@example.com
         role:
-          type: string
-          enum:
-            - CITIZEN
-            - PUBLIC_RELATIONS
-            - ADMINISTRATOR
-            - TECHNICAL_OFFICE
-          description: User role in the system
-          example: CITIZEN
+          $ref: "#/components/schemas/UserRole"
         telegramUsername:
           type: string
           nullable: true
@@ -893,7 +700,13 @@ components:
 
     ErrorResponse:
       type: object
+      required:
+        - code
       properties:
+        code:
+          type: integer
+          description: HTTP status code of the error
+          example: 400
         error:
           type: string
           description: Error type (BadRequest, Unauthorized, Conflict, InternalServerError)
@@ -938,13 +751,41 @@ components:
           description: Password (minimum 8 characters)
           example: AdminPass123!
         role:
+          $ref: "#/components/schemas/MunicipalityRole"
+
+    MunicipalityUserUpdateRequest:
+      type: object
+      description: |
+        Partial municipality user update. At least one of the fields must be present in the body.
+        Fields not present will be left unchanged. Password, if provided, will be hashed server-side.
+      properties:
+        firstName:
           type: string
-          description: Role assigned to the municipality user. Can be one of the predefined municipality roles.
-          enum:
-            - PUBLIC_RELATIONS
-            - ADMINISTRATOR
-            - TECHNICAL_OFFICE
-          example: PUBLIC_RELATIONS
+          minLength: 1
+          maxLength: 50
+          description: Municipality user's first name
+          example: Giuseppe
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Municipality user's last name
+          example: Verdi
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          description: Valid email address (must be unique)
+          example: giuseppe.verdi@comune.torino.it
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          format: password
+          description: New password (minimum 8 characters). If provided, it will be hashed server-side and not returned in the response.
+          example: NewPassword123!
+        role:
+          $ref: "#/components/schemas/MunicipalityRole"
 
     MunicipalityUserResponse:
       type: object
@@ -964,13 +805,7 @@ components:
           type: string
           example: giuseppe.verdi@comune.torino.it
         role:
-          type: string
-          description: Assigned role for the municipality user
-          enum:
-            - PUBLIC_RELATIONS
-            - ADMINISTRATOR
-            - TECHNICAL_OFFICE
-          example: PUBLIC_RELATIONS
+          $ref: "#/components/schemas/MunicipalityRole"
 
     MunicipalityRole:
       type: string
@@ -979,8 +814,19 @@ components:
         three supported role types for municipality staff.
       enum:
         - PUBLIC_RELATIONS
+        - TECHNICAL_OFFICE
+
+    UserRole:
+      type: string
+      description: |
+        All possible user roles in the system, including citizens and municipality staff.
+        Used for authentication and session management.
+      enum:
+        - CITIZEN
+        - PUBLIC_RELATIONS
         - ADMINISTRATOR
         - TECHNICAL_OFFICE
+      example: CITIZEN
 
     AssignRoleRequest:
       type: object
