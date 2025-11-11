@@ -137,6 +137,28 @@
   margin: 0;
 }
 
+.user-role {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(0,0,0,0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin: 6px;
+  text-transform: capitalize;
+}
+
+.user-role-badge {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0,0,0,0.12);
+  padding: 4px 8px;
+  border-radius: 999px;
+  margin: 10px;
+  align-self: center;
+  text-transform: none;
+  white-space: nowrap;
+}
+
 .logout-btn {
   padding: 0.5rem 1.25rem;
   border-radius: 6px;
