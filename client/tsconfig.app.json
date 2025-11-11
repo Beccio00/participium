@@ -5,8 +5,9 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "jest"],
     "skipLibCheck": true,
+    "esModuleInterop": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -24,5 +25,11 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "../shared/AuthTypes.tsx", "../shared/SignupTypes.tsx"]
+  "include": [
+    "src",
+    "test",
+    "../shared/AuthTypes.tsx",
+    "../shared/SignupTypes.tsx",
+    "../shared/LoginTypes.ts"
+  ]
 }

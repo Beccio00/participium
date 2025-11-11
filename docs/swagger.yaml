@@ -1,10 +1,19 @@
 openapi: 3.0.3
 info:
-  title: Participium API - Citizen Registration
+  title: Participium API - Citizen Registration & Municipality Administration
   description: |
-    API for citizen registration and authentication (PT01).
+    API for citizen registration, authentication (PT01) and municipality user management (PT02).
     Uses session-based authentication with HTTP-only cookies.
-  version: 1.0.0
+    
+    ## Municipality User Management
+    System administrators can create, update and delete internal municipality user accounts.
+    The system must have at least one administrator account pre-configured in the database.
+    
+    Available municipality roles:
+    - PUBLIC_RELATIONS: Public relations officer for citizen communication
+    - ADMINISTRATOR: Administrative staff for report management 
+    - TECHNICAL_OFFICE: Technical staff for resolving reported issues
+  version: 1.1.0
   contact:
     name: Municipality of Turin
     email: support@participium.torino.it
@@ -20,6 +29,8 @@ tags:
     description: Login, logout and session management operations
   - name: Citizens
     description: Citizen registration operations
+  - name: Administration
+    description: Municipality user management operations (create, update, delete)
 
 paths:
   /session:
@@ -92,32 +103,35 @@ paths:
       summary: Get current session info
       description: |
         Returns information about the current authenticated user.
-        Always returns 200 OK with authenticated flag (true/false).
-        No authentication required - this endpoint is used to check session status.
+        Returns 200 OK with user information when authenticated.
+        Returns 401 Unauthorized when no valid session exists.
+        No explicit authentication required - endpoint checks session validity.
       operationId: getSession
       responses:
         '200':
-          description: Session info retrieved successfully
+          description: User is authenticated - session info retrieved successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionResponse'
-              examples:
-                authenticated:
-                  summary: User is authenticated
-                  value:
-                    authenticated: true
-                    user:
-                      firstName: Mario
-                      lastName: Rossi
-                      email: mario.rossi@example.com
-                      role: CITIZEN
-                      telegramUsername: null
-                      emailNotificationsEnabled: true
-                notAuthenticated:
-                  summary: User is not authenticated
-                  value:
-                    authenticated: false
+              example:
+                authenticated: true
+                user:
+                  firstName: Mario
+                  lastName: Rossi
+                  email: mario.rossi@example.com
+                  role: CITIZEN
+                  telegramUsername: null
+                  emailNotificationsEnabled: true
+        '401':
+          description: User is not authenticated - no valid session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "No valid session found"
 
     delete:
       tags:
@@ -213,6 +227,394 @@ paths:
               example:
                 error: "InternalServerError"
                 message: "Unable to create user"
+
+  /admin/municipality-users:
+    post:
+      tags:
+        - Administration
+      summary: Create a new municipality user
+      description: |
+        Create a new internal municipality user account. Only administrators can perform this operation.
+        Email must be unique in the system.
+      operationId: createMunicipalityUser
+      security:
+        - SessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MunicipalityUserRequest'
+            example:
+              firstName: Giuseppe
+              lastName: Verdi
+              email: giuseppe.verdi@comune.torino.it
+              password: AdminPass123!
+              role: PUBLIC_RELATIONS
+      responses:
+        '201':
+          description: Municipality user created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MunicipalityUserResponse'
+        '400':
+          description: Missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "BadRequest"
+                message: "Missing required fields: firstName, lastName, email, password, role"
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                message: "Email already in use"
+        '500':
+          description: Unable to create user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "Unable to create municipality user"
+
+    get:
+      tags:
+        - Administration
+      summary: List all municipality users
+      description: |
+        Retrieve a complete list of all municipality users (excluding citizens). 
+        Returns all internal staff accounts including public relations officers, administrators, and technical office staff.
+        Only administrators can perform this operation.
+        
+        The response includes basic information for each user:
+        - User ID, name, email, and role
+        - No sensitive information like passwords is returned
+      operationId: listMunicipalityUsers
+      security:
+        - SessionAuth: []
+      responses:
+        '200':
+          description: List of municipality users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MunicipalityUserResponse'
+              example:
+                - id: 123
+                  firstName: "Giuseppe"
+                  lastName: "Verdi"
+                  email: "giuseppe.verdi@comune.torino.it"
+                  role: "PUBLIC_RELATIONS"
+                - id: 456
+                  firstName: "Maria"
+                  lastName: "Rossi"
+                  email: "maria.rossi@comune.torino.it"
+                  role: "ADMINISTRATOR"
+                - id: 789
+                  firstName: "Franco"
+                  lastName: "Bianchi"
+                  email: "franco.bianchi@comune.torino.it"
+                  role: "TECHNICAL_OFFICE"
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        '500':
+          description: Unable to retrieve users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "Failed to retrieve users"
+
+  /admin/municipality-users/{userId}:
+    get:
+      tags:
+        - Administration
+      summary: Get municipality user details
+      description: |
+        Retrieve detailed information about a specific municipality user.
+        Only administrators can perform this operation.
+      operationId: getMunicipalityUser
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the municipality user
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Municipality user details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MunicipalityUserResponse'
+        '400':
+          description: Invalid user ID parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "BadRequest"
+                message: "Invalid user ID format"
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "NotFound"
+                message: "Municipality user not found"
+        '500':
+          description: Unable to retrieve user details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "Failed to retrieve user"
+
+    put:
+      tags:
+        - Administration
+      summary: Update municipality user
+      description: |
+        Update information for a specific municipality user.
+        Only administrators can perform this operation.
+      operationId: updateMunicipalityUser
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the municipality user to update
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MunicipalityUserRequest'
+            example:
+              firstName: Giuseppe
+              lastName: Verdi
+              email: giuseppe.verdi@comune.torino.it
+              password: NewPassword123!
+              role: ADMINISTRATOR
+      responses:
+        '200':
+          description: Municipality user updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MunicipalityUserResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidUserId:
+                  summary: Invalid user ID parameter
+                  value:
+                    error: "BadRequest"
+                    message: "Invalid user ID format"
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    error: "BadRequest"
+                    message: "Missing required fields: firstName, lastName, email, password, role"
+                invalidRole:
+                  summary: Invalid role value
+                  value:
+                    error: "BadRequest"
+                    message: "Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE"
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "NotFound"
+                message: "Municipality user not found"
+        '409':
+          description: Email already in use by another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Conflict"
+                message: "Email already in use"
+        '500':
+          description: Unable to update user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "Failed to update user"
+
+    delete:
+      tags:
+        - Administration
+      summary: Delete municipality user
+      description: |
+        Delete a municipality user account. This action is irreversible.
+        Only administrators can perform this operation.
+      operationId: deleteMunicipalityUser
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the municipality user to delete
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Municipality user deleted successfully
+        '400':
+          description: Invalid user ID parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "BadRequest"
+                message: "Invalid user ID format"
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "NotFound"
+                message: "Municipality user not found"
+        '500':
+          description: Unable to delete user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "InternalServerError"
+                message: "Failed to delete user"
 
 components:
   securitySchemes:
@@ -343,9 +745,9 @@ components:
           type: string
           enum:
             - CITIZEN
-            - MUNICIPAL_PR_OFFICER
-            - MUNICIPAL_ADMINISTRATOR
-            - TECHNICAL_OFFICE_STAFF
+            - PUBLIC_RELATIONS
+            - ADMINISTRATOR
+            - TECHNICAL_OFFICE
           description: User role in the system
           example: CITIZEN
         telegramUsername:
@@ -369,6 +771,74 @@ components:
           type: string
           description: Human-readable error message
           example: "Missing required fields: email, password"
+
+    MunicipalityUserRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+        - role
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Municipality user's first name
+          example: Giuseppe
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Municipality user's last name
+          example: Verdi
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          description: Valid email address (must be unique)
+          example: giuseppe.verdi@comune.torino.it
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          format: password
+          description: Password (minimum 8 characters)
+          example: AdminPass123!
+        role:
+          type: string
+          enum:
+            - PUBLIC_RELATIONS
+            - ADMINISTRATOR
+            - TECHNICAL_OFFICE
+          description: Role assigned to the municipality user
+          example: PUBLIC_RELATIONS
+
+    MunicipalityUserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the user
+          example: 123
+        firstName:
+          type: string
+          example: Giuseppe
+        lastName:
+          type: string
+          example: Verdi
+        email:
+          type: string
+          example: giuseppe.verdi@comune.torino.it
+        role:
+          type: string
+          enum:
+            - PUBLIC_RELATIONS
+            - ADMINISTRATOR
+            - TECHNICAL_OFFICE
+          example: PUBLIC_RELATIONS
 
 # Security requirements for protected endpoints
 security:

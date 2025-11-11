@@ -1,7 +1,7 @@
 /* Home Page Styles - Map + Reports Layout */
 .home-container {
   height: 100vh;
-  background: #f8f9fa;
+  background: var(--bg);
   overflow: hidden;
   padding-top: 80px; /* Space for the fixed header */
   box-sizing: border-box; /* Include padding in height calculation */
@@ -16,8 +16,8 @@
 .map-section {
   flex: 1;
   min-width: 0;
-  background: white;
-  border-right: 1px solid #e9ecef;
+  background: var(--surface);
+  border-right: 1px solid rgba(34,49,63,0.06);
   display: flex;
   flex-direction: column;
   min-height: 0; /* Allow flex items to shrink */
@@ -36,13 +36,15 @@
 }
 
 .map-header h2 {
-  color: #333;
+  /* kept neutral/gray to match reports header */
+  color: var(--text);
   font-size: 1.8rem;
   margin: 0 0 0.5rem 0;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .map-header p {
+  /* subtitle explicitly set to #666 as requested */
   color: #666;
   margin: 0;
   font-size: 1rem;
@@ -55,8 +57,8 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 2px dashed #dee2e6;
+  background: linear-gradient(135deg, rgba(29,78,137,0.03) 0%, rgba(220,201,182,0.06) 100%);
+  border: 2px dashed rgba(34,49,63,0.06);
   border-radius: 12px;
   padding: 3rem;
 }
@@ -65,17 +67,32 @@
   font-size: 4rem;
   margin-bottom: 1rem;
   opacity: 0.6;
+  color: var(--muted);
+}
+
+.map-icon svg,
+.map-icon > * {
+  color: var(--muted);
+  fill: var(--muted);
+}
+
+.inline-icon {
+  margin-right: 0.6rem;
+  font-size: 1.05rem;
+  vertical-align: -0.05em;
 }
 
 .map-content h3 {
-  color: #495057;
+  /* neutral gray heading to match reports area */
+  color: var(--text);
   font-size: 1.5rem;
   margin: 0 0 1rem 0;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .map-content p {
-  color: #6c757d;
+  /* explicit neutral gray for map placeholder text */
+  color: #666;
   font-size: 1rem;
   margin: 0 0 1.5rem 0;
   line-height: 1.5;
@@ -92,12 +109,12 @@
 }
 
 .map-content li {
-  background: white;
+  background: var(--surface);
   padding: 0.75rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(34,49,63,0.04);
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--text);
 }
 
 /* Reports Section - Fixed width */
@@ -105,11 +122,11 @@
   width: 350px;
   min-width: 350px;
   max-width: 350px;
-  background: white;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   height: 100%;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+  box-shadow: -2px 0 16px rgba(34,49,63,0.04);
   min-height: 0; /* Allow flex items to shrink */
 }
 
@@ -123,15 +140,17 @@
 }
 
 .reports-header h3 {
-  color: #333;
+  /* make reports header match site primary for consistency */
+  color: var(--text);
   margin: 0;
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .reports-count {
-  background: #667eea;
-  color: white;
+  /* use the site's text color as the badge background for a subtler look */
+  background: var(--text);
+  color: var(--surface);
   padding: 0.3rem 0.8rem;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -194,22 +213,22 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 6px 18px rgba(29,78,137,0.12);
   width: 100%;
   justify-content: center;
 }
 
 .add-report-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 26px rgba(29,78,137,0.16);
 }
 
 .btn-icon {
@@ -227,7 +246,7 @@
 .link-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--primary);
   text-decoration: underline;
   cursor: pointer;
   font-size: inherit;
@@ -236,7 +255,7 @@
 }
 
 .link-btn:hover {
-  color: #535bf2;
+  color: color-mix(in srgb, var(--primary) 80%, black 10%);
 }
 
 /* Responsive Design */
