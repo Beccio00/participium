@@ -1,3 +1,5 @@
+import { ReportStatus } from "../interfaces/ReportDTO";
+
 export const CONFIG = {
   // Server
   PORT: process.env.PORT || 4000,
@@ -19,6 +21,7 @@ export const CONFIG = {
     SESSION: "/api/session",
     CITIZEN: "/api/citizen",
     ADMIN: "/api/admin",
+    REPORTS: "/api/reports",
     SWAGGER: "/api-docs",
   },
 
