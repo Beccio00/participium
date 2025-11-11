@@ -1,23 +1,25 @@
 import { Request, Response } from "express";
 import { 
-  MunicipalityUserCreateRequest, 
-  MunicipalityUserUpdateRequest, 
-  toMunicipalityUserDTO 
-} from "../interfaces/MunicipalityUserDTO";
+  toMunicipalityUserDTO,
+  isValidRole,
+  MUNICIPALITY_ROLES,
+  Role,
+} from "../interfaces/UserDTO";
 import { 
   createMunicipalityUser, 
   getAllMunicipalityUsers, 
   getMunicipalityUserById, 
   updateMunicipalityUser, 
   deleteMunicipalityUser,
-  findMunicipalityUserByEmail
 } from "../services/municipalityUserService";
 import { findByEmail } from "../services/userService";
 import { hashPassword } from "../services/passwordService";
 
+
+
 export async function createMunicipalityUserController(req: Request, res: Response) {
   try {
-    const { firstName, lastName, email, password, role }: MunicipalityUserCreateRequest = req.body;
+    const { firstName, lastName, email, password, role } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password || !role) {
@@ -28,8 +30,7 @@ export async function createMunicipalityUserController(req: Request, res: Respon
     }
 
     // Validate role
-    const validRoles = ['PUBLIC_RELATIONS', 'ADMINISTRATOR', 'TECHNICAL_OFFICE'];
-    if (!validRoles.includes(role)) {
+    if (!isValidRole(role) || !MUNICIPALITY_ROLES.includes(role as Role)) {
       return res.status(400).json({
         error: "BadRequest",
         message: "Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE"
@@ -55,7 +56,7 @@ export async function createMunicipalityUserController(req: Request, res: Respon
       last_name: lastName,
       password: hashedPassword,
       salt,
-      role
+      role: role as Role
     });
 
     const responseUser = toMunicipalityUserDTO(newUser);
@@ -122,7 +123,7 @@ export async function getMunicipalityUserController(req: Request, res: Response)
 export async function updateMunicipalityUserController(req: Request, res: Response) {
   try {
     const userId = parseInt(req.params.userId);
-    const { firstName, lastName, email, password, role }: MunicipalityUserUpdateRequest = req.body;
+    const { firstName, lastName, email, password, role } = req.body;
 
     if (isNaN(userId)) {
       return res.status(400).json({
@@ -131,24 +132,23 @@ export async function updateMunicipalityUserController(req: Request, res: Respon
       });
     }
 
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password || !role) {
+    // Require at least one updatable field
+    if (!firstName && !lastName && !email && !password && !role) {
       return res.status(400).json({
         error: "BadRequest",
-        message: "Missing required fields: firstName, lastName, email, password, role"
+        message: "Provide at least one field to update: firstName, lastName, email, password, or role"
       });
     }
 
-    // Validate role
-    const validRoles = ['PUBLIC_RELATIONS', 'ADMINISTRATOR', 'TECHNICAL_OFFICE'];
-    if (!validRoles.includes(role)) {
+    // Validate role only if provided
+    if (role && (!isValidRole(role) || !MUNICIPALITY_ROLES.includes(role as Role))) {
       return res.status(400).json({
         error: "BadRequest",
         message: "Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE"
       });
     }
 
-    // Check if user exists
+    // Check if user exists and is a municipality user
     const existingUser = await getMunicipalityUserById(userId);
     if (!existingUser) {
       return res.status(404).json({
@@ -157,8 +157,8 @@ export async function updateMunicipalityUserController(req: Request, res: Respon
       });
     }
 
-    // Check if email is already in use by another user
-    if (email !== existingUser.email) {
+    // Check if email is already in use by another user (only if provided and changed)
+    if (email && email !== existingUser.email) {
       const emailInUse = await findByEmail(email);
       if (emailInUse) {
         return res.status(409).json({
@@ -168,18 +168,27 @@ export async function updateMunicipalityUserController(req: Request, res: Respon
       }
     }
 
-    // Hash password if provided
-    const { hashedPassword, salt } = await hashPassword(password);
+    // Hash password only if provided
+    let hashedPassword: string | undefined = undefined;
+    let salt: string | undefined = undefined;
+    if (password) {
+      const hashed = await hashPassword(password);
+      hashedPassword = hashed.hashedPassword;
+      salt = hashed.salt;
+    }
+
+    // Build update payload with only provided fields
+    const updatePayload: any = {
+      ...(email && { email }),
+      ...(firstName && { first_name: firstName }),
+      ...(lastName && { last_name: lastName }),
+      ...(hashedPassword && { password: hashedPassword }),
+      ...(salt && { salt }),
+      ...(role && { role: role as Role }),
+    };
 
     // Update municipality user
-    const updatedUser = await updateMunicipalityUser(userId, {
-      email,
-      first_name: firstName,
-      last_name: lastName,
-      password: hashedPassword,
-      salt,
-      role
-    });
+    const updatedUser = await updateMunicipalityUser(userId, updatePayload);
 
     if (!updatedUser) {
       return res.status(404).json({

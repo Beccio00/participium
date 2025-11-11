@@ -1,19 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router'
 import type { 
   SignupFormData, 
   SignupFormErrors 
 } from '../../../shared/SignupTypes';
 import { SignupValidator } from '../validators/SignupValidator';
 import { useAuth } from '../hooks/useAuth';
-import Header from './Header';
 import '../styles/Signup.css';
 
-interface SignupProps {
-  onBackToHome: () => void;
-  onShowLogin: () => void;
-}
-
-export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
+export default function Signup() {
+  const navigate = useNavigate()
   const { signup } = useAuth();
   
   const [formData, setFormData] = useState<SignupFormData>({
@@ -105,28 +101,19 @@ export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
   if (success) {
     return (
       <>
-        <Header 
-          userHeader={null}
-          isAuthenticated={false}
-          onShowLogin={() => {}}
-          onShowSignup={() => {}}
-          onLogout={async () => {}}
-          showBackToHome={true}
-          onBackToHome={onBackToHome}
-        />
         <div className="signup-fullscreen">
           <div className="signup-card success-card">
             <h2>Registration Successful!</h2>
             <div className="success-message">
               <p>Your account has been created successfully.</p>
             </div>
-            <div className="signup-links">
-               <button
-                  type="button"
-                  className="btn-link-login"
-                  onClick={onShowLogin}
-                      >Click here to Log In</button>
-            </div>
+        <div className="signup-links">
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => navigate('/login')}
+               >Click here to Log In</button>
+        </div>
           </div>
         </div>
       </>
@@ -135,15 +122,7 @@ export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
 
   return (
     <>
-      <Header 
-        userHeader={null}
-        isAuthenticated={false}
-        onShowLogin={() => {}}
-        onShowSignup={() => {}}
-        onLogout={async () => {}}
-        showBackToHome={true}
-        onBackToHome={onBackToHome}
-      />
+      {/* Header is rendered by App; navigation handled locally */}
       <div className="signup-fullscreen">
       <div className="signup-card">
         <h2>Citizen Registration</h2>
@@ -247,11 +226,12 @@ export default function Signup({ onBackToHome, onShowLogin }: SignupProps) {
         </form>
 
         <div className="signup-links">
-          <p>Already have an account? <button
-                  type="button"
-                  className="btn-link-login"
-                  onClick={onShowLogin}
-                      >Click here to Log In</button></p>
+      <p>Already have an account? <br /> <button
+          type="button"
+          className="link-btn"
+          onClick={() => navigate('/login')}
+            >Click here to Log In
+            </button></p>
         </div>
       </div>
     </div>

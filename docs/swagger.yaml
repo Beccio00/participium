@@ -252,8 +252,8 @@ paths:
               password: AdminPass123!
               role: PUBLIC_RELATIONS
       responses:
-        "201":
-          description: Municipality user created successfully
+        '201':
+          description: Municipality user created successfully. The password is hashed server-side and no sensitive fields (password/salt) are returned in the response.
           content:
             application/json:
               schema:
@@ -451,6 +451,7 @@ paths:
       description: |
         Update information for a specific municipality user.
         Only administrators can perform this operation.
+        This endpoint supports partial updates: provide at least one of the updatable fields (firstName, lastName, email, password, role). Fields not present will remain unchanged.
       operationId: updateMunicipalityUser
       security:
         - SessionAuth: []
@@ -467,16 +468,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MunicipalityUserRequest"
+              $ref: '#/components/schemas/MunicipalityUserUpdateRequest'
             example:
-              firstName: Giuseppe
-              lastName: Verdi
               email: giuseppe.verdi@comune.torino.it
-              password: NewPassword123!
-              role: ADMINISTRATOR
       responses:
-        "200":
-          description: Municipality user updated successfully
+        '200':
+          description: Municipality user updated successfully. If a password was provided it is hashed server-side; no sensitive fields are returned.
           content:
             application/json:
               schema:
@@ -494,10 +491,10 @@ paths:
                     error: "BadRequest"
                     message: "Invalid user ID format"
                 missingFields:
-                  summary: Missing required fields
+                  summary: Missing update fields
                   value:
                     error: "BadRequest"
-                    message: "Missing required fields: firstName, lastName, email, password, role"
+                    message: "Provide at least one field to update: firstName, lastName, email, password, or role"
                 invalidRole:
                   summary: Invalid role value
                   value:
@@ -945,6 +942,46 @@ components:
             - ADMINISTRATOR
             - TECHNICAL_OFFICE
           example: PUBLIC_RELATIONS
+
+    MunicipalityUserUpdateRequest:
+      type: object
+      description: |
+        Partial municipality user update. At least one of the fields must be present in the body.
+        Fields not present will be left unchanged. Password, if provided, will be hashed server-side.
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Municipality user's first name
+          example: Giuseppe
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Municipality user's last name
+          example: Verdi
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          description: Valid email address (must be unique)
+          example: giuseppe.verdi@comune.torino.it
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          format: password
+          description: New password (minimum 8 characters). If provided, it will be hashed server-side and not returned in the response.
+          example: NewPassword123!
+        role:
+          type: string
+          enum:
+            - PUBLIC_RELATIONS
+            - ADMINISTRATOR
+            - TECHNICAL_OFFICE
+          description: Role assigned to the municipality user
+          example: ADMINISTRATOR
 
     MunicipalityUserResponse:
       type: object
