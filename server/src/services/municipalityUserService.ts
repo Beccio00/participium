@@ -8,6 +8,9 @@ import {
   findUsersByRoles,
 } from "./userService";
 import { Role, MUNICIPALITY_ROLES } from "../interfaces/UserDTO";
+import { PrismaClient } from "../../prisma/generated/client";
+
+const prisma = new PrismaClient();
 
 export async function createMunicipalityUser(data: {
   email: string;
@@ -64,10 +67,28 @@ export async function updateMunicipalityUser(id: number, data: {
   return updated;
 }
 
+/**
+ * Count total number of administrators in the system
+ */
+async function countAdministrators(): Promise<number> {
+  const count = await prisma.user.count({
+    where: { role: "ADMINISTRATOR" }
+  });
+  return count;
+}
+
 export async function deleteMunicipalityUser(id: number): Promise<boolean> {
   // ensure user exists and is a municipality user
   const existing = await getMunicipalityUserById(id);
   if (!existing) return false;
+
+  // Prevent deletion of the last administrator
+  if (existing.role === "ADMINISTRATOR") {
+    const adminCount = await countAdministrators();
+    if (adminCount <= 1) {
+      throw new Error("Cannot delete the last administrator account");
+    }
+  }
 
   return await deleteUser(id);
 }

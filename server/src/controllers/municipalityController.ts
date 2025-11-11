@@ -233,6 +233,15 @@ export async function deleteMunicipalityUserController(req: Request, res: Respon
 
   } catch (error) {
     console.error("Error deleting municipality user:", error);
+    
+    // Handle specific error: cannot delete last administrator
+    if (error instanceof Error && error.message === "Cannot delete the last administrator account") {
+      return res.status(400).json({
+        error: "BadRequest",
+        message: "Cannot delete the last administrator account"
+      });
+    }
+    
     return res.status(500).json({
       error: "InternalServerError",
       message: "Failed to delete user"
