@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { Express, Request, Response } from "express";
+import { PrismaClient } from "../prisma/generated/client";
 import session from "express-session";
 import passport from "passport";
 import cors from "cors";
