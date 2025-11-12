@@ -641,57 +641,6 @@ paths:
                 error: "InternalServerError"
                 message: "Failed to assign role"
 
-  /admin/roles:
-    get:
-      tags:
-        - Administration
-      summary: List available municipality roles
-      description: |
-        Returns the list of roles that can be assigned to municipality users. Useful for UI role selection and validation.
-      operationId: listMunicipalityRoles
-      security:
-        - SessionAuth: []
-      responses:
-        "200":
-          description: Array of available roles
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/MunicipalityRole"
-              example:
-                - PUBLIC_RELATIONS
-                - ADMINISTRATOR
-                - TECHNICAL_OFFICE
-        "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
-        "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "Forbidden"
-                message: "Administrator privileges required"
-        "500":
-          description: Unable to retrieve roles
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: "InternalServerError"
-                message: "Failed to retrieve roles"
-
 components:
   securitySchemes:
     SessionAuth:
@@ -958,25 +907,6 @@ components:
         - ADMINISTRATOR
         - TECHNICAL_OFFICE
       example: CITIZEN
-
-    AssignRoleRequest:
-      type: object
-      required:
-        - role
-      properties:
-        role:
-          $ref: "#/components/schemas/MunicipalityRole"
-      description: Payload to assign or update a municipality user's role
-
-    MunicipalityRole:
-      type: string
-      description: |
-        A canonical list of roles that can be assigned to municipality users. Allowed values correspond to the
-        three supported role types for municipality staff.
-      enum:
-        - PUBLIC_RELATIONS
-        - ADMINISTRATOR
-        - TECHNICAL_OFFICE
 
     AssignRoleRequest:
       type: object
