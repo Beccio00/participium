@@ -1,26 +1,26 @@
-import {prisma} from '../index';
-import { 
-    ReportCategory as PrismaReportCategory, 
-    ReportStatus as PrismaReportStatus 
-} from '../../prisma/generated/client';
+import { prisma } from "../utils/prismaClient";
 import {
-     ReportDTO,
-} from '../interfaces/ReportDTO';
-
-type PhotoInput = {
-    url: string;
-    filename: string;
-};
-
+  ReportCategory as PrismaReportCategory,
+  ReportStatus as PrismaReportStatus,
+} from "../../prisma/generated/client";
+import { ReportDTO } from "../interfaces/ReportDTO";
+import { ReportPhoto } from "../../../shared/ReportTypes";
 
 //new type where we exclude fields that will not be provided by the user
-type CreateReportData = 
-Omit<ReportDTO, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'messages' | 'user' | 'rejectedReason'> & {
-    userId: number; //add userId to link report to user
-    photos: PhotoInput[];
-    //here we can add photos handling later
+type CreateReportData = Omit<
+  ReportDTO,
+  | "id"
+  | "status"
+  | "createdAt"
+  | "updatedAt"
+  | "messages"
+  | "user"
+  | "rejectedReason"
+> & {
+  userId: number; //add userId to link report to user
+  photos: ReportPhoto[];
+  //here we can add photos handling later
 };
-
 
 export async function createReport(data: CreateReportData) {
   //here there should be validation for the photos
@@ -35,19 +35,19 @@ export async function createReport(data: CreateReportData) {
       isAnonymous: data.isAnonymous,
       status: PrismaReportStatus.PENDING_APPROVAL, //new reports are always pending approval
       userId: data.userId,
-      photos:{
-        create: data.photos.map(photo =>({
+      photos: {
+        create: data.photos.map((photo) => ({
           url: photo.url,
-          filename: photo.filename
-        }))
-      }
+          filename: photo.filename,
+        })),
+      },
     },
     include: {
       user: true,
       photos: true,
     },
   });
-  
+
   return newReport;
 }
 
@@ -56,20 +56,24 @@ export async function getApprovedReports() {
   return prisma.report.findMany({
     where: {
       status: {
-        in: [PrismaReportStatus.ASSIGNED, PrismaReportStatus.IN_PROGRESS, PrismaReportStatus.RESOLVED]
-      }
+        in: [
+          PrismaReportStatus.ASSIGNED,
+          PrismaReportStatus.IN_PROGRESS,
+          PrismaReportStatus.RESOLVED,
+        ],
+      },
     },
     include: {
       user: {
         select: {
           first_name: true,
           last_name: true,
-          email: true
-        }
+          email: true,
+        },
       },
     },
-    orderBy:{
-      createdAt: 'desc' //most recent first
-    }
+    orderBy: {
+      createdAt: "desc", //most recent first
+    },
   });
 }

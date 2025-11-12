@@ -1,0 +1,263 @@
+/* Report Form Styles */
+.report-form-container {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 2rem 0;
+  padding-top: 100px; /* Space for header */
+}
+
+.report-form-card {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 0 auto;
+  max-width: 1200px;
+  border: 1px solid rgba(34, 49, 63, 0.06);
+}
+
+.report-form-header {
+  background: var(--primary);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.report-form-header h2 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.report-form-header p {
+  margin: 0.5rem 0 0 0;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+.report-form-body {
+  padding: 3rem;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-section h3::before {
+  content: "";
+  width: 4px;
+  height: 24px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+.form-group-custom {
+  margin-bottom: 1.5rem;
+}
+
+.form-group-custom label {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-control-custom {
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.form-control-custom:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200, 110, 98, 0.1);
+  background: var(--surface);
+  outline: none;
+}
+
+.form-control-custom[readonly] {
+  background: var(--bg);
+  border-color: #dee2e6;
+  color: var(--muted);
+}
+
+.form-select-custom {
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+
+.form-select-custom:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200, 110, 98, 0.1);
+  background: var(--surface);
+  outline: none;
+}
+
+.checkbox-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 2px solid #e1e5e9;
+  transition: all 0.3s ease;
+}
+
+.checkbox-custom:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+
+.checkbox-custom input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.checkbox-custom label {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.coordinates-row {
+  background: linear-gradient(135deg, var(--stone) 0%, var(--olive) 100%);
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 1rem 0;
+  color: white;
+  text-align: center;
+}
+
+.coordinates-row h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.coordinates-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.coordinates-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: "Courier New", monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.map-section-custom {
+  background: var(--bg);
+  border-radius: 15px;
+  padding: 2rem;
+  border: 2px solid #e1e5e9;
+}
+
+.map-container-custom {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 3px solid var(--primary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.submit-section {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.btn-submit-custom {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--stone) 100%);
+  border: none;
+  border-radius: 50px;
+  padding: 1rem 3rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(200, 110, 98, 0.3);
+}
+
+.btn-submit-custom:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(200, 110, 98, 0.4);
+}
+
+.btn-submit-custom:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.alert-custom {
+  border-radius: 10px;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-weight: 500;
+}
+
+.alert-danger-custom {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  color: #721c24;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .report-form-body {
+    padding: 2rem 1.5rem;
+  }
+
+  .report-form-header {
+    padding: 1.5rem;
+  }
+
+  .report-form-header h2 {
+    font-size: 2rem;
+  }
+
+  .coordinates-row {
+    padding: 0.75rem;
+  }
+
+  .coordinates-display {
+    font-size: 1rem;
+  }
+
+  .coordinates-text {
+    font-size: 0.9rem;
+  }
+
+  .btn-submit-custom {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+  }
+}

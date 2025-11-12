@@ -6,6 +6,10 @@ const prisma = new PrismaClient();
  * Clean test database - runs before each test
  */
 export async function cleanDatabase() {
+  // Delete in order to respect foreign key constraints
+  await prisma.reportMessage.deleteMany();
+  await prisma.reportPhoto.deleteMany();
+  await prisma.report.deleteMany();
   await prisma.user.deleteMany();
 }
 

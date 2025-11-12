@@ -1,5 +1,5 @@
-import { UserDTO } from './UserDTO';
-
+import { UserDTO, Role } from './UserDTO';
+import { ReportCategory, ReportStatus, ReportPhoto } from "../../../shared/ReportTypes";
 
 export type ReportDTO = {
   id: number;
@@ -19,12 +19,6 @@ export type ReportDTO = {
   updatedAt: string;
 };
 
-export type ReportPhoto = {
-  id: number;
-  url: string;
-  filename: string;
-};
-
 export type ReportMessageDTO = {
   id: number;
   content: string;
@@ -32,27 +26,6 @@ export type ReportMessageDTO = {
   senderId: number;
 };
 
-//prisma enum are based on string, so this is a must
-export enum ReportStatus {
-    PENDING_APPROVAL = "PENDING_APPROVAL",
-    ASSIGNED = "ASSIGNED",
-    IN_PROGRESS = "IN_PROGRESS",
-    SUSPENDED = "SUSPENDED",
-    REJECTED = "REJECTED",
-    RESOLVED = "RESOLVED"
-}
-
-export enum ReportCategory {
-    WATER_SUPPLY_DRINKING_WATER = "WATER_SUPPLY_DRINKING_WATER",
-    ARCHITECTURAL_BARRIERS = "ARCHITECTURAL_BARRIERS",
-    SEWER_SYSTEM = "SEWER_SYSTEM",
-    PUBLIC_LIGHTING = "PUBLIC_LIGHTING",
-    WASTE = "WASTE",
-    ROAD_SIGNS_TRAFFIC_LIGHTS = "ROAD_SIGNS_TRAFFIC_LIGHTS",
-    ROADS_URBAN_FURNISHINGS = "ROADS_URBAN_FURNISHINGS",
-    PUBLIC_GREEN_AREAS_PLAYGROUNDS = "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
-    OTHER = "OTHER"
-}
 
 export function toReportDTO(r: any): ReportDTO {
     return {
@@ -70,7 +43,7 @@ export function toReportDTO(r: any): ReportDTO {
             firstName: r.user.first_name,
             lastName: r.user.last_name,
             email: r.user.email,
-            role: String(r.user.role),
+            role: r.user.role as Role,
             telegramUsername: r.user.telegram_username ?? null,
             emailNotificationsEnabled: r.user.email_notifications_enabled ?? true,
         } : undefined,

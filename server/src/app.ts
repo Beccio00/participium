@@ -71,7 +71,7 @@ export function createApp(): Express {
   app.use(CONFIG.ROUTES.SESSION, authRoutes);
   app.use(CONFIG.ROUTES.CITIZEN, citizenRoutes);
   app.use(CONFIG.ROUTES.ADMIN, adminRoutes);
-  app.use(CONFIG.ROUTES.REPORT, reportRoutes);
+  app.use(CONFIG.ROUTES.REPORTS, reportRoutes);
 
   // This must always be the last middleware added
   // TODO: Add error handler middleware here when implemented

@@ -4,7 +4,7 @@ import { isLoggedIn } from '../middleware/routeProtection';
 
 const router = Router();
 
-router.post('/reports', isLoggedIn, createReport);
-router.get('/reports', isLoggedIn,  getReports);
+router.post('/', isLoggedIn, createReport);
+router.get('/', isLoggedIn, getReports);
 
 export default router;
