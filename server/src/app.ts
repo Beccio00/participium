@@ -4,53 +4,77 @@ import { PrismaClient } from "../prisma/generated/client";
 import session from "express-session";
 import passport from "passport";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
+import path from "path";
+import { CONFIG } from "./config/constants";
 import { configurePassport } from "./config/passport";
-import authRoutes from './routes/authRoutes';
-import citizenRoutes from './routes/citizenRoutes';
-import adminRoutes from './routes/adminRoutes';
+import authRoutes from "./routes/authRoutes";
+import citizenRoutes from "./routes/citizenRoutes";
+import adminRoutes from "./routes/adminRoutes";
+import reportRoutes from './routes/reportRoutes';
 
 export function createApp(): Express {
   const app: Express = express();
 
-  // Middleware
+  // Body parsing middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
   // CORS middleware
-  app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  }));
+  app.use(
+    cors({
+      origin: CONFIG.CORS.ORIGIN,
+      credentials: CONFIG.CORS.CREDENTIALS,
+      methods: CONFIG.CORS.METHODS,
+    })
+  );
 
-  // Session and Passport Middleware
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "shhhhh... it's a secret!",
-    resave: false,
-    saveUninitialized: false,
-  }));
-  
+  // Session middleware
+  app.use(
+    session({
+      secret: CONFIG.SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+    })
+  );
+
+  // Passport middleware
   configurePassport();
   app.use(passport.initialize());
   app.use(passport.session());
 
+    // Swagger documentation
+  const swaggerPath = path.join(__dirname, "..", CONFIG.SWAGGER_FILE_PATH);
+  app.use(
+    CONFIG.ROUTES.SWAGGER,
+    swaggerUi.serve,
+    swaggerUi.setup(YAML.load(swaggerPath))
+  );
+
   // Root endpoint
-  app.get("/", (req: Request, res: Response) => {
-    res.json({ 
-      message: "Office Queue Management API",
-      version: "1.0.0",
+  app.get(CONFIG.ROUTES.ROOT, (req: Request, res: Response) => {
+    res.json({
+      message: CONFIG.API.NAME,
+      version: CONFIG.API.VERSION,
+      description: CONFIG.API.DESCRIPTION,
       endpoints: {
-        auth: "/api/session",
-        citizens: "/api/citizen",
-        admin: "/api/admin"
-      }
+        auth: CONFIG.ROUTES.SESSION,
+        citizens: CONFIG.ROUTES.CITIZEN,
+        admin: CONFIG.ROUTES.ADMIN,
+        docs: CONFIG.ROUTES.SWAGGER,
+      },
     });
   });
 
   // API Routes
-  app.use('/api/session', authRoutes);
-  app.use('/api/citizen', citizenRoutes);
-  app.use('/api/admin', adminRoutes);
+  app.use(CONFIG.ROUTES.SESSION, authRoutes);
+  app.use(CONFIG.ROUTES.CITIZEN, citizenRoutes);
+  app.use(CONFIG.ROUTES.ADMIN, adminRoutes);
+  app.use(CONFIG.ROUTES.REPORT, reportRoutes);
+
+  // This must always be the last middleware added
+  // TODO: Add error handler middleware here when implemented
 
   return app;
 }

@@ -120,94 +120,6 @@ export async function getMunicipalityUserController(req: Request, res: Response)
   }
 }
 
-export async function updateMunicipalityUserController(req: Request, res: Response) {
-  try {
-    const userId = parseInt(req.params.userId);
-    const { firstName, lastName, email, password, role } = req.body;
-
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "Invalid user ID format"
-      });
-    }
-
-    // Require at least one updatable field
-    if (!firstName && !lastName && !email && !password && !role) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "Provide at least one field to update: firstName, lastName, email, password, or role"
-      });
-    }
-
-    // Validate role only if provided
-    if (role && (!isValidRole(role) || !MUNICIPALITY_ROLES.includes(role as Role))) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE"
-      });
-    }
-
-    // Check if user exists and is a municipality user
-    const existingUser = await getMunicipalityUserById(userId);
-    if (!existingUser) {
-      return res.status(404).json({
-        error: "NotFound",
-        message: "Municipality user not found"
-      });
-    }
-
-    // Check if email is already in use by another user (only if provided and changed)
-    if (email && email !== existingUser.email) {
-      const emailInUse = await findByEmail(email);
-      if (emailInUse) {
-        return res.status(409).json({
-          error: "Conflict",
-          message: "Email already in use"
-        });
-      }
-    }
-
-    // Hash password only if provided
-    let hashedPassword: string | undefined = undefined;
-    let salt: string | undefined = undefined;
-    if (password) {
-      const hashed = await hashPassword(password);
-      hashedPassword = hashed.hashedPassword;
-      salt = hashed.salt;
-    }
-
-    // Build update payload with only provided fields
-    const updatePayload: any = {
-      ...(email && { email }),
-      ...(firstName && { first_name: firstName }),
-      ...(lastName && { last_name: lastName }),
-      ...(hashedPassword && { password: hashedPassword }),
-      ...(salt && { salt }),
-      ...(role && { role: role as Role }),
-    };
-
-    // Update municipality user
-    const updatedUser = await updateMunicipalityUser(userId, updatePayload);
-
-    if (!updatedUser) {
-      return res.status(404).json({
-        error: "NotFound",
-        message: "Municipality user not found"
-      });
-    }
-
-    const responseUser = toMunicipalityUserDTO(updatedUser);
-    return res.status(200).json(responseUser);
-
-  } catch (error) {
-    console.error("Error updating municipality user:", error);
-    return res.status(500).json({
-      error: "InternalServerError",
-      message: "Failed to update user"
-    });
-  }
-}
 
 export async function deleteMunicipalityUserController(req: Request, res: Response) {
   try {
@@ -245,6 +157,18 @@ export async function deleteMunicipalityUserController(req: Request, res: Respon
     return res.status(500).json({
       error: "InternalServerError",
       message: "Failed to delete user"
+    });
+  }
+}
+
+export async function listRolesController(req: Request, res: Response) {
+  try {
+    return res.status(200).json(MUNICIPALITY_ROLES);
+  } catch (error) {
+    console.error("Error listing roles:", error);
+    return res.status(500).json({
+      error: "InternalServerError",
+      message: "Failed to retrieve roles"
     });
   }
 }

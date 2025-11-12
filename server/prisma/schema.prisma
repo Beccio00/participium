@@ -19,6 +19,8 @@ model User {
   password String
   salt     String
   role Role @default(CITIZEN)
+  reports Report[]
+  messages ReportMessage[]
   telegram_username String? 
   email_notifications_enabled Boolean @default(true)
 }
@@ -28,4 +30,65 @@ enum Role {
   PUBLIC_RELATIONS
   ADMINISTRATOR
   TECHNICAL_OFFICE
+}
+
+model Report {
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String
+  category      ReportCategory 
+  latitude      Float
+  longitude     Float
+  isAnonymous   Boolean @default(false)
+  status        ReportStatus @default(PENDING_APPROVAL)
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int
+  photos        ReportPhoto[]
+  messages      ReportMessage[]
+  rejectionReason String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  /* assignedTo    User?    @relation("AssignedReports", fields: [assignedToId], references: [id])
+  assignedToId  Int? */
+}
+
+enum ReportCategory {
+  WATER_SUPPLY_DRINKING_WATER
+  ARCHITECTURAL_BARRIERS
+  SEWER_SYSTEM
+  PUBLIC_LIGHTING
+  WASTE
+  ROAD_SIGNS_TRAFFIC_LIGHTS
+  ROADS_URBAN_FURNISHINGS
+  PUBLIC_GREEN_AREAS_PLAYGROUNDS
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING_APPROVAL
+  ASSIGNED
+  IN_PROGRESS
+  SUSPENDED
+  REJECTED
+  RESOLVED
+}
+
+ model ReportPhoto {
+  id        Int      @id @default(autoincrement())
+  url       String
+  filename  String
+  report    Report   @relation(fields: [reportId], references: [id])
+  reportId  Int
+} 
+
+model ReportMessage {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  report    Report   @relation(fields: [reportId], references: [id])
+  reportId  Int
+
+  user      User     @relation(fields: [senderId], references: [id])
+  senderId    Int
 }

@@ -15,6 +15,7 @@ export function isValidRole(v: unknown): v is Role {
 
 
 export type UserDTO = {
+  id: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -25,6 +26,7 @@ export type UserDTO = {
 
 export function toUserDTO(u: PrismaUser): UserDTO {
   return {
+    id: u.id,
     firstName: u.first_name,
     lastName: u.last_name,
     email: u.email,
