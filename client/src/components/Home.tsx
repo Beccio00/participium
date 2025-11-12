@@ -155,7 +155,8 @@ export default function Home() {
                 <span className="btn-icon">
                   <Pencil />
                 </span>
-                Add New Report
+                Select a location
+                {/*Add New Report*/}
               </button>
 
               {!isAuthenticated && (

@@ -75,20 +75,8 @@ export default function ReportForm() {
     }
   };
 
-  return (
-    <div className="report-form-container">
-      <Container>
-        <div className="report-form-card">
-          <div className="report-form-header">
-            <h2>
-              <FileText /> Create New Report
-            </h2>
-            <p>Report an issue in your municipality</p>
-          </div>
-
-          <div className="report-form-body">
-            <Row>
-              <Col lg={6}>
+  //report details section
+ /*  <Col lg={6}>
                 <div className="form-section">
                   <h3>
                     <Tag /> Report Details
@@ -172,8 +160,23 @@ export default function ReportForm() {
                     </label>
                   </div>
                 </div>
-              </Col>
+              </Col> */
 
+
+  return (
+    <div className="report-form-container">
+      <Container>
+        <div className="report-form-card">
+          <div className="report-form-header">
+            <h2>
+              <FileText /> Create New Report
+            </h2>
+            <p>Report an issue in your municipality</p>
+          </div>
+
+          <div className="report-form-body">
+            <Row>
+              {/* Report Details Section */}
               <Col lg={6}>
                 <div className="form-section">
                   <h3>
@@ -207,7 +210,16 @@ export default function ReportForm() {
               </Col>
             </Row>
 
-            <div className="submit-section">
+            {/* Submit Button Section */}
+          </div>
+        </div>
+      </Container>
+    </div>
+  );
+}
+
+//submit button section
+{/* <div className="submit-section">
               <Button
                 type="submit"
                 className="btn-submit-custom"
@@ -216,10 +228,4 @@ export default function ReportForm() {
               >
                 Submit Report
               </Button>
-            </div>
-          </div>
-        </div>
-      </Container>
-    </div>
-  );
-}
+            </div> */}
