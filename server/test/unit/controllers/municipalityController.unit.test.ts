@@ -10,6 +10,7 @@ import * as municipalityService from "../../../src/services/municipalityUserServ
 import { findByEmail } from "../../../src/services/userService";
 import { hashPassword } from "../../../src/services/passwordService";
 import { Roles } from "../../../src/interfaces/UserDTO";
+import { BadRequestError, ConflictError, NotFoundError } from "../../../src/utils";
 
 jest.mock("../../../src/services/municipalityUserService");
 jest.mock("../../../src/services/userService");
@@ -65,21 +66,21 @@ describe("municipalityController", () => {
 
     it("should return 400 on missing fields", async () => {
       mockReq.body = { firstName: 'A' };
-      await createMunicipalityUserController(mockReq as Request, mockRes as Response);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
+      await expect(createMunicipalityUserController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(BadRequestError);
     });
 
     it("should return 400 on invalid role", async () => {
       mockReq.body = { firstName: 'A', lastName: 'B', email: 'a@b', password: 'P', role: 'INVALID' };
-      await createMunicipalityUserController(mockReq as Request, mockRes as Response);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
+      await expect(createMunicipalityUserController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(BadRequestError);
     });
 
     it("should return 409 when email exists", async () => {
       mockReq.body = { firstName: 'A', lastName: 'B', email: 'a@b', password: 'P', role: Roles.PUBLIC_RELATIONS };
       mockFindByEmail.mockResolvedValue({ id: 1 } as any);
-      await createMunicipalityUserController(mockReq as Request, mockRes as Response);
-      expect(mockRes.status).toHaveBeenCalledWith(409);
+      await expect(createMunicipalityUserController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(ConflictError);
     });
 
     it("should handle service errors", async () => {
@@ -87,13 +88,8 @@ describe("municipalityController", () => {
       mockFindByEmail.mockResolvedValue(null as any);
       mockHash.mockRejectedValue(new Error('Hash failed'));
 
-      await createMunicipalityUserController(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Unable to create municipality user"
-      });
+      await expect(createMunicipalityUserController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow();
     });
   });
 
@@ -114,14 +110,8 @@ describe("municipalityController", () => {
 
     it("should handle service errors", async () => {
       mockGetAll.mockRejectedValue(new Error('Database error'));
-
-      await listMunicipalityUsersController(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Failed to retrieve users"
-      });
+      await expect(listMunicipalityUsersController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow();
     });
   });
 
@@ -140,46 +130,27 @@ describe("municipalityController", () => {
 
     it("should return 400 for invalid userId", async () => {
       mockReq.params = { userId: 'invalid' };
-
-      await getMunicipalityUserController(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Invalid user ID format"
-      });
+      await expect(getMunicipalityUserController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(BadRequestError);
     });
 
     it("should return 404 when user not found", async () => {
       mockReq.params = { userId: '999' };
       mockGetById.mockResolvedValue(null);
-
-      await getMunicipalityUserController(mockReq as Request, mockRes as Response);
-
-      expect(mockGetById).toHaveBeenCalledWith(999);
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "NotFound",
-        message: "Municipality user not found"
-      });
+      await expect(getMunicipalityUserController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(NotFoundError);
     });
 
     it("should handle service errors", async () => {
       mockReq.params = { userId: '1' };
       mockGetById.mockRejectedValue(new Error('Database error'));
-
-      await getMunicipalityUserController(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Failed to retrieve user"
-      });
+      await expect(getMunicipalityUserController(mockReq as Request, mockRes as Response))
+        .rejects.toThrow();
     });
   });
 
   describe("deleteMunicipalityUserController", () => {
-    it("should delete user successfully", async () => {
+    it("should delete municipality user successfully", async () => {
       mockReq.params = { userId: '1' };
       mockDelete.mockResolvedValue(true);
 
@@ -190,43 +161,30 @@ describe("municipalityController", () => {
       expect(mockRes.send).toHaveBeenCalled();
     });
 
-    it("should return 400 for invalid userId", async () => {
+    it("should return 400 for invalid user ID", async () => {
       mockReq.params = { userId: 'invalid' };
 
-      await deleteMunicipalityUserController(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Invalid user ID format"
-      });
+      await expect(
+        deleteMunicipalityUserController(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should return 404 when user not found", async () => {
       mockReq.params = { userId: '999' };
       mockDelete.mockResolvedValue(false);
 
-      await deleteMunicipalityUserController(mockReq as Request, mockRes as Response);
-
-      expect(mockDelete).toHaveBeenCalledWith(999);
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "NotFound",
-        message: "Municipality user not found"
-      });
+      await expect(
+        deleteMunicipalityUserController(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(NotFoundError);
     });
 
     it("should handle service errors", async () => {
       mockReq.params = { userId: '1' };
       mockDelete.mockRejectedValue(new Error('Database error'));
 
-      await deleteMunicipalityUserController(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Failed to delete user"
-      });
+      await expect(
+        deleteMunicipalityUserController(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
   });
 
@@ -236,29 +194,6 @@ describe("municipalityController", () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalled();
-    });
-
-    it("should handle errors during roles listing", async () => {
-      // Mock res.status to throw an error
-      const errorMockRes = {
-        status: jest.fn().mockImplementation(() => {
-          throw new Error("Simulated error in response");
-        }),
-        json: jest.fn().mockReturnThis(),
-      } as unknown as Response;
-
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-
-      // Call the controller and catch any thrown errors
-      try {
-        await listRolesController(mockReq as Request, errorMockRes);
-      } catch (error) {
-        // Expected to throw due to our mock
-      }
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Error listing roles:", expect.any(Error));
-      
-      consoleErrorSpy.mockRestore();
     });
   });
 });

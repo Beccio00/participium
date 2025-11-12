@@ -1,6 +1,6 @@
 import { Request } from "express";
 import { authenticate, getSession } from "../../../src/services/authService";
-import { InvalidCredentialsError } from "../../../src/interfaces/errors/InvalidCredentialsError";
+import { UnauthorizedError } from "../../../src/utils";
 import passport from "passport";
 
 // Mock passport
@@ -44,7 +44,7 @@ describe("authService", () => {
       await expect(authenticate(mockReq as Request)).rejects.toThrow(mockError);
     });
 
-    it("should reject with InvalidCredentialsError if no user", async () => {
+    it("should reject with UnauthorizedError if no user", async () => {
       const mockAuthenticate = jest.fn((strategy, callback) => {
         callback(null, false);
         return (req: Request) => {};
@@ -52,7 +52,7 @@ describe("authService", () => {
       mockPassport.authenticate = mockAuthenticate;
 
       await expect(authenticate(mockReq as Request)).rejects.toThrow(
-        InvalidCredentialsError
+        UnauthorizedError
       );
     });
   });

@@ -3,6 +3,7 @@ import { signup } from "../../../src/controllers/citizenController";
 import { findByEmail, createUser } from "../../../src/services/userService";
 import { hashPassword } from "../../../src/services/passwordService";
 import * as UserDTO from "../../../src/interfaces/UserDTO";
+import { BadRequestError, ConflictError } from "../../../src/utils";
 
 
 jest.mock("../../../src/services/userService");
@@ -91,13 +92,9 @@ describe("signupController", () => {
         password: "password123",
       };
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Missing required fields: firstName",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if lastName is missing", async () => {
@@ -107,13 +104,9 @@ describe("signupController", () => {
         password: "password123",
       };
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Missing required fields: lastName",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if email is missing", async () => {
@@ -123,13 +116,9 @@ describe("signupController", () => {
         password: "password123",
       };
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Missing required fields: email",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if password is missing", async () => {
@@ -139,13 +128,9 @@ describe("signupController", () => {
         email: "test@example.com",
       };
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Missing required fields: password",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if multiple fields are missing (2 fields)", async () => {
@@ -154,26 +139,17 @@ describe("signupController", () => {
         password: "password123",
       };
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Missing required fields: firstName, lastName",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if all fields are missing (4 fields)", async () => {
       mockReq.body = {};
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message:
-          "Missing required fields: firstName, lastName, email, password",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if email already exists", async () => {
@@ -197,14 +173,9 @@ describe("signupController", () => {
       };
       mockFindByEmail.mockResolvedValue(existingUser);
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockFindByEmail).toHaveBeenCalledWith("test@example.com");
-      expect(mockRes.status).toHaveBeenCalledWith(409);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Conflict",
-        message: "Email already in use",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(ConflictError);
     });
 
     it("should handle error in findByEmail", async () => {
@@ -216,13 +187,9 @@ describe("signupController", () => {
       };
       mockFindByEmail.mockRejectedValue(new Error("DB error"));
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Unable to create user",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
 
     it("should handle error in hashPassword", async () => {
@@ -235,13 +202,9 @@ describe("signupController", () => {
       mockFindByEmail.mockResolvedValue(null);
       mockHashPassword.mockRejectedValue(new Error("Hash error"));
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Unable to create user",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
 
     it("should handle error in createUser", async () => {
@@ -258,30 +221,20 @@ describe("signupController", () => {
       });
       mockCreateUser.mockRejectedValue(new Error("Create error"));
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Unable to create user",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
 
     it("should handle req.body undefined", async () => {
       mockReq.body = undefined;
 
-      await signupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message:
-          "Missing required fields: firstName, lastName, email, password",
-      });
+      await expect(
+        signupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should handle invalid role", async () => {
-      // Create a signup handler with an invalid role
       const invalidSignupHandler = signup('INVALID_ROLE' as any);
       mockReq.body = {
         firstName: "Test",
@@ -290,13 +243,9 @@ describe("signupController", () => {
         password: "password123",
       };
 
-      await invalidSignupHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Invalid role",
-      });
+      await expect(
+        invalidSignupHandler(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
   });
 });

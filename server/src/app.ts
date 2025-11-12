@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express, { Express, Request, Response } from "express";
+import express, { Express } from "express";
 import session from "express-session";
 import passport from "passport";
 import cors from "cors";
@@ -8,19 +8,19 @@ import YAML from "yamljs";
 import path from "path";
 import { CONFIG } from "./config/constants";
 import { configurePassport } from "./config/passport";
+import { errorHandler } from "./middlewares/errorMiddleware";
+import rootRoutes from "./routes/rootRoutes";
 import authRoutes from "./routes/authRoutes";
 import citizenRoutes from "./routes/citizenRoutes";
 import adminRoutes from "./routes/adminRoutes";
-import reportRoutes from './routes/reportRoutes';
+import reportRoutes from "./routes/reportRoutes";
 
 export function createApp(): Express {
   const app: Express = express();
 
-  // Body parsing middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // CORS middleware
   app.use(
     cors({
       origin: CONFIG.CORS.ORIGIN,
@@ -29,7 +29,6 @@ export function createApp(): Express {
     })
   );
 
-  // Session middleware
   app.use(
     session({
       secret: CONFIG.SESSION_SECRET,
@@ -38,12 +37,10 @@ export function createApp(): Express {
     })
   );
 
-  // Passport middleware
   configurePassport();
   app.use(passport.initialize());
   app.use(passport.session());
 
-    // Swagger documentation
   const swaggerPath = path.join(__dirname, "..", CONFIG.SWAGGER_FILE_PATH);
   app.use(
     CONFIG.ROUTES.SWAGGER,
@@ -51,29 +48,13 @@ export function createApp(): Express {
     swaggerUi.setup(YAML.load(swaggerPath))
   );
 
-  // Root endpoint
-  app.get(CONFIG.ROUTES.ROOT, (req: Request, res: Response) => {
-    res.json({
-      message: CONFIG.API.NAME,
-      version: CONFIG.API.VERSION,
-      description: CONFIG.API.DESCRIPTION,
-      endpoints: {
-        auth: CONFIG.ROUTES.SESSION,
-        citizens: CONFIG.ROUTES.CITIZEN,
-        admin: CONFIG.ROUTES.ADMIN,
-        docs: CONFIG.ROUTES.SWAGGER,
-      },
-    });
-  });
-
-  // API Routes
+  app.use(CONFIG.ROUTES.ROOT, rootRoutes);
   app.use(CONFIG.ROUTES.SESSION, authRoutes);
   app.use(CONFIG.ROUTES.CITIZEN, citizenRoutes);
   app.use(CONFIG.ROUTES.ADMIN, adminRoutes);
   app.use(CONFIG.ROUTES.REPORTS, reportRoutes);
 
-  // This must always be the last middleware added
-  // TODO: Add error handler middleware here when implemented
+  app.use(errorHandler);
 
   return app;
 }

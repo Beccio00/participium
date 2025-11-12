@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../hooks/useAuth";
-import { createMunicipalityUser, listMunicipalityUsers } from "../api/api";
+import { createMunicipalityUser, listMunicipalityUsers, deleteMunicipalityUser } from "../api/api";
 import type {
   MunicipalityUserRequest,
   MunicipalityUserResponse,
@@ -87,8 +87,7 @@ export default function AdminPanel() {
     try {
       setLoading(true);
       setError("");
-      // await deleteMunicipalityUser(userId); // TODO: implement when backend is ready
-      alert("User deleted (mock)");
+      await deleteMunicipalityUser(_userId); 
       await loadUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user");

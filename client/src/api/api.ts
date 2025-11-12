@@ -88,6 +88,14 @@ export async function listMunicipalityUsers(): Promise<
   return handleResponse<MunicipalityUserResponse[]>(res);
 }
 
+export async function deleteMunicipalityUser(userId: number): Promise<void> {
+  const res = await fetch(`${API_PREFIX}/admin/municipality-users/${userId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  await handleResponse<unknown>(res);
+}
+
 //types for REPORT API
 
 export type ReportFormData = CreateReportRequest; //type sent to server
@@ -127,6 +135,9 @@ export async function getReports(): Promise<Report[]> {
   return handleResponse<Report[]>(res);
 }
 
+
+
+
 export default {
   getSession,
   login,
@@ -136,4 +147,5 @@ export default {
   listMunicipalityUsers,
   createReport,
   getReports,
+  deleteMunicipalityUser
 };

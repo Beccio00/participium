@@ -1,13 +1,13 @@
 import passport from "passport";
 import type { UserDTO } from "../interfaces/UserDTO";
 import { Request } from "express";
-import { InvalidCredentialsError } from "../interfaces/errors/InvalidCredentialsError";
+import { UnauthorizedError } from "../utils";
 
 export async function authenticate(req: Request): Promise<UserDTO> {
   return new Promise((resolve, reject) => {
     passport.authenticate("local", (err: Error | null, user?: UserDTO | false) => {
       if (err) return reject(err);
-      if (!user) return reject(new InvalidCredentialsError());
+      if (!user) return reject(new UnauthorizedError("Invalid username or password"));
       resolve(user as UserDTO);
     })(req);
   });

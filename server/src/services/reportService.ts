@@ -6,7 +6,7 @@ import {
 import { ReportDTO } from "../interfaces/ReportDTO";
 import { ReportPhoto } from "../../../shared/ReportTypes";
 
-//new type where we exclude fields that will not be provided by the useer
+//new type where we exclude fields that will not be provided by the user
 type CreateReportData = Omit<
   ReportDTO,
   | "id"

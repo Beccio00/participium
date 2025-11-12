@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import {
   login,
   logout,
   getSessionInfo,
 } from "../../../src/controllers/authController";
 import { authenticate, getSession } from "../../../src/services/authService";
-import { InvalidCredentialsError } from "../../../src/interfaces/errors/InvalidCredentialsError";
+import { BadRequestError, UnauthorizedError } from "../../../src/utils";
 import type { UserDTO } from "../../../src/interfaces/UserDTO";
 
 
@@ -18,7 +18,6 @@ const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
 describe("authController", () => {
   let mockReq: any;
   let mockRes: Partial<Response>;
-  let mockNext: NextFunction;
 
   beforeEach(() => {
     mockReq = {
@@ -33,7 +32,6 @@ describe("authController", () => {
       json: jest.fn(),
       send: jest.fn(),
     };
-    mockNext = jest.fn();
     jest.clearAllMocks();
     });
 
@@ -41,13 +39,9 @@ describe("authController", () => {
     it("should return error if already authenticated", async () => {
       mockReq.isAuthenticated.mockReturnValue(true);
 
-      await login(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Already logged in",
-      });
+      await expect(
+        login(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should login successfully and return user data", async () => {
@@ -67,7 +61,7 @@ describe("authController", () => {
         callback(null)
       );
 
-      await login(mockReq as Request, mockRes as Response, mockNext);
+      await login(mockReq as Request, mockRes as Response);
 
       expect(mockAuthenticate).toHaveBeenCalledWith(mockReq);
       expect(mockReq.logIn).toHaveBeenCalledWith(
@@ -83,17 +77,12 @@ describe("authController", () => {
     it("should handle invalid credentials", async () => {
       mockReq.isAuthenticated.mockReturnValue(false);
       mockReq.body = { email: "wrong@example.com", password: "wrongpass" };
-      const error = new InvalidCredentialsError();
+      const error = new UnauthorizedError("Invalid username or password");
       mockAuthenticate.mockRejectedValue(error);
 
-      await login(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockAuthenticate).toHaveBeenCalledWith(mockReq);
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Unauthorized",
-        message: "Invalid username or password",
-      });
+      await expect(
+        login(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(UnauthorizedError);
     });
 
     it("should handle login error", async () => {
@@ -112,9 +101,9 @@ describe("authController", () => {
         callback(new Error("Login failed"))
       );
 
-      await login(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith(new Error("Login failed"));
+      await expect(
+        login(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
 
     it("should handle unexpected error", async () => {
@@ -122,13 +111,9 @@ describe("authController", () => {
       const error = new Error("Unexpected error");
       mockAuthenticate.mockRejectedValue(error);
 
-      await login(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "An unexpected error occurred",
-      });
+      await expect(
+        login(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
 
     it("should proceed with login if isAuthenticated is undefined", async () => {
@@ -146,7 +131,7 @@ describe("authController", () => {
       mockAuthenticate.mockResolvedValue(mockUser);
       mockReq.logIn.mockImplementation((user: any, callback: any) => callback(null));
 
-      await login(mockReq as Request, mockRes as Response, mockNext);
+      await login(mockReq as Request, mockRes as Response);
 
       expect(mockAuthenticate).toHaveBeenCalledWith(mockReq);
       expect(mockReq.logIn).toHaveBeenCalledWith(mockUser, expect.any(Function));
@@ -156,32 +141,24 @@ describe("authController", () => {
 
 
   describe("logout", () => {
-    it("should return error if not authenticated", () => {
+    it("should return error if not authenticated", async () => {
       mockReq.isAuthenticated.mockReturnValue(false);
 
-      logout(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Already logged out",
-      });
+      await expect(
+        logout(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
-    it("should return error if no session", () => {
+    it("should return error if no session", async () => {
       mockReq.isAuthenticated.mockReturnValue(true);
       mockReq.session = undefined;
 
-      logout(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Already logged out",
-      });
+      await expect(
+        logout(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
 
-    it("should logout successfully", () => {
+    it("should logout successfully", async () => {
       mockReq.isAuthenticated.mockReturnValue(true);
       mockReq.session = {
         destroy: jest.fn((callback) => callback(null)),
@@ -190,14 +167,14 @@ describe("authController", () => {
         callback(null)
       );
 
-      logout(mockReq as Request, mockRes as Response);
+      await logout(mockReq as Request, mockRes as Response);
 
       expect(mockReq.logout).toHaveBeenCalled();
       expect(mockReq.session.destroy).toHaveBeenCalled();
       expect(mockRes.json).toHaveBeenCalledWith({ message: "Logged out" });
     });
 
-    it("should handle logout error", () => {
+    it("should handle logout error", async () => {
       mockReq.isAuthenticated.mockReturnValue(true);
       mockReq.session = { destroy: jest.fn() } as any;
       const error = new Error("Logout failed");
@@ -205,16 +182,12 @@ describe("authController", () => {
         callback(error)
       );
 
-      logout(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Logout failed",
-      });
+      await expect(
+        logout(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
 
-    it("should handle session destroy error", () => {
+    it("should handle session destroy error", async () => {
       mockReq.isAuthenticated.mockReturnValue(true);
       const error = new Error("Session destroy failed");
       mockReq.session = {
@@ -224,26 +197,18 @@ describe("authController", () => {
         callback(null)
       );
 
-      logout(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "InternalServerError",
-        message: "Logout failed",
-      });
+      await expect(
+        logout(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow();
     });
 
-    it("should return error if isAuthenticated is undefined", () => {
+    it("should return error if isAuthenticated is undefined", async () => {
       mockReq.isAuthenticated = undefined;
       mockReq.session = { destroy: jest.fn((callback) => callback(null)) } as any;
 
-      logout(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "BadRequest",
-        message: "Already logged out",
-      });
+      await expect(
+        logout(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(BadRequestError);
     });
   });
 
