@@ -24,7 +24,6 @@ export default function Home() {
       createdAt: "2025-11-10",
       latitude: 45.0703,
       longitude: 7.6869,
-      address: "Via Roma, 10100 Torino TO, Italy",
     },
     {
       id: 2,
@@ -36,7 +35,6 @@ export default function Home() {
       createdAt: "2025-11-08",
       latitude: 45.0653,
       longitude: 7.6789,
-      address: "Corso Vittorio Emanuele II, 10100 Torino TO, Italy",
     },
     {
       id: 3,
@@ -48,7 +46,6 @@ export default function Home() {
       createdAt: "2025-11-05",
       latitude: 45.0733,
       longitude: 7.6839,
-      address: "Piazza Castello, 10100 Torino TO, Italy",
     },
   ]);
 
@@ -130,7 +127,8 @@ export default function Home() {
                       <p className="report-description">{report.description}</p>
                       <div className="report-meta">
                         <span className="report-location">
-                          {report.address}
+                          {report.latitude.toFixed(6)},{" "}
+                          {report.longitude.toFixed(6)}
                         </span>
                         <span className="report-date">
                           {new Date(report.createdAt).toLocaleDateString()}
