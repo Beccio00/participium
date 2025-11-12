@@ -4,8 +4,8 @@ import {
   createMunicipalityUserController,
   listMunicipalityUsersController,
   getMunicipalityUserController,
-  updateMunicipalityUserController,
   deleteMunicipalityUserController,
+  listRolesController,
 } from "../../../src/controllers/municipalityController";
 
 jest.mock("../../../src/controllers/municipalityController");
@@ -44,16 +44,17 @@ describe("adminRoutes", () => {
     expect(getById).toBeDefined();
     expect(getById.route.stack[0].handle).toBe(getMunicipalityUserController);
 
-    const putRoute = stack.find(
-      (layer: any) => layer.route && layer.route.path === "/municipality-users/:userId" && layer.route.methods.put
-    );
-    expect(putRoute).toBeDefined();
-    expect(putRoute.route.stack[0].handle).toBe(updateMunicipalityUserController);
-
     const deleteRoute = stack.find(
       (layer: any) => layer.route && layer.route.path === "/municipality-users/:userId" && layer.route.methods.delete
     );
     expect(deleteRoute).toBeDefined();
     expect(deleteRoute.route.stack[0].handle).toBe(deleteMunicipalityUserController);
+
+    // check GET /roles route
+    const rolesRoute = stack.find(
+      (layer: any) => layer.route && layer.route.path === "/roles" && layer.route.methods.get
+    );
+    expect(rolesRoute).toBeDefined();
+    expect(rolesRoute.route.stack[0].handle).toBe(listRolesController);
   });
 });
