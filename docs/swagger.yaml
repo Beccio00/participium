@@ -126,44 +126,66 @@ paths:
             example:
               title: "Pothole on Via Roma"
               description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
-              category: ROAD
+              category: ROADS_URBAN_FURNISHINGS
               latitude: 45.070339
               longitude: 7.686864
               address: "Via Roma 1, Torino"
-              anonymous: false
+              isAnonymous: false
+              photos:
+                - "https://cdn.example.com/reports/tmp/photo1.jpg"
       responses:
         "201":
           description: Report created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReportResponse"
+                type: object
+                properties:
+                  message:
+                    type: string
+                  report:
+                    $ref: "#/components/schemas/ReportResponse"
               example:
-                id: 1024
-                title: "Pothole on Via Roma"
-                description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
-                location:
+                message: "Report created successfully"
+                report:
+                  id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+                  category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                address: "Via Roma 1, Torino"
-                photos:
-                  - https://cdn.example.com/reports/1024/photo1.jpg
-                category: ROADS_AND_URBAN_FURNISHINGS
-                anonymous: false
-                createdBy:
-                  email: mario.rossi@example.com
-                  name: Mario Rossi
-                status: OPEN
+                  isAnonymous: false
+                  status: PENDING_APPROVAL
+                  userId: 201
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  messages:
+                    - id: 1
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-11T10:12:34Z"
+                      senderId: 201
+                  rejectedReason: null
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T10:12:34Z"
         "400":
-          description: Missing or invalid fields (e.g. coordinates missing or out-of-range)
+          description: Missing required fields
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 400
-                error: "BadRequest"
-                message: "Missing or invalid fields (e.g. coordinates missing or out-of-range)"
+                error: "Bad Request"
+                message: "Missing required fields"
         "401":
           description: Not authenticated
           content:
@@ -171,29 +193,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 401
                 error: "Unauthorized"
-                message: "Authentication required"
-        "413":
-          description: Payload too large (uploaded photos exceed allowed size)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 413
-                error: "PayloadTooLarge"
-                message: "Uploaded photos exceed the maximum allowed size"
-        "415":
-          description: Unsupported media type for uploaded photos
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 415
-                error: "UnsupportedMediaType"
-                message: "Photos must be image files (image/jpeg, image/png)"
+                message: "User not logged in"
         "500":
           description: Unable to create report
           content:
@@ -201,8 +202,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 500
-                error: "InternalServerError"
+                error: "Internal Server Error"
                 message: "Unable to create report"
 
     get:
@@ -239,22 +239,59 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ReportSummary"
+                  $ref: "#/components/schemas/ReportResponse"
               example:
                 - id: 1024
                   title: "Pothole on Via Roma"
-                  location:
-                    latitude: 45.070339
-                    longitude: 7.686864
-                  category: ROADS_AND_URBAN_FURNISHINGS
-                  status: OPEN
+                  description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  isAnonymous: false
+                  status: PENDING_APPROVAL
+                  userId: 201
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  messages:
+                    - id: 1
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-11T10:12:34Z"
+                      senderId: 201
+                  rejectedReason: null
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T10:12:34Z"
                 - id: 1025
                   title: "Broken street light"
-                  location:
-                    latitude: 45.071000
-                    longitude: 7.687500
+                  description: "Street light not working"
                   category: PUBLIC_LIGHTING
+                  latitude: 45.071000
+                  longitude: 7.687500
+                  isAnonymous: false
                   status: RESOLVED
+                  userId: 202
+                  user:
+                    id: 202
+                    firstName: Maria
+                    lastName: Bianchi
+                    email: maria.bianchi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  messages: []
+                  rejectedReason: null
+                  photos: []
+                  createdAt: "2025-11-10T09:00:00Z"
+                  updatedAt: "2025-11-12T08:00:00Z"
         "400":
           description: Invalid query parameters (e.g. malformed bbox)
           content:
@@ -262,7 +299,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 400
                 error: "BadRequest"
                 message: "Invalid bbox parameter. Expected format: minLon,minLat,maxLon,maxLat"
         "500":
@@ -272,50 +308,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 500
                 error: "InternalServerError"
-                message: "Unable to retrieve reports"
-  /reports/{reportId}:
-    get:
-      tags:
-        - Reports
-      summary: Get a single report by id
-      description: Retrieve detailed information for a single report, including precise location coordinates.
-      operationId: getReport
-      parameters:
-        - name: reportId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        "200":
-          description: Report details retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReportResponse"
-        "400":
-          description: Invalid report id
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Invalid report id"
-        "404":
-          description: Report not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 404
-                error: "NotFound"
-                message: "Report not found"
+                message: "Error during report retrieval"
+
 
   /session/current:
     get:
@@ -926,20 +921,17 @@ components:
     ErrorResponse:
       type: object
       required:
-        - code
+        - error
+        - message
       properties:
-        code:
-          type: integer
-          description: HTTP status code of the error
-          example: 400
         error:
           type: string
-          description: Error type (BadRequest, Unauthorized, Conflict, InternalServerError)
+          description: Error type or code (as returned by the backend)
           example: "BadRequest"
         message:
           type: string
           description: Human-readable error message
-          example: "Human-readable description of the error"
+          example: "Missing required fields"
 
     MunicipalityUserRequest:
       type: object

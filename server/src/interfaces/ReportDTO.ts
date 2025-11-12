@@ -1,4 +1,4 @@
-import { UserDTO } from './UserDTO';
+import { UserDTO, Role } from './UserDTO';
 
 
 export type ReportDTO = {
@@ -70,7 +70,7 @@ export function toReportDTO(r: any): ReportDTO {
             firstName: r.user.first_name,
             lastName: r.user.last_name,
             email: r.user.email,
-            role: String(r.user.role),
+            role: r.user.role as Role,
             telegramUsername: r.user.telegram_username ?? null,
             emailNotificationsEnabled: r.user.email_notifications_enabled ?? true,
         } : undefined,
