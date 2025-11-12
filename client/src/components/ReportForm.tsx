@@ -16,23 +16,29 @@ export default function ReportForm() {
     longitude: 0,
     isAnonymous: false,
   });
-  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<
+    [number, number] | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
+      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleLocationSelect = (lat: number, lng: number) => {
     setSelectedLocation([lat, lng]);
-    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+    setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,7 +75,9 @@ export default function ReportForm() {
       <Container>
         <div className="report-form-card">
           <div className="report-form-header">
-            <h2><FileText /> Create New Report</h2>
+            <h2>
+              <FileText /> Create New Report
+            </h2>
             <p>Report an issue in your municipality</p>
           </div>
 
@@ -77,8 +85,17 @@ export default function ReportForm() {
             <Row>
               <Col lg={6}>
                 <div className="form-section">
-                  <h3><Tag /> Report Details</h3>
-                  {error && <Alert variant="danger" className="alert-custom alert-danger-custom">{error}</Alert>}
+                  <h3>
+                    <Tag /> Report Details
+                  </h3>
+                  {error && (
+                    <Alert
+                      variant="danger"
+                      className="alert-custom alert-danger-custom"
+                    >
+                      {error}
+                    </Alert>
+                  )}
 
                   <div className="form-group-custom">
                     <label>Title</label>
@@ -125,10 +142,13 @@ export default function ReportForm() {
                         "ROAD_MAINTENANCE",
                         "GREEN_AREAS",
                         "PUBLIC_TRANSPORT",
-                        "OTHER"
-                      ].map(cat => (
+                        "OTHER",
+                      ].map((cat) => (
                         <option key={cat} value={cat}>
-                          {cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                          {cat
+                            .replace(/_/g, " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
                         </option>
                       ))}
                     </select>
@@ -151,12 +171,19 @@ export default function ReportForm() {
 
               <Col lg={6}>
                 <div className="form-section">
-                  <h3><GeoAlt /> Location Selection</h3>
-                  <p>Click on the map to select the exact location of the issue.</p>
+                  <h3>
+                    <GeoAlt /> Location Selection
+                  </h3>
+                  <p>
+                    Click on the map to select the exact location of the issue.
+                  </p>
 
                   <div className="map-section-custom">
                     <div className="map-container-custom">
-                      <MapView onLocationSelect={handleLocationSelect} selectedLocation={selectedLocation} />
+                      <MapView
+                        onLocationSelect={handleLocationSelect}
+                        selectedLocation={selectedLocation}
+                      />
                     </div>
                   </div>
 
@@ -164,7 +191,8 @@ export default function ReportForm() {
                     <div className="coordinates-row">
                       <h4>Selected Coordinates</h4>
                       <div className="coordinates-display">
-                        {selectedLocation[0].toFixed(6)}, {selectedLocation[1].toFixed(6)}
+                        {selectedLocation[0].toFixed(6)},{" "}
+                        {selectedLocation[1].toFixed(6)}
                       </div>
                     </div>
                   )}

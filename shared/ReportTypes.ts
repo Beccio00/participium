@@ -1,13 +1,13 @@
 export type ReportCategory =
-  "WATER_SUPPLY_DRINKING_WATER" |
-  "ARCHITECTURAL_BARRIERS" |
-  "SEWER_SYSTEM" |
-  "PUBLIC_LIGHTING" |
-  "WASTE" |
-  "ROAD_MAINTENANCE" |
-  "GREEN_AREAS" |
-  "PUBLIC_TRANSPORT" |
-  "OTHER";
+  | "WATER_SUPPLY_DRINKING_WATER"
+  | "ARCHITECTURAL_BARRIERS"
+  | "SEWER_SYSTEM"
+  | "PUBLIC_LIGHTING"
+  | "WASTE"
+  | "ROAD_MAINTENANCE"
+  | "GREEN_AREAS"
+  | "PUBLIC_TRANSPORT"
+  | "OTHER";
 
 export interface CreateReportRequest {
   title: string;

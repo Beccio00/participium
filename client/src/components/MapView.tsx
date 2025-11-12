@@ -9,7 +9,10 @@ interface MapViewProps {
   selectedLocation?: [number, number] | null;
 }
 
-export default function MapView({ onLocationSelect, selectedLocation }: MapViewProps) {
+export default function MapView({
+  onLocationSelect,
+  selectedLocation,
+}: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -49,7 +52,7 @@ export default function MapView({ onLocationSelect, selectedLocation }: MapViewP
     });
 
     // Add click event to select location
-    map.on('click', (e: L.LeafletMouseEvent) => {
+    map.on("click", (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       if (markerRef.current) {
         map.removeLayer(markerRef.current);
@@ -87,7 +90,9 @@ export default function MapView({ onLocationSelect, selectedLocation }: MapViewP
       markerRef.current = null;
     }
     if (selectedLocation) {
-      markerRef.current = L.marker(selectedLocation).addTo(mapInstanceRef.current);
+      markerRef.current = L.marker(selectedLocation).addTo(
+        mapInstanceRef.current
+      );
     }
   }, [selectedLocation]);
 
