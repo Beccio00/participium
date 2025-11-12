@@ -28,11 +28,11 @@ describe("reportRoutes", () => {
     expect(stack).toBeDefined();
     expect(stack.length).toBeGreaterThan(0);
 
-    // Find the POST route for /reports
+    // Find the POST route for /
     const postRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.post
     );
     
@@ -49,11 +49,11 @@ describe("reportRoutes", () => {
   it("should have GET route for /reports with authentication middleware", () => {
     const stack = (reportRoutes as any).stack;
     
-    // Find the GET route for /reports
+    // Find the GET route for /
     const getRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.get
     );
     
@@ -97,7 +97,7 @@ describe("reportRoutes", () => {
     const routes = stack.filter((layer: any) => layer.route);
     
     routes.forEach((route: any) => {
-      expect(route.route.path).toBe("/reports");
+      expect(route.route.path).toBe("/");
     });
   });
 
@@ -107,14 +107,14 @@ describe("reportRoutes", () => {
     const postRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.post
     );
     
     const getRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.get
     );
     
@@ -136,7 +136,7 @@ describe("reportRoutes", () => {
     const postRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.post
     );
     
@@ -151,7 +151,7 @@ describe("reportRoutes", () => {
     const getRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.get
     );
     
@@ -178,7 +178,7 @@ describe("reportRoutes", () => {
     const postRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.post
     );
     
@@ -193,7 +193,7 @@ describe("reportRoutes", () => {
     const getRoute = stack.find(
       (layer: any) =>
         layer.route &&
-        layer.route.path === "/reports" &&
+        layer.route.path === "/" &&
         layer.route.methods.get
     );
     

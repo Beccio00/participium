@@ -1,20 +1,18 @@
 import { createReport, getApprovedReports } from "../../../src/services/reportService";
 import { ReportCategory } from "../../../../shared/ReportTypes";
 
-// Mock Prisma
-var mockPrisma: any;
+// Mock the Prisma client
+const mockCreate = jest.fn();
+const mockFindMany = jest.fn();
 
-jest.mock("../../../src/index", () => {
-  mockPrisma = {
+jest.mock("../../../src/utils/prismaClient", () => ({
+  prisma: {
     report: {
-      create: jest.fn(),
-      findMany: jest.fn(),
+      create: (...args: any[]) => mockCreate(...args),
+      findMany: (...args: any[]) => mockFindMany(...args),
     },
-  };
-  return {
-    prisma: mockPrisma,
-  };
-});
+  },
+}));
 
 describe("reportService", () => {
   beforeEach(() => {
@@ -62,11 +60,11 @@ describe("reportService", () => {
         ]
       };
 
-      mockPrisma.report.create.mockResolvedValue(mockCreatedReport);
+      mockCreate.mockResolvedValue(mockCreatedReport);
 
       const result = await createReport(validReportData);
 
-      expect(mockPrisma.report.create).toHaveBeenCalledWith({
+      expect(mockCreate).toHaveBeenCalledWith({
         data: {
           title: validReportData.title,
           description: validReportData.description,
@@ -115,11 +113,11 @@ describe("reportService", () => {
         photos: []
       };
 
-      mockPrisma.report.create.mockResolvedValue(mockCreatedReport);
+      mockCreate.mockResolvedValue(mockCreatedReport);
 
       const result = await createReport(anonymousReportData);
 
-      expect(mockPrisma.report.create).toHaveBeenCalledWith({
+      expect(mockCreate).toHaveBeenCalledWith({
         data: {
           title: anonymousReportData.title,
           description: anonymousReportData.description,
@@ -192,11 +190,11 @@ describe("reportService", () => {
         ]
       };
 
-      mockPrisma.report.create.mockResolvedValue(mockCreatedReport);
+      mockCreate.mockResolvedValue(mockCreatedReport);
 
       const result = await createReport(reportWithMultiplePhotos);
 
-      expect(mockPrisma.report.create).toHaveBeenCalledWith({
+      expect(mockCreate).toHaveBeenCalledWith({
         data: {
           title: reportWithMultiplePhotos.title,
           description: reportWithMultiplePhotos.description,
@@ -245,11 +243,11 @@ describe("reportService", () => {
         photos: []
       };
 
-      mockPrisma.report.create.mockResolvedValue(mockCreatedReport);
+      mockCreate.mockResolvedValue(mockCreatedReport);
 
       const result = await createReport(turinReportData);
 
-      expect(mockPrisma.report.create).toHaveBeenCalledWith(
+      expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             latitude: 45.0703,
@@ -262,22 +260,22 @@ describe("reportService", () => {
     });
 
     it("should create report with different categories", async () => {
-      const categories: ReportCategory[] = [
+      const categories = [
         "WATER_SUPPLY_DRINKING_WATER",
         "ARCHITECTURAL_BARRIERS", 
         "SEWER_SYSTEM",
         "PUBLIC_LIGHTING",
         "WASTE",
-        "ROAD_SIGNS_AND_TRAFFIC_LIGHTS",
-        "ROADS_AND_URBAN_FURNISHINGS",
-        "PUBLIC_GREEN_AREAS_AND_PLAYGROUNDS",
+        "ROAD_SIGNS_TRAFFIC_LIGHTS",
+        "ROADS_URBAN_FURNISHINGS",
+        "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
         "OTHER"
       ];
 
       for (const category of categories) {
         const reportWithCategory = {
           ...validReportData,
-          category
+          category: category as any
         };
 
         const mockCreatedReport = {
@@ -290,11 +288,11 @@ describe("reportService", () => {
           photos: []
         };
 
-        mockPrisma.report.create.mockResolvedValue(mockCreatedReport);
+        mockCreate.mockResolvedValue(mockCreatedReport);
 
         await createReport(reportWithCategory);
 
-        expect(mockPrisma.report.create).toHaveBeenCalledWith(
+        expect(mockCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
               category: category
@@ -308,11 +306,11 @@ describe("reportService", () => {
 
     it("should handle database errors", async () => {
       const error = new Error("Database connection failed");
-      mockPrisma.report.create.mockRejectedValue(error);
+      mockCreate.mockRejectedValue(error);
 
       await expect(createReport(validReportData)).rejects.toThrow(error);
 
-      expect(mockPrisma.report.create).toHaveBeenCalled();
+      expect(mockCreate).toHaveBeenCalled();
     });
 
     it("should create report with boundary coordinates", async () => {
@@ -341,11 +339,11 @@ describe("reportService", () => {
           photos: []
         };
 
-        mockPrisma.report.create.mockResolvedValue(mockCreatedReport);
+        mockCreate.mockResolvedValue(mockCreatedReport);
 
         await createReport(reportWithBoundaryCoords);
 
-        expect(mockPrisma.report.create).toHaveBeenCalledWith(
+        expect(mockCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
               latitude: coords.latitude,
@@ -394,11 +392,11 @@ describe("reportService", () => {
         }
       ];
 
-      mockPrisma.report.findMany.mockResolvedValue(mockReports);
+      mockFindMany.mockResolvedValue(mockReports);
 
       const result = await getApprovedReports();
 
-      expect(mockPrisma.report.findMany).toHaveBeenCalledWith({
+      expect(mockFindMany).toHaveBeenCalledWith({
         where: {
           status: {
             in: [
@@ -426,11 +424,11 @@ describe("reportService", () => {
     });
 
     it("should return empty array when no approved reports exist", async () => {
-      mockPrisma.report.findMany.mockResolvedValue([]);
+      mockFindMany.mockResolvedValue([]);
 
       const result = await getApprovedReports();
 
-      expect(mockPrisma.report.findMany).toHaveBeenCalled();
+      expect(mockFindMany).toHaveBeenCalled();
       expect(result).toEqual([]);
     });
 
@@ -453,12 +451,12 @@ describe("reportService", () => {
         }
       ];
 
-      mockPrisma.report.findMany.mockResolvedValue(mockApprovedReports);
+      mockFindMany.mockResolvedValue(mockApprovedReports);
 
       const result = await getApprovedReports();
 
       // Verifica che la query filtri correttamente gli stati
-      expect(mockPrisma.report.findMany).toHaveBeenCalledWith({
+      expect(mockFindMany).toHaveBeenCalledWith({
         where: {
           status: {
             in: ["ASSIGNED", "IN_PROGRESS", "RESOLVED"]
@@ -483,11 +481,11 @@ describe("reportService", () => {
 
     it("should handle database errors", async () => {
       const error = new Error("Database query failed");
-      mockPrisma.report.findMany.mockRejectedValue(error);
+      mockFindMany.mockRejectedValue(error);
 
       await expect(getApprovedReports()).rejects.toThrow(error);
 
-      expect(mockPrisma.report.findMany).toHaveBeenCalled();
+      expect(mockFindMany).toHaveBeenCalled();
     });
 
     it("should include user information in results", async () => {
@@ -508,7 +506,7 @@ describe("reportService", () => {
         }
       ];
 
-      mockPrisma.report.findMany.mockResolvedValue(mockReports);
+      mockFindMany.mockResolvedValue(mockReports);
 
       const result = await getApprovedReports();
 
@@ -520,11 +518,11 @@ describe("reportService", () => {
     });
 
     it("should order reports by creation date descending", async () => {
-      mockPrisma.report.findMany.mockResolvedValue([]);
+      mockFindMany.mockResolvedValue([]);
 
       await getApprovedReports();
 
-      expect(mockPrisma.report.findMany).toHaveBeenCalledWith(
+      expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: {
             createdAt: "desc"

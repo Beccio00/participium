@@ -291,15 +291,15 @@ describe("reportController", () => {
     });
 
     it("should handle different report categories", async () => {
-      const categories: ReportCategory[] = [
+      const categories = [
         "WATER_SUPPLY_DRINKING_WATER",
-        "ARCHITECTURAL_BARRIERS",
+        "ARCHITECTURAL_BARRIERS", 
         "SEWER_SYSTEM",
         "PUBLIC_LIGHTING",
         "WASTE",
-        "ROAD_SIGNS_AND_TRAFFIC_LIGHTS",
-        "ROADS_AND_URBAN_FURNISHINGS",
-        "PUBLIC_GREEN_AREAS_AND_PLAYGROUNDS",
+        "ROAD_SIGNS_TRAFFIC_LIGHTS",
+        "ROADS_URBAN_FURNISHINGS",
+        "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
         "OTHER"
       ];
 
