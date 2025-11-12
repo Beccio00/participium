@@ -44,6 +44,7 @@ describe("signupController", () => {
         email_notifications_enabled: true,
       };
       const mockUserDTO = {
+        id: 1,
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
@@ -276,6 +277,25 @@ describe("signupController", () => {
         error: "BadRequest",
         message:
           "Missing required fields: firstName, lastName, email, password",
+      });
+    });
+
+    it("should handle invalid role", async () => {
+      // Create a signup handler with an invalid role
+      const invalidSignupHandler = signup('INVALID_ROLE' as any);
+      mockReq.body = {
+        firstName: "Test",
+        lastName: "User",
+        email: "test@example.com",
+        password: "password123",
+      };
+
+      await invalidSignupHandler(mockReq as Request, mockRes as Response);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: "BadRequest",
+        message: "Invalid role",
       });
     });
   });

@@ -52,6 +52,7 @@ describe("authController", () => {
 
     it("should login successfully and return user data", async () => {
       const mockUser: UserDTO = {
+        id: 1,
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
@@ -97,6 +98,7 @@ describe("authController", () => {
 
     it("should handle login error", async () => {
       const mockUser: UserDTO = {
+        id: 1,
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
@@ -131,6 +133,7 @@ describe("authController", () => {
 
     it("should proceed with login if isAuthenticated is undefined", async () => {
       const mockUser: UserDTO = { 
+        id: 1,
         firstName: "Test", 
         lastName: "User", 
         email: "test@example.com", 
@@ -242,6 +245,7 @@ describe("authController", () => {
         message: "Already logged out",
       });
     });
+  });
 
   describe("getSessionInfo", () => {
     it("should return not authenticated if no user", () => {
@@ -255,6 +259,7 @@ describe("authController", () => {
 
     it("should return authenticated with user data", () => {
       const mockUser: UserDTO = {
+        id: 1,
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
@@ -273,5 +278,4 @@ describe("authController", () => {
       });
     });
   });
-});
 });
