@@ -8,7 +8,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   loading: boolean;
   signup: (formData: SignupFormData) => Promise<SignupResponse>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
 };
 
@@ -35,9 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return api.signup(formData);
   };
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<AuthUser> => {
     const data = await api.login(email, password);
     setUser(data.user);
+    return data.user;
   };
 
   const logout = async (): Promise<void> => {

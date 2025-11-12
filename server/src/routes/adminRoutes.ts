@@ -1,33 +1,30 @@
 import { Router } from "express";
-import { isLoggedIn } from "../middleware/routeProtection";
-import { requireAdmin } from "../middleware/adminProtection";
+import { requireAdmin } from "../middleware/routeProtection";
 import {
   createMunicipalityUserController,
   listMunicipalityUsersController,
   getMunicipalityUserController,
-  updateMunicipalityUserController,
-  deleteMunicipalityUserController
-} from "../controllers/municipalityUserController";
+  deleteMunicipalityUserController,
+  listRolesController
+} from "../controllers/municipalityController";
 
 const router = Router();
 
-// All admin routes require authentication and admin privileges
-router.use(isLoggedIn);
 router.use(requireAdmin);
 
-// POST /admin/municipality-users - Create a new municipality user
+// POST api/admin/municipality-users - Create a new municipality user
 router.post('/municipality-users', createMunicipalityUserController);
 
-// GET /admin/municipality-users - List all municipality users
+// GET api/admin/municipality-users - List all municipality users
 router.get('/municipality-users', listMunicipalityUsersController);
 
-// GET /admin/municipality-users/:userId - Get specific municipality user
+// GET api/admin/municipality-users/:userId - Get specific municipality user
 router.get('/municipality-users/:userId', getMunicipalityUserController);
 
-// PUT /admin/municipality-users/:userId - Update specific municipality user
-router.put('/municipality-users/:userId', updateMunicipalityUserController);
-
-// DELETE /admin/municipality-users/:userId - Delete specific municipality user
+// DELETE api/admin/municipality-users/:userId - Delete specific municipality user
 router.delete('/municipality-users/:userId', deleteMunicipalityUserController);
+
+// GET api/admin/roles - List all roles
+router.get('/roles', listRolesController);
 
 export default router;

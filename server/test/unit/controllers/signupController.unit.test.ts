@@ -1,20 +1,17 @@
 import { Request, Response } from "express";
-import { signup } from "../../../src/controllers/signupController";
+import { signup } from "../../../src/controllers/citizenController";
 import { findByEmail, createUser } from "../../../src/services/userService";
 import { hashPassword } from "../../../src/services/passwordService";
-import { toUserDTO } from "../../../src/interfaces/UserDTO";
+import * as UserDTO from "../../../src/interfaces/UserDTO";
 
 
 jest.mock("../../../src/services/userService");
 jest.mock("../../../src/services/passwordService");
-jest.mock("../../../src/interfaces/UserDTO");
-
 const mockFindByEmail = findByEmail as jest.MockedFunction<typeof findByEmail>;
 const mockCreateUser = createUser as jest.MockedFunction<typeof createUser>;
 const mockHashPassword = hashPassword as jest.MockedFunction<
   typeof hashPassword
 >;
-const mockToUserDTO = toUserDTO as jest.MockedFunction<typeof toUserDTO>;
 
 describe("signupController", () => {
   let mockReq: any;
@@ -32,7 +29,7 @@ describe("signupController", () => {
   });
 
   describe("signup", () => {
-    const signupHandler = signup("CITIZEN");
+    const signupHandler = signup(UserDTO.Roles.CITIZEN);
 
     it("should create user successfully with all fields", async () => {
       const mockUser = {
@@ -42,7 +39,7 @@ describe("signupController", () => {
         last_name: "User",
         password: "hashed",
         salt: "salt",
-        role: "CITIZEN" as any,
+        role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
         email_notifications_enabled: true,
       };
@@ -50,7 +47,7 @@ describe("signupController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: "CITIZEN",
+        role: UserDTO.Roles.CITIZEN,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
@@ -67,7 +64,7 @@ describe("signupController", () => {
         salt: "salt",
       });
       mockCreateUser.mockResolvedValue(mockUser);
-      mockToUserDTO.mockReturnValue(mockUserDTO);
+      jest.spyOn(UserDTO, 'toUserDTO').mockReturnValue(mockUserDTO);
 
       await signupHandler(mockReq as Request, mockRes as Response);
 
@@ -79,9 +76,9 @@ describe("signupController", () => {
         last_name: "User",
         password: "hashed",
         salt: "salt",
-        role: "CITIZEN",
+        role: UserDTO.Roles.CITIZEN,
       });
-      expect(mockToUserDTO).toHaveBeenCalledWith(mockUser);
+      expect(UserDTO.toUserDTO).toHaveBeenCalledWith(mockUser);
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith(mockUserDTO);
     });
@@ -186,7 +183,7 @@ describe("signupController", () => {
         last_name: "User",
         password: "hashed",
         salt: "salt",
-        role: "CITIZEN" as any,
+        role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
         email_notifications_enabled: true,
       };

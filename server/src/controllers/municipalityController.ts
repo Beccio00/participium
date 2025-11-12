@@ -1,23 +1,25 @@
 import { Request, Response } from "express";
 import { 
-  MunicipalityUserCreateRequest, 
-  MunicipalityUserUpdateRequest, 
-  toMunicipalityUserDTO 
-} from "../interfaces/MunicipalityUserDTO";
+  toMunicipalityUserDTO,
+  isValidRole,
+  MUNICIPALITY_ROLES,
+  Role,
+} from "../interfaces/UserDTO";
 import { 
   createMunicipalityUser, 
   getAllMunicipalityUsers, 
   getMunicipalityUserById, 
   updateMunicipalityUser, 
   deleteMunicipalityUser,
-  findMunicipalityUserByEmail
 } from "../services/municipalityUserService";
 import { findByEmail } from "../services/userService";
 import { hashPassword } from "../services/passwordService";
 
+
+
 export async function createMunicipalityUserController(req: Request, res: Response) {
   try {
-    const { firstName, lastName, email, password, role }: MunicipalityUserCreateRequest = req.body;
+    const { firstName, lastName, email, password, role } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password || !role) {
@@ -28,8 +30,7 @@ export async function createMunicipalityUserController(req: Request, res: Respon
     }
 
     // Validate role
-    const validRoles = ['PUBLIC_RELATIONS', 'ADMINISTRATOR', 'TECHNICAL_OFFICE'];
-    if (!validRoles.includes(role)) {
+    if (!isValidRole(role) || !MUNICIPALITY_ROLES.includes(role as Role)) {
       return res.status(400).json({
         error: "BadRequest",
         message: "Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE"
@@ -55,7 +56,7 @@ export async function createMunicipalityUserController(req: Request, res: Respon
       last_name: lastName,
       password: hashedPassword,
       salt,
-      role
+      role: role as Role
     });
 
     const responseUser = toMunicipalityUserDTO(newUser);
@@ -119,86 +120,6 @@ export async function getMunicipalityUserController(req: Request, res: Response)
   }
 }
 
-export async function updateMunicipalityUserController(req: Request, res: Response) {
-  try {
-    const userId = parseInt(req.params.userId);
-    const { firstName, lastName, email, password, role }: MunicipalityUserUpdateRequest = req.body;
-
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "Invalid user ID format"
-      });
-    }
-
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password || !role) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "Missing required fields: firstName, lastName, email, password, role"
-      });
-    }
-
-    // Validate role
-    const validRoles = ['PUBLIC_RELATIONS', 'ADMINISTRATOR', 'TECHNICAL_OFFICE'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({
-        error: "BadRequest",
-        message: "Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE"
-      });
-    }
-
-    // Check if user exists
-    const existingUser = await getMunicipalityUserById(userId);
-    if (!existingUser) {
-      return res.status(404).json({
-        error: "NotFound",
-        message: "Municipality user not found"
-      });
-    }
-
-    // Check if email is already in use by another user
-    if (email !== existingUser.email) {
-      const emailInUse = await findByEmail(email);
-      if (emailInUse) {
-        return res.status(409).json({
-          error: "Conflict",
-          message: "Email already in use"
-        });
-      }
-    }
-
-    // Hash password if provided
-    const { hashedPassword, salt } = await hashPassword(password);
-
-    // Update municipality user
-    const updatedUser = await updateMunicipalityUser(userId, {
-      email,
-      first_name: firstName,
-      last_name: lastName,
-      password: hashedPassword,
-      salt,
-      role
-    });
-
-    if (!updatedUser) {
-      return res.status(404).json({
-        error: "NotFound",
-        message: "Municipality user not found"
-      });
-    }
-
-    const responseUser = toMunicipalityUserDTO(updatedUser);
-    return res.status(200).json(responseUser);
-
-  } catch (error) {
-    console.error("Error updating municipality user:", error);
-    return res.status(500).json({
-      error: "InternalServerError",
-      message: "Failed to update user"
-    });
-  }
-}
 
 export async function deleteMunicipalityUserController(req: Request, res: Response) {
   try {
@@ -227,6 +148,18 @@ export async function deleteMunicipalityUserController(req: Request, res: Respon
     return res.status(500).json({
       error: "InternalServerError",
       message: "Failed to delete user"
+    });
+  }
+}
+
+export async function listRolesController(req: Request, res: Response) {
+  try {
+    return res.status(200).json(MUNICIPALITY_ROLES);
+  } catch (error) {
+    console.error("Error listing roles:", error);
+    return res.status(500).json({
+      error: "InternalServerError",
+      message: "Failed to retrieve roles"
     });
   }
 }
