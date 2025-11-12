@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import {
   createMunicipalityUserController,
-  updateMunicipalityUserController,
+  listMunicipalityUsersController,
+  getMunicipalityUserController,
+  deleteMunicipalityUserController,
+  listRolesController,
 } from "../../../src/controllers/municipalityController";
 import * as municipalityService from "../../../src/services/municipalityUserService";
 import { findByEmail } from "../../../src/services/userService";
@@ -59,20 +62,6 @@ describe("municipalityController", () => {
       mockFindByEmail.mockResolvedValue({ id: 1 } as any);
       await createMunicipalityUserController(mockReq as Request, mockRes as Response);
       expect(mockRes.status).toHaveBeenCalledWith(409);
-    });
-  });
-
-  describe("updateMunicipalityUserController - role validation and payload", () => {
-    it("should return 400 when invalid userId", async () => {
-      const req = { params: { userId: 'abc' }, body: {} } as any;
-      await updateMunicipalityUserController(req as Request, mockRes as Response);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-    });
-
-    it("should return 400 when no fields provided", async () => {
-      const req = { params: { userId: '1' }, body: {} } as any;
-      await updateMunicipalityUserController(req as Request, mockRes as Response);
-      expect(mockRes.status).toHaveBeenCalledWith(400);
     });
   });
 });

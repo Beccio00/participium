@@ -53,6 +53,20 @@ export async function createUserInDatabase(userData?: Partial<{
 }
 
 /**
+ * Delete user from database (for test cleanup/setup)
+ */
+export async function deleteUserFromDatabase(userId: number) {
+  try {
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Verify password is correctly hashed before storage
  */
 export async function verifyPasswordIsHashed(email: string, plainPassword: string) {
