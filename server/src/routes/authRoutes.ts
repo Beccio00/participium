@@ -1,13 +1,11 @@
-import express from "express";
+import { Router } from "express";
+import { asyncHandler } from "../middlewares/errorMiddleware";
 import { login, logout, getSessionInfo } from "../controllers/authController";
 
-const router = express.Router();
+const router = Router();
 
-// POST /session
-router.post("/", login);
-// DELETE /session/current
-router.delete("/current", logout);
-// GET /session/current
-router.get("/current", getSessionInfo);
+router.post("/", asyncHandler(login));
+router.delete("/current", asyncHandler(logout));
+router.get("/current", asyncHandler(getSessionInfo));
 
 export default router;

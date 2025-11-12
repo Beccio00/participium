@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { CONFIG } from "../config/constants";
 
-
-export const getApiInfo = (req: Request, res: Response): void => {
+export async function getApiInfo(req: Request, res: Response): Promise<void> {
   res.json({
     message: CONFIG.API.NAME,
     version: CONFIG.API.VERSION,
@@ -15,4 +14,4 @@ export const getApiInfo = (req: Request, res: Response): void => {
       docs: CONFIG.ROUTES.SWAGGER,
     },
   });
-};
+}

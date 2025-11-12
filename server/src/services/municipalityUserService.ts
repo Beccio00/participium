@@ -9,6 +9,7 @@ import {
 } from "./userService";
 import { Role, MUNICIPALITY_ROLES } from "../interfaces/UserDTO";
 import { PrismaClient } from "../../prisma/generated/client";
+import { BadRequestError } from "../utils";
 
 const prisma = new PrismaClient();
 
@@ -81,7 +82,7 @@ export async function deleteMunicipalityUser(id: number): Promise<boolean> {
   if (existing.role === "ADMINISTRATOR") {
     const adminCount = await countAdministrators();
     if (adminCount <= 1) {
-      throw new Error("Cannot delete the last administrator account");
+      throw new BadRequestError("Cannot delete the last administrator account");
     }
   }
 
