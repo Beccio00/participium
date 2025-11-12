@@ -15,6 +15,12 @@ describe('UserDTO', () => {
       expect(dto.email).toBe('x@y.com');
       expect(dto.role).toBe(Roles.TECHNICAL_OFFICE);
     });
+
+    it('handles invalid role in municipality DTO', () => {
+      const user = { id: 7, first_name: 'Jane', last_name: 'Doe', email: 'jane@example.com', role: 'INVALID_ROLE' } as any;
+      const dto = toMunicipalityUserDTO(user);
+      expect(dto.role).toBe('INVALID_ROLE');
+    });
   });
 });
 import { toUserDTO, UserDTO } from "../../../src/interfaces/UserDTO";
@@ -38,6 +44,7 @@ describe("UserDTO", () => {
       const result = toUserDTO(prismaUser);
 
       expect(result).toEqual({
+        id: 1,
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
@@ -99,6 +106,24 @@ describe("UserDTO", () => {
       const result = toUserDTO(prismaUser);
 
       expect(result.role).toBe("ADMIN");
+    });
+
+    it("should handle invalid role in UserDTO", () => {
+      const prismaUser = {
+        id: 1,
+        email: "test@example.com",
+        first_name: "Test",
+        last_name: "User",
+        password: "hashed",
+        salt: "salt",
+        role: "INVALID_ROLE" as any,
+        telegram_username: null,
+        email_notifications_enabled: true,
+      };
+
+      const result = toUserDTO(prismaUser);
+
+      expect(result.role).toBe("INVALID_ROLE");
     });
   });
 });
