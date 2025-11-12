@@ -1,0 +1,49 @@
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  font-family: inherit;
+}
+
+.report-popup {
+  padding: 0;
+  min-width: 200px;
+}
+
+.report-popup-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--stone) 100%);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.report-popup-body {
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0 0 8px 8px;
+}
+
+.report-popup-location {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.report-popup-location::before {
+  content: "📍";
+  font-size: 0.8rem;
+}
+
+.report-popup-description {
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.4;
+}
