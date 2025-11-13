@@ -6,6 +6,8 @@ import "../styles/MapView.css";
 const TURIN: [number, number] = [45.0703, 7.6869];
 
 // Helper function to get status color for map markers
+// COMMENTED OUT: Not used since reports markers are disabled
+/*
 const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
     case "resolved":
@@ -18,8 +20,11 @@ const getStatusColor = (status: string): string => {
       return "#6c757d";
   }
 };
+*/
 
 // Helper function to create colored marker icon
+// COMMENTED OUT: Not used since reports markers are disabled
+/*
 const createColoredIcon = (color: string) => {
   return L.divIcon({
     className: "custom-marker",
@@ -35,6 +40,7 @@ const createColoredIcon = (color: string) => {
     iconAnchor: [13, 13],
   });
 };
+*/
 
 // Helper function to create selected location marker icon
 const createSelectedLocationIcon = () => {
@@ -147,6 +153,9 @@ export default function MapView({
     }
 
     // Add markers for reports
+    // COMMENTED OUT: Reports markers are not displayed on the map for now
+    // To re-enable, uncomment the following block
+    /*
     reports.forEach((report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
@@ -171,6 +180,7 @@ export default function MapView({
         `);
       reportMarkersRef.current.push(marker);
     });
+    */
 
     mapInstanceRef.current = map;
 
@@ -184,6 +194,9 @@ export default function MapView({
   }, []);
 
   // Update report markers when reports change
+  // COMMENTED OUT: Reports markers update is disabled
+  // To re-enable, uncomment the following useEffect
+  /*
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -219,6 +232,7 @@ export default function MapView({
       reportMarkersRef.current.push(marker);
     });
   }, [reports]);
+  */
 
   useEffect(() => {
     if (mapInstanceRef.current) {
@@ -240,6 +254,9 @@ export default function MapView({
   }, [selectedLocation]);
 
   // Handle selected report popup
+  // COMMENTED OUT: Selected report popup handling is disabled since reports markers are not shown
+  // To re-enable, uncomment the following useEffect
+  /*
   useEffect(() => {
     if (!mapInstanceRef.current || !selectedReportId) return;
 
@@ -258,6 +275,7 @@ export default function MapView({
       marker.openPopup();
     }
   }, [selectedReportId, reports]);
+  */
 
   return (
     <>

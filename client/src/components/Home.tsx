@@ -151,13 +151,15 @@ export default function Home() {
             </div>
 
             <div className="add-report-section">
-              <button onClick={handleAddReport} className="add-report-btn">
-                <span className="btn-icon">
-                  <Pencil />
-                </span>
-                Select a location
-                {/*Add New Report*/}
-              </button>
+              {(!isAuthenticated || user?.role === "CITIZEN") && (
+                <button onClick={handleAddReport} className="add-report-btn">
+                  <span className="btn-icon">
+                    <Pencil />
+                  </span>
+                  Select a location
+                  {/*Add New Report*/}
+                </button>
+              )}
 
               {!isAuthenticated && (
                 <p className="auth-reminder">
