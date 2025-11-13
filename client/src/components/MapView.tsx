@@ -101,22 +101,9 @@ export default function MapView({
   const [center, setCenter] = useState<[number, number]>(TURIN);
   const [hasTileError, setHasTileError] = useState(false);
 
+  // Always center on Turin
   useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setCenter(TURIN);
-      return;
-    }
-
-    const success = (pos: GeolocationPosition) => {
-      const { latitude, longitude } = pos.coords;
-      setCenter([latitude, longitude]);
-    };
-
-    const error = () => {
-      setCenter(TURIN);
-    };
-
-    navigator.geolocation.getCurrentPosition(success, error, { timeout: 5000 });
+    setCenter(TURIN);
   }, []);
 
   useEffect(() => {
