@@ -89,14 +89,17 @@ sections:
 ## ASSESSMENT
 
 - What did go wrong in the sprint?
-    - The major problems encountered during the sprint where due to tasks assignment. We can solve this problem with a better task definition during sprint planning and also assigning the same person to small backend tasks of the same story, in order to reduce waiting times
+    - The issues are related to task assignement which led to an uneven workload distribuition for each tema member. Compounding this, some task descriptions were too vague, making it difficult to understand the full scope of the work needed.
 
 - What caused your errors in estimation (if any)?
-    - The major overstimation errors are bound to uncategorized decision tasks (architecture design, technologies choice, etc) and DB updates tasks. The former where due to the fact that many decisions where almost directly inherited from the previous project. The latter, instead, where caused by the fact that in some stories a DB update was not really required.
-    Finally, we have to start every task from the swagger and pay more attention on implementing only things that actually belongs to our stories.
+    - Our main estimation errors were overestimations, caused by two factors:
+      - decision tasks (e.g. Architecture design) took less tima than planned because many decicions were inherited from the previous project.
+      - database update tasks were estimated for stories that ultimately did not require big changes
+      We also had a few underestimated tasks, primarily due to unexpected issues with Git versioning.
 
 - What lessons did you learn (both positive and negative) in this sprint?
-    - We realized that we need to improve task descriptions during sprint planning, but overall our time estimation was quite precise.
+    - **Negative**: We learned that our task descriptions must be more detailed during sprint planning to avoid ambiguity and ensure clarity.
+    - **Positive**: We confirmed that, despite issues with individual tasks, our overall time estimation for the sprint was quite precise.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
     - First sprint, no previous set goals
@@ -107,8 +110,8 @@ sections:
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
   > Propose one or two
-  - Improve task definition and description during sprint planning in orderd to a better understanding of the work to do.
-  - Always start development of stories from swagger in order to improve team alignment.
+  - Improve task definition and description during sprint planning to ensure a shared and clear understanding of the work to be done.
+  - Adoption of "Swagger-first" approach, starting all stories development from the APi definition, in order to improve team alignment and consistency.
 
 - One thing you are proud of as a Team!!
-  - We kept an excellent level of communication, always updating each other on the status of the project and giving feedback on others work
+  - We are proud of our excellent and proactive communication, which consistently kept each other updated on the project's status and fostered a strong, collaborative environment by regularly providing feedback on each other's work.
