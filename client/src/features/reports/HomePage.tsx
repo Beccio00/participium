@@ -1,25 +1,27 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Clipboard, Pencil } from "react-bootstrap-icons";
-import AuthModal from "./AuthModal";
-import "../styles/Home.css";
-import MapView from "./MapView";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks";
+import { Button } from "../../components/ui";
+import { AuthRequiredModal } from "../auth/AuthRequiredModal";
+import { ReportCard } from "./ReportCard";
+import MapView from "../../components/MapView";
+import type { Report } from "../../types";
+import "./HomePage.css";
 
-export default function Home() {
+export function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
 
-  // Mock reports data
-  const [reports] = useState([
+  // Mock reports data - TODO: Replace with API call
+  const [reports] = useState<Report[]>([
     {
       id: 1,
       title: "Broken street light on Via Roma",
-      description:
-        "The street light at the corner of Via Roma and Via Milano has been out for a week.",
-      category: "Public Lighting",
+      description: "The street light at the corner of Via Roma and Via Milano has been out for a week.",
+      category: "PUBLIC_LIGHTING",
       status: "In Progress",
       createdAt: "2025-11-10",
       latitude: 45.0703,
@@ -28,9 +30,8 @@ export default function Home() {
     {
       id: 2,
       title: "Pothole on Corso Vittorio",
-      description:
-        "Large pothole causing traffic issues near the central station.",
-      category: "Road Maintenance",
+      description: "Large pothole causing traffic issues near the central station.",
+      category: "ROADS_URBAN_FURNISHINGS",
       status: "Assigned",
       createdAt: "2025-11-08",
       latitude: 45.0653,
@@ -39,9 +40,8 @@ export default function Home() {
     {
       id: 3,
       title: "Overflowing trash bin",
-      description:
-        "Trash bin on Piazza Castello is overflowing and needs emptying.",
-      category: "Waste",
+      description: "Trash bin on Piazza Castello is overflowing and needs emptying.",
+      category: "WASTE",
       status: "Resolved",
       createdAt: "2025-11-05",
       latitude: 45.0733,
@@ -63,20 +63,6 @@ export default function Home() {
     }
   };
 
-  const handleModalLogin = () => {
-    setShowAuthModal(false);
-    navigate("/login");
-  };
-
-  const handleModalSignup = () => {
-    setShowAuthModal(false);
-    navigate("/signup");
-  };
-
-  const handleCloseModal = () => {
-    setShowAuthModal(false);
-  };
-
   return (
     <>
       <div className="home-container">
@@ -88,10 +74,7 @@ export default function Home() {
                 <p>Municipality territory view</p>
               </div>
               <div className="map-content">
-                <MapView
-                  reports={reports}
-                  selectedReportId={selectedReportId}
-                />
+                <MapView reports={reports} selectedReportId={selectedReportId} />
               </div>
             </div>
           </div>
@@ -106,35 +89,12 @@ export default function Home() {
               {reports.length > 0 ? (
                 <div className="reports-list">
                   {reports.map((report) => (
-                    <div
+                    <ReportCard
                       key={report.id}
-                      className={`report-item ${
-                        selectedReportId === report.id ? "selected" : ""
-                      }`}
+                      report={report}
+                      isSelected={selectedReportId === report.id}
                       onClick={() => setSelectedReportId(report.id)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <div className="report-header">
-                        <h4 className="report-title">{report.title}</h4>
-                        <span
-                          className={`report-status status-${report.status
-                            .toLowerCase()
-                            .replace(" ", "-")}`}
-                        >
-                          {report.status}
-                        </span>
-                      </div>
-                      <p className="report-description">{report.description}</p>
-                      <div className="report-meta">
-                        <span className="report-location">
-                          {report.latitude.toFixed(6)},{" "}
-                          {report.longitude.toFixed(6)}
-                        </span>
-                        <span className="report-date">
-                          {new Date(report.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
+                    />
                   ))}
                 </div>
               ) : (
@@ -143,39 +103,30 @@ export default function Home() {
                     <Clipboard />
                   </div>
                   <p>No reports yet</p>
-                  <small>
-                    Reports will appear here once submitted by citizens.
-                  </small>
+                  <small>Reports will appear here once submitted by citizens.</small>
                 </div>
               )}
             </div>
 
             <div className="add-report-section">
               {(!isAuthenticated || user?.role === "CITIZEN") && (
-                <button onClick={handleAddReport} className="add-report-btn">
+                <Button onClick={handleAddReport} variant="primary" fullWidth>
                   <span className="btn-icon">
                     <Pencil />
                   </span>
                   Select a location
-                  {/*Add New Report*/}
-                </button>
+                </Button>
               )}
 
               {!isAuthenticated && (
                 <p className="auth-reminder">
                   <small>
                     You need to{" "}
-                    <button
-                      onClick={() => navigate("/login")}
-                      className="link-btn"
-                    >
+                    <button onClick={() => navigate("/login")} className="link-btn">
                       login
                     </button>{" "}
                     or{" "}
-                    <button
-                      onClick={() => navigate("/signup")}
-                      className="link-btn"
-                    >
+                    <button onClick={() => navigate("/signup")} className="link-btn">
                       sign up
                     </button>{" "}
                     to submit reports
@@ -187,13 +138,7 @@ export default function Home() {
         </main>
       </div>
 
-      <AuthModal
-        isOpen={showAuthModal}
-        isAuthenticated={isAuthenticated}
-        onClose={handleCloseModal}
-        onLogin={handleModalLogin}
-        onSignup={handleModalSignup}
-      />
+      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </>
   );
 }

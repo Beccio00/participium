@@ -1,0 +1,15 @@
+.card {
+  background-color: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(34, 49, 63, 0.08);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(34, 49, 63, 0.06);
+}
+
+.card-body {
+  padding: 2rem;
+}
