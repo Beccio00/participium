@@ -15,7 +15,13 @@ export default function Modal({
   className = "",
 }: ModalProps) {
   return (
-    <BSModal show={isOpen} onHide={onClose} centered className={className}>
+    <BSModal 
+      show={isOpen} 
+      onHide={onClose} 
+      centered 
+      className={className}
+      animation={true}
+    >
       {children}
     </BSModal>
   );
