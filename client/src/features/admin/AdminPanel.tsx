@@ -97,7 +97,7 @@ export default function AdminPanel() {
         <Card>
         <CardHeader>
           <div className="d-flex justify-content-between align-items-center">
-            <h2 className="mb-0" style={{ color: 'var(--text)', fontWeight: 700 }}>
+            <h2 className="mb-0 fw-bold text-dark">
               <People className="me-2" /> Municipality Users
             </h2>
             <Button onClick={toggleForm} variant={showForm ? "secondary" : "primary"} disabled={isLoading}>
@@ -193,7 +193,7 @@ export default function AdminPanel() {
           )}
 
           <div>
-            <h3 className="mb-3" style={{ color: 'var(--text)', fontSize: '1.3rem', fontWeight: 600 }}>
+            <h3 className="mb-3 h4 fw-semibold text-dark">
               Registered Municipality Users ({users.length})
             </h3>
 

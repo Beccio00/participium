@@ -118,3 +118,8 @@ h1 {
   box-shadow: 0 0 0 0.25rem rgba(200, 110, 98, 0.25) !important;
 }
 
+/* Modal backdrop with blur effect */
+.modal-backdrop-blur {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}

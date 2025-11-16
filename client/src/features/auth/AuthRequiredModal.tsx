@@ -22,7 +22,7 @@ export default function AuthRequiredModal({ isOpen, onClose }: AuthRequiredModal
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} backdropClassName="modal-backdrop-blur">
       <div style={{ position: 'relative' }}>
         <button
           onClick={onClose}

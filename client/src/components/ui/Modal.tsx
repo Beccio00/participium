@@ -6,6 +6,7 @@ interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  backdropClassName?: string;
 }
 
 export default function Modal({
@@ -13,6 +14,7 @@ export default function Modal({
   onClose,
   children,
   className = "",
+  backdropClassName = "",
 }: ModalProps) {
   return (
     <BSModal 
@@ -20,6 +22,7 @@ export default function Modal({
       onHide={onClose} 
       centered 
       className={className}
+      backdropClassName={backdropClassName}
       animation={true}
     >
       {children}
