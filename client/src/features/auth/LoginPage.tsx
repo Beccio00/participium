@@ -1,11 +1,12 @@
 import { Container } from 'react-bootstrap';
 import { useNavigate } from "react-router";
 import { useAuth, useForm, useLoadingState } from "../../hooks";
-import { Button, Input } from "../../components/ui";
+import Button from "../../components/ui/Button.tsx";
+import Input from "../../components/ui/Input.tsx";
 import { LoginValidator } from "../../validators/LoginValidator";
 import type { LoginFormData } from "../../../../shared/LoginTypes";
 
-export function LoginPage() {
+export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { loadingState, setLoading, setError, setIdle } = useLoadingState();

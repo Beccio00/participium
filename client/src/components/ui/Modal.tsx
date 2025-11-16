@@ -8,7 +8,12 @@ interface ModalProps {
   className?: string;
 }
 
-export function Modal({ isOpen, onClose, children, className = "" }: ModalProps) {
+export default function Modal({
+  isOpen,
+  onClose,
+  children,
+  className = "",
+}: ModalProps) {
   return (
     <BSModal show={isOpen} onHide={onClose} centered className={className}>
       {children}

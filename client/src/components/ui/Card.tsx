@@ -6,7 +6,7 @@ interface CardProps {
   className?: string;
 }
 
-export function Card({ children, className = "" }: CardProps) {
+export default function Card({ children, className = "" }: CardProps) {
   return <BSCard className={className}>{children}</BSCard>;
 }
 

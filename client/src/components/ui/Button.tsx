@@ -8,7 +8,7 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'siz
   fullWidth?: boolean;
 }
 
-export function Button({
+export default function Button({
   children,
   variant = "primary",
   size = "md",

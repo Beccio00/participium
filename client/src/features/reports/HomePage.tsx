@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Clipboard, Pencil } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
-import { Button } from "../../components/ui";
-import { AuthRequiredModal } from "../auth/AuthRequiredModal";
-import { ReportCard } from "./ReportCard";
+import Button from "../../components/ui/Button.tsx";
+import AuthRequiredModal from "../auth/AuthRequiredModal.tsx";
+import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
 import type { Report } from "../../types";
 
-export function HomePage() {
+export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);

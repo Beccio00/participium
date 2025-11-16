@@ -1,10 +1,11 @@
 import { Routes, Route, useLocation } from "react-router";
 import { useAuth } from "./hooks/useAuth";
-import { LoadingSpinner } from "./components/ui";
+import LoadingSpinner from "./components/ui/LoadingSpinner.tsx";
 import Header from "./components/Header";
-import { HomePage } from "./features/reports";
-import { LoginPage, SignupPage } from "./features/auth";
-import { AdminPanel } from "./features/admin";
+import HomePage from "./features/reports/HomePage.tsx";
+import LoginPage from "./features/auth/LoginPage.tsx";
+import SignupPage from "./features/auth/SignupPage.tsx";
+import AdminPanel from "./features/admin/AdminPanel.tsx";
 import ReportForm from "./components/ReportForm";
 
 function App() {

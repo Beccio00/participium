@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Container, Row, Col } from 'react-bootstrap';
 import { useNavigate } from "react-router";
 import { useAuth, useForm } from "../../hooks";
-import { Button, Input } from "../../components/ui";
+import Button from "../../components/ui/Button.tsx";
+import Input from "../../components/ui/Input.tsx";
 import { SignupValidator } from "../../validators/SignupValidator";
 import type { SignupFormData } from "../../../../shared/SignupTypes";
 
-export function SignupPage() {
+export default function SignupPage() {
   const navigate = useNavigate();
   const { signup } = useAuth();
   const [success, setSuccess] = useState(false);

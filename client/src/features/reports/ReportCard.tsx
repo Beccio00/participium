@@ -7,7 +7,7 @@ interface ReportCardProps {
   onClick?: () => void;
 }
 
-export function ReportCard({ report, isSelected = false, onClick }: ReportCardProps) {
+export default function ReportCard({ report, isSelected = false, onClick }: ReportCardProps) {
   const statusVariant = report.status === "Resolved" ? "success" : report.status === "In Progress" ? "warning" : "info";
 
   return (

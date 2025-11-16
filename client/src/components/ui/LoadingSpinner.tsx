@@ -5,7 +5,7 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
-export function LoadingSpinner({ size = "md", className = "" }: LoadingSpinnerProps) {
+export default function LoadingSpinner({ size = "md", className = "" }: LoadingSpinnerProps) {
   const bsSize = size === "sm" ? "sm" : undefined;
   const spinnerStyle = size === "lg" ? { width: '3rem', height: '3rem' } : undefined;
 

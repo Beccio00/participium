@@ -93,6 +93,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
               variant="light"
               size="sm"
               className="fw-semibold"
+              style={{ color: 'var(--primary)' }}
             >
               {user?.role === 'ADMINISTRATOR' 
                 ? (loading ? 'Logging out...' : 'Logout') 
@@ -120,16 +121,17 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                 variant="light"
                 size="sm"
                 className="fw-semibold"
+                style={{ color: 'var(--primary)' }}
               >
                 {loading ? 'Logging out...' : 'Logout'}
               </Button>
             </div>
           ) : (
             <div className="d-flex gap-2">
-              <Button onClick={handleGoToLogin} variant="light" size="sm" className="fw-semibold">
+              <Button onClick={handleGoToLogin} variant="light" size="sm" className="fw-semibold" style={{ color: 'var(--primary)' }}>
                 Login
               </Button>
-              <Button onClick={handleGoToSignup} variant="light" size="sm" className="fw-semibold">
+              <Button onClick={handleGoToSignup} variant="light" size="sm" className="fw-semibold" style={{ color: 'var(--primary)' }}>
                 Sign Up
               </Button>
             </div>

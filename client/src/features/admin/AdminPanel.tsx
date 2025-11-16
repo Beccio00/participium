@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { Container, Table, Form, Alert, Badge } from 'react-bootstrap';
 import { useNavigate } from "react-router";
 import { useAuth, useForm, useLoadingState } from "../../hooks";
-import { Button, Input, Card, CardHeader, CardBody } from "../../components/ui";
+import Button from "../../components/ui/Button.tsx";
+import Input from "../../components/ui/Input.tsx";
+import Card, { CardHeader, CardBody } from "../../components/ui/Card.tsx";
 import { createMunicipalityUser, listMunicipalityUsers, deleteMunicipalityUser } from "../../api/api";
 import type { MunicipalityUserRequest, MunicipalityUserResponse } from "../../types";
 import { PersonPlus, Trash, People } from "react-bootstrap-icons";
@@ -16,7 +18,7 @@ const INITIAL_FORM_STATE: MunicipalityUserRequest = {
   role: "PUBLIC_RELATIONS",
 };
 
-export function AdminPanel() {
+export default function AdminPanel() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [users, setUsers] = useState<MunicipalityUserResponse[]>([]);

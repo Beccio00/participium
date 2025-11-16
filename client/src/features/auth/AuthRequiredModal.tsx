@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router";
 import { LockFill } from "react-bootstrap-icons";
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "../../components/ui";
+import Modal, { ModalHeader, ModalBody, ModalFooter } from "../../components/ui/Modal.tsx";
+import Button from "../../components/ui/Button.tsx";
 
 interface AuthRequiredModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function AuthRequiredModal({ isOpen, onClose }: AuthRequiredModalProps) {
+export default function AuthRequiredModal({ isOpen, onClose }: AuthRequiredModalProps) {
   const navigate = useNavigate();
 
   const handleLogin = () => {

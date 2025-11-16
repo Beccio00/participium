@@ -10,12 +10,12 @@ interface InputProps extends Omit<FormControlProps, 'type'> {
   type?: string;
 }
 
-export function Input({
+export default function Input({
   label,
   error,
   helperText,
+  type = "text",
   className = "",
-  type,
   id,
   ...props
 }: InputProps) {
