@@ -15,7 +15,7 @@ const INITIAL_FORM_STATE: MunicipalityUserRequest = {
   lastName: "",
   email: "",
   password: "",
-  role: "PUBLIC_RELATIONS",
+  role: "" as any,
 };
 
 export default function AdminPanel() {
@@ -178,6 +178,7 @@ export default function AdminPanel() {
                   disabled={form.isSubmitting}
                   required
                 >
+                  <option value="">- Select a role -</option>
                   {MUNICIPALITY_ROLES.map((role) => (
                     <option key={role} value={role}>
                       {getRoleLabel(role)}
@@ -202,7 +203,7 @@ export default function AdminPanel() {
             ) : users.length === 0 ? (
               <div className="text-center text-muted py-5">No municipality users yet</div>
             ) : (
-              <Table striped hover responsive>
+              <Table striped responsive>
                 <thead>
                   <tr>
                     <th>Name</th>

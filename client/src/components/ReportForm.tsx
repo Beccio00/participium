@@ -133,7 +133,9 @@ export default function ReportForm() {
           <Card.Body className="p-4 p-md-5">
             <Form onSubmit={handleSubmit}>
               <Row>
-                {/* Report Details Section */}
+                {/* Report Details Section  TODO: uncomment this part for Report datails*/}
+                
+                {/*
                 <Col lg={6}>
                   <div className="mb-4">
                     <h3 style={sectionTitleStyle}>
@@ -236,27 +238,23 @@ export default function ReportForm() {
                     />
                   </div>
                 </Col>
+                */}
 
                 {/* Location Section */}
-                <Col lg={6}>
+                <Col lg={12}>
                   <div className="mb-4">
                     <h3 style={sectionTitleStyle}>
                       <GeoAlt /> Location Selection
                     </h3>
-                    <p className="text-muted">
+                    <p className="text-muted text-center mb-4">
                       Click on the map to select the exact location of the issue.
                     </p>
 
-                    <div 
-                      className="p-3 mb-3"
-                      style={{ background: 'var(--bg)', borderRadius: '15px', border: '2px solid #e1e5e9' }}
-                    >
-                      <div style={mapContainerStyle}>
-                        <MapView
-                          onLocationSelect={handleLocationSelect}
-                          selectedLocation={selectedLocation}
-                        />
-                      </div>
+                    <div style={{ height: '600px', ...mapContainerStyle }}>
+                      <MapView
+                        onLocationSelect={handleLocationSelect}
+                        selectedLocation={selectedLocation}
+                      />
                     </div>
 
                     {selectedLocation && (
@@ -284,6 +282,8 @@ export default function ReportForm() {
               </Row>
 
               {/* Submit Button Section */}
+              {/* TODO: Uncomment this when you want add a submit report button*/}
+              {/* 
               <div className="text-center mt-4">
                 <Button
                   type="submit"
@@ -304,6 +304,7 @@ export default function ReportForm() {
                   Submit Report
                 </Button>
               </div>
+              */}
             </Form>
           </Card.Body>
         </Card>
