@@ -7,7 +7,7 @@ import { UserDTO } from "../interfaces/UserDTO";
 import { 
   ReportCategory
  } from "../../../shared/ReportTypes";
- import { calculateAddress } from "../utils/addressGeoCoding";
+ import { calculateAddress } from "../utils/addressFinder";
 
 export const createReport = async (req: Request, res: Response) => {
   try {
