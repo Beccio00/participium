@@ -137,16 +137,17 @@ export default function ReportForm() {
     setError(null);
 
     try{
-      const reportData ={
-        title: formData.title,
-        description: formData.description,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        isAnonymous: formData.isAnonymous,
-        photos: files,
-        category: formData.category as ReportCategory,
-      }
-      await createReport(reportData);
+      const dataToSend = new FormData();
+      dataToSend.append("title", formData.title);
+      dataToSend.append("description", formData.description);
+      dataToSend.append("category", formData.category);
+      dataToSend.append("latitude", formData.latitude.toString());
+      dataToSend.append("longitude", formData.longitude.toString());
+      dataToSend.append("isAnonymous", formData.isAnonymous.toString());
+      files.forEach((file) => {
+        dataToSend.append("photos", file);
+      });
+      await createReport(dataToSend); 
       navigate("/");
     }catch(err: any){
       console.error("Error submitting report:", err);

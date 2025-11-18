@@ -11,6 +11,8 @@ import {
 
 export const createReport = async (req: Request, res: Response) => {
   try {
+    const photos = req.files as Express.Multer.File[];
+
     const {
       title,
       description,
@@ -18,8 +20,7 @@ export const createReport = async (req: Request, res: Response) => {
       latitude,
       longitude,
       isAnonymous,
-      photos,
-    } = req.body as CreateReportRequest;
+    } = req.body;
     const user = req.user as UserDTO & { id: number }; //need to get the userId
 
     //citizen must be logged in to create a report
@@ -45,14 +46,20 @@ export const createReport = async (req: Request, res: Response) => {
       });
     }
 
+    const photoData = photos ? photos.map(file => ({
+      id: 0, // Placeholder, actual ID will be set in the database
+      filename: file.filename,
+      url: `/uploads/${file.filename}`
+    })) : [];
+
     const reportData = {
       title,
       description,
       category: category as ReportCategory,
-      latitude,
-      longitude,
-      isAnonymous,
-      photos: photos,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      isAnonymous: isAnonymous === "true",
+      photos: photoData,
       userId: user.id,
     };
 
