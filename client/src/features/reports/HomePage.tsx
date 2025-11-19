@@ -137,7 +137,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div style={{ height: 'calc(100vh - 70px)', background: 'var(--bg)', overflow: 'hidden' }}>
+      <div style={{ height: '100%', background: 'var(--bg)', overflow: 'hidden' }}>
         <main style={{ height: '100%', display: 'flex', position: 'relative' }}>
           {/* Map Section */}
           <div style={{ flex: 1, minWidth: 0, background: 'var(--surface)', display: 'flex', flexDirection: 'column' }}>
