@@ -53,7 +53,7 @@ export default function SignupPage() {
     form.values.lastName.trim() &&
     form.values.email.trim() &&
     form.values.password.trim() &&
-    Object.keys(form.errors).length === 0;
+    Object.values(form.errors).every(error => !error);
 
   if (success) {
     return (
