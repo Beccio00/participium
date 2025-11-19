@@ -8,6 +8,8 @@ import {
   ReportCategory
  } from "../../../shared/ReportTypes";
  import { calculateAddress } from "../utils/addressFinder";
+import path from "path";
+import minioClient, {BUCKET_NAME} from "../utils/minioClient";
 
 export const createReport = async (req: Request, res: Response) => {
   try {
@@ -21,6 +23,7 @@ export const createReport = async (req: Request, res: Response) => {
       longitude,
       isAnonymous,
     } = req.body;
+
     const user = req.user as UserDTO & { id: number }; //need to get the userId
 
     //citizen must be logged in to create a report
@@ -46,11 +49,34 @@ export const createReport = async (req: Request, res: Response) => {
       });
     }
 
-    const photoData = photos ? photos.map(file => ({
-      id: 0, // Placeholder, actual ID will be set in the database
-      filename: file.filename,
-      url: `/uploads/${file.filename}`
-    })) : [];
+    const photoData = [];
+
+    if (photos && photos.length > 0) {
+      for (const photo of photos) {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const filename = uniqueSuffix + path.extname(photo.originalname);
+
+       
+        await minioClient.putObject(
+          BUCKET_NAME,
+          filename,
+          photo.buffer,
+          photo.size,
+          { 'Content-Type': photo.mimetype } 
+        );
+
+        const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+        const host = process.env.MINIO_ENDPOINT || 'localhost';
+        const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : '';
+        const url = `${protocol}://${host}${port}/${BUCKET_NAME}/${filename}`;
+
+        photoData.push({
+          id: 0,
+          filename: filename,
+          url: url 
+        });
+      }
+    }
 
     const parsedLatitude = parseFloat(latitude);
     const parsedLongitude = parseFloat(longitude);
