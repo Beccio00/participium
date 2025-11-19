@@ -274,7 +274,7 @@ useEffect(() => {
                         />
                         <Camera size={32} style={cameraStyle} />
                         <p className="mb-0 text-muted">
-                          <strong>Clicca per caricare</strong> o trascina le foto qui
+                          <strong>Click here to upload</strong> or drag photos here
                         </p>
                         <small className="text-muted">JPG, PNG (Max 3 foto)</small>
                       </div>
