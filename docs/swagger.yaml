@@ -599,10 +599,9 @@ paths:
         - Reports
       summary: Create a new report with geolocation
       description: |
-        Create a new citizen report tied to a geographic location (latitude/longitude in WGS84).
-        The frontend is expected to use an interactive map (OpenStreetMap-based, e.g. Leaflet.js) to allow the user
-        to pick a location; the selected coordinates (decimal degrees) must be provided in the request body.
-        Reports are associated with the authenticated user (session-based authentication).
+        Create a new citizen report tied to a geographic location within the municipality of Turin.
+        Use an interactive map to select the location. Coordinates must be in decimal degrees (WGS84).
+        All coordinates must be within Turin municipality boundaries.
       operationId: createReport
       security:
         - SessionAuth: []
@@ -611,23 +610,10 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/ReportCreateMultipart"
+              $ref: "#/components/schemas/ReportRequest"
             encoding:
               photos:
                 contentType: image/jpeg, image/png
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ReportRequest"
-            example:
-              title: "Pothole on Via Roma"
-              description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
-              category: ROADS_URBAN_FURNISHINGS
-              latitude: 45.070339
-              longitude: 7.686864
-              address: "Via Roma 1, Torino"
-              isAnonymous: false
-              photos:
-                - "https://cdn.example.com/reports/tmp/photo1.jpg"
       responses:
         "201":
           description: Report created successfully
@@ -649,9 +635,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: PENDING_APPROVAL
-                  userId: 201
                   user:
                     id: 201
                     firstName: Mario
@@ -660,6 +644,7 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer: null
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -672,6 +657,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
+                  assignedAt: null
         "400":
           description: Missing required fields
           content:
@@ -692,6 +678,36 @@ paths:
                 code: 401
                 error: "Unauthorized"
                 message: "User not logged in"
+        "403":
+          description: Insufficient permissions (only citizens can create reports)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can create reports"
+        "413":
+          description: Photo file(s) too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 413
+                error: "PayloadTooLarge"
+                message: "One or more photos exceed the maximum file size"
+        "422":
+          description: Invalid coordinates (outside Turin municipality boundaries)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: "UnprocessableEntity"
+                message: "Coordinates are outside Turin municipality boundaries"
         "500":
           description: Unable to create report
           content:
@@ -706,26 +722,32 @@ paths:
     get:
       tags:
         - Reports
-      summary: List reports (optionally filtered by bounding box)
+      summary: Get all approved reports for map visualization
       description: |
-        Retrieve a list of reports. Optionally filter by a bounding box using the `bbox` query parameter
-        in the format `minLon,minLat,maxLon,maxLat` (decimal degrees, WGS84). This is useful for map views
-        where the frontend requests only reports within the currently visible map area.
+        Retrieve all approved reports for display on an interactive map. This endpoint returns only reports 
+        that have been approved by public relations officers and are in one of the following statuses:
+        - ASSIGNED (approved and assigned to technical staff)
+        - IN_PROGRESS (being worked on)
+        - RESOLVED (completed)
+        
+        Reports with status PENDING_APPROVAL or REJECTED are NOT included in the response.
+        
+        This endpoint is designed for citizen-facing map views where users can see all active and resolved 
+        issues in their area. The response includes reporter information (name or "anonymous" flag), location 
+        coordinates, and other details needed for map markers and popups.
+        
+        Optionally filter by a bounding box using the `bbox` query parameter in the format 
+        `minLon,minLat,maxLon,maxLat` (decimal degrees, WGS84). This is useful for map views where the 
+        frontend requests only reports within the currently visible map area.
+        
         The `category` query parameter is also optional and can be combined with `bbox` to request
         reports of a given category inside the visible map area (e.g. `?bbox=7.66,45.06,7.70,45.08&category=PUBLIC_LIGHTING`).
       operationId: listReports
       parameters:
-        - name: bbox
-          in: query
-          required: false
-          description: Bounding box filter `minLon,minLat,maxLon,maxLat`
-          schema:
-            type: string
-            example: "7.66,45.06,7.70,45.08"
         - name: category
           in: query
           required: false
-          description: Filter reports by category (use one of the ReportCategory values). Optional and combinable with `bbox`.
+          description: Filter reports by category
           schema:
             $ref: "#/components/schemas/ReportCategory"
           example: ROADS_URBAN_FURNISHINGS
@@ -745,9 +767,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: PENDING_APPROVAL
-                  userId: 201
                   user:
                     id: 201
                     firstName: Mario
@@ -756,6 +776,7 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer: null
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -768,15 +789,14 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
+                  assignedAt: null
                 - id: 1025
                   title: "Broken street light"
                   description: "Street light not working"
                   category: PUBLIC_LIGHTING
                   latitude: 45.071000
                   longitude: 7.687500
-                  isAnonymous: false
                   status: RESOLVED
-                  userId: 202
                   user:
                     id: 202
                     firstName: Maria
@@ -785,13 +805,20 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer:
+                    id: 306
+                    firstName: Paolo
+                    lastName: Neri
+                    email: paolo.neri@municipality.com
+                    role: TECHNICAL_OFFICE
                   messages: []
                   rejectedReason: null
                   photos: []
                   createdAt: "2025-11-10T09:00:00Z"
                   updatedAt: "2025-11-12T08:00:00Z"
+                  assignedAt: "2025-11-10T14:00:00Z"
         "400":
-          description: Invalid query parameters (e.g. malformed bbox)
+          description: Invalid category parameter
           content:
             application/json:
               schema:
@@ -799,7 +826,7 @@ paths:
               example:
                 code: 400
                 error: "BadRequest"
-                message: "Invalid bbox parameter. Expected format: minLon,minLat,maxLon,maxLat"
+                message: "Invalid category value"
         "500":
           description: Unable to retrieve reports
           content:
@@ -810,6 +837,539 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Error during report retrieval"
+
+  /reports/pending:
+    get:
+      tags:
+        - Reports
+      summary: Get reports pending approval
+      description: |
+        Retrieve all reports with status PENDING_APPROVAL for review by public relations officers.
+        Only public relations officers can access this endpoint.
+      operationId: getPendingReports
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: List of pending reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportResponse"
+              example:
+                - id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  isAnonymous: false
+                  status: PENDING_APPROVAL
+                  userId: 201
+                  assignedTo: null
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  assignedOfficer: null
+                  messages:
+                    - id: 1
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-11T10:12:34Z"
+                      senderId: 201
+                  rejectedReason: null
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T10:12:34Z"
+                  assignedAt: null
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (PUBLIC_RELATIONS role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Public relations officer privileges required"
+        "500":
+          description: Unable to retrieve pending reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to retrieve pending reports"
+
+  /reports/{reportId}/approve:
+    post:
+      tags:
+        - Reports
+      summary: Approve a report
+      description: |
+        Approve a report for processing by municipality staff. Only public relations officers can perform this operation.
+        The report status changes from PENDING_APPROVAL to APPROVED.
+        After approval, the report can later be assigned to technical staff.
+      operationId: approveReport
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report to approve
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Report approved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  report:
+                    $ref: "#/components/schemas/ReportResponse"
+              example:
+                message: "Report approved successfully"
+                report:
+                  id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  isAnonymous: false
+                  status: APPROVED
+                  userId: 201
+                  assignedTo: null
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  assignedOfficer: null
+                  messages:
+                    - id: 1
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-11T10:12:34Z"
+                      senderId: 201
+                    - id: 2
+                      content: "Report approved by public relations officer"
+                      createdAt: "2025-11-11T11:15:00Z"
+                      senderId: 123
+                  rejectedReason: null
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T11:15:00Z"
+                  assignedAt: null
+        "400":
+          description: Invalid report ID or report not in PENDING_APPROVAL status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Report is not in PENDING_APPROVAL status"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (PUBLIC_RELATIONS role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Public relations officer privileges required"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Report not found"
+        "409":
+          description: Report already processed by another officer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Report has already been processed"
+        "500":
+          description: Unable to approve report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to approve report"
+
+  /reports/{reportId}/reject:
+    post:
+      tags:
+        - Reports
+      summary: Reject a report
+      description: |
+        Reject a report with a mandatory explanation. Only public relations officers can perform this operation.
+        The report status changes from PENDING_APPROVAL to REJECTED.
+        A rejection reason must be provided in the request body.
+      operationId: rejectReport
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report to reject
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectReportRequest"
+            example:
+              reason: "The reported issue does not fall under municipal jurisdiction"
+      responses:
+        "200":
+          description: Report rejected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  report:
+                    $ref: "#/components/schemas/ReportResponse"
+              example:
+                message: "Report rejected successfully"
+                report:
+                  id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  isAnonymous: false
+                  status: REJECTED
+                  userId: 201
+                  assignedTo: null
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  assignedOfficer: null
+                  messages:
+                    - id: 1
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-11T10:12:34Z"
+                      senderId: 201
+                    - id: 2
+                      content: "Report rejected by public relations officer"
+                      createdAt: "2025-11-11T11:15:00Z"
+                      senderId: 123
+                  rejectedReason: "The reported issue does not fall under municipal jurisdiction"
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T11:15:00Z"
+                  assignedAt: null
+        "400":
+          description: Invalid report ID, missing rejection reason, or report not in PENDING_APPROVAL status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Missing required field: reason"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (PUBLIC_RELATIONS role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Public relations officer privileges required"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Report not found"
+        "409":
+          description: Report already processed by another officer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Report has already been processed"
+        "422":
+          description: Invalid rejection reason (empty, too long, or inappropriate content)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: "UnprocessableEntity"
+                message: "Rejection reason must be between 1 and 500 characters"
+        "500":
+          description: Unable to reject report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to reject report"
+
+  /reports/assigned:
+    get:
+      tags:
+        - Reports
+      summary: Get reports assigned to the authenticated technical officer
+      description: |
+        Retrieve all reports assigned to the authenticated technical office staff member.
+        Returns reports with status ASSIGNED, IN_PROGRESS, or RESOLVED that are assigned to the current user.
+        The user ID is extracted from the session token, ensuring users can only see their own assigned reports.
+        
+        Optional query parameters allow filtering by status and sorting the results.
+      operationId: getAssignedReports
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter reports by status
+          schema:
+            type: string
+            enum:
+              - ASSIGNED
+              - IN_PROGRESS
+              - RESOLVED
+          example: ASSIGNED
+        - name: sortBy
+          in: query
+          required: false
+          description: Field to sort by
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - assignedAt
+              - priority
+          example: assignedAt
+        - name: order
+          in: query
+          required: false
+          description: Sort order
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+          example: desc
+      responses:
+        "200":
+          description: List of assigned reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportResponse"
+              example:
+                - id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  isAnonymous: false
+                  status: ASSIGNED
+                  userId: 201
+                  assignedTo: 305
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  assignedOfficer:
+                    id: 305
+                    firstName: Luca
+                    lastName: Verdi
+                    email: luca.verdi@municipality.com
+                    role: TECHNICAL_OFFICE
+                  messages:
+                    - id: 1
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-11T10:12:34Z"
+                      senderId: 201
+                    - id: 2
+                      content: "Report assigned to technical staff"
+                      createdAt: "2025-11-12T09:00:00Z"
+                      senderId: 300
+                  rejectedReason: null
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-12T09:00:00Z"
+                  assignedAt: "2025-11-12T09:00:00Z"
+                - id: 1026
+                  title: "Broken street light"
+                  description: "Street light not working on Via Torino"
+                  category: PUBLIC_LIGHTING
+                  latitude: 45.071
+                  longitude: 7.6875
+                  isAnonymous: false
+                  status: IN_PROGRESS
+                  userId: 202
+                  assignedTo: 305
+                  user:
+                    id: 202
+                    firstName: Maria
+                    lastName: Bianchi
+                    email: maria.bianchi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  assignedOfficer:
+                    id: 305
+                    firstName: Luca
+                    lastName: Verdi
+                    email: luca.verdi@municipality.com
+                    role: TECHNICAL_OFFICE
+                  messages:
+                    - id: 3
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-10T09:00:00Z"
+                      senderId: 202
+                    - id: 4
+                      content: "Started maintenance work"
+                      createdAt: "2025-11-13T10:30:00Z"
+                      senderId: 305
+                  rejectedReason: null
+                  photos: []
+                  createdAt: "2025-11-10T09:00:00Z"
+                  updatedAt: "2025-11-13T10:30:00Z"
+                  assignedAt: "2025-11-12T14:00:00Z"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (Technical office role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Technical office staff privileges required"
+        "500":
+          description: Unable to retrieve assigned reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to retrieve assigned reports"
 
 components:
   securitySchemes:
@@ -1008,8 +1568,6 @@ components:
         role:
           $ref: "#/components/schemas/MunicipalityRole"
 
-   
-
     MunicipalityUserResponse:
       type: object
       properties:
@@ -1037,6 +1595,7 @@ components:
         three supported role types for municipality staff.
       enum:
         - PUBLIC_RELATIONS
+        - ADMINISTRATOR
         - TECHNICAL_OFFICE
 
     UserRole:
@@ -1092,6 +1651,8 @@ components:
           type: string
           description: Detailed description of the issue
           example: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+        category:
+          $ref: "#/components/schemas/ReportCategory"
         latitude:
           $ref: "#/components/schemas/Location/properties/latitude"
         longitude:
@@ -1104,53 +1665,11 @@ components:
         photos:
           type: array
           minItems: 1
-          items:
-            type: string
-            format: uri
-          description: Array of URLs to uploaded photos (at least one required)
-        category:
-          $ref: "#/components/schemas/ReportCategory"
-        isAnonymous:
-          type: boolean
-          description: Whether the report should be publicly anonymous
-          example: false
-
-    ReportCreateMultipart:
-      type: object
-      required:
-        - title
-        - description
-        - category
-        - latitude
-        - longitude
-        - photos
-      properties:
-        title:
-          type: string
-          example: "Pothole on Via Roma"
-        description:
-          type: string
-          example: "Large pothole near the pedestrian crossing, causing risk for cyclists."
-        category:
-          $ref: "#/components/schemas/ReportCategory"
-        latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
-        longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
-        address:
-          type: string
-          nullable: true
-        isAnonymous:
-          type: boolean
-          example: false
-        photos:
-          type: array
-          minItems: 1
           maxItems: 3
           items:
             type: string
             format: binary
-          description: Up to 3 photo files (image/*)
+          description: Up to 3 photo files (image/jpeg, image/png)
 
     ReportSummary:
       type: object
@@ -1224,17 +1743,15 @@ components:
           $ref: "#/components/schemas/Location/properties/latitude"
         longitude:
           $ref: "#/components/schemas/Location/properties/longitude"
-        isAnonymous:
-          type: boolean
-          example: false
         status:
           $ref: "#/components/schemas/ReportStatus"
-        userId:
-          type: integer
-          format: int64
-          example: 201
         user:
           $ref: "#/components/schemas/UserInfo"
+        assignedOfficer:
+          allOf:
+            - $ref: "#/components/schemas/MunicipalityUserResponse"
+          nullable: true
+          description: Details of the assigned officer (null if not assigned)
         messages:
           type: array
           items:
@@ -1255,11 +1772,18 @@ components:
           type: string
           format: date-time
           example: "2025-11-11T10:12:34Z"
+        assignedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the report was assigned (null if not assigned)
+          example: "2025-11-12T09:00:00Z"
 
     ReportStatus:
       type: string
       enum:
         - PENDING_APPROVAL
+        - APPROVED
         - ASSIGNED
         - IN_PROGRESS
         - SUSPENDED
@@ -1280,6 +1804,18 @@ components:
         - PUBLIC_GREEN_AREAS_PLAYGROUNDS
         - OTHER
       example: ROADS_URBAN_FURNISHINGS
+
+    RejectReportRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Mandatory explanation for why the report is being rejected
+          example: "The reported issue does not fall under municipal jurisdiction"
 
 # Security requirements for protected endpoints
 security:

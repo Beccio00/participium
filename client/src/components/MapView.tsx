@@ -92,10 +92,12 @@ export default function MapView({
   const [center, setCenter] = useState<[number, number]>(TURIN);
   const [hasTileError, setHasTileError] = useState(false);
   const [turinData, setTurinData] = useState<any | null>(null);
+
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
 
   useEffect(() => {
     fetch("/turin-boundary3.geojson") 
+
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch GeoJSON");
@@ -167,6 +169,45 @@ export default function MapView({
         setShowBoundaryAlert(false);
       }, 3000);
     }); 
+
+    const turinLayer = L.geoJSON(turinData as any, {
+      style: {
+        color: "var(--primary, #C86E62)",
+        weight: 2,
+        fillOpacity: 0.05,
+        fillColor: "var(--primary, #C86E62)",
+        interactive: true,
+      },
+    });
+
+    const worldRect = [
+      [-90, -180],
+      [90, -180],
+      [90, 180],
+      [-90, 180],
+      [-90, -180],
+    ];
+    const turinHoles = (turinData as any).features[0].geometry.coordinates.map(
+      (polygon: any) => polygon[0]
+    );
+
+    const maskGeoJSON: GeoJSON.Feature<GeoJSON.Polygon> = {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [worldRect, ...turinHoles],
+      },
+      properties: {},
+    };
+
+    L.geoJSON(maskGeoJSON, {
+      style: {
+        fillColor: "#000",
+        fillOpacity: 0.35,
+        stroke: false,
+        interactive: false,
+      },
+    }).addTo(map);
 
     const turinLayer = L.geoJSON(turinData as any, {
       style: {
