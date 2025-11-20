@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-import { Button, Container, Row, Col, Alert, Form, Card } from "react-bootstrap";
+import {
+  Button,
+  Container,
+  Row,
+  Col,
+  Alert,
+  Form,
+  Card,
+} from "react-bootstrap";
 import { GeoAlt, FileText, Tag, Eye, Camera, X } from "react-bootstrap-icons";
 import MapView from "./MapView";
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
@@ -15,6 +23,9 @@ import {
   photoPreviewStyle,
   dndStyle,
   formControlStyle,
+  photoCounterStyle,
+  photoProgressStyle,
+  photoLabelStyle,
   divStyle,
   h2Style,
   pStyle,
@@ -24,7 +35,7 @@ import {
   h4Style,
   locationDivStyle,
   mapDivStyle,
-  submitButtonStyle
+  submitButtonStyle,
 } from "../styles/ReportFormStyles";
 
 export default function ReportForm() {
@@ -36,7 +47,7 @@ export default function ReportForm() {
     latitude: 0,
     longitude: 0,
     isAnonymous: false,
-    photos: [] as ReportPhoto[]
+    photos: [] as ReportPhoto[],
   });
   const [selectedLocation, setSelectedLocation] = useState<
     [number, number] | null
@@ -45,11 +56,14 @@ export default function ReportForm() {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [hoverPreview, setHoverPreview] = useState<number | null>(null);
 
   const processFiles = (newFiles: File[]) => {
     //validation on dnd
-    const validateImages = newFiles.filter(file => file.type.startsWith('image/'));
+    const validateImages = newFiles.filter((file) =>
+      file.type.startsWith("image/")
+    );
     if (validateImages.length < newFiles.length) {
       setError("Only image files are allowed.");
     }
@@ -59,7 +73,7 @@ export default function ReportForm() {
 
     if (totalFiles.length > 3) {
       setError("You can upload a maximum of 3 photos.");
-      setFiles(totalFiles.slice(0, 3)); 
+      setFiles(totalFiles.slice(0, 3));
     } else {
       setFiles(totalFiles);
 
@@ -69,7 +83,7 @@ export default function ReportForm() {
     }
   };
 
-   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       processFiles(Array.from(e.target.files));
     }
@@ -88,14 +102,14 @@ export default function ReportForm() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    if(e.dataTransfer.files && e.dataTransfer.files.length > 0){
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFiles(Array.from(e.dataTransfer.files));
     }
   };
 
   const removeFile = (index: number) => {
-    setFiles(files.filter((_,i)=> i !== index));
-  }
+    setFiles(files.filter((_, i) => i !== index));
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -130,13 +144,13 @@ export default function ReportForm() {
       setError(
         `Please fill in the following fields: ${missingFields.join(", ")}.`
       );
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
     setError(null);
 
-    try{
+    try {
       const dataToSend = new FormData();
       dataToSend.append("title", formData.title);
       dataToSend.append("description", formData.description);
@@ -147,18 +161,18 @@ export default function ReportForm() {
       files.forEach((file) => {
         dataToSend.append("photos", file);
       });
-      await createReport(dataToSend); 
+      await createReport(dataToSend);
       navigate("/");
-    }catch(err: any){
+    } catch (err: any) {
       console.error("Error submitting report:", err);
       setError(
         err?.message || "An error occurred while submitting the report."
       );
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         setError(null);
@@ -175,9 +189,7 @@ useEffect(() => {
             <h2 style={h2Style}>
               <FileText /> Create New Report
             </h2>
-            <p style={pStyle}>
-              Report an issue in your municipality
-            </p>
+            <p style={pStyle}>Report an issue in your municipality</p>
           </Card.Header>
 
           <Card.Body className="p-4 p-md-5">
@@ -188,10 +200,14 @@ useEffect(() => {
                     <h3 style={sectionTitleStyle}>
                       <Tag /> Report Details
                     </h3>
-                    
+
                     {error && (
-                      <Alert style={alertOverlayStyle} variant="danger" 
-                          dismissible onClose={() => setError(null)}>
+                      <Alert
+                        style={alertOverlayStyle}
+                        variant="danger"
+                        dismissible
+                        onClose={() => setError(null)}
+                      >
                         {error}
                       </Alert>
                     )}
@@ -205,12 +221,26 @@ useEffect(() => {
                         onChange={handleInputChange}
                         placeholder="Brief title for your report"
                         required
-                        style={formControlStyle}
+                        style={{
+                          ...formControlStyle,
+                          boxShadow:
+                            focusedInput === "title"
+                              ? "0 6px 18px rgba(27,83,175,0.08)"
+                              : undefined,
+                          transform:
+                            focusedInput === "title"
+                              ? "translateY(-1px)"
+                              : undefined,
+                        }}
+                        onFocus={() => setFocusedInput("title")}
+                        onBlur={() => setFocusedInput(null)}
                       />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Description</Form.Label>
+                      <Form.Label className="fw-semibold">
+                        Description
+                      </Form.Label>
                       <Form.Control
                         as="textarea"
                         rows={4}
@@ -219,7 +249,19 @@ useEffect(() => {
                         onChange={handleInputChange}
                         placeholder="Describe the issue in detail..."
                         required
-                        style={formControlStyle}
+                        style={{
+                          ...formControlStyle,
+                          boxShadow:
+                            focusedInput === "description"
+                              ? "0 6px 18px rgba(27,83,175,0.08)"
+                              : undefined,
+                          transform:
+                            focusedInput === "description"
+                              ? "translateY(-1px)"
+                              : undefined,
+                        }}
+                        onFocus={() => setFocusedInput("description")}
+                        onBlur={() => setFocusedInput(null)}
                       />
                     </Form.Group>
 
@@ -230,7 +272,19 @@ useEffect(() => {
                         value={formData.category}
                         onChange={handleInputChange}
                         required
-                        style={formControlStyle}
+                        style={{
+                          ...formControlStyle,
+                          boxShadow:
+                            focusedInput === "category"
+                              ? "0 6px 18px rgba(27,83,175,0.08)"
+                              : undefined,
+                          transform:
+                            focusedInput === "category"
+                              ? "translateY(-1px)"
+                              : undefined,
+                        }}
+                        onFocus={() => setFocusedInput("category")}
+                        onBlur={() => setFocusedInput(null)}
                       >
                         <option value="">Select a category</option>
                         {[
@@ -254,8 +308,10 @@ useEffect(() => {
                       </Form.Select>
                     </Form.Group>
                     <Form.Group className="mb-4 mt-4">
-                      <Form.Label className="fw-semibold">Foto (Min 1, Max 3)</Form.Label>
-                      
+                      <Form.Label className="fw-semibold">
+                        Foto (Min 1, Max 3)
+                      </Form.Label>
+
                       {/*D&D*/}
                       <div
                         onDragOver={handleDragOver}
@@ -268,24 +324,58 @@ useEffect(() => {
                           type="file"
                           ref={fileInputRef}
                           onChange={handleFileChange}
-                          style={{ display: 'none' }}
-                          accept="image/*" 
+                          style={{ display: "none" }}
+                          accept="image/*"
                           multiple
                         />
                         <Camera size={32} style={cameraStyle} />
                         <p className="mb-0 text-muted">
-                          <strong>Click here to upload</strong> or drag photos here
+                          <strong>Click here to upload</strong> or drag photos
+                          here
                         </p>
-                        <small className="text-muted">JPG, PNG (Max 3 foto)</small>
+                        <small className="text-muted">
+                          JPG, PNG (Max 3 foto)
+                        </small>
                       </div>
-                      
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginTop: "0.5rem",
+                        }}
+                      >
+                        <div style={photoLabelStyle}>
+                          {files.length} / 3 foto
+                        </div>
+                        <div style={photoCounterStyle} aria-hidden>
+                          <div
+                            style={{
+                              ...photoProgressStyle,
+                              width: `${(files.length / 3) * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
                       {/* Photo preview */}
                       {files.length > 0 && (
                         <div className="d-flex flex-wrap gap-3 mt-3">
                           {files.map((file, index) => (
                             <div
                               key={index}
-                              style={photoPreviewStyle}
+                              style={{
+                                ...photoPreviewStyle,
+                                transform:
+                                  hoverPreview === index
+                                    ? "translateY(-4px) scale(1.03)"
+                                    : undefined,
+                                boxShadow:
+                                  hoverPreview === index
+                                    ? "0 10px 24px rgba(34,49,63,0.08)"
+                                    : photoPreviewStyle.boxShadow,
+                              }}
+                              onMouseEnter={() => setHoverPreview(index)}
+                              onMouseLeave={() => setHoverPreview(null)}
                             >
                               <img
                                 src={URL.createObjectURL(file)}
@@ -295,7 +385,7 @@ useEffect(() => {
                               <button
                                 type="button"
                                 onClick={(e) => {
-                                  e.stopPropagation(); 
+                                  e.stopPropagation();
                                   removeFile(index);
                                 }}
                                 style={removeButtonStyle}
@@ -326,7 +416,7 @@ useEffect(() => {
                         border: '2px solid #e1e5e9',
                       }}
                     />*/}
-                  </div> 
+                  </div>
                 </Col>
 
                 {/* Location Section */}
@@ -336,10 +426,11 @@ useEffect(() => {
                       <GeoAlt /> Location Selection
                     </h3>
                     <p className="text-muted text-center mb-4">
-                      Click on the map to select the exact location of the issue.
+                      Click on the map to select the exact location of the
+                      issue.
                     </p>
 
-                    <div style={{ height: '600px', ...mapContainerStyle }}>
+                    <div style={{ height: "600px", ...mapContainerStyle }}>
                       <MapView
                         onLocationSelect={handleLocationSelect}
                         selectedLocation={selectedLocation}
@@ -348,12 +439,11 @@ useEffect(() => {
 
                     {selectedLocation && (
                       <div style={coordinatesStyle}>
-                        <h4 style={h4Style}>
-                          Selected Location
-                        </h4>
+                        <h4 style={h4Style}>Selected Location</h4>
                         <div style={locationDivStyle}>
                           <div style={mapDivStyle}>
-                            <GeoAlt /> {selectedLocation[0].toFixed(6)}, {selectedLocation[1].toFixed(6)}
+                            <GeoAlt /> {selectedLocation[0].toFixed(6)},{" "}
+                            {selectedLocation[1].toFixed(6)}
                           </div>
                         </div>
                       </div>
@@ -363,11 +453,7 @@ useEffect(() => {
               </Row>
               {/* Submit Button Section */}
               <div className="text-center mt-4">
-                <Button
-                  type="submit"
-                  size="lg"
-                  style={submitButtonStyle}
-                >
+                <Button type="submit" size="lg" style={submitButtonStyle}>
                   Send Report
                 </Button>
               </div>
