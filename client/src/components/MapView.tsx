@@ -95,7 +95,7 @@ export default function MapView({
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
 
   useEffect(() => {
-    fetch("/turin-boundary.geojson") 
+    fetch("/turin-boundary3.geojson") 
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch GeoJSON");
@@ -119,6 +119,7 @@ export default function MapView({
     if (!mapRef.current || mapInstanceRef.current || !turinData) return;
 
     const map = L.map(mapRef.current).setView(center, 13);
+    
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
@@ -128,8 +129,8 @@ export default function MapView({
     map.on("tileerror", () => {
       setHasTileError(true);
     });
-
-    const worldRect = [
+    
+     const worldRect = [
       [-90, -180],
       [90, -180],
       [90, 180],
@@ -156,7 +157,7 @@ export default function MapView({
         stroke: false,
         interactive: true,
       },
-    }).addTo(map);
+    }).addTo(map); 
 
     maskLayer.on("click", (e: L.LeafletMouseEvent) => {
       L.DomEvent.stopPropagation(e);
@@ -165,7 +166,7 @@ export default function MapView({
       setTimeout(() => {
         setShowBoundaryAlert(false);
       }, 3000);
-    });
+    }); 
 
     const turinLayer = L.geoJSON(turinData as any, {
       style: {
