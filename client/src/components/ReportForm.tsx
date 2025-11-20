@@ -85,13 +85,13 @@ export default function ReportForm() {
   const headerStyle = {
     background: 'var(--primary)',
     color: 'white',
-    padding: '2rem',
+    padding: 'clamp(1.5rem, 4vw, 2rem)',
     textAlign: 'center' as const,
   };
 
   const sectionTitleStyle = {
     color: 'var(--text)',
-    fontSize: '1.5rem',
+    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
     fontWeight: 600,
     marginBottom: '1.5rem',
     display: 'flex',
@@ -118,19 +118,19 @@ export default function ReportForm() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '2rem 0', paddingTop: '100px' }}>
-      <Container>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: '30px', paddingBottom: '2rem' }}>
+      <Container className="px-3 px-md-4">
         <Card style={formCardStyle}>
           <Card.Header style={headerStyle}>
-            <h2 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 700, textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)' }}>
-              <FileText /> Create New Report
+            <h2 style={{ margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', fontWeight: 700, textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)' }}>
+              <FileText className="me-2" /> Create New Report
             </h2>
-            <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9, fontSize: '1.1rem' }}>
+            <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9, fontSize: 'clamp(0.9rem, 3vw, 1.1rem)' }}>
               Report an issue in your municipality
             </p>
           </Card.Header>
 
-          <Card.Body className="p-4 p-md-5">
+          <Card.Body className="p-3 p-sm-4 p-md-5">
             <Form onSubmit={handleSubmit}>
               <Row>
                 {/* Report Details Section  TODO: uncomment this part for Report datails*/}
@@ -250,7 +250,7 @@ export default function ReportForm() {
                       Click on the map to select the exact location of the issue.
                     </p>
 
-                    <div style={{ height: '600px', ...mapContainerStyle }}>
+                    <div style={{ height: 'clamp(400px, 60vh, 600px)', ...mapContainerStyle }}>
                       <MapView
                         onLocationSelect={handleLocationSelect}
                         selectedLocation={selectedLocation}
@@ -259,7 +259,7 @@ export default function ReportForm() {
 
                     {selectedLocation && (
                       <div style={coordinatesStyle}>
-                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 600 }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: 'clamp(1rem, 3vw, 1.1rem)', fontWeight: 600 }}>
                           Selected Location
                         </h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
@@ -267,10 +267,12 @@ export default function ReportForm() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            fontSize: '1rem',
+                            fontSize: 'clamp(0.85rem, 2.5vw, 1rem)',
                             fontWeight: 600,
                             fontFamily: '"Courier New", monospace',
                             textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                            flexWrap: 'wrap' as const,
+                            justifyContent: 'center',
                           }}>
                             <GeoAlt /> {selectedLocation[0].toFixed(6)}, {selectedLocation[1].toFixed(6)}
                           </div>

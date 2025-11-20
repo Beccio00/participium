@@ -92,14 +92,15 @@ export default function AdminPanel() {
   const isLoading = loadingState === "loading";
 
   return (
-    <div style={{ paddingTop: '100px', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ paddingTop: '10px', minHeight: '100vh', background: 'var(--bg)' }}>
       <Container className="py-4">
         <Card>
-        <CardHeader>
-          <div className="d-flex justify-content-between align-items-center">
-            <h2 className="mb-0 fw-bold text-dark">
-              <People className="me-2" /> Municipality Users
-            </h2>
+        <CardHeader className="py-4">
+          <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+            <div className="d-flex align-items-center gap-2">
+              <People size={28} style={{ color: 'var(--primary)' }} />
+              <h2 className="mb-0 fw-bold text-dark">Municipality Users</h2>
+            </div>
             <Button onClick={toggleForm} variant={showForm ? "secondary" : "primary"} disabled={isLoading}>
               {showForm ? "← Back" : <><PersonPlus className="me-2" /> Add New User</>}
             </Button>
@@ -203,26 +204,23 @@ export default function AdminPanel() {
             ) : users.length === 0 ? (
               <div className="text-center text-muted py-5">No municipality users yet</div>
             ) : (
-              <Table striped responsive>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                {/* Mobile view - Cards */}
+                <div className="d-md-none">
                   {users.map((user) => (
-                    <tr key={user.id}>
-                      <td>
-                        {user.firstName} {user.lastName}
-                      </td>
-                      <td>{user.email}</td>
-                      <td>
-                        <Badge bg="secondary">{getRoleLabel(user.role)}</Badge>
-                      </td>
-                      <td>
+                    <div 
+                      key={user.id}
+                      className="border rounded p-3 mb-3"
+                      style={{ background: 'rgba(0, 0, 0, 0.02)' }}
+                    >
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <div className="fw-semibold text-dark mb-1">
+                            {user.firstName} {user.lastName}
+                          </div>
+                          <div className="text-muted small mb-2">{user.email}</div>
+                          <Badge bg="secondary">{getRoleLabel(user.role)}</Badge>
+                        </div>
                         <button
                           onClick={() => handleDelete(user.id)}
                           className="btn btn-sm btn-outline-danger"
@@ -231,11 +229,48 @@ export default function AdminPanel() {
                         >
                           <Trash />
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </Table>
+                </div>
+
+                {/* Desktop view - Table */}
+                <div className="d-none d-md-block">
+                  <Table striped responsive>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id}>
+                          <td>
+                            {user.firstName} {user.lastName}
+                          </td>
+                          <td>{user.email}</td>
+                          <td>
+                            <Badge bg="secondary">{getRoleLabel(user.role)}</Badge>
+                          </td>
+                          <td>
+                            <button
+                              onClick={() => handleDelete(user.id)}
+                              className="btn btn-sm btn-outline-danger"
+                              disabled={isLoading}
+                              title="Delete user"
+                            >
+                              <Trash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              </>
             )}
           </div>
         </CardBody>

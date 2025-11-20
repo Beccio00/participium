@@ -89,10 +89,15 @@
   background-color: #3b82f6 !important;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
   min-width: 320px;
-  min-height: 100vh;
   background-color: var(--bg);
   color: var(--text);
 }
