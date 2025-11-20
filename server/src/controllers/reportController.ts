@@ -10,6 +10,8 @@ import {
  import { calculateAddress } from "../utils/addressFinder";
 import path from "path";
 import minioClient, {BUCKET_NAME} from "../utils/minioClient";
+import { BadRequestError, InternalServerError } from "../utils";
+import InvalidCredentialsError from "../interfaces/errors/InvalidCredentialsError";
 
 export const createReport = async (req: Request, res: Response) => {
   try {
@@ -28,10 +30,7 @@ export const createReport = async (req: Request, res: Response) => {
 
     //citizen must be logged in to create a report
     if (!user) {
-      return res.status(401).json({
-        error: "Unauthorized",
-        message: "User not logged in",
-      });
+      throw new InvalidCredentialsError();
     }
 
     //validate required fields maybe can move it to service
@@ -43,10 +42,7 @@ export const createReport = async (req: Request, res: Response) => {
       longitude === undefined ||
       !photos
     ) {
-      return res.status(400).json({
-        error: "Bad Request",
-        message: "Missing required fields",
-      });
+      throw new BadRequestError()
     }
 
     const photoData = [];
@@ -103,10 +99,7 @@ export const createReport = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("Error creating report", err);
-    return res.status(500).json({
-      error: "Internal Server Error",
-      message: "Unable to create report",
-    });
+    throw new InternalServerError();
   }
 };
 
@@ -116,9 +109,6 @@ export const getReports = async (req: Request, res: Response) => {
     res.status(200).json(reports);
   } catch (error) {
     console.error("Error during report retrieval:", error);
-    res.status(500).json({
-      error: "InternalServerError",
-      message: "Error during report retrieval",
-    });
+    throw new InternalServerError();
   }
 };

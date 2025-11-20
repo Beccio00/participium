@@ -1,4 +1,5 @@
 import multer from "multer";
+import { InvalidPhotoTypeError } from "../interfaces/errors/InvalidPhotoTypeError";
 
 const storage = multer.memoryStorage();
 
@@ -6,7 +7,7 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
-    cb(new Error("Only images are allowed"), false);
+    cb(new InvalidPhotoTypeError(), false);
   }
 };
 
