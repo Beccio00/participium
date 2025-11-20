@@ -767,7 +767,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  status: PENDING_APPROVAL
+                  status: ASSIGNED
                   user:
                     id: 201
                     firstName: Mario
@@ -776,7 +776,12 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
-                  assignedOfficer: null
+                  assignedOfficer:
+                    id: 305
+                    firstName: Luca
+                    lastName: Verdi
+                    email: luca.verdi@municipality.com
+                    role: TECHNICAL_OFFICE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -865,10 +870,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: PENDING_APPROVAL
-                  userId: 201
-                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -963,10 +965,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: APPROVED
-                  userId: 201
-                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -1103,10 +1102,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: REJECTED
-                  userId: 201
-                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -1267,10 +1263,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: ASSIGNED
-                  userId: 201
-                  assignedTo: 305
                   user:
                     id: 201
                     firstName: Mario
@@ -1308,10 +1301,7 @@ paths:
                   category: PUBLIC_LIGHTING
                   latitude: 45.071
                   longitude: 7.6875
-                  isAnonymous: false
                   status: IN_PROGRESS
-                  userId: 202
-                  assignedTo: 305
                   user:
                     id: 202
                     firstName: Maria
