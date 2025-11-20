@@ -160,11 +160,13 @@ export default function MapView({
 
     maskLayer.on("click", (e: L.LeafletMouseEvent) => {
       L.DomEvent.stopPropagation(e);
-      setShowBoundaryAlert(true);
+      if (onLocationSelect){
+        setShowBoundaryAlert(true);
 
-      setTimeout(() => {
-        setShowBoundaryAlert(false);
-      }, 3000);
+        setTimeout(() => {
+          setShowBoundaryAlert(false);
+        }, 3000);
+      }
     });
 
     const turinLayer = L.geoJSON(turinData as any, {
