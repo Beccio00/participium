@@ -652,6 +652,7 @@ paths:
                   isAnonymous: false
                   status: PENDING_APPROVAL
                   userId: 201
+                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -660,6 +661,7 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer: null
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -672,6 +674,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
+                  assignedAt: null
         "400":
           description: Missing required fields
           content:
@@ -748,6 +751,7 @@ paths:
                   isAnonymous: false
                   status: PENDING_APPROVAL
                   userId: 201
+                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -756,6 +760,7 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer: null
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -768,6 +773,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
+                  assignedAt: null
                 - id: 1025
                   title: "Broken street light"
                   description: "Street light not working"
@@ -777,6 +783,7 @@ paths:
                   isAnonymous: false
                   status: RESOLVED
                   userId: 202
+                  assignedTo: 306
                   user:
                     id: 202
                     firstName: Maria
@@ -785,11 +792,18 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer:
+                    id: 306
+                    firstName: Paolo
+                    lastName: Neri
+                    email: paolo.neri@municipality.com
+                    role: TECHNICAL_OFFICE
                   messages: []
                   rejectedReason: null
                   photos: []
                   createdAt: "2025-11-10T09:00:00Z"
                   updatedAt: "2025-11-12T08:00:00Z"
+                  assignedAt: "2025-11-10T14:00:00Z"
         "400":
           description: Invalid query parameters (e.g. malformed bbox)
           content:
@@ -841,6 +855,7 @@ paths:
                   isAnonymous: false
                   status: PENDING_APPROVAL
                   userId: 201
+                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -849,6 +864,7 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer: null
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -861,6 +877,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
+                  assignedAt: null
         "401":
           description: Not authenticated
           content:
@@ -936,6 +953,7 @@ paths:
                   isAnonymous: false
                   status: APPROVED
                   userId: 201
+                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -944,6 +962,7 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer: null
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -960,6 +979,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T11:15:00Z"
+                  assignedAt: null
         "400":
           description: Invalid report ID or report not in PENDING_APPROVAL status
           content:
@@ -1073,6 +1093,7 @@ paths:
                   isAnonymous: false
                   status: REJECTED
                   userId: 201
+                  assignedTo: null
                   user:
                     id: 201
                     firstName: Mario
@@ -1081,6 +1102,7 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
+                  assignedOfficer: null
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -1097,6 +1119,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T11:15:00Z"
+                  assignedAt: null
         "400":
           description: Invalid report ID, missing rejection reason, or report not in PENDING_APPROVAL status
           content:
@@ -1167,6 +1190,173 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Failed to reject report"
+
+  /reports/assigned:
+    get:
+      tags:
+        - Reports
+      summary: Get reports assigned to the authenticated technical officer
+      description: |
+        Retrieve all reports assigned to the authenticated technical office staff member.
+        Returns reports with status ASSIGNED, IN_PROGRESS, or RESOLVED that are assigned to the current user.
+        The user ID is extracted from the session token, ensuring users can only see their own assigned reports.
+        
+        Optional query parameters allow filtering by status and sorting the results.
+      operationId: getAssignedReports
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter reports by status
+          schema:
+            type: string
+            enum:
+              - ASSIGNED
+              - IN_PROGRESS
+              - RESOLVED
+          example: ASSIGNED
+        - name: sortBy
+          in: query
+          required: false
+          description: Field to sort by
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - assignedAt
+              - priority
+          example: assignedAt
+        - name: order
+          in: query
+          required: false
+          description: Sort order
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+          example: desc
+      responses:
+        "200":
+          description: List of assigned reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportResponse"
+              example:
+                - id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  isAnonymous: false
+                  status: ASSIGNED
+                  userId: 201
+                  assignedTo: 305
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  assignedOfficer:
+                    id: 305
+                    firstName: Luca
+                    lastName: Verdi
+                    email: luca.verdi@municipality.com
+                    role: TECHNICAL_OFFICE
+                  messages:
+                    - id: 1
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-11T10:12:34Z"
+                      senderId: 201
+                    - id: 2
+                      content: "Report assigned to technical staff"
+                      createdAt: "2025-11-12T09:00:00Z"
+                      senderId: 300
+                  rejectedReason: null
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-12T09:00:00Z"
+                  assignedAt: "2025-11-12T09:00:00Z"
+                - id: 1026
+                  title: "Broken street light"
+                  description: "Street light not working on Via Torino"
+                  category: PUBLIC_LIGHTING
+                  latitude: 45.071
+                  longitude: 7.6875
+                  isAnonymous: false
+                  status: IN_PROGRESS
+                  userId: 202
+                  assignedTo: 305
+                  user:
+                    id: 202
+                    firstName: Maria
+                    lastName: Bianchi
+                    email: maria.bianchi@example.com
+                    role: CITIZEN
+                    telegramUsername: null
+                    emailNotificationsEnabled: true
+                  assignedOfficer:
+                    id: 305
+                    firstName: Luca
+                    lastName: Verdi
+                    email: luca.verdi@municipality.com
+                    role: TECHNICAL_OFFICE
+                  messages:
+                    - id: 3
+                      content: "Initial report created by user"
+                      createdAt: "2025-11-10T09:00:00Z"
+                      senderId: 202
+                    - id: 4
+                      content: "Started maintenance work"
+                      createdAt: "2025-11-13T10:30:00Z"
+                      senderId: 305
+                  rejectedReason: null
+                  photos: []
+                  createdAt: "2025-11-10T09:00:00Z"
+                  updatedAt: "2025-11-13T10:30:00Z"
+                  assignedAt: "2025-11-12T14:00:00Z"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (Technical office role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Technical office staff privileges required"
+        "500":
+          description: Unable to retrieve assigned reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to retrieve assigned reports"
 
 components:
   securitySchemes:
@@ -1591,8 +1781,19 @@ components:
           type: integer
           format: int64
           example: 201
+        assignedTo:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID of the technical officer assigned to this report (null if not assigned)
+          example: 305
         user:
           $ref: "#/components/schemas/UserInfo"
+        assignedOfficer:
+          allOf:
+            - $ref: "#/components/schemas/MunicipalityUserResponse"
+          nullable: true
+          description: Details of the assigned officer (null if not assigned)
         messages:
           type: array
           items:
@@ -1613,6 +1814,12 @@ components:
           type: string
           format: date-time
           example: "2025-11-11T10:12:34Z"
+        assignedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the report was assigned (null if not assigned)
+          example: "2025-11-12T09:00:00Z"
 
     ReportStatus:
       type: string
