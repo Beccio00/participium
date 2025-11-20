@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { isLoggedIn, requireAdmin } from "../../../src/middleware/routeProtection";
+import { isLoggedIn, requireAdmin } from "../../../src/middlewares/routeProtection";
 
 describe("routeProtection", () => {
   let mockReq: any;

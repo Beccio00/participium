@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import type { Report } from "../types/report.types";
 import "../styles/MapView.css";
 
 // Torino coordinates fallback
@@ -71,16 +72,6 @@ const createSelectedLocationIcon = () => {
   });
 };
 
-interface Report {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  latitude: number;
-  longitude: number;
-}
-
 interface MapViewProps {
   onLocationSelect?: (lat: number, lng: number) => void;
   selectedLocation?: [number, number] | null;
@@ -100,6 +91,24 @@ export default function MapView({
   const reportMarkersRef = useRef<L.Marker[]>([]);
   const [center, setCenter] = useState<[number, number]>(TURIN);
   const [hasTileError, setHasTileError] = useState(false);
+  const [turinData, setTurinData] = useState<any | null>(null);
+  const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
+
+  useEffect(() => {
+    fetch("/turin-boundary3.geojson") 
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch GeoJSON");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setTurinData(data); 
+      })
+      .catch((err) => {
+        console.error("Errore caricamento GeoJSON:", err);
+      });
+  }, []);
 
   // Always center on Turin
   useEffect(() => {
@@ -107,7 +116,7 @@ export default function MapView({
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+    if (!mapRef.current || mapInstanceRef.current || !turinData) return;
 
     const map = L.map(mapRef.current).setView(center, 13);
 
@@ -120,17 +129,72 @@ export default function MapView({
       setHasTileError(true);
     });
 
+    const worldRect = [
+      [-90, -180],
+      [90, -180],
+      [90, 180],
+      [-90, 180],
+      [-90, -180],
+    ];
+    const turinHoles = (turinData as any).features[0].geometry.coordinates.map(
+      (polygon: any) => polygon[0]
+    );
+
+    const maskGeoJSON: GeoJSON.Feature<GeoJSON.Polygon> = {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [worldRect, ...turinHoles],
+      },
+      properties: {},
+    };
+
+    const maskLayer =L.geoJSON(maskGeoJSON, {
+      style: {
+        fillColor: "#000",
+        fillOpacity: 0.35,
+        stroke: false,
+        interactive: true,
+      },
+    }).addTo(map);
+
+    maskLayer.on("click", (e: L.LeafletMouseEvent) => {
+      L.DomEvent.stopPropagation(e);
+      if (onLocationSelect){
+        setShowBoundaryAlert(true);
+
+        setTimeout(() => {
+          setShowBoundaryAlert(false);
+        }, 3000);
+      }
+    });
+
+    const turinLayer = L.geoJSON(turinData as any, {
+      style: {
+        color: "var(--primary, #C86E62)",
+        weight: 2,
+        fillOpacity: 0.05,
+        fillColor: "var(--primary, #C86E62)",
+        interactive: true,
+      },
+    });
+
     // Add click event to select location (only if callback is provided)
     if (onLocationSelect) {
-      map.on("click", (e: L.LeafletMouseEvent) => {
+      turinLayer.on("click", (e: L.LeafletMouseEvent) => {
+        L.DomEvent.stopPropagation(e);
+
         const { lat, lng } = e.latlng;
         if (markerRef.current) {
           map.removeLayer(markerRef.current);
         }
-        markerRef.current = L.marker([lat, lng]).addTo(map);
+        markerRef.current = L.marker([lat, lng],{
+          icon: createSelectedLocationIcon(),
+        }).addTo(map);
         onLocationSelect(lat, lng);
       });
     }
+    turinLayer.addTo(map);
 
     // Add initial marker if selectedLocation is provided
     if (selectedLocation) {
@@ -178,7 +242,7 @@ export default function MapView({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [turinData]);
 
   // Update report markers when reports change
   // COMMENTED OUT: Reports markers update is disabled
@@ -265,13 +329,40 @@ export default function MapView({
   */
 
   return (
-    <>
+    <div style={{ position: "relative", height: "100%", width: "100%" }}>
+      {/*alert bootstrap cudtom*/}
+      {showBoundaryAlert && (
+        <div
+          className="alert alert-warning shadow-sm"
+          role="alert"
+          style={{
+            position: "absolute",
+            top: "20px",          
+            left: "50%",           
+            transform: "translateX(-50%)",
+            zIndex: 9999,          
+            width: "auto",
+            minWidth: "300px",
+            textAlign: "center",
+            opacity: 0.95
+          }}
+        >
+          <strong>Warning!</strong> Please select a point within Turin.
+          {/* Close button for manual dismissal (optional) */}
+          <button 
+            type="button" 
+            className="btn-close float-end ms-2" 
+            aria-label="Close"
+            onClick={() => setShowBoundaryAlert(false)}
+          ></button>
+        </div>
+      )}
       {hasTileError && (
         <div style={{ padding: "1rem", color: "crimson" }}>
           Unable to load map tiles — showing coordinates only.
         </div>
       )}
       <div ref={mapRef} className="leaflet-map" />
-    </>
+      </div>
   );
 }

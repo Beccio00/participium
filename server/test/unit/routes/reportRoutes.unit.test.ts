@@ -11,7 +11,7 @@ jest.mock("../../../src/middleware/routeProtection", () => ({
 import express from "express";
 import reportRoutes from "../../../src/routes/reportRoutes";
 import { createReport, getReports } from "../../../src/controllers/reportController";
-import { isLoggedIn } from "../../../src/middleware/routeProtection";
+import { isLoggedIn } from "../../../src/middlewares/routeProtection";
 
 const mockCreateReport = createReport as jest.MockedFunction<typeof createReport>;
 const mockGetReports = getReports as jest.MockedFunction<typeof getReports>;

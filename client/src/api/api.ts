@@ -98,30 +98,17 @@ export async function deleteMunicipalityUser(userId: number): Promise<void> {
 
 //types for REPORT API
 
-export type ReportFormData = CreateReportRequest; //type sent to server
-
 //type received from server
 //this type is not in the shared folder because it's only used client-side
-export interface Report {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  latitude: number;
-  longitude: number;
-}
-
 //REPORT API functions
 
 export async function createReport(
-  reportData: ReportFormData
+  reportData: FormData
 ): Promise<CreateReportResponse> { 
   const res = await fetch(`${API_PREFIX}/reports`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(reportData),
+    body: reportData,
   });
   return handleResponse<CreateReportResponse>(res); 
 }

@@ -15,6 +15,7 @@ import citizenRoutes from "./routes/citizenRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import reportRoutes from "./routes/reportRoutes";
 import { ApiValidationMiddleware } from "./middleware/validationMiddlewere";
+import { initMinio } from "./utils/minioClient";
 
 export function createApp(): Express {
   const app: Express = express();
@@ -57,6 +58,9 @@ export function createApp(): Express {
   app.use(CONFIG.ROUTES.REPORTS, reportRoutes);
 
   app.use(errorHandler);
+  initMinio().then(() => {
+    console.log("MinIO initialized successfully");
+  });
 
   return app;
 }
