@@ -664,7 +664,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 code: 400
-                error: "Bad Request"
+                error: "BadRequest"
                 message: "Missing required fields"
         "401":
           description: Not authenticated
@@ -714,7 +714,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 code: 500
-                error: "Internal Server Error"
+                error: "InternalServerError"
                 message: "Unable to create report"
 
     get:
@@ -722,8 +722,11 @@ paths:
         - Reports
       summary: List reports
       description: |
-        Retrieve all citizen reports. Optionally filter by category.
-        All reports are within the municipality of Turin.
+        Retrieve citizen reports. By default shows only processed reports (approved, assigned, in progress, resolved, rejected).
+        Use the 'status' parameter to filter by specific report status.
+        Only PUBLIC_RELATIONS officers can view PENDING_APPROVAL reports by using status=PENDING_APPROVAL.
+        Optionally filter by category. All reports are within the municipality of Turin.
+        This endpoint is publicly accessible for the homepage display.
       operationId: listReports
       parameters:
         - name: category
@@ -733,6 +736,16 @@ paths:
           schema:
             $ref: "#/components/schemas/ReportCategory"
           example: ROADS_URBAN_FURNISHINGS
+        - name: status
+          in: query
+          required: false
+          description: |
+            Filter reports by status. 
+            PENDING_APPROVAL can only be accessed by PUBLIC_RELATIONS officers.
+            If not specified, returns only processed reports (excludes PENDING_APPROVAL).
+          schema:
+            $ref: "#/components/schemas/ReportStatus"
+          example: APPROVED
       responses:
         "200":
           description: Array of reports
@@ -749,7 +762,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  status: PENDING_APPROVAL
+                  status: APPROVED
                   user:
                     id: 201
                     firstName: Mario
@@ -763,13 +776,17 @@ paths:
                       content: "Initial report created by user"
                       createdAt: "2025-11-11T10:12:34Z"
                       senderId: 201
+                    - id: 2
+                      content: "Report approved by public relations officer"
+                      createdAt: "2025-11-11T11:15:00Z"
+                      senderId: 123
                   rejectedReason: null
                   photos:
                     - id: 301
                       url: "https://cdn.example.com/reports/1024/photo1.jpg"
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
-                  updatedAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T11:15:00Z"
                 - id: 1025
                   title: "Broken street light"
                   description: "Street light not working"
@@ -818,6 +835,7 @@ paths:
       summary: Get reports pending approval
       description: |
         Retrieve all reports with status PENDING_APPROVAL for review by public relations officers.
+        This is a specialized endpoint for PUBLIC_RELATIONS staff to review and process citizen reports.
         Only public relations officers can access this endpoint.
       operationId: getPendingReports
       security:
