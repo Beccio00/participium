@@ -8,11 +8,10 @@ import type {
   MunicipalityUserResponse,
 } from "../../../shared/MunicipalityUserTypes";
 import type { 
-  CreateReportRequest,
   CreateReportResponse 
 } from "../../../shared/ReportTypes";
 
-const API_PREFIX = "/api";
+const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const text = await res.text();

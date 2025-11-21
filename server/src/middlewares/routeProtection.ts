@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { User } from "../../prisma/generated/client";
+import { User } from "@prisma/client";
 
 // isLoggedIn checks if the user is authenticated
 export function isLoggedIn(req: Request & { isAuthenticated?: () => boolean }, res: Response, next: NextFunction) {

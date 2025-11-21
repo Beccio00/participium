@@ -9,7 +9,7 @@ import {
   Form,
   Card,
 } from "react-bootstrap";
-import { GeoAlt, FileText, Tag, Eye, Camera, X } from "react-bootstrap-icons";
+import { GeoAlt, FileText, Tag, Camera, X } from "react-bootstrap-icons";
 import MapView from "./MapView";
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
 import { createReport } from "../api/api";

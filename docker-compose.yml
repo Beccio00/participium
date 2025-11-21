@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: participium-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-participium}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-participium_password}
+      POSTGRES_DB: ${POSTGRES_DB:-participium}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - participium-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-participium}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: participium-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    networks:
+      - participium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MinIO Initialization - Creates bucket automatically
+  minio-init:
+    image: minio/mc:latest
+    container_name: participium-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
+      mc mb myminio/${MINIO_BUCKET_NAME:-reports-photos} --ignore-existing;
+      mc anonymous set public myminio/${MINIO_BUCKET_NAME:-reports-photos};
+      echo 'MinIO bucket ${MINIO_BUCKET_NAME:-reports-photos} created successfully';
+      exit 0;
+      "
+    networks:
+      - participium-network
+
+  # Backend Server
+  server:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    container_name: participium-server
+    environment:
+      NODE_ENV: production
+      PORT: ${SERVER_PORT:-4000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-participium}:${POSTGRES_PASSWORD:-participium_password}@db:5432/${POSTGRES_DB:-participium}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-reports-photos}
+      SESSION_SECRET: ${SESSION_SECRET:-your-secret-key-change-in-production}
+    ports:
+      - "${SERVER_PORT:-4000}:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - participium-network
+    volumes:
+      - ./server/uploads:/app/uploads
+    command: >
+      sh -c "
+      npx prisma migrate deploy &&
+      npx prisma db seed &&
+      node dist/app/src/index.js
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Client
+  client:
+    build:
+      context: .
+      dockerfile: ./client/Dockerfile
+    container_name: participium-client
+    ports:
+      - "${CLIENT_PORT:-3000}:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - participium-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  participium-network:
+    driver: bridge
