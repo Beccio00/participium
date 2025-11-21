@@ -4,8 +4,8 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
+COPY server/package*.json ./
+COPY server/prisma ./prisma/
 
 # Install dependencies
 RUN npm ci
@@ -13,8 +13,11 @@ RUN npm ci
 # Generate Prisma Client
 RUN npx prisma generate
 
+# Copy shared types from parent directory
+COPY shared/ /shared/
+
 # Copy source code
-COPY . .
+COPY server/ .
 
 # Build TypeScript
 RUN npm run build
@@ -28,14 +31,17 @@ WORKDIR /app
 RUN apk add --no-cache tini
 
 # Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
+COPY server/package*.json ./
+COPY server/prisma ./prisma/
 
 # Install only production dependencies
 RUN npm ci --only=production
 
 # Generate Prisma Client
 RUN npx prisma generate
+
+# Copy shared types
+COPY shared/ /shared/
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist

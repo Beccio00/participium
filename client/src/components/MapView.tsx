@@ -82,13 +82,10 @@ interface MapViewProps {
 export default function MapView({
   onLocationSelect,
   selectedLocation,
-  reports = [],
-  selectedReportId,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
-  const reportMarkersRef = useRef<L.Marker[]>([]);
   const [center, setCenter] = useState<[number, number]>(TURIN);
   const [hasTileError, setHasTileError] = useState(false);
   const [turinData, setTurinData] = useState<any | null>(null);

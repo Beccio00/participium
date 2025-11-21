@@ -16,10 +16,11 @@ type CreateReportData = Omit<
   | "messages"
   | "user"
   | "rejectedReason"
+  | "address"
 > & {
   userId: number; //add userId to link report to user
   photos: ReportPhoto[];
-  address: string;
+  address?: string;
 };
 
 export async function createReport(data: CreateReportData) {
@@ -32,7 +33,7 @@ export async function createReport(data: CreateReportData) {
       category: data.category as PrismaReportCategory,
       latitude: data.latitude,
       longitude: data.longitude,
-      address: data.address,
+      address: data.address || null,
       isAnonymous: data.isAnonymous,
       status: PrismaReportStatus.PENDING_APPROVAL, //new reports are always pending approval
       userId: data.userId,

@@ -66,8 +66,8 @@ services:
   # Backend Server
   server:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./server/Dockerfile
     container_name: participium-server
     environment:
       NODE_ENV: production
@@ -110,8 +110,8 @@ services:
   # Frontend Client
   client:
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./client/Dockerfile
     container_name: participium-client
     ports:
       - "${CLIENT_PORT:-3000}:80"

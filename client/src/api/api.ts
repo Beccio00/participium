@@ -8,7 +8,6 @@ import type {
   MunicipalityUserResponse,
 } from "../../../shared/MunicipalityUserTypes";
 import type { 
-  CreateReportRequest,
   CreateReportResponse 
 } from "../../../shared/ReportTypes";
 

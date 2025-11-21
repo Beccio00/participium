@@ -4,13 +4,16 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY client/package*.json ./
 
 # Install dependencies
 RUN npm ci
 
+# Copy shared types from parent directory (before copying client code)
+COPY shared/ /shared/
+
 # Copy source code and config files
-COPY . .
+COPY client/ .
 
 # Build the application
 RUN npm run build
