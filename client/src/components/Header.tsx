@@ -37,7 +37,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const handleGoToLogin = () => navigate('/login')
   const handleGoToSignup = () => navigate('/signup')
   const handleBackHome = () => {
-    if (user?.role === 'ADMINISTRATOR') {
+    if (user?.role === 'ADMINISTRATOR' || user?.role === 'TECHNICAL_OFFICE') {
       handleLogout();
     } else {
       navigate('/');

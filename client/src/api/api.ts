@@ -10,6 +10,7 @@ import type {
 import type { 
   CreateReportResponse 
 } from "../../../shared/ReportTypes";
+import type { Report } from "../types/report.types";
 
 const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
@@ -121,8 +122,25 @@ export async function getReports(): Promise<Report[]> {
   return handleResponse<Report[]>(res);
 }
 
-
-
+export async function updateReportStatus(
+  reportId: number,
+  status: string,
+  rejectionReason?: string
+): Promise<void> {
+  const body = { status, rejectionReason };
+  
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/status`, {
+    method: "PATCH", // or PUT depending on your backend
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || "Failed to update report status");
+  }
+}
 
 export default {
   getSession,

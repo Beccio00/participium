@@ -6,6 +6,7 @@ import HomePage from "./features/reports/HomePage.tsx";
 import LoginPage from "./features/auth/LoginPage.tsx";
 import SignupPage from "./features/auth/SignupPage.tsx";
 import AdminPanel from "./features/admin/AdminPanel.tsx";
+import TechPanel from "./features/technician/TechPanel.tsx";
 import ReportForm from "./components/ReportForm";
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/technician" element={<TechPanel />} />
           <Route path="/report/new" element={<ReportForm />} />
         </Routes>
       </div>
