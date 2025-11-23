@@ -599,10 +599,9 @@ paths:
         - Reports
       summary: Create a new report with geolocation
       description: |
-        Create a new citizen report tied to a geographic location (latitude/longitude in WGS84).
-        The frontend is expected to use an interactive map (OpenStreetMap-based, e.g. Leaflet.js) to allow the user
-        to pick a location; the selected coordinates (decimal degrees) must be provided in the request body.
-        Reports are associated with the authenticated user (session-based authentication).
+        Create a new citizen report tied to a geographic location within the municipality of Turin.
+        Use an interactive map to select the location. Coordinates must be in decimal degrees (WGS84).
+        All coordinates must be within Turin municipality boundaries.
       operationId: createReport
       security:
         - SessionAuth: []
@@ -611,23 +610,10 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/ReportCreateMultipart"
+              $ref: "#/components/schemas/ReportRequest"
             encoding:
               photos:
                 contentType: image/jpeg, image/png
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ReportRequest"
-            example:
-              title: "Pothole on Via Roma"
-              description: "Large pothole near the pedestrian crossing, causing risk for cyclists."
-              category: ROADS_URBAN_FURNISHINGS
-              latitude: 45.070339
-              longitude: 7.686864
-              address: "Via Roma 1, Torino"
-              isAnonymous: false
-              photos:
-                - "https://cdn.example.com/reports/tmp/photo1.jpg"
       responses:
         "201":
           description: Report created successfully
@@ -649,9 +635,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: PENDING_APPROVAL
-                  userId: 201
                   user:
                     id: 201
                     firstName: Mario
@@ -692,6 +676,36 @@ paths:
                 code: 401
                 error: "Unauthorized"
                 message: "User not logged in"
+        "403":
+          description: Insufficient permissions (only citizens can create reports)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can create reports"
+        "413":
+          description: Photo file(s) too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 413
+                error: "PayloadTooLarge"
+                message: "One or more photos exceed the maximum file size"
+        "422":
+          description: Invalid coordinates (outside Turin municipality boundaries)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: "UnprocessableEntity"
+                message: "Coordinates are outside Turin municipality boundaries"
         "500":
           description: Unable to create report
           content:
@@ -706,26 +720,16 @@ paths:
     get:
       tags:
         - Reports
-      summary: List reports (optionally filtered by bounding box)
+      summary: List reports
       description: |
-        Retrieve a list of reports. Optionally filter by a bounding box using the `bbox` query parameter
-        in the format `minLon,minLat,maxLon,maxLat` (decimal degrees, WGS84). This is useful for map views
-        where the frontend requests only reports within the currently visible map area.
-        The `category` query parameter is also optional and can be combined with `bbox` to request
-        reports of a given category inside the visible map area (e.g. `?bbox=7.66,45.06,7.70,45.08&category=PUBLIC_LIGHTING`).
+        Retrieve all citizen reports. Optionally filter by category.
+        All reports are within the municipality of Turin.
       operationId: listReports
       parameters:
-        - name: bbox
-          in: query
-          required: false
-          description: Bounding box filter `minLon,minLat,maxLon,maxLat`
-          schema:
-            type: string
-            example: "7.66,45.06,7.70,45.08"
         - name: category
           in: query
           required: false
-          description: Filter reports by category (use one of the ReportCategory values). Optional and combinable with `bbox`.
+          description: Filter reports by category
           schema:
             $ref: "#/components/schemas/ReportCategory"
           example: ROADS_URBAN_FURNISHINGS
@@ -745,9 +749,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  isAnonymous: false
                   status: PENDING_APPROVAL
-                  userId: 201
                   user:
                     id: 201
                     firstName: Mario
@@ -774,9 +776,7 @@ paths:
                   category: PUBLIC_LIGHTING
                   latitude: 45.071000
                   longitude: 7.687500
-                  isAnonymous: false
                   status: RESOLVED
-                  userId: 202
                   user:
                     id: 202
                     firstName: Maria
@@ -791,7 +791,7 @@ paths:
                   createdAt: "2025-11-10T09:00:00Z"
                   updatedAt: "2025-11-12T08:00:00Z"
         "400":
-          description: Invalid query parameters (e.g. malformed bbox)
+          description: Invalid category parameter
           content:
             application/json:
               schema:
@@ -799,7 +799,7 @@ paths:
               example:
                 code: 400
                 error: "BadRequest"
-                message: "Invalid bbox parameter. Expected format: minLon,minLat,maxLon,maxLat"
+                message: "Invalid category value"
         "500":
           description: Unable to retrieve reports
           content:
@@ -921,8 +921,7 @@ components:
         user:
           allOf:
             - $ref: "#/components/schemas/UserInfo"
-          description: User information (only present when authenticated is true)
-          nullable: true
+          description: User information
 
     UserInfo:
       type: object
@@ -1008,8 +1007,6 @@ components:
         role:
           $ref: "#/components/schemas/MunicipalityRole"
 
-   
-
     MunicipalityUserResponse:
       type: object
       properties:
@@ -1060,19 +1057,15 @@ components:
           $ref: "#/components/schemas/MunicipalityRole"
       description: Payload to assign or update a municipality user's role
 
-    Location:
-      type: object
-      properties:
-        latitude:
-          type: number
-          format: double
-          description: Latitude in decimal degrees (WGS84)
-          example: 45.070339
-        longitude:
-          type: number
-          format: double
-          description: Longitude in decimal degrees (WGS84)
-          example: 7.686864
+    Latitude:
+      type: string
+      description: Latitude in decimal degrees (WGS84)
+      example: 45.070339
+
+    Longitude:
+      type: string
+      description: Longitude in decimal degrees (WGS84)
+      example: 7.686864
 
     ReportRequest:
       type: object
@@ -1092,65 +1085,28 @@ components:
           type: string
           description: Detailed description of the issue
           example: "Large pothole near the pedestrian crossing, causing risk for cyclists."
+        category:
+          $ref: "#/components/schemas/ReportCategory"
         latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
+          $ref: "#/components/schemas/Latitude"
         longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
+          $ref: "#/components/schemas/Longitude"
         address:
           type: string
           nullable: true
           description: Optional human-readable address for the location
           example: "Via Roma 1, Torino"
         photos:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uri
-          description: Array of URLs to uploaded photos (at least one required)
-        category:
-          $ref: "#/components/schemas/ReportCategory"
-        isAnonymous:
-          type: boolean
-          description: Whether the report should be publicly anonymous
-          example: false
-
-    ReportCreateMultipart:
-      type: object
-      required:
-        - title
-        - description
-        - category
-        - latitude
-        - longitude
-        - photos
-      properties:
-        title:
-          type: string
-          example: "Pothole on Via Roma"
-        description:
-          type: string
-          example: "Large pothole near the pedestrian crossing, causing risk for cyclists."
-        category:
-          $ref: "#/components/schemas/ReportCategory"
-        latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
-        longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
-        address:
-          type: string
-          nullable: true
-        isAnonymous:
-          type: boolean
-          example: false
-        photos:
-          type: array
-          minItems: 1
-          maxItems: 3
-          items:
-            type: string
-            format: binary
-          description: Up to 3 photo files (image/*)
+          oneOf:
+            - type: string
+              format: binary
+            - type: array
+              minItems: 1
+              maxItems: 3
+              items:
+                type: string
+                format: binary
+          description: Up to 3 photo files (image/jpeg, image/png)
 
     ReportSummary:
       type: object
@@ -1163,9 +1119,9 @@ components:
           type: string
           example: "Pothole on Via Roma"
         latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
+          $ref: "#/components/schemas/Latitude"
         longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
+          $ref: "#/components/schemas/Longitude"
         category:
           $ref: "#/components/schemas/ReportCategory"
         status:
@@ -1221,18 +1177,11 @@ components:
         category:
           $ref: "#/components/schemas/ReportCategory"
         latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
+          $ref: "#/components/schemas/Latitude"
         longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
-        isAnonymous:
-          type: boolean
-          example: false
+          $ref: "#/components/schemas/Longitude"
         status:
           $ref: "#/components/schemas/ReportStatus"
-        userId:
-          type: integer
-          format: int64
-          example: 201
         user:
           $ref: "#/components/schemas/UserInfo"
         messages:
@@ -1266,6 +1215,7 @@ components:
         - REJECTED
         - RESOLVED
       example: PENDING_APPROVAL
+    
     ReportCategory:
       type: string
       description: Category of the reported problem
@@ -1280,7 +1230,3 @@ components:
         - PUBLIC_GREEN_AREAS_PLAYGROUNDS
         - OTHER
       example: ROADS_URBAN_FURNISHINGS
-
-# Security requirements for protected endpoints
-security:
-  - SessionAuth: []

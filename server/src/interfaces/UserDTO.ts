@@ -1,4 +1,4 @@
-import type { User as PrismaUser } from "../../prisma/generated/client";
+import type { User as PrismaUser } from "@prisma/client";
 
 export const Roles = {
   PUBLIC_RELATIONS: "PUBLIC_RELATIONS",

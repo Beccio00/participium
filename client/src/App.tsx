@@ -21,15 +21,17 @@ function App() {
   }
 
   return (
-    <div>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <Header showBackToHome={location.pathname !== "/"} />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/report/new" element={<ReportForm />} />
-      </Routes>
+      <div style={{ flex: 1, overflow: location.pathname === '/' ? 'hidden' : 'auto' }}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/report/new" element={<ReportForm />} />
+        </Routes>
+      </div>
     </div>
   );
 }

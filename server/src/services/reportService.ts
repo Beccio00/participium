@@ -2,7 +2,7 @@ import { prisma } from "../utils/prismaClient";
 import {
   ReportCategory as PrismaReportCategory,
   ReportStatus as PrismaReportStatus,
-} from "../../prisma/generated/client";
+} from "@prisma/client";
 import { ReportDTO } from "../interfaces/ReportDTO";
 import { ReportPhoto } from "../../../shared/ReportTypes";
 
@@ -16,10 +16,11 @@ type CreateReportData = Omit<
   | "messages"
   | "user"
   | "rejectedReason"
+  | "address"
 > & {
   userId: number; //add userId to link report to user
   photos: ReportPhoto[];
-  //here we can add photos handling later
+  address?: string;
 };
 
 export async function createReport(data: CreateReportData) {
@@ -32,6 +33,7 @@ export async function createReport(data: CreateReportData) {
       category: data.category as PrismaReportCategory,
       latitude: data.latitude,
       longitude: data.longitude,
+      address: data.address || null,
       isAnonymous: data.isAnonymous,
       status: PrismaReportStatus.PENDING_APPROVAL, //new reports are always pending approval
       userId: data.userId,
@@ -51,8 +53,7 @@ export async function createReport(data: CreateReportData) {
   return newReport;
 }
 
-//get reports only after being approved
-export async function getApprovedReports() {
+export async function getApprovedReports(category?: PrismaReportCategory) {
   return prisma.report.findMany({
     where: {
       status: {
@@ -62,6 +63,7 @@ export async function getApprovedReports() {
           PrismaReportStatus.RESOLVED,
         ],
       },
+      ...(category && { category }),
     },
     include: {
       user: {
@@ -71,9 +73,10 @@ export async function getApprovedReports() {
           email: true,
         },
       },
+      photos: true,
     },
     orderBy: {
-      createdAt: "desc", //most recent first
+      createdAt: "desc",
     },
   });
 }

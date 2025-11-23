@@ -1,5 +1,5 @@
 import adminRoutes from "../../../src/routes/adminRoutes";
-import { requireAdmin } from "../../../src/middleware/routeProtection";
+import { requireAdmin } from "../../../src/middlewares/routeProtection";
 import {
   createMunicipalityUserController,
   listMunicipalityUsersController,

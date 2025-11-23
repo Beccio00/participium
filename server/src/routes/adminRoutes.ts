@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../middlewares/errorMiddleware";
-import { requireAdmin } from "../middleware/routeProtection";
+import { requireAdmin } from "../middlewares/routeProtection";
 import {
   createMunicipalityUserController,
   listMunicipalityUsersController,

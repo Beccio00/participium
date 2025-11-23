@@ -53,12 +53,12 @@ export default function SignupPage() {
     form.values.lastName.trim() &&
     form.values.email.trim() &&
     form.values.password.trim() &&
-    Object.keys(form.errors).length === 0;
+    Object.values(form.errors).every(error => !error);
 
   if (success) {
     return (
       <div className="signup-fullscreen">
-        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: 'calc(100vh - 80px)' }}>
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: 'calc(100vh - 80px)', paddingTop: '2rem', paddingBottom: '2rem' }}>
           <div style={{
             background: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(20px)',
@@ -89,7 +89,7 @@ export default function SignupPage() {
 
   return (
     <div className="signup-fullscreen">
-      <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: 'calc(100vh - 80px)', paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div style={{
           background: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(20px)',

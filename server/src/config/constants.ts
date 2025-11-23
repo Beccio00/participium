@@ -1,3 +1,5 @@
+import path from "path";
+
 export const CONFIG = {
   // Server
   PORT: process.env.PORT || 4000,
@@ -7,7 +9,7 @@ export const CONFIG = {
 
   // CORS
   CORS: {
-    ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173",
+    ORIGIN: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ["http://localhost:5173", "http://localhost:3000"],
     CREDENTIALS: true,
     METHODS: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   },
@@ -24,7 +26,7 @@ export const CONFIG = {
   },
 
   // Swagger
-  SWAGGER_FILE_PATH: "../docs/swagger.yaml",
+  SWAGGER_FILE_PATH: path.resolve(__dirname, "../../../docs/swagger.yaml"),
 
   // API Info
   API: {

@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import type { User as PrismaUser } from "../../prisma/generated/client";
+import type { User as PrismaUser } from "@prisma/client";
 
 // Genera un hash e un sale della password
 export async function hashPassword(plain: string): Promise<{ hashedPassword: string; salt: string }> {

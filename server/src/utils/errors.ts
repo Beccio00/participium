@@ -46,6 +46,13 @@ export class ConflictError extends AppError {
   }
 }
 
+export class UnprocessableEntityError extends AppError {
+  constructor(message = "Unprocessable Entity") {
+    super(message, 422);
+    Object.setPrototypeOf(this, UnprocessableEntityError.prototype);
+  }
+}
+
 export class InternalServerError extends AppError {
   constructor(message = "Internal Server Error") {
     super(message, 500, false);

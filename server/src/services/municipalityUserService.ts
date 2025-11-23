@@ -1,4 +1,4 @@
-import type { User as PrismaUser } from "../../prisma/generated/client";
+import type { User as PrismaUser } from "@prisma/client";
 import {
   createUser,
   findByEmail,
@@ -8,7 +8,7 @@ import {
   findUsersByRoles,
 } from "./userService";
 import { Role, MUNICIPALITY_ROLES } from "../interfaces/UserDTO";
-import { PrismaClient } from "../../prisma/generated/client";
+import { PrismaClient } from "@prisma/client";
 import { BadRequestError } from "../utils";
 
 const prisma = new PrismaClient();
