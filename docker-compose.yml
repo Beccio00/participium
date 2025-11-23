@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database
@@ -80,6 +80,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-reports-photos}
       SESSION_SECRET: ${SESSION_SECRET:-your-secret-key-change-in-production}
+      AUTO_SEED: ${AUTO_SEED:-false}
     ports:
       - "${SERVER_PORT:-4000}:4000"
     depends_on:
@@ -97,10 +98,20 @@ services:
     command: >
       sh -c "
       npx prisma migrate deploy &&
+      if [ "${AUTO_SEED}" = "true" ] && [ -f dist/prisma/seed.js ]; then
+        echo '🌱 AUTO_SEED=true — running compiled seed script';
+        node dist/prisma/seed.js;
+      else
+        echo 'ℹ️  Skipping automatic seed (AUTO_SEED not true or seed not found)';
+      fi &&
       node dist/app/src/index.js
       "
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -120,11 +131,33 @@ services:
     networks:
       - participium-network
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  # One-off seeding job (uses the builder stage so dev dependencies like ts-node are available)
+  seed:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+      target: builder
+    container_name: participium-seed
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-participium}:${POSTGRES_PASSWORD:-participium_password}@db:5432/${POSTGRES_DB:-participium}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - participium-network
+    command: ["sh", "-c", "npm run seed"]
 
 volumes:
   postgres_data:
