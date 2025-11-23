@@ -7,7 +7,7 @@ import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { getReports, updateReportStatus } from "../../api/api"; 
 import type { Report as AppReport } from "../../types/report.types";
-import "../../styles/TechPanelStyle.css";
+import "../../styles/TechPanelstyle.css";
 
 export default function TechPanel() {
   const { user, isAuthenticated } = useAuth();

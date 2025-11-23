@@ -59,6 +59,8 @@ export default function ReportForm() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [hoverPreview, setHoverPreview] = useState<number | null>(null);
 
+  const topRef = useRef<HTMLDivElement>(null);
+
   const processFiles = (newFiles: File[]) => {
     //validation on dnd
     const validateImages = newFiles.filter((file) =>
@@ -144,7 +146,7 @@ export default function ReportForm() {
       setError(
         `Please fill in the following fields: ${missingFields.join(", ")}.`
       );
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      topRef.current?.scrollIntoView({ behavior: "smooth" });
       return;
     }
 
@@ -168,7 +170,7 @@ export default function ReportForm() {
       setError(
         err?.message || "An error occurred while submitting the report."
       );
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      topRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -182,7 +184,7 @@ export default function ReportForm() {
   }, [error]);
 
   return (
-    <div style={divStyle}>
+    <div style={divStyle} ref={topRef}>
       <Container>
         <Card style={formCardStyle}>
           <Card.Header style={headerStyle}>
@@ -293,9 +295,9 @@ export default function ReportForm() {
                           "SEWER_SYSTEM",
                           "PUBLIC_LIGHTING",
                           "WASTE",
-                          "ROAD_MAINTENANCE",
-                          "GREEN_AREAS",
-                          "PUBLIC_TRANSPORT",
+                          "ROAD_SIGNS_TRAFFIC_LIGHTS",
+                          "ROADS_URBAN_FURNISHINGS",
+                          "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
                           "OTHER",
                         ].map((cat) => (
                           <option key={cat} value={cat}>
