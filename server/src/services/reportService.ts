@@ -250,16 +250,17 @@ export async function rejectReport(reportId: number, rejecterId: number, reason:
   }
   const updatedReport = await prisma.report.update({
     where: { id: reportId },
-    data: {
+    // cast to any to avoid mismatches with generated Prisma client types
+    data: ({
       status: ReportStatus.REJECTED,
-      rejectionReason: reason,
+      rejectedReason: reason,
       messages: {
         create: {
           content: "Report rejected by public relations officer",
           senderId: rejecterId,
         },
       },
-    },
+    } as unknown) as any,
     include: {
       user: true,
       photos: true,
