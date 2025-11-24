@@ -1,10 +1,7 @@
 import { prisma } from "../utils/prismaClient";
-import { ReportDTO } from "../interfaces/ReportDTO";
-import { ReportPhoto } from "../../../shared/ReportTypes";
+import { ReportDTO, toReportDTO } from "../interfaces/ReportDTO";
+import { ReportPhoto, ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { NotFoundError, BadRequestError, UnprocessableEntityError } from "../utils/errors";
-
-// Use the enum objects from Prisma client
-import { ReportCategory, ReportStatus, Role } from "@prisma/client";
 
 //new type where we exclude fields that will not be provided by the user
 type CreateReportData = Omit<
@@ -53,8 +50,8 @@ export async function createReport(data: CreateReportData) {
   return newReport;
 }
 
-export async function getApprovedReports(category?: ReportCategory) {
-  return prisma.report.findMany({
+export async function getApprovedReports(category?: ReportCategory): Promise<ReportDTO[]> {
+  const reports = await prisma.report.findMany({
     where: {
       status: {
         in: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED],
@@ -74,11 +71,12 @@ export async function getApprovedReports(category?: ReportCategory) {
       createdAt: "desc",
     },
   });
+  
+  return reports.map(toReportDTO);
 }
 
-// Get pending reports for PUBLIC_RELATIONS review
-export async function getPendingReports() {
-  return prisma.report.findMany({
+export async function getPendingReports(): Promise<ReportDTO[]> {
+  const reports = await prisma.report.findMany({
     where: {
       status: ReportStatus.PENDING_APPROVAL,
     },
@@ -95,11 +93,12 @@ export async function getPendingReports() {
       createdAt: "desc",
     },
   });
+  
+  return reports.map(toReportDTO);
 }
 
 // Approve a report (PUBLIC_RELATIONS only)
-export async function approveReport(reportId: number, approverId: number) {
-  // Check if report exists and is in PENDING_APPROVAL status
+export async function approveReport(reportId: number, approverId: number): Promise<ReportDTO> {
   const report = await prisma.report.findUnique({
     where: { id: reportId },
     include: { user: true },
@@ -113,7 +112,6 @@ export async function approveReport(reportId: number, approverId: number) {
     throw new BadRequestError("Report is not in PENDING_APPROVAL status");
   }
 
-  // Update report status to ASSIGNED and add approval message
   const updatedReport = await prisma.report.update({
     where: { id: reportId },
     data: {
@@ -136,12 +134,11 @@ export async function approveReport(reportId: number, approverId: number) {
     },
   });
 
-  return updatedReport;
+  return toReportDTO(updatedReport);
 }
 
 // Reject a report with reason (PUBLIC_RELATIONS only)
-export async function rejectReport(reportId: number, rejecterId: number, reason: string) {
-  // Validate reason
+export async function rejectReport(reportId: number, rejecterId: number, reason: string): Promise<ReportDTO> {
   if (!reason || reason.trim().length === 0) {
     throw new BadRequestError("Rejection reason is required");
   }
@@ -150,7 +147,6 @@ export async function rejectReport(reportId: number, rejecterId: number, reason:
     throw new UnprocessableEntityError("Rejection reason must be less than 500 characters");
   }
 
-  // Check if report exists and is in PENDING_APPROVAL status
   const report = await prisma.report.findUnique({
     where: { id: reportId },
     include: { user: true },
@@ -164,7 +160,6 @@ export async function rejectReport(reportId: number, rejecterId: number, reason:
     throw new BadRequestError("Report is not in PENDING_APPROVAL status");
   }
 
-  // Update report status to REJECTED with reason and add rejection message
   const updatedReport = await prisma.report.update({
     where: { id: reportId },
     data: {
@@ -188,5 +183,5 @@ export async function rejectReport(reportId: number, rejecterId: number, reason:
     },
   });
 
-  return updatedReport;
+  return toReportDTO(updatedReport);
 }
