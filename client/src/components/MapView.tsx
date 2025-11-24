@@ -7,8 +7,6 @@ import "../styles/MapView.css";
 const TURIN: [number, number] = [45.0703, 7.6869];
 
 // Helper function to get status color for map markers
-// COMMENTED OUT: Not used since reports markers are disabled
-/*
 const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
     case "resolved":
@@ -21,11 +19,8 @@ const getStatusColor = (status: string): string => {
       return "#6c757d";
   }
 };
-*/
 
 // Helper function to create colored marker icon
-// COMMENTED OUT: Not used since reports markers are disabled
-/*
 const createColoredIcon = (color: string) => {
   return L.divIcon({
     className: "custom-marker",
@@ -41,7 +36,6 @@ const createColoredIcon = (color: string) => {
     iconAnchor: [13, 13],
   });
 };
-*/
 
 // Helper function to create selected location marker icon
 const createSelectedLocationIcon = () => {
@@ -82,17 +76,20 @@ interface MapViewProps {
 export default function MapView({
   onLocationSelect,
   selectedLocation,
+  reports = [],
+  selectedReportId,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const reportMarkersRef = useRef<L.Marker[]>([]);
   const [center, setCenter] = useState<[number, number]>(TURIN);
   const [hasTileError, setHasTileError] = useState(false);
   const [turinData, setTurinData] = useState<any | null>(null);
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
 
   useEffect(() => {
-    fetch("/turin-boundary3.geojson") 
+    fetch("/turin-boundary3.geojson")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch GeoJSON");
@@ -100,7 +97,7 @@ export default function MapView({
         return response.json();
       })
       .then((data) => {
-        setTurinData(data); 
+        setTurinData(data);
       })
       .catch((err) => {
         console.error("Errore caricamento GeoJSON:", err);
@@ -146,7 +143,7 @@ export default function MapView({
       properties: {},
     };
 
-    const maskLayer =L.geoJSON(maskGeoJSON, {
+    const maskLayer = L.geoJSON(maskGeoJSON, {
       style: {
         fillColor: "#000",
         fillOpacity: 0.35,
@@ -157,7 +154,7 @@ export default function MapView({
 
     maskLayer.on("click", (e: L.LeafletMouseEvent) => {
       L.DomEvent.stopPropagation(e);
-      if (onLocationSelect){
+      if (onLocationSelect) {
         setShowBoundaryAlert(true);
 
         setTimeout(() => {
@@ -185,7 +182,7 @@ export default function MapView({
         if (markerRef.current) {
           map.removeLayer(markerRef.current);
         }
-        markerRef.current = L.marker([lat, lng],{
+        markerRef.current = L.marker([lat, lng], {
           icon: createSelectedLocationIcon(),
         }).addTo(map);
         onLocationSelect(lat, lng);
@@ -201,9 +198,6 @@ export default function MapView({
     }
 
     // Add markers for reports
-    // COMMENTED OUT: Reports markers are not displayed on the map for now
-    // To re-enable, uncomment the following block
-    /*
     reports.forEach((report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
@@ -228,7 +222,6 @@ export default function MapView({
         `);
       reportMarkersRef.current.push(marker);
     });
-    */
 
     mapInstanceRef.current = map;
 
@@ -242,9 +235,7 @@ export default function MapView({
   }, [turinData]);
 
   // Update report markers when reports change
-  // COMMENTED OUT: Reports markers update is disabled
-  // To re-enable, uncomment the following useEffect
-  /*
+
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -280,7 +271,6 @@ export default function MapView({
       reportMarkersRef.current.push(marker);
     });
   }, [reports]);
-  */
 
   useEffect(() => {
     if (mapInstanceRef.current) {
@@ -302,9 +292,7 @@ export default function MapView({
   }, [selectedLocation]);
 
   // Handle selected report popup
-  // COMMENTED OUT: Selected report popup handling is disabled since reports markers are not shown
-  // To re-enable, uncomment the following useEffect
-  /*
+
   useEffect(() => {
     if (!mapInstanceRef.current || !selectedReportId) return;
 
@@ -323,7 +311,6 @@ export default function MapView({
       marker.openPopup();
     }
   }, [selectedReportId, reports]);
-  */
 
   return (
     <div style={{ position: "relative", height: "100%", width: "100%" }}>
@@ -334,21 +321,21 @@ export default function MapView({
           role="alert"
           style={{
             position: "absolute",
-            top: "20px",          
-            left: "50%",           
+            top: "20px",
+            left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 9999,          
+            zIndex: 9999,
             width: "auto",
             minWidth: "300px",
             textAlign: "center",
-            opacity: 0.95
+            opacity: 0.95,
           }}
         >
           <strong>Warning!</strong> Please select a point within Turin.
           {/* Close button for manual dismissal (optional) */}
-          <button 
-            type="button" 
-            className="btn-close float-end ms-2" 
+          <button
+            type="button"
+            className="btn-close float-end ms-2"
             aria-label="Close"
             onClick={() => setShowBoundaryAlert(false)}
           ></button>
@@ -360,6 +347,6 @@ export default function MapView({
         </div>
       )}
       <div ref={mapRef} className="leaflet-map" />
-      </div>
+    </div>
   );
 }
