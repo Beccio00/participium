@@ -19,7 +19,7 @@ async function main() {
       password: "adminpass",
       role: "ADMINISTRATOR",
       telegram_username: null,
-      email_notifications_enabled: true
+      email_notifications_enabled: true,
     },
     {
       email: "citizen@participium.com",
@@ -28,7 +28,7 @@ async function main() {
       password: "citizenpass",
       role: "CITIZEN",
       telegram_username: null,
-      email_notifications_enabled: true
+      email_notifications_enabled: true,
     },
     {
       email: "pr@participium.com",
@@ -37,16 +37,16 @@ async function main() {
       password: "prpass",
       role: "PUBLIC_RELATIONS",
       telegram_username: null,
-      email_notifications_enabled: true
+      email_notifications_enabled: true,
     },
     {
       email: "tech@participium.com",
-      first_name: "Technical",
-      last_name: "Office",
+      first_name: "Municipal",
+      last_name: "Building Maintenance",
       password: "techpass",
-      role: "TECHNICAL_OFFICE",
+      role: "MUNICIPAL_BUILDING_MAINTENANCE",
       telegram_username: null,
-      email_notifications_enabled: true
+      email_notifications_enabled: true,
     },
   ];
 
@@ -62,7 +62,7 @@ async function main() {
         salt,
         role: u.role as any,
         telegram_username: u.telegram_username,
-        email_notifications_enabled: u.email_notifications_enabled
+        email_notifications_enabled: u.email_notifications_enabled,
       },
     });
     console.log(`✅ Created user: ${u.email}`);
@@ -71,10 +71,10 @@ async function main() {
   console.log("\n✅ Database seed completed successfully!");
   console.log(`\nCreated ${users.length} sample users with hashed passwords`);
   console.log("\n📋 Test credentials:");
-  console.log("  Admin: admin@participium.com / admin123");
-  console.log("  Citizen: citizen@participium.com / citizen123");
-  console.log("  PR: pr@participium.com / pr123");
-  console.log("  Tech: tech@participium.com / tech123");
+  console.log("  Admin: admin@participium.com / adminpass");
+  console.log("  Citizen: citizen@participium.com / citizenpass");
+  console.log("  PR: pr@participium.com / prpass");
+  console.log("  Tech: tech@participium.com / techpass");
 }
 
 main()

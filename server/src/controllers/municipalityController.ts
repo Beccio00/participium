@@ -23,7 +23,7 @@ export async function createMunicipalityUserController(req: Request, res: Respon
   }
 
   if (!isValidRole(role) || !MUNICIPALITY_ROLES.includes(role as Role)) {
-    throw new BadRequestError("Invalid role. Allowed: PUBLIC_RELATIONS, ADMINISTRATOR, TECHNICAL_OFFICE");
+    throw new BadRequestError("Invalid role. Must be one of the municipality roles");
   }
 
   const existingUser = await findByEmail(email);

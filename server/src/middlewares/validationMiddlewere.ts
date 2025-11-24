@@ -5,5 +5,7 @@ export const ApiValidationMiddleware = OpenApiValidator.middleware({
     apiSpec: CONFIG.SWAGGER_FILE_PATH,
     validateRequests: true,
     validateResponses: true,
-    validateSecurity: false
+    validateSecurity: false,
+    fileUploader: false,  // Non gestire file upload - lascia fare a multer
+    ignorePaths: /\/api\/reports$/  // Ignora POST e GET /api/reports
 });

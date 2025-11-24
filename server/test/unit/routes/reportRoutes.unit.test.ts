@@ -1,4 +1,4 @@
-// Mock dei controller e middleware - devono essere prima degli import
+// Mock dei controller e middleware
 jest.mock("../../../src/controllers/reportController", () => ({
   createReport: jest.fn(),
   getReports: jest.fn(),

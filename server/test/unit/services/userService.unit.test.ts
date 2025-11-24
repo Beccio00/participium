@@ -28,6 +28,17 @@ jest.mock("@prisma/client", () => {
 
 describe("userService", () => {
   beforeEach(() => {
+    if (!mockPrisma) {
+      mockPrisma = {
+        user: {
+          findUnique: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+          findMany: jest.fn(),
+        },
+      };
+    }
     jest.clearAllMocks();
   });
 
@@ -365,7 +376,9 @@ describe("userService", () => {
     it("should return empty array when no users found", async () => {
       mockPrisma.user.findMany.mockResolvedValue([]);
 
-      const result = await findUsersByRoles([Roles.TECHNICAL_OFFICE]);
+      const result = await findUsersByRoles([
+        Roles.MUNICIPAL_BUILDING_MAINTENANCE,
+      ]);
 
       expect(result).toEqual([]);
     });
