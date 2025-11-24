@@ -10,9 +10,20 @@ info:
     The system must have at least one administrator account pre-configured in the database.
 
     Available municipality roles:
+    - ADMINISTRATOR: System administrator with full privileges
     - PUBLIC_RELATIONS: Public relations officer for citizen communication
-    - ADMINISTRATOR: Administrative staff for report management 
-    - TECHNICAL_OFFICE: Technical staff for resolving reported issues
+    - CULTURE_EVENTS_TOURISM_SPORTS: Culture, events, tourism and sports
+    - LOCAL_PUBLIC_SERVICES: Local public services
+    - EDUCATION_SERVICES: Education services
+    - PUBLIC_RESIDENTIAL_HOUSING: Public/residential housing services
+    - INFORMATION_SYSTEMS: Information systems/IT
+    - MUNICIPAL_BUILDING_MAINTENANCE: Municipal building maintenance
+    - PRIVATE_BUILDINGS: Private buildings oversight
+    - INFRASTRUCTURES: Road, bridges and general infrastructures
+    - GREENSPACES_AND_ANIMAL_PROTECTION: Parks, green areas and animal protection
+    - WASTE_MANAGEMENT: Waste collection and management
+    - ROAD_MAINTENANCE: Road maintenance
+    - CIVIL_PROTECTION: Civil protection and emergency coordination
   version: 1.1.0
   contact:
     name: Municipality of Turin
@@ -261,7 +272,7 @@ paths:
               lastName: Verdi
               email: giuseppe.verdi@comune.torino.it
               password: AdminPass123!
-              role: PUBLIC_RELATIONS
+              role: LOCAL_PUBLIC_SERVICES
       responses:
         "201":
           description: Municipality user created successfully
@@ -349,7 +360,7 @@ paths:
                   firstName: "Giuseppe"
                   lastName: "Verdi"
                   email: "giuseppe.verdi@comune.torino.it"
-                  role: "PUBLIC_RELATIONS"
+                  role: "LOCAL_PUBLIC_SERVICES"
                 - id: 456
                   firstName: "Maria"
                   lastName: "Rossi"
@@ -359,7 +370,7 @@ paths:
                   firstName: "Franco"
                   lastName: "Bianchi"
                   email: "franco.bianchi@comune.torino.it"
-                  role: "TECHNICAL_OFFICE"
+                  role: "ROAD_MAINTENANCE"
         "401":
           description: Not authenticated
           content:
@@ -560,8 +571,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/MunicipalityRole"
               example:
+                - ADMINISTRATOR
                 - PUBLIC_RELATIONS
-                - TECHNICAL_OFFICE
+                - CULTURE_EVENTS_TOURISM_SPORTS
+                - LOCAL_PUBLIC_SERVICES
+                - EDUCATION_SERVICES
+                - PUBLIC_RESIDENTIAL_HOUSING
+                - INFORMATION_SYSTEMS
+                - MUNICIPAL_BUILDING_MAINTENANCE
+                - PRIVATE_BUILDINGS
+                - INFRASTRUCTURES
+                - GREENSPACES_AND_ANIMAL_PROTECTION
+                - WASTE_MANAGEMENT
+                - ROAD_MAINTENANCE
+                - CIVIL_PROTECTION
+
         "401":
           description: Not authenticated
           content:
@@ -1586,22 +1610,44 @@ components:
       type: string
       description: |
         A canonical list of roles that can be assigned to municipality users. Allowed values correspond to the
-        three supported role types for municipality staff.
+        roles defined for internal municipality staff in the database schema.
       enum:
-        - PUBLIC_RELATIONS
         - ADMINISTRATOR
-        - TECHNICAL_OFFICE
+        - PUBLIC_RELATIONS
+        - CULTURE_EVENTS_TOURISM_SPORTS
+        - LOCAL_PUBLIC_SERVICES
+        - EDUCATION_SERVICES
+        - PUBLIC_RESIDENTIAL_HOUSING
+        - INFORMATION_SYSTEMS
+        - MUNICIPAL_BUILDING_MAINTENANCE
+        - PRIVATE_BUILDINGS
+        - INFRASTRUCTURES
+        - GREENSPACES_AND_ANIMAL_PROTECTION
+        - WASTE_MANAGEMENT
+        - ROAD_MAINTENANCE
+        - CIVIL_PROTECTION
 
     UserRole:
       type: string
       description: |
         All possible user roles in the system, including citizens and municipality staff.
-        Used for authentication and session management.
+        Used for authentication and session management. Values mirror the `Role` enum in the Prisma schema.
       enum:
         - CITIZEN
-        - PUBLIC_RELATIONS
         - ADMINISTRATOR
-        - TECHNICAL_OFFICE
+        - PUBLIC_RELATIONS
+        - CULTURE_EVENTS_TOURISM_SPORTS
+        - LOCAL_PUBLIC_SERVICES
+        - EDUCATION_SERVICES
+        - PUBLIC_RESIDENTIAL_HOUSING
+        - INFORMATION_SYSTEMS
+        - MUNICIPAL_BUILDING_MAINTENANCE
+        - PRIVATE_BUILDINGS
+        - INFRASTRUCTURES
+        - GREENSPACES_AND_ANIMAL_PROTECTION
+        - WASTE_MANAGEMENT
+        - ROAD_MAINTENANCE
+        - CIVIL_PROTECTION
       example: CITIZEN
 
     AssignRoleRequest:
