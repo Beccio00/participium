@@ -1,15 +1,22 @@
-import { createReport, getApprovedReports } from "../../../src/services/reportService";
+import {
+  createReport,
+  getApprovedReports,
+} from "../../../src/services/reportService";
 import { ReportCategory } from "../../../../shared/ReportTypes";
 
 // Mock the Prisma client
 const mockCreate = jest.fn();
 const mockFindMany = jest.fn();
+const mockFindUnique = jest.fn();
+const mockUpdate = jest.fn();
 
 jest.mock("../../../src/utils/prismaClient", () => ({
   prisma: {
     report: {
       create: (...args: any[]) => mockCreate(...args),
       findMany: (...args: any[]) => mockFindMany(...args),
+      findUnique: (...args: any[]) => mockFindUnique(...args),
+      update: (...args: any[]) => mockUpdate(...args),
     },
   },
 }));
@@ -33,9 +40,9 @@ describe("reportService", () => {
         {
           id: 1,
           url: "https://example.com/photo.jpg",
-          filename: "streetlight.jpg"
-        }
-      ]
+          filename: "streetlight.jpg",
+        },
+      ],
     };
 
     it("should create a report with valid data", async () => {
@@ -56,9 +63,9 @@ describe("reportService", () => {
             id: 1,
             url: "https://example.com/photo.jpg",
             filename: "streetlight.jpg",
-            reportId: 1
-          }
-        ]
+            reportId: 1,
+          },
+        ],
       };
 
       mockCreate.mockResolvedValue(mockCreatedReport);
@@ -67,6 +74,7 @@ describe("reportService", () => {
 
       expect(mockCreate).toHaveBeenCalledWith({
         data: {
+          address: null,
           title: validReportData.title,
           description: validReportData.description,
           category: validReportData.category,
@@ -80,9 +88,9 @@ describe("reportService", () => {
             create: [
               {
                 url: "https://example.com/photo.jpg",
-                filename: "streetlight.jpg"
-              }
-            ]
+                filename: "streetlight.jpg",
+              },
+            ],
           },
         },
         include: {
@@ -97,7 +105,7 @@ describe("reportService", () => {
     it("should create anonymous report", async () => {
       const anonymousReportData = {
         ...validReportData,
-        isAnonymous: true
+        isAnonymous: true,
       };
 
       const mockCreatedReport = {
@@ -112,7 +120,7 @@ describe("reportService", () => {
           last_name: "Doe",
           email: "john.doe@example.com",
         },
-        photos: []
+        photos: [],
       };
 
       mockCreate.mockResolvedValue(mockCreatedReport);
@@ -121,6 +129,7 @@ describe("reportService", () => {
 
       expect(mockCreate).toHaveBeenCalledWith({
         data: {
+          address: null,
           title: anonymousReportData.title,
           description: anonymousReportData.description,
           category: anonymousReportData.category,
@@ -134,9 +143,9 @@ describe("reportService", () => {
             create: [
               {
                 url: "https://example.com/photo.jpg",
-                filename: "streetlight.jpg"
-              }
-            ]
+                filename: "streetlight.jpg",
+              },
+            ],
           },
         },
         include: {
@@ -155,14 +164,14 @@ describe("reportService", () => {
           {
             id: 1,
             url: "https://example.com/photo1.jpg",
-            filename: "photo1.jpg"
+            filename: "photo1.jpg",
           },
           {
             id: 2,
             url: "https://example.com/photo2.jpg",
-            filename: "photo2.jpg"
-          }
-        ]
+            filename: "photo2.jpg",
+          },
+        ],
       };
 
       const mockCreatedReport = {
@@ -182,15 +191,15 @@ describe("reportService", () => {
             id: 1,
             url: "https://example.com/photo1.jpg",
             filename: "photo1.jpg",
-            reportId: 1
+            reportId: 1,
           },
           {
             id: 2,
             url: "https://example.com/photo2.jpg",
             filename: "photo2.jpg",
-            reportId: 1
-          }
-        ]
+            reportId: 1,
+          },
+        ],
       };
 
       mockCreate.mockResolvedValue(mockCreatedReport);
@@ -199,6 +208,7 @@ describe("reportService", () => {
 
       expect(mockCreate).toHaveBeenCalledWith({
         data: {
+          address: null,
           title: reportWithMultiplePhotos.title,
           description: reportWithMultiplePhotos.description,
           category: reportWithMultiplePhotos.category,
@@ -212,13 +222,13 @@ describe("reportService", () => {
             create: [
               {
                 url: "https://example.com/photo1.jpg",
-                filename: "photo1.jpg"
+                filename: "photo1.jpg",
               },
               {
                 url: "https://example.com/photo2.jpg",
-                filename: "photo2.jpg"
-              }
-            ]
+                filename: "photo2.jpg",
+              },
+            ],
           },
         },
         include: {
@@ -234,7 +244,7 @@ describe("reportService", () => {
       const turinReportData = {
         ...validReportData,
         latitude: 45.0703,
-        longitude: 7.6869
+        longitude: 7.6869,
       };
 
       const mockCreatedReport = {
@@ -244,7 +254,7 @@ describe("reportService", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         user: { id: 1 },
-        photos: []
+        photos: [],
       };
 
       mockCreate.mockResolvedValue(mockCreatedReport);
@@ -255,8 +265,8 @@ describe("reportService", () => {
         expect.objectContaining({
           data: expect.objectContaining({
             latitude: 45.0703,
-            longitude: 7.6869
-          })
+            longitude: 7.6869,
+          }),
         })
       );
 
@@ -266,20 +276,20 @@ describe("reportService", () => {
     it("should create report with different categories", async () => {
       const categories = [
         "WATER_SUPPLY_DRINKING_WATER",
-        "ARCHITECTURAL_BARRIERS", 
+        "ARCHITECTURAL_BARRIERS",
         "SEWER_SYSTEM",
         "PUBLIC_LIGHTING",
         "WASTE",
         "ROAD_SIGNS_TRAFFIC_LIGHTS",
         "ROADS_URBAN_FURNISHINGS",
         "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
-        "OTHER"
+        "OTHER",
       ];
 
       for (const category of categories) {
         const reportWithCategory = {
           ...validReportData,
-          category: category as any
+          category: category as any,
         };
 
         const mockCreatedReport = {
@@ -289,7 +299,7 @@ describe("reportService", () => {
           createdAt: new Date(),
           updatedAt: new Date(),
           user: { id: 1 },
-          photos: []
+          photos: [],
         };
 
         mockCreate.mockResolvedValue(mockCreatedReport);
@@ -299,8 +309,8 @@ describe("reportService", () => {
         expect(mockCreate).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
-              category: category
-            })
+              category: category,
+            }),
           })
         );
 
@@ -320,17 +330,17 @@ describe("reportService", () => {
     it("should create report with boundary coordinates", async () => {
       // Test coordinate ai limiti
       const boundaryTests = [
-        { latitude: -90, longitude: -180 },   // Limite sud-ovest
-        { latitude: 90, longitude: 180 },     // Limite nord-est  
-        { latitude: 0, longitude: 0 },        // Equatore e meridiano di Greenwich
-        { latitude: 45.1, longitude: 7.7 },  // Coordinate vicino a Torino
+        { latitude: -90, longitude: -180 }, // Limite sud-ovest
+        { latitude: 90, longitude: 180 }, // Limite nord-est
+        { latitude: 0, longitude: 0 }, // Equatore e meridiano di Greenwich
+        { latitude: 45.1, longitude: 7.7 }, // Coordinate vicino a Torino
       ];
 
       for (const coords of boundaryTests) {
         const reportWithBoundaryCoords = {
           ...validReportData,
           latitude: coords.latitude,
-          longitude: coords.longitude
+          longitude: coords.longitude,
         };
 
         const mockCreatedReport = {
@@ -340,7 +350,7 @@ describe("reportService", () => {
           createdAt: new Date(),
           updatedAt: new Date(),
           user: { id: 1 },
-          photos: []
+          photos: [],
         };
 
         mockCreate.mockResolvedValue(mockCreatedReport);
@@ -351,8 +361,8 @@ describe("reportService", () => {
           expect.objectContaining({
             data: expect.objectContaining({
               latitude: coords.latitude,
-              longitude: coords.longitude
-            })
+              longitude: coords.longitude,
+            }),
           })
         );
 
@@ -376,8 +386,8 @@ describe("reportService", () => {
           user: {
             first_name: "John",
             last_name: "Doe",
-            email: "john.doe@example.com"
-          }
+            email: "john.doe@example.com",
+          },
         },
         {
           id: 2,
@@ -385,15 +395,15 @@ describe("reportService", () => {
           description: "Older issue",
           category: "ROADS_AND_URBAN_FURNISHINGS",
           latitude: 45.0704,
-          longitude: 7.6870,
+          longitude: 7.687,
           status: "IN_PROGRESS",
           createdAt: new Date("2023-11-01"),
           user: {
             first_name: "Jane",
             last_name: "Smith",
-            email: "jane.smith@example.com"
-          }
-        }
+            email: "jane.smith@example.com",
+          },
+        },
       ];
 
       mockFindMany.mockResolvedValue(mockReports);
@@ -403,26 +413,17 @@ describe("reportService", () => {
       expect(mockFindMany).toHaveBeenCalledWith({
         where: {
           status: {
-            in: [
-              "ASSIGNED",
-              "IN_PROGRESS", 
-              "RESOLVED"
-            ]
-          }
+            in: ["ASSIGNED", "IN_PROGRESS", "RESOLVED"],
+          },
         },
         include: {
-          user: {
-            select: {
-              first_name: true,
-              last_name: true,
-              email: true,
-            }
-          },
+          user: true,
           photos: true,
+          messages: { include: { user: true } },
         },
         orderBy: {
-          createdAt: "desc"
-        }
+          createdAt: "desc",
+        },
       });
 
       expect(result).toEqual(mockReports);
@@ -442,18 +443,30 @@ describe("reportService", () => {
         {
           id: 1,
           status: "ASSIGNED",
-          user: { first_name: "John", last_name: "Doe", email: "john@example.com" }
+          user: {
+            first_name: "John",
+            last_name: "Doe",
+            email: "john@example.com",
+          },
         },
         {
           id: 2,
           status: "IN_PROGRESS",
-          user: { first_name: "Jane", last_name: "Smith", email: "jane@example.com" }
+          user: {
+            first_name: "Jane",
+            last_name: "Smith",
+            email: "jane@example.com",
+          },
         },
         {
           id: 3,
           status: "RESOLVED",
-          user: { first_name: "Bob", last_name: "Johnson", email: "bob@example.com" }
-        }
+          user: {
+            first_name: "Bob",
+            last_name: "Johnson",
+            email: "bob@example.com",
+          },
+        },
       ];
 
       mockFindMany.mockResolvedValue(mockApprovedReports);
@@ -464,22 +477,17 @@ describe("reportService", () => {
       expect(mockFindMany).toHaveBeenCalledWith({
         where: {
           status: {
-            in: ["ASSIGNED", "IN_PROGRESS", "RESOLVED"]
-          }
+            in: ["ASSIGNED", "IN_PROGRESS", "RESOLVED"],
+          },
         },
         include: {
-          user: {
-            select: {
-              first_name: true,
-              last_name: true,
-              email: true,
-            }
-          },
+          user: true,
           photos: true,
+          messages: { include: { user: true } },
         },
         orderBy: {
-          createdAt: "desc"
-        }
+          createdAt: "desc",
+        },
       });
 
       expect(result).toEqual(mockApprovedReports);
@@ -507,9 +515,9 @@ describe("reportService", () => {
           user: {
             first_name: "John",
             last_name: "Doe",
-            email: "john.doe@example.com"
-          }
-        }
+            email: "john.doe@example.com",
+          },
+        },
       ];
 
       mockFindMany.mockResolvedValue(mockReports);
@@ -519,7 +527,7 @@ describe("reportService", () => {
       expect(result[0].user).toEqual({
         first_name: "John",
         last_name: "Doe",
-        email: "john.doe@example.com"
+        email: "john.doe@example.com",
       });
     });
 
@@ -531,10 +539,168 @@ describe("reportService", () => {
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: {
-            createdAt: "desc"
-          }
+            createdAt: "desc",
+          },
         })
       );
+    });
+  });
+
+  describe("approveReport", () => {
+    const reportId = 42;
+    const approverId = 7;
+
+    afterEach(() => jest.clearAllMocks());
+
+    it("should throw NotFoundError when report does not exist", async () => {
+      mockFindUnique.mockResolvedValue(null);
+      const { approveReport } = require("../../../src/services/reportService");
+      await expect(approveReport(reportId, approverId)).rejects.toThrow(
+        "Report not found"
+      );
+      expect(mockFindUnique).toHaveBeenCalledWith({
+        where: { id: reportId },
+        include: { user: true },
+      });
+    });
+
+    it("should throw BadRequestError when report status is not PENDING_APPROVAL", async () => {
+      mockFindUnique.mockResolvedValue({ id: reportId, status: "ASSIGNED" });
+      const { approveReport } = require("../../../src/services/reportService");
+      await expect(approveReport(reportId, approverId)).rejects.toThrow(
+        "Report is not in PENDING_APPROVAL status"
+      );
+    });
+
+    it("should update report to ASSIGNED and add approval message", async () => {
+      const existing = { id: reportId, status: "PENDING_APPROVAL" };
+      const updated = {
+        id: reportId,
+        status: "ASSIGNED",
+        messages: [
+          {
+            id: 1,
+            content: "Report approved by public relations officer",
+            senderId: approverId,
+          },
+        ],
+        user: { id: 2 },
+        photos: [],
+      };
+
+      mockFindUnique.mockResolvedValue(existing);
+      mockUpdate.mockResolvedValue(updated);
+
+      const { approveReport } = require("../../../src/services/reportService");
+      const result = await approveReport(reportId, approverId);
+
+      expect(mockFindUnique).toHaveBeenCalled();
+      expect(mockUpdate).toHaveBeenCalledWith({
+        where: { id: reportId },
+        data: {
+          status: "ASSIGNED",
+          messages: {
+            create: {
+              content: "Report approved by public relations officer",
+              senderId: approverId,
+            },
+          },
+        },
+        include: {
+          user: true,
+          photos: true,
+          messages: { include: { user: true } },
+        },
+      });
+
+      expect(result).toEqual(updated);
+    });
+  });
+
+  describe("rejectReport", () => {
+    const reportId = 43;
+    const rejecterId = 8;
+
+    afterEach(() => jest.clearAllMocks());
+
+    it("should reject when reason is empty", async () => {
+      const { rejectReport } = require("../../../src/services/reportService");
+      await expect(rejectReport(reportId, rejecterId, "")).rejects.toThrow(
+        "Rejection reason is required"
+      );
+    });
+
+    it("should reject when reason is too long", async () => {
+      const longReason = "a".repeat(501);
+      const { rejectReport } = require("../../../src/services/reportService");
+      await expect(
+        rejectReport(reportId, rejecterId, longReason)
+      ).rejects.toThrow("Rejection reason must be less than 500 characters");
+    });
+
+    it("should throw NotFoundError when report does not exist", async () => {
+      mockFindUnique.mockResolvedValue(null);
+      const { rejectReport } = require("../../../src/services/reportService");
+      await expect(
+        rejectReport(reportId, rejecterId, "Invalid report")
+      ).rejects.toThrow("Report not found");
+    });
+
+    it("should throw BadRequestError when report status is not PENDING_APPROVAL", async () => {
+      mockFindUnique.mockResolvedValue({ id: reportId, status: "ASSIGNED" });
+      const { rejectReport } = require("../../../src/services/reportService");
+      await expect(
+        rejectReport(reportId, rejecterId, "Reason")
+      ).rejects.toThrow("Report is not in PENDING_APPROVAL status");
+    });
+
+    it("should update report to REJECTED and set rejectionReason", async () => {
+      const existing = { id: reportId, status: "PENDING_APPROVAL" };
+      const updated = {
+        id: reportId,
+        status: "REJECTED",
+        rejectionReason: "Not a valid report",
+        messages: [
+          {
+            id: 2,
+            content: "Report rejected by public relations officer",
+            senderId: rejecterId,
+          },
+        ],
+        user: { id: 3 },
+        photos: [],
+      };
+
+      mockFindUnique.mockResolvedValue(existing);
+      mockUpdate.mockResolvedValue(updated);
+
+      const { rejectReport } = require("../../../src/services/reportService");
+      const result = await rejectReport(
+        reportId,
+        rejecterId,
+        "Not a valid report"
+      );
+
+      expect(mockUpdate).toHaveBeenCalledWith({
+        where: { id: reportId },
+        data: {
+          status: "REJECTED",
+          rejectionReason: "Not a valid report",
+          messages: {
+            create: {
+              content: "Report rejected by public relations officer",
+              senderId: rejecterId,
+            },
+          },
+        },
+        include: {
+          user: true,
+          photos: true,
+          messages: { include: { user: true } },
+        },
+      });
+
+      expect(result).toEqual(updated);
     });
   });
 });
