@@ -17,7 +17,10 @@ export default function LoginPage() {
       const response = await login(values.email, values.password);
       if (response && response.role === "ADMINISTRATOR") {
         navigate("/admin", { replace: true });
-      } else {
+      } else if (response && response.role === "TECHNICAL_OFFICE") {
+        navigate("/technician", { replace: true });
+      } 
+      else {
         navigate("/", { replace: true });
       }
     } catch (err) {

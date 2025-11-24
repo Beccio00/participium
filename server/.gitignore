@@ -54,3 +54,6 @@ openapitools.json
 
 # Ignore test database created by Jest globalSetup
 test/test.db
+
+# Ignore covarage directory created by Jest
+coverage

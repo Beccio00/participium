@@ -666,7 +666,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 code: 400
-                error: "Bad Request"
+                error: "BadRequest"
                 message: "Missing required fields"
         "401":
           description: Not authenticated
@@ -716,7 +716,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 code: 500
-                error: "Internal Server Error"
+                error: "InternalServerError"
                 message: "Unable to create report"
 
     get:
@@ -787,6 +787,10 @@ paths:
                       content: "Initial report created by user"
                       createdAt: "2025-11-11T10:12:34Z"
                       senderId: 201
+                    - id: 2
+                      content: "Report approved by public relations officer"
+                      createdAt: "2025-11-11T11:15:00Z"
+                      senderId: 123
                   rejectedReason: null
                   photos:
                     - id: 301
@@ -849,7 +853,8 @@ paths:
         - Reports
       summary: Get reports pending approval
       description: |
-        Retrieve all reports with status PENDING_APPROVAL for review by public relations officers.
+        Retrieve all reports with status PENDING for review by public relations officers.
+        This is a specialized endpoint for PUBLIC_RELATIONS staff to review and process citizen reports.
         Only public relations officers can access this endpoint.
       operationId: getPendingReports
       security:
@@ -1471,8 +1476,7 @@ components:
         user:
           allOf:
             - $ref: "#/components/schemas/UserInfo"
-          description: User information (only present when authenticated is true)
-          nullable: true
+          description: User information
 
     UserInfo:
       type: object
@@ -1609,19 +1613,15 @@ components:
           $ref: "#/components/schemas/MunicipalityRole"
       description: Payload to assign or update a municipality user's role
 
-    Location:
-      type: object
-      properties:
-        latitude:
-          type: number
-          format: double
-          description: Latitude in decimal degrees (WGS84)
-          example: 45.070339
-        longitude:
-          type: number
-          format: double
-          description: Longitude in decimal degrees (WGS84)
-          example: 7.686864
+    Latitude:
+      type: number
+      description: Latitude in decimal degrees (WGS84)
+      example: 45.070339
+
+    Longitude:
+      type: number
+      description: Longitude in decimal degrees (WGS84)
+      example: 7.686864
 
     ReportRequest:
       type: object
@@ -1644,9 +1644,9 @@ components:
         category:
           $ref: "#/components/schemas/ReportCategory"
         latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
+          $ref: "#/components/schemas/Latitude"
         longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
+          $ref: "#/components/schemas/Longitude"
         address:
           type: string
           nullable: true
@@ -1672,9 +1672,9 @@ components:
           type: string
           example: "Pothole on Via Roma"
         latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
+          $ref: "#/components/schemas/Latitude"
         longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
+          $ref: "#/components/schemas/Longitude"
         category:
           $ref: "#/components/schemas/ReportCategory"
         status:
@@ -1730,9 +1730,9 @@ components:
         category:
           $ref: "#/components/schemas/ReportCategory"
         latitude:
-          $ref: "#/components/schemas/Location/properties/latitude"
+          $ref: "#/components/schemas/Latitude"
         longitude:
-          $ref: "#/components/schemas/Location/properties/longitude"
+          $ref: "#/components/schemas/Longitude"
         status:
           $ref: "#/components/schemas/ReportStatus"
         user:
@@ -1780,6 +1780,7 @@ components:
         - REJECTED
         - RESOLVED
       example: PENDING_APPROVAL
+    
     ReportCategory:
       type: string
       description: Category of the reported problem

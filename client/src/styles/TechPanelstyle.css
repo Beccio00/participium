@@ -1,0 +1,58 @@
+.tech-panel-container {
+  background-color: var(--bg); 
+  min-height: 100%;
+}
+
+
+.tech-panel-title {
+  color: var(--text); 
+  font-weight: 700;
+}
+
+.report-card {
+  border: none !important; 
+  border-radius: 12px !important;
+  height: 100%;
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); /
+}
+
+.report-img-wrapper {
+  height: 200px;
+  overflow: hidden;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.report-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+.report-card-title {
+  font-weight: 600;
+}
+
+.report-card-text {
+  color: #666;
+  flex: 1; 
+}
+
+.report-divider {
+  border-color: #f0f0f0;
+}
+
+
+.loading-container {
+  padding: 3rem;
+  text-align: center;
+}
+
+
+.empty-state {
+  text-align: center;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  color: #6c757d; 
+}

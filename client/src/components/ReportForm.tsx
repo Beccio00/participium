@@ -1,10 +1,42 @@
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-import { Button, Container, Row, Col, Alert, Form, Card } from "react-bootstrap";
-import { GeoAlt, FileText, Tag, Eye } from "react-bootstrap-icons";
+import {
+  Button,
+  Container,
+  Row,
+  Col,
+  Alert,
+  Form,
+  Card,
+} from "react-bootstrap";
+import { GeoAlt, FileText, Tag, Camera, X } from "react-bootstrap-icons";
 import MapView from "./MapView";
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
 import { createReport } from "../api/api";
+import {
+  formCardStyle,
+  headerStyle,
+  sectionTitleStyle,
+  coordinatesStyle,
+  mapContainerStyle,
+  alertOverlayStyle,
+  photoPreviewStyle,
+  dndStyle,
+  formControlStyle,
+  photoCounterStyle,
+  photoProgressStyle,
+  photoLabelStyle,
+  divStyle,
+  h2Style,
+  pStyle,
+  cameraStyle,
+  imgStyle,
+  removeButtonStyle,
+  h4Style,
+  locationDivStyle,
+  mapDivStyle,
+  submitButtonStyle,
+} from "../styles/ReportFormStyles";
 
 export default function ReportForm() {
   const navigate = useNavigate();
@@ -15,12 +47,71 @@ export default function ReportForm() {
     latitude: 0,
     longitude: 0,
     isAnonymous: false,
-    photos: [] as ReportPhoto[]
+    photos: [] as ReportPhoto[],
   });
   const [selectedLocation, setSelectedLocation] = useState<
     [number, number] | null
   >(null);
   const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [hoverPreview, setHoverPreview] = useState<number | null>(null);
+
+  const topRef = useRef<HTMLDivElement>(null);
+
+  const processFiles = (newFiles: File[]) => {
+    //validation on dnd
+    const validateImages = newFiles.filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (validateImages.length < newFiles.length) {
+      setError("Only image files are allowed.");
+    }
+    if (validateImages.length === 0) return;
+
+    const totalFiles = [...files, ...validateImages];
+
+    if (totalFiles.length > 3) {
+      setError("You can upload a maximum of 3 photos.");
+      setFiles(totalFiles.slice(0, 3));
+    } else {
+      setFiles(totalFiles);
+
+      if (validateImages.length === newFiles.length) {
+        setError(null);
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -43,107 +134,82 @@ export default function ReportForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedLocation) {
-      setError("Please select a location on the map.");
-      return;
-    }
-    if (!formData.category) {
-      setError("Please select a category.");
+
+    const missingFields = [];
+    if (!formData.title.trim()) missingFields.push("Title");
+    if (!formData.description.trim()) missingFields.push("Description");
+    if (!formData.category) missingFields.push("Category");
+    if (files.length === 0) missingFields.push("Photos (min 1 max 3)");
+    if (!selectedLocation) missingFields.push("Location");
+
+    if (missingFields.length > 0) {
+      setError(
+        `Please fill in the following fields: ${missingFields.join(", ")}.`
+      );
+      topRef.current?.scrollIntoView({ behavior: "smooth" });
       return;
     }
 
     setError(null);
 
-    try{
-      const reportData ={
-        title: formData.title,
-        description: formData.description,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        isAnonymous: formData.isAnonymous,
-        photos: formData.photos,
-        category: formData.category,
-      }
-      await createReport(reportData);
+    try {
+      const dataToSend = new FormData();
+      dataToSend.append("title", formData.title);
+      dataToSend.append("description", formData.description);
+      dataToSend.append("category", formData.category);
+      dataToSend.append("latitude", formData.latitude.toString());
+      dataToSend.append("longitude", formData.longitude.toString());
+      dataToSend.append("isAnonymous", formData.isAnonymous.toString());
+      files.forEach((file) => {
+        dataToSend.append("photos", file);
+      });
+      await createReport(dataToSend);
       navigate("/");
-    }catch(err: any){
+    } catch (err: any) {
       console.error("Error submitting report:", err);
       setError(
         err?.message || "An error occurred while submitting the report."
       );
+      topRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  const formCardStyle = {
-    background: 'var(--surface)',
-    borderRadius: '20px',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(34, 49, 63, 0.06)',
-    overflow: 'hidden',
-  };
-
-  const headerStyle = {
-    background: 'var(--primary)',
-    color: 'white',
-    padding: 'clamp(1.5rem, 4vw, 2rem)',
-    textAlign: 'center' as const,
-  };
-
-  const sectionTitleStyle = {
-    color: 'var(--text)',
-    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-    fontWeight: 600,
-    marginBottom: '1.5rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    borderLeft: '4px solid var(--primary)',
-    paddingLeft: '0.5rem',
-  };
-
-  const coordinatesStyle = {
-    background: 'linear-gradient(135deg, var(--stone) 0%, var(--olive) 100%)',
-    borderRadius: '10px',
-    padding: '1rem',
-    margin: '1rem 0',
-    color: 'white',
-    textAlign: 'center' as const,
-  };
-
-  const mapContainerStyle = {
-    borderRadius: '10px',
-    overflow: 'hidden',
-    border: '3px solid var(--primary)',
-    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-  };
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: '30px', paddingBottom: '2rem' }}>
-      <Container className="px-3 px-md-4">
+    <div style={divStyle} ref={topRef}>
+      <Container>
         <Card style={formCardStyle}>
           <Card.Header style={headerStyle}>
-            <h2 style={{ margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', fontWeight: 700, textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)' }}>
-              <FileText className="me-2" /> Create New Report
+            <h2 style={h2Style}>
+              <FileText /> Create New Report
             </h2>
-            <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9, fontSize: 'clamp(0.9rem, 3vw, 1.1rem)' }}>
-              Report an issue in your municipality
-            </p>
+            <p style={pStyle}>Report an issue in your municipality</p>
           </Card.Header>
 
-          <Card.Body className="p-3 p-sm-4 p-md-5">
-            <Form onSubmit={handleSubmit}>
-              <Row>
-                {/* Report Details Section  TODO: uncomment this part for Report datails*/}
-                
-                {/*
-                <Col lg={6}>
+          <Card.Body className="p-4 p-md-5">
+            <Form onSubmit={handleSubmit} noValidate>
+              <Row className="justify-content-center">
+                <Col lg={8}>
                   <div className="mb-4">
                     <h3 style={sectionTitleStyle}>
                       <Tag /> Report Details
                     </h3>
-                    
+
                     {error && (
-                      <Alert variant="danger" dismissible onClose={() => setError(null)}>
+                      <Alert
+                        style={alertOverlayStyle}
+                        variant="danger"
+                        dismissible
+                        onClose={() => setError(null)}
+                      >
                         {error}
                       </Alert>
                     )}
@@ -158,15 +224,25 @@ export default function ReportForm() {
                         placeholder="Brief title for your report"
                         required
                         style={{
-                          borderRadius: '10px',
-                          border: '2px solid #e1e5e9',
-                          padding: '0.75rem 1rem',
+                          ...formControlStyle,
+                          boxShadow:
+                            focusedInput === "title"
+                              ? "0 6px 18px rgba(27,83,175,0.08)"
+                              : undefined,
+                          transform:
+                            focusedInput === "title"
+                              ? "translateY(-1px)"
+                              : undefined,
                         }}
+                        onFocus={() => setFocusedInput("title")}
+                        onBlur={() => setFocusedInput(null)}
                       />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Description</Form.Label>
+                      <Form.Label className="fw-semibold">
+                        Description
+                      </Form.Label>
                       <Form.Control
                         as="textarea"
                         rows={4}
@@ -176,10 +252,18 @@ export default function ReportForm() {
                         placeholder="Describe the issue in detail..."
                         required
                         style={{
-                          borderRadius: '10px',
-                          border: '2px solid #e1e5e9',
-                          padding: '0.75rem 1rem',
+                          ...formControlStyle,
+                          boxShadow:
+                            focusedInput === "description"
+                              ? "0 6px 18px rgba(27,83,175,0.08)"
+                              : undefined,
+                          transform:
+                            focusedInput === "description"
+                              ? "translateY(-1px)"
+                              : undefined,
                         }}
+                        onFocus={() => setFocusedInput("description")}
+                        onBlur={() => setFocusedInput(null)}
                       />
                     </Form.Group>
 
@@ -191,10 +275,18 @@ export default function ReportForm() {
                         onChange={handleInputChange}
                         required
                         style={{
-                          borderRadius: '10px',
-                          border: '2px solid #e1e5e9',
-                          padding: '0.75rem 1rem',
+                          ...formControlStyle,
+                          boxShadow:
+                            focusedInput === "category"
+                              ? "0 6px 18px rgba(27,83,175,0.08)"
+                              : undefined,
+                          transform:
+                            focusedInput === "category"
+                              ? "translateY(-1px)"
+                              : undefined,
                         }}
+                        onFocus={() => setFocusedInput("category")}
+                        onBlur={() => setFocusedInput(null)}
                       >
                         <option value="">Select a category</option>
                         {[
@@ -203,9 +295,9 @@ export default function ReportForm() {
                           "SEWER_SYSTEM",
                           "PUBLIC_LIGHTING",
                           "WASTE",
-                          "ROAD_MAINTENANCE",
-                          "GREEN_AREAS",
-                          "PUBLIC_TRANSPORT",
+                          "ROAD_SIGNS_TRAFFIC_LIGHTS",
+                          "ROADS_URBAN_FURNISHINGS",
+                          "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
                           "OTHER",
                         ].map((cat) => (
                           <option key={cat} value={cat}>
@@ -217,8 +309,98 @@ export default function ReportForm() {
                         ))}
                       </Form.Select>
                     </Form.Group>
+                    <Form.Group className="mb-4 mt-4">
+                      <Form.Label className="fw-semibold">
+                        Foto (Min 1, Max 3)
+                      </Form.Label>
 
-                    <Form.Check
+                      {/*D&D*/}
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        style={dndStyle(isDragging)}
+                      >
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          style={{ display: "none" }}
+                          accept="image/*"
+                          multiple
+                        />
+                        <Camera size={32} style={cameraStyle} />
+                        <p className="mb-0 text-muted">
+                          <strong>Click here to upload</strong> or drag photos
+                          here
+                        </p>
+                        <small className="text-muted">
+                          JPG, PNG (Max 3 foto)
+                        </small>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginTop: "0.5rem",
+                        }}
+                      >
+                        <div style={photoLabelStyle}>
+                          {files.length} / 3 foto
+                        </div>
+                        <div style={photoCounterStyle} aria-hidden>
+                          <div
+                            style={{
+                              ...photoProgressStyle,
+                              width: `${(files.length / 3) * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Photo preview */}
+                      {files.length > 0 && (
+                        <div className="d-flex flex-wrap gap-3 mt-3">
+                          {files.map((file, index) => (
+                            <div
+                              key={index}
+                              style={{
+                                ...photoPreviewStyle,
+                                transform:
+                                  hoverPreview === index
+                                    ? "translateY(-4px) scale(1.03)"
+                                    : undefined,
+                                boxShadow:
+                                  hoverPreview === index
+                                    ? "0 10px 24px rgba(34,49,63,0.08)"
+                                    : photoPreviewStyle.boxShadow,
+                              }}
+                              onMouseEnter={() => setHoverPreview(index)}
+                              onMouseLeave={() => setHoverPreview(null)}
+                            >
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`preview-${index}`}
+                                style={imgStyle}
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFile(index);
+                                }}
+                                style={removeButtonStyle}
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </Form.Group>
+
+                    {/* <Form.Check
                       type="checkbox"
                       id="anonymous"
                       name="isAnonymous"
@@ -235,19 +417,19 @@ export default function ReportForm() {
                         borderRadius: '10px',
                         border: '2px solid #e1e5e9',
                       }}
-                    />
+                    />*/}
                   </div>
                 </Col>
-                */}
 
                 {/* Location Section */}
-                <Col lg={12}>
-                  <div className="mb-4">
+                <Col lg={8}>
+                  <div className="mb-4 mt-4">
                     <h3 style={sectionTitleStyle}>
                       <GeoAlt /> Location Selection
                     </h3>
                     <p className="text-muted text-center mb-4">
-                      Click on the map to select the exact location of the issue.
+                      Click on the map to select the exact location of the
+                      issue.
                     </p>
 
                     <div style={{ height: 'clamp(400px, 60vh, 600px)', ...mapContainerStyle }}>
@@ -259,22 +441,11 @@ export default function ReportForm() {
 
                     {selectedLocation && (
                       <div style={coordinatesStyle}>
-                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: 'clamp(1rem, 3vw, 1.1rem)', fontWeight: 600 }}>
-                          Selected Location
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: 'clamp(0.85rem, 2.5vw, 1rem)',
-                            fontWeight: 600,
-                            fontFamily: '"Courier New", monospace',
-                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
-                            flexWrap: 'wrap' as const,
-                            justifyContent: 'center',
-                          }}>
-                            <GeoAlt /> {selectedLocation[0].toFixed(6)}, {selectedLocation[1].toFixed(6)}
+                        <h4 style={h4Style}>Selected Location</h4>
+                        <div style={locationDivStyle}>
+                          <div style={mapDivStyle}>
+                            <GeoAlt /> {selectedLocation[0].toFixed(6)},{" "}
+                            {selectedLocation[1].toFixed(6)}
                           </div>
                         </div>
                       </div>
@@ -282,31 +453,12 @@ export default function ReportForm() {
                   </div>
                 </Col>
               </Row>
-
               {/* Submit Button Section */}
-              {/* TODO: Uncomment this when you want add a submit report button*/}
-              {/* 
               <div className="text-center mt-4">
-                <Button
-                  type="submit"
-                  disabled={!selectedLocation}
-                  size="lg"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--stone) 100%)',
-                    border: 'none',
-                    borderRadius: '50px',
-                    padding: '1rem 3rem',
-                    fontSize: '1.2rem',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    boxShadow: '0 8px 25px rgba(200, 110, 98, 0.3)',
-                  }}
-                >
-                  Submit Report
+                <Button type="submit" size="lg" style={submitButtonStyle}>
+                  Send Report
                 </Button>
               </div>
-              */}
             </Form>
           </Card.Body>
         </Card>

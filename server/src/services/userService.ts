@@ -1,5 +1,5 @@
-import type { User as PrismaUser } from "../../prisma/generated/client";
-import { PrismaClient } from "../../prisma/generated/client";
+import type { User as PrismaUser } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Role } from "../interfaces/UserDTO";
 
 const prisma = new PrismaClient();

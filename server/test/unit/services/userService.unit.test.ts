@@ -11,7 +11,7 @@ import { Roles } from "../../../src/interfaces/UserDTO";
 var mockPrisma: any;
 
 // Mock PrismaClient
-jest.mock("../../../prisma/generated/client", () => {
+jest.mock("@prisma/client", () => {
   mockPrisma = {
     user: {
       findUnique: jest.fn(),
@@ -28,6 +28,17 @@ jest.mock("../../../prisma/generated/client", () => {
 
 describe("userService", () => {
   beforeEach(() => {
+    if (!mockPrisma) {
+      mockPrisma = {
+        user: {
+          findUnique: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+          findMany: jest.fn(),
+        },
+      };
+    }
     jest.clearAllMocks();
   });
 

@@ -8,6 +8,7 @@ import AuthRequiredModal from "../auth/AuthRequiredModal.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
 import type { Report } from "../../types";
+import { ReportCategory } from "../../../../shared/ReportTypes";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function HomePage() {
       id: 1,
       title: "Broken street light on Via Roma",
       description: "The street light at the corner of Via Roma and Via Milano has been out for a week.",
-      category: "PUBLIC_LIGHTING",
+      category: ReportCategory.PUBLIC_LIGHTING,
       status: "In Progress",
       createdAt: "2025-11-10",
       latitude: 45.0703,
@@ -32,7 +33,7 @@ export default function HomePage() {
       id: 2,
       title: "Pothole on Corso Vittorio",
       description: "Large pothole causing traffic issues near the central station.",
-      category: "ROADS_URBAN_FURNISHINGS",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
       status: "Assigned",
       createdAt: "2025-11-08",
       latitude: 45.0653,
@@ -42,7 +43,7 @@ export default function HomePage() {
       id: 3,
       title: "Overflowing trash bin",
       description: "Trash bin on Piazza Castello is overflowing and needs emptying.",
-      category: "WASTE",
+      category: ReportCategory.WASTE,
       status: "Resolved",
       createdAt: "2025-11-05",
       latitude: 45.0733,

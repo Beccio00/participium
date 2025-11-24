@@ -26,6 +26,7 @@ describe("reportService", () => {
       category: "PUBLIC_LIGHTING" as ReportCategory,
       latitude: 45.0703,
       longitude: 7.6869,
+      address: "Via Roma 123, Torino",
       isAnonymous: false,
       userId: 1,
       photos: [
@@ -71,6 +72,7 @@ describe("reportService", () => {
           category: validReportData.category,
           latitude: validReportData.latitude,
           longitude: validReportData.longitude,
+          address: validReportData.address,
           isAnonymous: validReportData.isAnonymous,
           status: "PENDING_APPROVAL",
           userId: validReportData.userId,
@@ -124,6 +126,7 @@ describe("reportService", () => {
           category: anonymousReportData.category,
           latitude: anonymousReportData.latitude,
           longitude: anonymousReportData.longitude,
+          address: anonymousReportData.address,
           isAnonymous: true,
           status: "PENDING_APPROVAL",
           userId: anonymousReportData.userId,
@@ -201,6 +204,7 @@ describe("reportService", () => {
           category: reportWithMultiplePhotos.category,
           latitude: reportWithMultiplePhotos.latitude,
           longitude: reportWithMultiplePhotos.longitude,
+          address: reportWithMultiplePhotos.address,
           isAnonymous: reportWithMultiplePhotos.isAnonymous,
           status: "PENDING_APPROVAL",
           userId: reportWithMultiplePhotos.userId,
@@ -413,7 +417,8 @@ describe("reportService", () => {
               last_name: true,
               email: true,
             }
-          }
+          },
+          photos: true,
         },
         orderBy: {
           createdAt: "desc"
@@ -469,7 +474,8 @@ describe("reportService", () => {
               last_name: true,
               email: true,
             }
-          }
+          },
+          photos: true,
         },
         orderBy: {
           createdAt: "desc"

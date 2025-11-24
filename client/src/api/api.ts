@@ -8,11 +8,11 @@ import type {
   MunicipalityUserResponse,
 } from "../../../shared/MunicipalityUserTypes";
 import type { 
-  CreateReportRequest,
   CreateReportResponse 
 } from "../../../shared/ReportTypes";
+import type { Report } from "../types/report.types";
 
-const API_PREFIX = "/api";
+const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
@@ -98,30 +98,17 @@ export async function deleteMunicipalityUser(userId: number): Promise<void> {
 
 //types for REPORT API
 
-export type ReportFormData = CreateReportRequest; //type sent to server
-
 //type received from server
 //this type is not in the shared folder because it's only used client-side
-export interface Report {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  latitude: number;
-  longitude: number;
-}
-
 //REPORT API functions
 
 export async function createReport(
-  reportData: ReportFormData
+  reportData: FormData
 ): Promise<CreateReportResponse> { 
   const res = await fetch(`${API_PREFIX}/reports`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(reportData),
+    body: reportData,
   });
   return handleResponse<CreateReportResponse>(res); 
 }
@@ -135,8 +122,25 @@ export async function getReports(): Promise<Report[]> {
   return handleResponse<Report[]>(res);
 }
 
-
-
+export async function updateReportStatus(
+  reportId: number,
+  status: string,
+  rejectionReason?: string
+): Promise<void> {
+  const body = { status, rejectionReason };
+  
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/status`, {
+    method: "PATCH", // or PUT depending on your backend
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || "Failed to update report status");
+  }
+}
 
 export default {
   getSession,

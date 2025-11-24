@@ -17,7 +17,6 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Chiudi il menu quando cambi pagina
   useEffect(() => {
     setExpanded(false);
   }, [location.pathname]);
@@ -37,7 +36,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const handleGoToLogin = () => navigate('/login')
   const handleGoToSignup = () => navigate('/signup')
   const handleBackHome = () => {
-    if (user?.role === 'ADMINISTRATOR') {
+    if (user?.role === 'ADMINISTRATOR' || user?.role === 'TECHNICAL_OFFICE') {
       handleLogout();
     } else {
       navigate('/');
@@ -105,7 +104,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
             </div>
           </Navbar.Brand>
         
-          {/* User info visibile sempre su desktop e mobile, fuori dal burger */}
+          {/* User info visible always on desktop and mobile, outside the burger */}
           {isAuthenticated && user && !showBackToHome && (
             <div className="d-flex align-items-center gap-2 d-lg-none">
               <div className="d-flex align-items-center gap-2">
@@ -144,7 +143,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
           <Nav className="ms-auto align-items-lg-center mt-3 mt-lg-0">
             {showBackToHome && user?.role === 'ADMINISTRATOR' ? (
               <>
-                {/* Logout button per admin sia mobile che desktop */}
+                {/* Logout button for admin both mobile and desktop */}
                 <Button 
                   onClick={handleLogout}
                   disabled={loading}
@@ -165,11 +164,11 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                 className="fw-semibold d-none d-lg-block"
                 style={{ ...buttonStyle, color: 'var(--primary)' }}
               >
-                ← Back to Home
+                {user?.role=="ADMINISTRATOR" || user?.role=="TECHNICAL_OFFICE" ? 'Logout' : '← Back to Home'}
               </Button>
             ) : isAuthenticated && user ? (
               <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2">
-                {/* User info solo su desktop nel collapse */}
+                {/* User info only on desktop in the collapse */}
                 <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-3">
                   {MUNICIPALITY_ROLES.includes(user.role) && (
                     <Badge 

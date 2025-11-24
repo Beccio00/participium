@@ -2,12 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "./generated"
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -39,6 +39,7 @@ model Report {
   category      ReportCategory 
   latitude      Float
   longitude     Float
+  address       String?
   isAnonymous   Boolean @default(false)
   status        ReportStatus @default(PENDING_APPROVAL)
   user          User     @relation(fields: [userId], references: [id])

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "./generated/client";
+import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/services/passwordService";
 
 const prisma = new PrismaClient();
@@ -71,10 +71,10 @@ async function main() {
   console.log("\n✅ Database seed completed successfully!");
   console.log(`\nCreated ${users.length} sample users with hashed passwords`);
   console.log("\n📋 Test credentials:");
-  console.log("  Admin: admin@participium.com / admin123");
-  console.log("  Citizen: citizen@participium.com / citizen123");
-  console.log("  PR: pr@participium.com / pr123");
-  console.log("  Tech: tech@participium.com / tech123");
+  console.log("  Admin: " + users[0].email + " / " + users[0].password);
+  console.log("  Citizen: " + users[1].email + " / " + users[1].password);
+  console.log("  PR: " + users[2].email + " / " + users[2].password);
+  console.log("  Tech: " + users[3].email + " / " + users[3].password);
 }
 
 main()

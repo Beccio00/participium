@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { isLoggedIn, requireAdmin } from "../../../src/middleware/routeProtection";
+import { isLoggedIn, requireAdmin } from "../../../src/middlewares/routeProtection";
 
 describe("routeProtection", () => {
   let mockReq: any;
@@ -29,40 +29,28 @@ describe("routeProtection", () => {
     it("should return 401 if user is not authenticated", () => {
       mockReq.isAuthenticated = jest.fn().mockReturnValue(false);
 
-      isLoggedIn(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => isLoggedIn(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("You don't have the right to access this resource");
 
       expect(mockReq.isAuthenticated).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Unauthorized",
-        message: "You don't have the right to access this resource",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it("should return 401 if isAuthenticated is undefined", () => {
       mockReq.isAuthenticated = undefined;
 
-      isLoggedIn(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => isLoggedIn(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("You don't have the right to access this resource");
 
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Unauthorized",
-        message: "You don't have the right to access this resource",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it("should return 401 if isAuthenticated is null", () => {
       mockReq.isAuthenticated = null;
 
-      isLoggedIn(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => isLoggedIn(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("You don't have the right to access this resource");
 
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Unauthorized",
-        message: "You don't have the right to access this resource",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
   });
@@ -82,14 +70,10 @@ describe("routeProtection", () => {
     it("should return 401 if user is not authenticated", () => {
       mockReq.isAuthenticated = jest.fn().mockReturnValue(false);
 
-      requireAdmin(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => requireAdmin(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("Authentication required");
 
       expect(mockReq.isAuthenticated).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Unauthorized",
-        message: "Authentication required",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -97,13 +81,9 @@ describe("routeProtection", () => {
       mockReq.isAuthenticated = undefined;
       mockReq.user = { role: 'ADMINISTRATOR' };
 
-      requireAdmin(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => requireAdmin(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("Authentication required");
 
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Unauthorized",
-        message: "Authentication required",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -111,13 +91,9 @@ describe("routeProtection", () => {
       mockReq.isAuthenticated = jest.fn().mockReturnValue(true);
       mockReq.user = { role: 'CITIZEN' };
 
-      requireAdmin(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => requireAdmin(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("Administrator privileges required");
 
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Forbidden",
-        message: "Administrator privileges required",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -125,13 +101,9 @@ describe("routeProtection", () => {
       mockReq.isAuthenticated = jest.fn().mockReturnValue(true);
       mockReq.user = undefined;
 
-      requireAdmin(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => requireAdmin(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("Administrator privileges required");
 
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Forbidden",
-        message: "Administrator privileges required",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -139,13 +111,9 @@ describe("routeProtection", () => {
       mockReq.isAuthenticated = jest.fn().mockReturnValue(true);
       mockReq.user = null;
 
-      requireAdmin(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => requireAdmin(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("Administrator privileges required");
 
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Forbidden",
-        message: "Administrator privileges required",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -153,13 +121,9 @@ describe("routeProtection", () => {
       mockReq.isAuthenticated = jest.fn().mockReturnValue(true);
       mockReq.user = { role: 'PUBLIC_RELATIONS' };
 
-      requireAdmin(mockReq as Request, mockRes as Response, mockNext);
+      expect(() => requireAdmin(mockReq as Request, mockRes as Response, mockNext))
+        .toThrow("Administrator privileges required");
 
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: "Forbidden",
-        message: "Administrator privileges required",
-      });
       expect(mockNext).not.toHaveBeenCalled();
     });
   });
