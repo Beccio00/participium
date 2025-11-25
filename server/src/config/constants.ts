@@ -22,6 +22,7 @@ export const CONFIG = {
     CITIZEN: "/api/citizen",
     ADMIN: "/api/admin",
     REPORTS: "/api/reports",
+    NOTIFICATIONS: "/api/notifications",
     SWAGGER: "/api-docs",
   },
 

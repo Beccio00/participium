@@ -22,6 +22,7 @@ model User {
   reports Report[]
   messages ReportMessage[]
   assignedReports Report[] @relation("AssignedReports")
+  notifications Notification[]
   telegram_username String? 
   email_notifications_enabled Boolean @default(true)
 }
@@ -60,6 +61,7 @@ model Report {
   userId        Int
   photos        ReportPhoto[]
   messages      ReportMessage[]
+  notifications Notification[]
   rejectedReason String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -106,4 +108,27 @@ model ReportMessage {
 
   user      User     @relation(fields: [senderId], references: [id])
   senderId    Int
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  
+  report    Report?  @relation(fields: [reportId], references: [id])
+  reportId  Int?
+}
+
+enum NotificationType {
+  REPORT_STATUS_CHANGED
+  REPORT_MESSAGE_RECEIVED
+  REPORT_ASSIGNED
+  REPORT_APPROVED
+  REPORT_REJECTED
 }
