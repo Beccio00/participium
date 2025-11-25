@@ -22,8 +22,17 @@ model User {
   reports Report[]
   messages ReportMessage[]
   assignedReports Report[] @relation("AssignedReports")
+  photo CitizenPhoto?
   telegram_username String? 
   email_notifications_enabled Boolean @default(true)
+}
+
+model CitizenPhoto {
+  id        Int      @id @default(autoincrement())
+  url       String
+  filename  String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int      @unique
 }
 
 enum Role {

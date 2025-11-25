@@ -1969,13 +1969,14 @@ components:
         status:
           $ref: "#/components/schemas/ReportStatus"
 
-    ReportPhoto:
+    Photo:
       type: object
       properties:
         id:
           type: integer
           format: int64
           example: 301
+          description: Photo ID (0 for new uploads, actual ID after saved)
         url:
           type: string
           format: uri
@@ -2042,7 +2043,7 @@ components:
         photos:
           type: array
           items:
-            $ref: "#/components/schemas/ReportPhoto"
+            $ref: "#/components/schemas/Photo"
         createdAt:
           type: string
           format: date-time
@@ -2160,11 +2161,9 @@ components:
       properties:
         message:
           type: string
-          example: "Photo uploaded"
-        photoUrl:
-          type: string
-          format: uri
-          example: "https://cdn.example.com/users/201/photo.jpg"
+          example: "Photo uploaded successfully"
+        photo:
+          $ref: "#/components/schemas/Photo"
 
     RejectReportRequest:
       type: object
