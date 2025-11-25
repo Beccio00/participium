@@ -1,29 +1,29 @@
 import { Router } from 'express';
-import { requireCitizen, requirePublicRelations } from '../middlewares/routeProtection';
+import { asyncHandler } from '../middlewares/errorMiddleware';
+import { requireCitizen } from '../middlewares/routeProtection';
 import { validateTurinBoundaries } from '../middlewares/validateTurinBoundaries';
-import { 
-  createReport, 
-  getReports, 
-  getPendingReports, 
-  approveReport, 
-  rejectReport 
-} from '../controllers/reportController';
+import { createReport, getReports, getPendingReports, approveReport, rejectReport } from '../controllers/reportController';
+import { upload } from '../middlewares/uploadsMiddleware';
+import { ApiValidationMiddleware } from '../middlewares/validationMiddlewere';
+import { requirePublicRelations } from '../middlewares/routeProtection';
 
 const router = Router();
 
-// POST /api/reports - Create a new report (citizens only)
-router.post('/', requireCitizen, validateTurinBoundaries, createReport);
 
-// GET /api/reports - Get approved reports (public access)
-router.get('/', getReports);
+// POST /api/reports (ATTENTION: the validator is skipped for this route)
+router.post('/', requireCitizen, upload.array('photos', 3), validateTurinBoundaries, asyncHandler(createReport));
+
+// GET /api/reports 
+router.get('/', ApiValidationMiddleware, asyncHandler(getReports));
+
 
 // GET /api/reports/pending - Get pending reports for review
-router.get('/pending', requirePublicRelations, getPendingReports);
+router.get('/pending', requirePublicRelations, asyncHandler(getPendingReports));
 
 // POST /api/reports/:reportId/approve - Approve a report
-router.post('/:reportId/approve', requirePublicRelations, approveReport);
+router.post('/:reportId/approve', requirePublicRelations, asyncHandler(approveReport));
 
 // POST /api/reports/:reportId/reject - Reject a report
-router.post('/:reportId/reject', requirePublicRelations, rejectReport);
+router.post('/:reportId/reject', requirePublicRelations, asyncHandler(rejectReport));
 
 export default router;
