@@ -1390,6 +1390,483 @@ paths:
                 error: "InternalServerError"
                 message: "Failed to retrieve assigned reports"
 
+  /reports/{reportId}/status:
+    patch:
+      tags:
+        - Reports
+      summary: Update report status
+      description: |
+        Update the status of an assigned report. Only technical office staff assigned to the report can perform this operation.
+        Valid status transitions:
+        - ASSIGNED → IN_PROGRESS
+        - IN_PROGRESS → RESOLVED
+        - IN_PROGRESS → SUSPENDED
+        - SUSPENDED → IN_PROGRESS
+        
+        A notification is automatically created for the citizen when the status changes.
+      operationId: updateReportStatus
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report to update
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - IN_PROGRESS
+                    - SUSPENDED
+                    - RESOLVED
+                  description: New status for the report
+                note:
+                  type: string
+                  maxLength: 500
+                  description: Optional note explaining the status change
+            example:
+              status: "IN_PROGRESS"
+              note: "Started maintenance work on the reported issue"
+      responses:
+        "200":
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  report:
+                    $ref: "#/components/schemas/ReportResponse"
+        "400":
+          description: Invalid status transition or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Report not assigned to current user or insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Report not assigned to current user or insufficient permissions"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Report not found"
+        "500":
+          description: Unable to update status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to update status"
+
+  /reports/{reportId}/messages:
+    post:
+      tags:
+        - Reports
+      summary: Send message to citizen
+      description: |
+        Send a message to the citizen who created the report. Only technical office staff assigned 
+        to the report can send messages. A notification is automatically created for the citizen.
+      operationId: sendReportMessage
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  description: Message content
+            example:
+              content: "We are working on resolving the issue. Expected completion by Friday."
+      responses:
+        "201":
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/ReportMessage"
+        "400":
+          description: Missing or invalid content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Missing or invalid content"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Report not assigned to user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Report not assigned to user"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Report not found"
+        "500":
+          description: Unable to send message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to send message"
+
+    get:
+      tags:
+        - Reports
+      summary: Get report conversation history
+      description: |
+        Retrieve all messages for a specific report. Both citizens (for their own reports) 
+        and assigned technical staff can access the conversation.
+      operationId: getReportMessages
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportMessage"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Not authorized to view this conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Not authorized to view this conversation"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Report not found"
+        "500":
+          description: Unable to retrieve messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to retrieve messages"
+
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications
+      description: |
+        Retrieve all notifications for the authenticated user. 
+        Frontend should poll this endpoint every 30-60 seconds to check for new notifications.
+        
+        Notifications are generated when:
+        - Report status changes (for citizens)
+        - New messages are received (for citizens)
+        - Reports are assigned (for technical staff)
+        - Reports are approved/rejected (for citizens)
+      operationId: getNotifications
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Return only unread notifications
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+          description: Maximum number of notifications to return
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+              example:
+                - id: 501
+                  type: "REPORT_STATUS_CHANGED"
+                  title: "Report status updated"
+                  message: "Your report 'Pothole on Via Roma' is now IN_PROGRESS"
+                  reportId: 1024
+                  read: false
+                  createdAt: "2025-11-24T14:30:00Z"
+                - id: 502
+                  type: "MESSAGE_RECEIVED"
+                  title: "New message on your report"
+                  message: "Technical staff sent you a message about 'Pothole on Via Roma'"
+                  reportId: 1024
+                  read: false
+                  createdAt: "2025-11-24T15:00:00Z"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "500":
+          description: Unable to retrieve notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to retrieve notifications"
+
+  /notifications/{notificationId}/read:
+    patch:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      operationId: markNotificationAsRead
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Notification marked as read"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Not authorized to modify this notification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Not authorized to modify this notification"
+        "404":
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Notification not found"
+
+  /reports/{reportId}:
+    get:
+      tags:
+        - Reports
+      summary: Get single report details
+      description: |
+        Retrieve detailed information about a specific report including all messages.
+        - Citizens can only view their own reports
+        - Technical staff can view reports assigned to them
+        - Public relations can view any report
+      operationId: getReportById
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Report details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Not authorized to view this report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Not authorized to view this report"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Report not found"
+        "500":
+          description: Unable to retrieve report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to retrieve report"
+
 components:
   securitySchemes:
     SessionAuth:
@@ -1660,12 +2137,12 @@ components:
       description: Payload to assign or update a municipality user's role
 
     Latitude:
-      type: number
+      type: string
       description: Latitude in decimal degrees (WGS84)
       example: 45.070339
 
     Longitude:
-      type: number
+      type: string
       description: Longitude in decimal degrees (WGS84)
       example: 7.686864
 
@@ -1854,6 +2331,40 @@ components:
           description: Mandatory explanation for why the report is being rejected
           example: "The reported issue does not fall under municipal jurisdiction"
 
-# Security requirements for protected endpoints
-security:
-  - SessionAuth: []
+    NotificationType:
+      type: string
+      enum:
+        - REPORT_STATUS_CHANGED
+        - MESSAGE_RECEIVED
+        - REPORT_ASSIGNED
+        - REPORT_APPROVED
+        - REPORT_REJECTED
+      example: REPORT_STATUS_CHANGED
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 501
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        title:
+          type: string
+          example: "Report status updated"
+        message:
+          type: string
+          example: "Your report 'Pothole on Via Roma' is now IN_PROGRESS"
+        reportId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1024
+        read:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-24T14:30:00Z"
