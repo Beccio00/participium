@@ -48,6 +48,15 @@ async function main() {
       telegram_username: null,
       email_notifications_enabled: true,
     },
+    {
+      email: "techPR@participium.com",
+      first_name: "Municipal",
+      last_name: "Public Relations",
+      password: "techpass",
+      role: "PUBLIC_RELATIONS",
+      telegram_username: null,
+      email_notifications_enabled: true,
+    }
   ];
 
   // Hash passwords and insert users
