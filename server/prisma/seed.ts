@@ -7,7 +7,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seed...");
 
-  // Clear existing users
+  // Clear existing report photos, reports, and users (ordine corretto per FK)
+  await prisma.reportPhoto.deleteMany();
+  await prisma.report.deleteMany();
   await prisma.user.deleteMany();
 
   // Users to insert (plain passwords)

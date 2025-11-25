@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import multer from "multer";
 import path from "path";
 import multer from "multer";
 import { 
@@ -183,9 +184,9 @@ export async function rejectReport(req: Request, res: Response): Promise<void> {
     throw new BadRequestError("Invalid report ID parameter");
   }
 
-  if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
-    throw new BadRequestError("Missing rejection reason");
-  }
+    if (!reason || typeof reason !== "string" || reason.trim().length === 0) {
+      throw new BadRequestError("Missing rejection reason");
+    }
 
   const updatedReport = await rejectReportService(reportId, user.id, reason);
   res.status(200).json({
