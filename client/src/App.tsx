@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import HomePage from "./features/reports/HomePage.tsx";
 import LoginPage from "./features/auth/LoginPage.tsx";
 import SignupPage from "./features/auth/SignupPage.tsx";
+import CitizenSettings from "./features/auth/CitizenSettings";
 import AdminPanel from "./features/admin/AdminPanel.tsx";
 import TechPanel from "./features/technician/TechPanel.tsx";
 import ReportForm from "./components/ReportForm";
@@ -29,6 +30,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/me" element={<CitizenSettings />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/technician" element={<TechPanel />} />
           <Route path="/report/new" element={<ReportForm />} />

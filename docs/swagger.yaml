@@ -2029,6 +2029,7 @@ components:
         assignedOfficer:
           allOf:
             - $ref: "#/components/schemas/MunicipalityUserResponse"
+          type: object
           description: Details of the assigned officer (null if not assigned)
         messages:
           type: array

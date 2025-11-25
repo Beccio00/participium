@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { Navbar, Container, Nav, Button, Badge } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
 import { MUNICIPALITY_ROLES, getRoleLabel } from '../utils/roles';
-import { PersonCircle, ArrowLeft } from 'react-bootstrap-icons';
+import { PersonCircle, ArrowLeft, GearFill } from 'react-bootstrap-icons';
 
 
 interface HeaderProps {
@@ -114,6 +114,16 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                   <div style={{...userSurnameStyle, fontSize: '0.75rem'}}>{user.lastName}</div>
                 </div>
               </div>
+              {user.role === 'CITIZEN' && (
+                <button
+                  onClick={() => navigate('/me')}
+                  className="border-0 bg-transparent d-flex align-items-center justify-content-center"
+                  style={{ color: 'white', fontSize: '1.25rem', padding: '0.25rem', cursor: 'pointer' }}
+                  aria-label="Account settings"
+                >
+                  <GearFill />
+                </button>
+              )}
             </div>
           )}
           
@@ -186,6 +196,16 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                       <div style={userSurnameStyle}>{user.lastName}</div>
                     </div>
                   </div>
+                  {user.role === 'CITIZEN' && (
+                    <button
+                      onClick={() => navigate('/me')}
+                      className="border-0 bg-transparent d-flex align-items-center justify-content-center"
+                      style={{ color: 'white', fontSize: '1.25rem', padding: '0.25rem', marginLeft: '0.5rem', cursor: 'pointer' }}
+                      aria-label="Account settings"
+                    >
+                      <GearFill />
+                    </button>
+                  )}
                 </div>
                 {/* Logout button */}
                 <Button 

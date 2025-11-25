@@ -15,37 +15,7 @@ import minioClient, { BUCKET_NAME } from "../utils/minioClient";
 import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
 import { asyncHandler } from "../middlewares/errorMiddleware";
 
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new BadRequestError("Only JPEG and PNG images are allowed"));
-    }
-  }
-}).array("photos", 3);
-
-export const createReport = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  return new Promise<void>((resolve, reject) => {
-    upload(req, res, async (err) => {
-      try {
-        if (err instanceof multer.MulterError) {
-          if (err.code === "LIMIT_FILE_SIZE") {
-            throw new BadRequestError("File size exceeds 5MB limit");
-          }
-          if (err.code === "LIMIT_UNEXPECTED_FILE") {
-            throw new BadRequestError("Maximum 3 photos allowed");
-          }
-          throw new BadRequestError(err.message);
-        }
-        if (err) {
-          throw err;
-        }
-
+export async function createReport(req: Request, res: Response): Promise<void> {
         const user = req.user as { id: number };
         const { title, description, category, latitude, longitude, isAnonymous } = req.body;
         const photos = req.files as Express.Multer.File[];
@@ -135,20 +105,14 @@ export const createReport = asyncHandler(async (req: Request, res: Response): Pr
 
         const newReport = await createReportService(reportData);
 
-        res.status(201).json({
-          message: "Report created successfully",
-          id: newReport.id,
-          report: newReport
-        });
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
-  });
-});
 
-export const getReports = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  res.status(201).json({
+    message: "Report created successfully",
+    id: newReport.id,
+  });
+}
+
+export async function getReports(req: Request, res: Response): Promise<void> {
   const { category } = req.query;
 
   if (category && !Object.values(ReportCategory).includes(category as ReportCategory)) {
@@ -157,16 +121,15 @@ export const getReports = asyncHandler(async (req: Request, res: Response): Prom
 
   const reports = await getApprovedReportsService(category as ReportCategory | undefined);
   res.status(200).json(reports);
-});
-
+}
 // Get pending reports (PUBLIC_RELATIONS only)
-export const getPendingReports = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export async function getPendingReports(req: Request, res: Response): Promise<void> {
   const reports = await getPendingReportsService();
   res.status(200).json(reports);
-});
+}
 
 // Approve a report (PUBLIC_RELATIONS only)
-export const approveReport = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export async function approveReport(req: Request, res: Response): Promise<void> {
   const reportId = parseInt(req.params.reportId);
   const user = req.user as { id: number };
   const { assignedTechnicalId } = req.body;
@@ -186,7 +149,7 @@ export const approveReport = asyncHandler(async (req: Request, res: Response): P
     message: "Report approved and assigned successfully",
     report: updatedReport
   });
-});
+}
 
 // Get list of assignable technicals for a report (PUBLIC_RELATIONS only)
 export const getAssignableTechnicals = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -199,7 +162,7 @@ export const getAssignableTechnicals = asyncHandler(async (req: Request, res: Re
 });
 
 // Reject a report (PUBLIC_RELATIONS only)
-export const rejectReport = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export async function rejectReport(req: Request, res: Response): Promise<void> {
   const reportId = parseInt(req.params.reportId);
   const user = req.user as { id: number };
   const { reason } = req.body;
@@ -208,13 +171,13 @@ export const rejectReport = asyncHandler(async (req: Request, res: Response): Pr
     throw new BadRequestError("Invalid report ID parameter");
   }
 
-  if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
-    throw new BadRequestError("Missing rejection reason");
-  }
+    if (!reason || typeof reason !== "string" || reason.trim().length === 0) {
+      throw new BadRequestError("Missing rejection reason");
+    }
 
   const updatedReport = await rejectReportService(reportId, user.id, reason);
   res.status(200).json({
     message: "Report rejected successfully",
     report: updatedReport
   });
-});
+}

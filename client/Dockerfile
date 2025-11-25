@@ -7,7 +7,7 @@ WORKDIR /app
 COPY client/package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci && npm install leaflet.markercluster @types/leaflet.markercluster
 
 # Copy shared types from parent directory (before copying client code)
 COPY shared/ /shared/

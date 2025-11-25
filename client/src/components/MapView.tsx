@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import "leaflet.markercluster/dist/leaflet.markercluster.js";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
 import type { Report } from "../types/report.types";
 import "../styles/MapView.css";
 
@@ -7,8 +10,6 @@ import "../styles/MapView.css";
 const TURIN: [number, number] = [45.0703, 7.6869];
 
 // Helper function to get status color for map markers
-// COMMENTED OUT: Not used since reports markers are disabled
-/*
 const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
     case "resolved":
@@ -21,11 +22,8 @@ const getStatusColor = (status: string): string => {
       return "#6c757d";
   }
 };
-*/
 
 // Helper function to create colored marker icon
-// COMMENTED OUT: Not used since reports markers are disabled
-/*
 const createColoredIcon = (color: string) => {
   return L.divIcon({
     className: "custom-marker",
@@ -41,7 +39,6 @@ const createColoredIcon = (color: string) => {
     iconAnchor: [13, 13],
   });
 };
-*/
 
 // Helper function to create selected location marker icon
 const createSelectedLocationIcon = () => {
@@ -82,17 +79,20 @@ interface MapViewProps {
 export default function MapView({
   onLocationSelect,
   selectedLocation,
+  reports = [],
+  selectedReportId,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const reportMarkersRef = useRef<L.Marker[]>([]);
   const [center, setCenter] = useState<[number, number]>(TURIN);
   const [hasTileError, setHasTileError] = useState(false);
   const [turinData, setTurinData] = useState<any | null>(null);
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
 
   useEffect(() => {
-    fetch("/turin-boundary3.geojson") 
+    fetch("/turin-boundary3.geojson")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch GeoJSON");
@@ -100,7 +100,7 @@ export default function MapView({
         return response.json();
       })
       .then((data) => {
-        setTurinData(data); 
+        setTurinData(data);
       })
       .catch((err) => {
         console.error("Errore caricamento GeoJSON:", err);
@@ -146,7 +146,7 @@ export default function MapView({
       properties: {},
     };
 
-    const maskLayer =L.geoJSON(maskGeoJSON, {
+    const maskLayer = L.geoJSON(maskGeoJSON, {
       style: {
         fillColor: "#000",
         fillOpacity: 0.35,
@@ -157,7 +157,7 @@ export default function MapView({
 
     maskLayer.on("click", (e: L.LeafletMouseEvent) => {
       L.DomEvent.stopPropagation(e);
-      if (onLocationSelect){
+      if (onLocationSelect) {
         setShowBoundaryAlert(true);
 
         setTimeout(() => {
@@ -185,7 +185,7 @@ export default function MapView({
         if (markerRef.current) {
           map.removeLayer(markerRef.current);
         }
-        markerRef.current = L.marker([lat, lng],{
+        markerRef.current = L.marker([lat, lng], {
           icon: createSelectedLocationIcon(),
         }).addTo(map);
         onLocationSelect(lat, lng);
@@ -200,35 +200,52 @@ export default function MapView({
       }).addTo(map);
     }
 
-    // Add markers for reports
-    // COMMENTED OUT: Reports markers are not displayed on the map for now
-    // To re-enable, uncomment the following block
-    /*
-    reports.forEach((report) => {
+    // Add markers for reports using MarkerClusterGroup
+    const markerCluster = (L as any).markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 60, // distanza in pixel per raggruppare
+      spiderfyOnMaxZoom: true,
+      zoomToBoundsOnClick: true,
+      iconCreateFunction: function (cluster: any) {
+        // Marker cluster icon: mostra il numero totale di report
+        return L.divIcon({
+          html: `<div style="background:#C86E62;color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);">${cluster.getChildCount()}</div>`,
+          className: "custom-cluster-marker",
+          iconSize: [32, 32],
+        });
+      },
+    });
+
+    reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).addTo(map).bindPopup(`
-          <div class="report-popup">
-            <div class="report-popup-header">${report.title}</div>
-            <div class="report-popup-body">
-              <div class="report-popup-location">${report.latitude.toFixed(
-                6
-              )}, ${report.longitude.toFixed(6)}</div>
-              <div class="report-popup-description">${report.description}</div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
-                  report.category
-                }</span>
-                <span style="color: ${getStatusColor(
-                  report.status
-                )}; font-weight: bold; font-size: 12px;">${report.status}</span>
-              </div>
+      }).bindPopup(`
+        <div class="report-popup">
+          <div class="report-popup-header">${report.title}</div>
+          <div class="report-popup-body">
+            <div class="report-popup-location">${report.latitude.toFixed(
+              6
+            )}, ${report.longitude.toFixed(6)}</div>
+            <div class="report-popup-description">${report.description}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+                report.category
+              }</span>
+              <span style="color: ${getStatusColor(
+                report.status
+              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
             </div>
+            <div style="margin-top:0.5rem;font-size:12px;">Segnalato da: <b>${
+              report.isAnonymous ? "anonymous" : "utente"
+            }</b></div>
           </div>
-        `);
+        </div>
+      `);
       reportMarkersRef.current.push(marker);
+      markerCluster.addLayer(marker);
     });
-    */
+
+    map.addLayer(markerCluster);
 
     mapInstanceRef.current = map;
 
@@ -242,45 +259,67 @@ export default function MapView({
   }, [turinData]);
 
   // Update report markers when reports change
-  // COMMENTED OUT: Reports markers update is disabled
-  // To re-enable, uncomment the following useEffect
-  /*
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
-    // Remove existing report markers
-    reportMarkersRef.current.forEach((marker) => {
+    // Remove existing report markers and clusters
+    reportMarkersRef.current.forEach((marker: L.Marker) => {
       mapInstanceRef.current!.removeLayer(marker);
     });
     reportMarkersRef.current = [];
+    // Remove all marker clusters
+    mapInstanceRef.current.eachLayer((layer: any) => {
+      if (layer instanceof (L as any).MarkerClusterGroup) {
+        mapInstanceRef.current!.removeLayer(layer);
+      }
+    });
 
-    // Add new report markers
-    reports.forEach((report) => {
+    // Add new report markers using MarkerClusterGroup
+    const markerCluster = (L as any).markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 60,
+      spiderfyOnMaxZoom: true,
+      zoomToBoundsOnClick: true,
+      iconCreateFunction: function (cluster: any) {
+        return L.divIcon({
+          html: `<div style="background:#C86E62;color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);">${cluster.getChildCount()}</div>`,
+          className: "custom-cluster-marker",
+          iconSize: [32, 32],
+        });
+      },
+    });
+
+    reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).addTo(mapInstanceRef.current!).bindPopup(`
-          <div class="report-popup">
-            <div class="report-popup-header">${report.title}</div>
-            <div class="report-popup-body">
-              <div class="report-popup-location">${report.latitude.toFixed(
-                6
-              )}, ${report.longitude.toFixed(6)}</div>
-              <div class="report-popup-description">${report.description}</div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
-                  report.category
-                }</span>
-                <span style="color: ${getStatusColor(
-                  report.status
-                )}; font-weight: bold; font-size: 12px;">${report.status}</span>
-              </div>
+      }).bindPopup(`
+        <div class="report-popup">
+          <div class="report-popup-header">${report.title}</div>
+          <div class="report-popup-body">
+            <div class="report-popup-location">${report.latitude.toFixed(
+              6
+            )}, ${report.longitude.toFixed(6)}</div>
+            <div class="report-popup-description">${report.description}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+                report.category
+              }</span>
+              <span style="color: ${getStatusColor(
+                report.status
+              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
             </div>
+            <div style="margin-top:0.5rem;font-size:12px;">Segnalato da: <b>${
+              report.isAnonymous ? "anonymous" : "utente"
+            }</b></div>
           </div>
-        `);
+        </div>
+      `);
       reportMarkersRef.current.push(marker);
+      markerCluster.addLayer(marker);
     });
+
+    mapInstanceRef.current.addLayer(markerCluster);
   }, [reports]);
-  */
 
   useEffect(() => {
     if (mapInstanceRef.current) {
@@ -302,28 +341,37 @@ export default function MapView({
   }, [selectedLocation]);
 
   // Handle selected report popup
-  // COMMENTED OUT: Selected report popup handling is disabled since reports markers are not shown
-  // To re-enable, uncomment the following useEffect
-  /*
   useEffect(() => {
     if (!mapInstanceRef.current || !selectedReportId) return;
 
     // Find the marker for the selected report
     const reportIndex = reports.findIndex(
-      (report) => report.id === selectedReportId
+      (report: Report) => report.id === selectedReportId
     );
     if (reportIndex !== -1 && reportMarkersRef.current[reportIndex]) {
       const marker = reportMarkersRef.current[reportIndex];
       const report = reports[reportIndex];
 
-      // Center map on the marker
-      mapInstanceRef.current.setView([report.latitude, report.longitude], 15);
+      // Trova il cluster che contiene il marker
+      let markerClusterLayer: any = null;
+      mapInstanceRef.current.eachLayer((layer: any) => {
+        if (layer && typeof layer.getVisibleParent === "function") {
+          markerClusterLayer = layer;
+        }
+      });
 
-      // Open the popup
-      marker.openPopup();
+      if (markerClusterLayer) {
+        // Zooma sul marker e apri il popup dopo lo zoom
+        markerClusterLayer.zoomToShowLayer(marker, () => {
+          marker.openPopup();
+        });
+      } else {
+        // Fallback: centra e apri il popup normalmente
+        mapInstanceRef.current.setView([report.latitude, report.longitude], 15);
+        marker.openPopup();
+      }
     }
   }, [selectedReportId, reports]);
-  */
 
   return (
     <div style={{ position: "relative", height: "100%", width: "100%" }}>
@@ -334,21 +382,21 @@ export default function MapView({
           role="alert"
           style={{
             position: "absolute",
-            top: "20px",          
-            left: "50%",           
+            top: "20px",
+            left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 9999,          
+            zIndex: 9999,
             width: "auto",
             minWidth: "300px",
             textAlign: "center",
-            opacity: 0.95
+            opacity: 0.95,
           }}
         >
           <strong>Warning!</strong> Please select a point within Turin.
           {/* Close button for manual dismissal (optional) */}
-          <button 
-            type="button" 
-            className="btn-close float-end ms-2" 
+          <button
+            type="button"
+            className="btn-close float-end ms-2"
             aria-label="Close"
             onClick={() => setShowBoundaryAlert(false)}
           ></button>
@@ -360,6 +408,6 @@ export default function MapView({
         </div>
       )}
       <div ref={mapRef} className="leaflet-map" />
-      </div>
+    </div>
   );
 }
