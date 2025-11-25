@@ -21,6 +21,7 @@ model User {
   role Role @default(CITIZEN)
   reports Report[]
   messages ReportMessage[]
+  assignedReports Report[] @relation("AssignedReports")
   telegram_username String? 
   email_notifications_enabled Boolean @default(true)
 }
@@ -43,6 +44,8 @@ enum Role {
   CIVIL_PROTECTION
 }
 
+
+
 model Report {
   id            Int      @id @default(autoincrement())
   title         String
@@ -57,11 +60,11 @@ model Report {
   userId        Int
   photos        ReportPhoto[]
   messages      ReportMessage[]
-  rejectionReason String?
+  rejectedReason String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  /* assignedTo    User?    @relation("AssignedReports", fields: [assignedToId], references: [id])
-  assignedToId  Int? */
+  assignedTo    User?    @relation("AssignedReports", fields: [assignedToId], references: [id])
+  assignedToId  Int?
 }
 
 enum ReportCategory {

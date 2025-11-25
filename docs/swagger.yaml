@@ -1095,6 +1095,87 @@ paths:
                 error: "InternalServerError"
                 message: "Failed to retrieve pending reports"
 
+  /reports/{reportId}/assignable-technicals:
+    get:
+      tags:
+        - Reports
+      summary: List technicals available for this report's category
+      description: |
+        Return the list of municipality technical users that are valid assignees for the given report.
+        The backend filters available technicals according to the report's category. This endpoint is
+        intended for use by public relations officers when approving a report and choosing the responsible technical.
+      operationId: getAssignableTechnicals
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Array of municipality technical users suitable for assignment
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MunicipalityUserResponse"
+              example:
+                - id: 305
+                  firstName: Luca
+                  lastName: Verdi
+                  email: luca.verdi@municipality.com
+                  role: MUNICIPAL_BUILDING_MAINTENANCE
+                - id: 306
+                  firstName: Paolo
+                  lastName: Neri
+                  email: paolo.neri@municipality.com
+                  role: ROAD_MAINTENANCE
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (PUBLIC_RELATIONS role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Public relations officer privileges required"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Report not found"
+        "500":
+          description: Unable to retrieve technicals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to retrieve assignable technicals"
+
   /reports/{reportId}/approve:
     post:
       tags:
@@ -1102,8 +1183,8 @@ paths:
       summary: Approve a report
       description: |
         Approve a report for processing by municipality staff. Only public relations officers can perform this operation.
-        The report status changes from PENDING_APPROVAL to APPROVED.
-        After approval, the report can later be assigned to technical staff.
+        The public relations officer must select a municipality technical user to assign the report to.
+        The report status changes from PENDING_APPROVAL to ASSIGNED and the chosen technical user is stored as the assigned officer.
       operationId: approveReport
       security:
         - SessionAuth: []
@@ -1115,6 +1196,21 @@ paths:
           schema:
             type: integer
             format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - assignedTechnicalId
+              properties:
+                assignedTechnicalId:
+                  type: integer
+                  format: int64
+                  description: ID of the municipality technical user to assign to the report
+            example:
+              assignedTechnicalId: 305
       responses:
         "200":
           description: Report approved successfully
@@ -1128,7 +1224,7 @@ paths:
                   report:
                     $ref: "#/components/schemas/ReportResponse"
               example:
-                message: "Report approved successfully"
+                message: "Report approved and assigned successfully"
                 report:
                   id: 1024
                   title: "Pothole on Via Roma"
@@ -1136,7 +1232,7 @@ paths:
                   category: ROADS_URBAN_FURNISHINGS
                   latitude: 45.070339
                   longitude: 7.686864
-                  status: APPROVED
+                  status: ASSIGNED
                   user:
                     id: 201
                     firstName: Mario
@@ -1145,14 +1241,19 @@ paths:
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
-                  assignedOfficer: null
+                  assignedOfficer:
+                    id: 305
+                    firstName: Luca
+                    lastName: Verdi
+                    email: luca.verdi@municipality.com
+                    role: MUNICIPAL_BUILDING_MAINTENANCE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
                       createdAt: "2025-11-11T10:12:34Z"
                       senderId: 201
                     - id: 2
-                      content: "Report approved by public relations officer"
+                      content: "Report approved and assigned by public relations officer"
                       createdAt: "2025-11-11T11:15:00Z"
                       senderId: 123
                   rejectedReason: null
@@ -1162,7 +1263,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T11:15:00Z"
-                  assignedAt: null
+                  assignedAt: "2025-11-12T09:00:00Z"
         "400":
           description: Invalid report ID or report not in PENDING_APPROVAL status
           content:
@@ -1802,12 +1903,12 @@ components:
       description: Payload to assign or update a municipality user's role
 
     Latitude:
-      type: number
+      type: string
       description: Latitude in decimal degrees (WGS84)
       example: 45.070339
 
     Longitude:
-      type: number
+      type: string
       description: Longitude in decimal degrees (WGS84)
       example: 7.686864
 
