@@ -2,65 +2,61 @@
 jest.mock("../../../src/controllers/reportController", () => ({
   createReport: jest.fn(),
   getReports: jest.fn(),
+  getPendingReports: jest.fn(),
+  approveReport: jest.fn(),
+  rejectReport: jest.fn(),
 }));
 
 jest.mock("../../../src/middlewares/routeProtection", () => ({
-  requireCitizen: jest.fn((req: any, res: any, next: any) => next()),
+  requireCitizen: jest.fn(),
+  requirePublicRelations: jest.fn(),
 }));
 
 jest.mock("../../../src/middlewares/validateTurinBoundaries", () => ({
-  validateTurinBoundaries: jest.fn((req: any, res: any, next: any) => next()),
-}));
-
-jest.mock("../../../src/middlewares/errorMiddleware", () => ({
-  asyncHandler: jest.fn((fn: any) => fn),
-}));
-
-jest.mock("../../../src/middlewares/uploadsMiddleware", () => ({
-  upload: { single: jest.fn(() => (req: any, res: any, next: any) => next()) },
+  validateTurinBoundaries: jest.fn(),
 }));
 
 import express from "express";
 import reportRoutes from "../../../src/routes/reportRoutes";
+import {
+  createReport,
+  getReports,
+} from "../../../src/controllers/reportController";
+import { requireCitizen } from "../../../src/middlewares/routeProtection";
+import { validateTurinBoundaries } from "../../../src/middlewares/validateTurinBoundaries";
 
-describe("Report Routes", () => {
-  describe("Router Configuration", () => {
-    it("should export an Express router", () => {
-      expect(reportRoutes).toBeDefined();
-      expect(typeof reportRoutes).toBe("function");
-    });
-
-    it("should have routes configured", () => {
-      const stack = (reportRoutes as any).stack;
-      expect(stack).toBeDefined();
-      expect(Array.isArray(stack)).toBe(true);
-      expect(stack.length).toBeGreaterThan(0);
-    });
+describe("reportRoutes", () => {
+  it("should export a router", () => {
+    expect(reportRoutes).toBeDefined();
+    expect(reportRoutes).toBeInstanceOf(Function); // express.Router is a function
   });
 
-  describe("Route Methods", () => {
-    it("should support POST method", () => {
-      const stack = (reportRoutes as any).stack;
-      const postRoute = stack.find(
-        (layer: any) => layer.route && layer.route.methods.post
-      );
-      expect(postRoute).toBeDefined();
-    });
+  it("should have POST route for / with requireCitizen and validateTurinBoundaries middleware", () => {
+    const stack = (reportRoutes as any).stack;
 
-    it("should support GET method", () => {
-      const stack = (reportRoutes as any).stack;
-      const getRoute = stack.find(
-        (layer: any) => layer.route && layer.route.methods.get
-      );
-      expect(getRoute).toBeDefined();
-    });
+    const postRoute = stack.find(
+      (layer: any) =>
+        layer.route && layer.route.path === "/" && layer.route.methods.post
+    );
+
+    expect(postRoute).toBeDefined();
+    // expect middleware: requireCitizen, validateTurinBoundaries, handler: createReport
+    expect(postRoute.route.stack).toHaveLength(3);
+    expect(postRoute.route.stack[0].handle).toBe(requireCitizen);
+    expect(postRoute.route.stack[1].handle).toBe(validateTurinBoundaries);
+    expect(postRoute.route.stack[2].handle).toBe(createReport);
   });
 
-  describe("Route Integration", () => {
-    it("should mount on Express app", () => {
-      const app = express();
-      app.use("/reports", reportRoutes);
-      expect(app).toBeDefined();
-    });
+  it("should have GET route for / that uses getReports handler", () => {
+    const stack = (reportRoutes as any).stack;
+
+    const getRoute = stack.find(
+      (layer: any) =>
+        layer.route && layer.route.path === "/" && layer.route.methods.get
+    );
+
+    expect(getRoute).toBeDefined();
+    expect(getRoute.route.stack).toHaveLength(1);
+    expect(getRoute.route.stack[0].handle).toBe(getReports);
   });
 });

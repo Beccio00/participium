@@ -9,6 +9,22 @@ import { getReports, updateReportStatus } from "../../api/api";
 import type { Report as AppReport } from "../../types/report.types";
 import "../../styles/TechPanelstyle.css";
 
+const ALLOWED_ROLES = [
+  "PUBLIC_RELATIONS",
+  "CULTURE_EVENTS_TOURISM_SPORTS",
+  "LOCAL_PUBLIC_SERVICES",
+  "EDUCATION_SERVICES",
+  "PUBLIC_RESIDENTIAL_HOUSING",
+  "INFORMATION_SYSTEMS",
+  "MUNICIPAL_BUILDING_MAINTENANCE",
+  "PRIVATE_BUILDINGS",
+  "INFRASTRUCTURES",
+  "GREENSPACES_AND_ANIMAL_PROTECTION",
+  "WASTE_MANAGEMENT",
+  "ROAD_MAINTENANCE",
+  "CIVIL_PROTECTION"
+];
+
 export default function TechPanel() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -22,8 +38,10 @@ export default function TechPanel() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
 
+  const isPublicRelations = user?.role === "PUBLIC_RELATIONS";
+
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "TECHNICAL_OFFICE") {
+    if (!isAuthenticated || (user?.role  && !ALLOWED_ROLES.includes(user.role))) { 
       navigate("/"); 
     }
     fetchReports();
@@ -33,11 +51,17 @@ export default function TechPanel() {
     try {
       setLoading(true);
       const data = await getReports() as AppReport[];
+
+      let filteredReports : AppReport[] = [];
      
-      const pendingReports = data.filter(r => 
-         r.status === "PENDING" || r.status === "PENDING_APPROVAL"
-      );
-      setReports(pendingReports);
+      if (isPublicRelations) {
+        filteredReports = data.filter(r=>
+          (r.status === "APPROVED" || r.status === "ASSIGNED")
+        )
+      }else{
+
+      }
+      setReports(filteredReports);
     } catch (err) {
       setError("Failed to load reports.");
     } finally {
@@ -85,16 +109,26 @@ export default function TechPanel() {
   return (
     <Container className="py-4 tech-panel-container">
       <div className="mb-4">
-        <h2 className="tech-panel-title">Technical Office Dashboard</h2>
-        <p className="text-muted">Review incoming reports and assign status.</p>
+        <h2 className="tech-panel-title">
+          {isPublicRelations ? "Public Relations Dashboard" : "Department Dashboard"}
+        </h2>
+        <p className="text-muted">
+          {isPublicRelations 
+            ? "Review incoming reports and assign status." 
+            : `Managing active reports for ${user?.role?.replace(/_/g, " ")}`}
+        </p>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
       {reports.length === 0 && !error ? (
         <div className="empty-state">
-          <h4>No pending reports</h4>
-          <p>All incoming reports have been processed.</p>
+          <h4>No reports found</h4>
+          <p>
+            {isPublicRelations 
+              ? "All incoming reports have been processed." 
+              : "No active reports assigned to your department."}
+          </p>
         </div>
       ) : (
         <Row>
@@ -131,25 +165,34 @@ export default function TechPanel() {
 
                   <hr className="report-divider" />
 
-                  <div className="d-flex gap-2 mt-auto">
-                    <Button 
-                      variant="danger"
-                      className="flex-fill d-flex align-items-center justify-content-center"
-                      onClick={() => openRejectModal(report.id)}
-                      disabled={processingId === report.id}
-                    >
-                      <XCircle className="me-2" /> Reject
-                    </Button>
-                    <Button 
-                      variant="primary" 
-                      className="flex-fill d-flex align-items-center justify-content-center"
-                      onClick={() => handleApprove(report.id)}
-                      disabled={processingId === report.id}
-                      isLoading={processingId === report.id}
-                    >
-                      <CheckCircle className="me-2" /> Accept
-                    </Button>
-                  </div>
+                  {/* Public Relations */}
+                  {isPublicRelations ? (
+                    <div className="d-flex gap-2 mt-auto">
+                      <Button 
+                        variant="danger"
+                        className="flex-fill d-flex align-items-center justify-content-center"
+                        onClick={() => openRejectModal(report.id)}
+                        disabled={processingId === report.id}
+                      >
+                        <XCircle className="me-2" /> Reject
+                      </Button>
+                      <Button 
+                        variant="primary" 
+                        className="flex-fill d-flex align-items-center justify-content-center"
+                        onClick={() => handleApprove(report.id)}
+                        disabled={processingId === report.id}
+                        isLoading={processingId === report.id}
+                      >
+                        <CheckCircle className="me-2" /> Accept
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mt-auto text-center">
+                      <Badge bg="success" className="p-2 w-100">
+                        Assigned to your Department
+                      </Badge>
+                    </div>
+                  )}
                 </Card.Body>
               </Card>
             </Col>
@@ -157,6 +200,7 @@ export default function TechPanel() {
         </Row>
       )}
 
+      {/* rejection */}
       <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Reject Report</Modal.Title>
