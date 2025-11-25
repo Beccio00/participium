@@ -386,8 +386,7 @@ export async function sendMessageToCitizen(
  */
 export async function getReportMessages(
   reportId: number,
-  userId: number,
-  userRole: string
+  userId: number
 ): Promise<ReportMessageDTO[]> {
   const report = await prisma.report.findUnique({
     where: { id: reportId },
@@ -400,6 +399,7 @@ export async function getReportMessages(
           createdAt: "asc",
         },
       },
+      user: true,
     },
   });
 
@@ -408,12 +408,10 @@ export async function getReportMessages(
   }
 
   // Verifica autorizzazione: il cittadino può vedere solo i propri report, il technical può vedere i report assegnati
-  const isCitizen = userRole === "CITIZEN";
-  const isTechnical = report.assignedToId === userId;
-  if (isCitizen && report.userId !== userId) {
-    throw new ForbiddenError("You can only view messages for your own reports");
-  }
-  if (!isCitizen && !isTechnical) {
+  const isReportOwner = report.userId === userId;
+  const isAssignedTechnical = report.assignedToId === userId;
+  
+  if (!isReportOwner && !isAssignedTechnical) {
     throw new ForbiddenError("You are not authorized to view this conversation");
   }
 

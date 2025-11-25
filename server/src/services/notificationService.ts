@@ -98,7 +98,7 @@ export async function notifyNewMessage(
 ): Promise<void> {
   await createNotification(
     userId,
-    NotificationType.REPORT_MESSAGE_RECEIVED,
+    NotificationType.MESSAGE_RECEIVED,
     "New Message Received",
     `${senderName} has sent you a message regarding your report`,
     reportId

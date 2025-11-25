@@ -243,12 +243,12 @@ export async function sendMessageToCitizen(req: Request, res: Response): Promise
 // Get report conversation history
 export async function getReportMessages(req: Request, res: Response): Promise<void> {
   const reportId = parseInt(req.params.reportId);
-  const user = req.user as { id: number, role: string };
+  const user = req.user as { id: number };
 
   if (isNaN(reportId)) {
     throw new BadRequestError("Invalid report ID parameter");
   }
 
-  const messages = await getReportMessagesService(reportId, user.id, user.role);
+  const messages = await getReportMessagesService(reportId, user.id);
   res.status(200).json(messages);
 }
