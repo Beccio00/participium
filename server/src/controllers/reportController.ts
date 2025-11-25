@@ -15,17 +15,6 @@ import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
 import { asyncHandler } from "../middlewares/errorMiddleware";
 
 export async function createReport(req: Request, res: Response): Promise<void> {
-  const photos = req.files as Express.Multer.File[];
-  
-  const {
-    title,
-    description,
-    category,
-    latitude,
-    longitude,
-    isAnonymous,
-  } = req.body;
-
         const user = req.user as { id: number };
 
         // Validate required fields
@@ -159,14 +148,14 @@ export async function approveReport(req: Request, res: Response): Promise<void> 
 }
 
 // Get list of assignable technicals for a report (PUBLIC_RELATIONS only)
-export const getAssignableTechnicals = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export async function getAssignableTechnicals (req: Request, res: Response): Promise<void> {
   const reportId = parseInt(req.params.reportId);
   if (isNaN(reportId)) {
     throw new BadRequestError("Invalid report ID parameter");
   }
   const list = await getAssignableTechnicalsForReportService(reportId);
   res.status(200).json(list);
-});
+};
 
 // Reject a report (PUBLIC_RELATIONS only)
 export async function rejectReport(req: Request, res: Response): Promise<void> {

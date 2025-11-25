@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../middlewares/errorMiddleware';
 import { requireCitizen } from '../middlewares/routeProtection';
 import { validateTurinBoundaries } from '../middlewares/validateTurinBoundaries';
-import { createReport, getReports, getPendingReports, approveReport, rejectReport } from '../controllers/reportController';
+import { createReport, getReports, getPendingReports, approveReport, rejectReport, getAssignableTechnicals } from '../controllers/reportController';
 import { upload } from '../middlewares/uploadsMiddleware';
 import { ApiValidationMiddleware } from '../middlewares/validationMiddlewere';
 import { requirePublicRelations } from '../middlewares/routeProtection';
@@ -25,5 +25,8 @@ router.post('/:reportId/approve', requirePublicRelations, asyncHandler(approveRe
 
 // POST /api/reports/:reportId/reject - Reject a report
 router.post('/:reportId/reject', requirePublicRelations, asyncHandler(rejectReport));
+
+// GET /api/reports/:reportId/assignable-technicals - list technicals valid for this report
+router.get('/:reportId/assignable-technicals', requirePublicRelations, asyncHandler(getAssignableTechnicals));
 
 export default router;
