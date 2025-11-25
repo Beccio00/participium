@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import multer from "multer";
 import path from "path";
 import multer from "multer";
 import { 
@@ -17,17 +16,6 @@ import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
 import { asyncHandler } from "../middlewares/errorMiddleware";
 
 export async function createReport(req: Request, res: Response): Promise<void> {
-  const photos = req.files as Express.Multer.File[];
-  
-  const {
-    title,
-    description,
-    category,
-    latitude,
-    longitude,
-    isAnonymous,
-  } = req.body;
-
         const user = req.user as { id: number };
         const { title, description, category, latitude, longitude, isAnonymous } = req.body;
         const photos = req.files as Express.Multer.File[];
@@ -117,7 +105,6 @@ export async function createReport(req: Request, res: Response): Promise<void> {
 
         const newReport = await createReportService(reportData);
 
-  const newReport = await createReportService(reportData);
 
   res.status(201).json({
     message: "Report created successfully",
