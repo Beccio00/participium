@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import multer from "multer";
 import path from "path";
-import multer from "multer";
 import { 
   createReport as createReportService, 
   getApprovedReports as getApprovedReportsService,
