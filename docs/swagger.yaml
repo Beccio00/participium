@@ -251,146 +251,146 @@ paths:
                 message: "Unable to create user"
 
   /citizen/me:
-      get:
-        tags:
-          - Citizens
-        summary: Get current citizen profile
-        description: Returns the authenticated citizen's profile and notification settings.
-        operationId: getCitizenProfile
-        security:
-          - SessionAuth: []
-        responses:
-          "200":
-            description: Citizen profile retrieved successfully
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/CitizenConfigResponse"
-          "401":
-            description: Not authenticated
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
-
-      patch:
-        tags:
-          - Citizens
-        summary: Update citizen profile configuration
-        description: Update Telegram username and email notification preference.
-        operationId: updateCitizenConfig
-        security:
-          - SessionAuth: []
-        requestBody:
-          required: true
+    get:
+      tags:
+        - Citizens
+      summary: Get current citizen profile
+      description: Returns the authenticated citizen's profile and notification settings.
+      operationId: getCitizenProfile
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Citizen profile retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CitizenConfigRequest"
-              example:
-                firstName: "Mario"
-                lastName: "Rossi"
-                email: "mario.updated@example.com"
-                password: "NewSecurePass123!"
-                telegramUsername: "mario_rossi"
-                emailNotificationsEnabled: true
-        responses:
-          "200":
-            description: Configuration updated successfully
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/CitizenConfigResponse"
-          "400":
-            description: Invalid input
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
-          "401":
-            description: Not authenticated
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
-          "422":
-            description: Validation error
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/CitizenConfigResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags:
+        - Citizens
+      summary: Update citizen profile configuration
+      description: Update name, surname, email, password, Telegram username and email notification preference.
+      operationId: updateCitizenConfig
+      security:
+        - SessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CitizenConfigRequest"
+            example:
+              firstName: "Mario"
+              lastName: "Rossi"
+              email: "mario.updated@example.com"
+              password: "NewSecurePass123!"
+              telegramUsername: "mario_rossi"
+              emailNotificationsEnabled: true
+      responses:
+        "200":
+          description: Configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CitizenConfigResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /citizen/me/photo:
-      post:
-        tags:
-          - Citizens
-        summary: Upload/update personal photo
-        description: Upload a personal profile photo. Accepts `multipart/form-data` with single file field `photo` (jpg/png). Replaces existing photo if present.
-        operationId: uploadCitizenPhoto
-        security:
-          - SessionAuth: []
-        requestBody:
-          required: true
-          content:
-            multipart/form-data:
-              schema:
-                type: object
-                properties:
-                  photo:
-                    type: string
-                    format: binary
-              encoding:
+    post:
+      tags:
+        - Citizens
+      summary: Upload/update personal photo
+      description: Upload a personal profile photo. Accepts `multipart/form-data` with single file field `photo` (jpg/png). Replaces existing photo if present.
+      operationId: uploadCitizenPhoto
+      security:
+        - SessionAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
                 photo:
-                  contentType: image/jpeg, image/png
-        responses:
-          "201":
-            description: Photo uploaded successfully
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/PhotoUploadResponse"
-          "400":
-            description: Missing file or invalid file type
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
-          "413":
-            description: File too large
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
-          "401":
-            description: Not authenticated
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
+                  type: string
+                  format: binary
+            encoding:
+              photo:
+                contentType: image/jpeg, image/png
+      responses:
+        "201":
+          description: Photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoUploadResponse"
+        "400":
+          description: Missing file or invalid file type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-      delete:
-        tags:
-          - Citizens
-        summary: Remove personal photo
-        description: Delete the currently stored personal photo for the authenticated citizen.
-        operationId: deleteCitizenPhoto
-        security:
-          - SessionAuth: []
-        responses:
-          "204":
-            description: Photo deleted successfully
-          "401":
-            description: Not authenticated
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
-          "404":
-            description: Photo not found
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - Citizens
+      summary: Remove personal photo
+      description: Delete the currently stored personal photo for the authenticated citizen.
+      operationId: deleteCitizenPhoto
+      security:
+        - SessionAuth: []
+      responses:
+        "204":
+          description: Photo deleted successfully
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Photo not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /admin/municipality-users:
     post:
