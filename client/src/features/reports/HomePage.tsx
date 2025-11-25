@@ -39,7 +39,13 @@ export default function HomePage() {
           if (isAuthenticated && user && r.user && r.user.email === user.email) return true;
           return false;
         });
-        setReports(visible);
+        // Ensure latitude/longitude are numbers (API may return strings to satisfy OpenAPI schema)
+        const normalized = visible.map((r: any) => ({
+          ...r,
+          latitude: Number(r.latitude),
+          longitude: Number(r.longitude),
+        }));
+        setReports(normalized);
       } catch (err: any) {
         console.error("Failed to load reports:", err);
         if (!mounted) return;

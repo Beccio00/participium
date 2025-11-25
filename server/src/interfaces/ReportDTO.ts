@@ -6,8 +6,8 @@ export type ReportDTO = {
   title: string;
   description: string;
   category: ReportCategory;
-  latitude: number;
-  longitude: number;
+    latitude: string;
+    longitude: string;
   address: string;
   isAnonymous: boolean;
   status: ReportStatus;
@@ -34,8 +34,8 @@ export function toReportDTO(r: any): ReportDTO {
         title: r.title,
         description: r.description,
         category: r.category,
-        latitude: r.latitude,
-        longitude: r.longitude,
+        latitude: String(r.latitude),
+        longitude: String(r.longitude),
         address: r.address,
         isAnonymous: r.isAnonymous,
         status: r.status,

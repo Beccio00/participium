@@ -86,8 +86,13 @@ type CreateReportData = Omit<
   | "user"
   | "rejectedReason"
   | "address"
+  | "latitude"
+  | "longitude"
 > & {
-  userId: number; //add userId to link report to user
+  // When creating a report, latitude/longitude are numbers coming from the client
+  latitude: number;
+  longitude: number;
+  userId: number; // add userId to link report to user
   photos: ReportPhoto[];
   address?: string;
 };
