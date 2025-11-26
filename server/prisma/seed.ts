@@ -224,12 +224,6 @@ async function main() {
         "The central fountain has a strong smell and the water appears cloudy. Please inspect as soon as possible.",
       preferredRole: "LOCAL_PUBLIC_SERVICES",
     },
-    ARCHITECTURAL_BARRIERS: {
-      title: "Staircase missing handrail limits access",
-      description:
-        "The park staircase lacks a handrail and poses a risk to elderly and disabled people.",
-      preferredRole: "MUNICIPAL_BUILDING_MAINTENANCE",
-    },
     SEWER_SYSTEM: {
       title: "Road drain flooding after heavy rain",
       description:
