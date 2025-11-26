@@ -44,6 +44,59 @@ describe("reportService", () => {
     jest.clearAllMocks();
   });
 
+  describe("getAssignedReportsService", () => {
+    const { getAssignedReportsService } = require("../../../src/services/reportService");
+    const mockToReportDTO = jest.fn((r) => r);
+    beforeAll(() => {
+      jest.spyOn(require("../../../src/interfaces/ReportDTO"), "toReportDTO").mockImplementation(mockToReportDTO);
+    });
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("returns assigned reports for the technician with default statuses", async () => {
+      const fakeReports = [
+        { id: 1, assignedToId: 42, status: "ASSIGNED" },
+        { id: 2, assignedToId: 42, status: "IN_PROGRESS" },
+      ];
+      mockFindManyReport.mockResolvedValue(fakeReports);
+      const result = await getAssignedReportsService(42);
+      expect(mockFindManyReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { assignedToId: 42, status: { in: ["ASSIGNED", "IN_PROGRESS", "RESOLVED"] } },
+          orderBy: { createdAt: "desc" },
+        })
+      );
+      expect(result).toEqual(fakeReports);
+    });
+
+    it("filters by specific status if provided", async () => {
+      mockFindManyReport.mockResolvedValue([]);
+      await getAssignedReportsService(42, "RESOLVED");
+      expect(mockFindManyReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { assignedToId: 42, status: { in: ["RESOLVED"] } },
+        })
+      );
+    });
+
+    it("sorts by specified field and direction", async () => {
+      mockFindManyReport.mockResolvedValue([]);
+      await getAssignedReportsService(42, undefined, "priority", "asc");
+      expect(mockFindManyReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { priority: "asc" },
+        })
+      );
+    });
+
+    it("returns an empty array if no reports are found", async () => {
+      mockFindManyReport.mockResolvedValue([]);
+      const result = await getAssignedReportsService(42);
+      expect(result).toEqual([]);
+    });
+  });
+
   describe("createReport", () => {
     it("should create basic report", async () => {
       const input = {

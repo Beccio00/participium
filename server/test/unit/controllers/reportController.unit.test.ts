@@ -44,6 +44,7 @@ import {
   rejectReport,
   getAssignableTechnicals,
   getPendingReports,
+  getAssignedReports,
 } from "../../../src/controllers/reportController";
 import * as reportService from "../../../src/services/reportService";
 import { ReportCategory } from "../../../../shared/ReportTypes";
@@ -75,6 +76,11 @@ const mockGetAssignableTechnicalsService =
     typeof reportService.getAssignableTechnicalsForReport
   >;
 
+const mockGetAssignedReportsService =
+  reportService.getAssignedReportsService as jest.MockedFunction<
+    typeof reportService.getAssignedReportsService
+  >;
+
 describe("reportController", () => {
   let mockReq: any;
   let mockRes: Partial<Response>;
@@ -91,6 +97,75 @@ describe("reportController", () => {
       json: jest.fn(),
     };
     jest.clearAllMocks();
+  });
+
+  describe("getAssignedReports", () => {
+    const technicalUser = {
+      id: 42,
+      role: "ROAD_MAINTENANCE",
+    };
+    const nonTechnicalUser = {
+      id: 99,
+      role: "ADMINISTRATOR",
+    };
+
+    it("should throw UnauthorizedError if user is not authenticated", async () => {
+      mockReq.user = null;
+      await expect(getAssignedReports(mockReq as Request, mockRes as Response)).rejects.toThrow("Authentication required");
+      expect(mockGetAssignedReportsService).not.toHaveBeenCalled();
+    });
+
+    it("should throw ForbiddenError if user is not technical staff", async () => {
+      mockReq.user = nonTechnicalUser;
+      await expect(getAssignedReports(mockReq as Request, mockRes as Response)).rejects.toThrow("Technical office staff privileges required");
+      expect(mockGetAssignedReportsService).not.toHaveBeenCalled();
+    });
+
+    it("should throw BadRequestError if status is invalid", async () => {
+      mockReq.user = technicalUser;
+      mockReq.query = { status: "INVALID_STATUS" };
+      await expect(getAssignedReports(mockReq as Request, mockRes as Response)).rejects.toThrow("Invalid status filter");
+      expect(mockGetAssignedReportsService).not.toHaveBeenCalled();
+    });
+
+    it("should call service with correct params and return reports", async () => {
+      mockReq.user = technicalUser;
+      mockReq.query = { status: "ASSIGNED", sortBy: "priority", order: "asc" };
+      const fakeReports = [
+        { id: 1, title: "R1", status: "ASSIGNED" },
+        { id: 2, title: "R2", status: "ASSIGNED" },
+      ];
+      mockGetAssignedReportsService.mockResolvedValue(fakeReports as any);
+
+      await getAssignedReports(mockReq as Request, mockRes as Response);
+
+      expect(mockGetAssignedReportsService).toHaveBeenCalledWith(
+        technicalUser.id,
+        "ASSIGNED",
+        "priority",
+        "asc"
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(fakeReports);
+    });
+
+    it("should use default sort and order if not provided", async () => {
+      mockReq.user = technicalUser;
+      mockReq.query = {};
+      const fakeReports: any[] = [];
+      mockGetAssignedReportsService.mockResolvedValue(fakeReports);
+
+      await getAssignedReports(mockReq as Request, mockRes as Response);
+
+      expect(mockGetAssignedReportsService).toHaveBeenCalledWith(
+        technicalUser.id,
+        undefined,
+        "createdAt",
+        "desc"
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(fakeReports);
+    });
   });
 
   describe("createReport", () => {
