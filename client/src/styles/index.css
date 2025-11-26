@@ -1,3 +1,16 @@
+/* Bottone chat custom, grigio palette */
+.btn-chat {
+  background-color: var(--stone) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--stone) !important;
+}
+
+.btn-chat:hover,
+.btn-chat:focus {
+  background-color: var(--olive) !important;
+  border-color: var(--olive) !important;
+  color: var(--surface) !important;
+}
 :root {
   /* Typography */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -7,17 +20,17 @@
   color-scheme: light dark;
 
   /* New Pantone-based palette (user-provided). No blue primary. */
-  --primary: #C86E62;    /* PANTONE 16-3-3 C - Rosa terroso / Corallo tenue (primary) */
+  --primary: #c86e62; /* PANTONE 16-3-3 C - Rosa terroso / Corallo tenue (primary) */
   --primary-dark: color-mix(in srgb, var(--primary) 78%, black 22%);
-  --stone:   #C39973;    /* PANTONE 13-4-3 C - Beige caldo / Sabbia dorata */
-  --olive:   #95804D;    /* PANTONE 150-1-3 C - Verde oliva chiaro / Oro antico */
+  --stone: #c39973; /* PANTONE 13-4-3 C - Beige caldo / Sabbia dorata */
+  --olive: #95804d; /* PANTONE 150-1-3 C - Verde oliva chiaro / Oro antico */
   --navbar-accent: var(--primary); /* use primary as navbar accent */
-  --sand:    #AB8165;    /* PANTONE 479 C - Beige sabbia / Marrone chiaro rosato */
-  --bg:      #F6F5F3;    /* soft page background */
-  --surface: #FFFFFF;    /* card/surface */
-  --text:    #482F1D;    /* keep dark brown for primary text for legibility */
-  --muted:   #C39973;    /* muted / secondary text */
-  --glass:   rgba(255,255,255,0.6);
+  --sand: #ab8165; /* PANTONE 479 C - Beige sabbia / Marrone chiaro rosato */
+  --bg: #f6f5f3; /* soft page background */
+  --surface: #ffffff; /* card/surface */
+  --text: #482f1d; /* keep dark brown for primary text for legibility */
+  --muted: #c39973; /* muted / secondary text */
+  --glass: rgba(255, 255, 255, 0.6);
 
   color: var(--text);
   background-color: var(--bg);
@@ -89,7 +102,8 @@
   background-color: #3b82f6 !important;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
