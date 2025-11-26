@@ -11,6 +11,7 @@ export async function getApiInfo(req: Request, res: Response): Promise<void> {
       citizens: CONFIG.ROUTES.CITIZEN,
       admin: CONFIG.ROUTES.ADMIN,
       reports: CONFIG.ROUTES.REPORTS,
+      notifications: CONFIG.ROUTES.NOTIFICATIONS,
       docs: CONFIG.ROUTES.SWAGGER,
     },
   });

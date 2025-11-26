@@ -63,8 +63,11 @@ import {
   approveReport as approveReportService,
   rejectReport as rejectReportService,
   getAssignableTechnicalsForReport as getAssignableTechnicalsForReportService,
+  updateReportStatus as updateReportStatusService,
+  sendMessageToCitizen as sendMessageToCitizenService,
+  getReportMessages as getReportMessagesService
 } from "../services/reportService";
-import { ReportCategory } from "../../../shared/ReportTypes";
+import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
 import minioClient, { BUCKET_NAME } from "../utils/minioClient";
 import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
@@ -272,4 +275,65 @@ export async function rejectReport(req: Request, res: Response): Promise<void> {
     message: "Report rejected successfully",
     report: updatedReport,
   });
+}
+
+// Update report status
+export async function updateReportStatus(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number };
+  const { status } = req.body;
+
+  if (isNaN(reportId)) {
+    throw new BadRequestError("Invalid report ID parameter");
+  }
+
+  if (!status || typeof status !== "string") {
+    throw new BadRequestError("Status is required");
+  }
+
+  // Validate status
+  const validStatuses = [ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED, ReportStatus.RESOLVED];
+  if (!validStatuses.includes(status as ReportStatus)) {
+    throw new BadRequestError(`Invalid status. Allowed values: ${validStatuses.join(", ")}`);
+  }
+
+  const updatedReport = await updateReportStatusService(reportId, user.id, status as ReportStatus);
+  res.status(200).json({
+    message: "Report status updated successfully",
+    report: updatedReport,
+  });
+}
+
+// Send message to citizen
+export async function sendMessageToCitizen(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number };
+  const { content } = req.body;
+
+  if (isNaN(reportId)) {
+    throw new BadRequestError("Invalid report ID parameter");
+  }
+
+  if (!content || typeof content !== "string" || content.trim().length === 0) {
+    throw new BadRequestError("Message content is required");
+  }
+
+  const message = await sendMessageToCitizenService(reportId, user.id, content);
+  res.status(201).json({
+    message: "Message sent successfully",
+    data: message,
+  });
+}
+
+// Get report conversation history
+export async function getReportMessages(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number };
+
+  if (isNaN(reportId)) {
+    throw new BadRequestError("Invalid report ID parameter");
+  }
+
+  const messages = await getReportMessagesService(reportId, user.id);
+  res.status(200).json(messages);
 }
