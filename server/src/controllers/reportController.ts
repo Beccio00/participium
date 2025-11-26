@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import path from "path";
-import multer from "multer";
 import { 
   createReport as createReportService, 
   getApprovedReports as getApprovedReportsService,
@@ -17,8 +16,6 @@ import { asyncHandler } from "../middlewares/errorMiddleware";
 
 export async function createReport(req: Request, res: Response): Promise<void> {
         const user = req.user as { id: number };
-        const { title, description, category, latitude, longitude, isAnonymous } = req.body;
-        const photos = req.files as Express.Multer.File[];
 
         // Validate required fields
         if (
@@ -103,8 +100,7 @@ export async function createReport(req: Request, res: Response): Promise<void> {
           userId: user.id,
         };
 
-        const newReport = await createReportService(reportData);
-
+  const newReport = await createReportService(reportData);
 
   res.status(201).json({
     message: "Report created successfully",
@@ -152,14 +148,14 @@ export async function approveReport(req: Request, res: Response): Promise<void> 
 }
 
 // Get list of assignable technicals for a report (PUBLIC_RELATIONS only)
-export const getAssignableTechnicals = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export async function getAssignableTechnicals (req: Request, res: Response): Promise<void> {
   const reportId = parseInt(req.params.reportId);
   if (isNaN(reportId)) {
     throw new BadRequestError("Invalid report ID parameter");
   }
   const list = await getAssignableTechnicalsForReportService(reportId);
   res.status(200).json(list);
-});
+};
 
 // Reject a report (PUBLIC_RELATIONS only)
 export async function rejectReport(req: Request, res: Response): Promise<void> {

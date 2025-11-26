@@ -154,6 +154,28 @@ export async function deleteCitizenPhoto() {
   const res = await fetch(`${API_PREFIX}/citizen/me/photo`, {
     method: 'DELETE',
     credentials: 'include',
+export async function getPendingReports(): Promise<Report[]> {
+  const res = await fetch(`${API_PREFIX}/reports/pending`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<Report[]>(res);
+}
+
+export async function getAssignableTechnicals(reportId: number): Promise<any[]> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/assignable-technicals`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return handleResponse<any[]>(res);
+}
+
+export async function approveReport(reportId: number, assignedTechnicalId: number): Promise<any> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/approve`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignedTechnicalId }),
   });
   return handleResponse<any>(res);
 }
@@ -176,6 +198,16 @@ export async function updateReportStatus(
     const data = await res.json();
     throw new Error(data.message || "Failed to update report status");
   }
+}
+
+export async function rejectReport(reportId: number, reason: string): Promise<any> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/reject`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+  return handleResponse<any>(res);
 }
 
 export default {
