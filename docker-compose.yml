@@ -97,12 +97,13 @@ services:
       - ./server/uploads:/app/uploads
     command: >
       sh -c "
-      npx prisma migrate deploy &&
+      echo 'RESETTING DATABASE FOR DEMO...' &&
+      npx prisma migrate reset --force --skip-seed &&
       if [ "${AUTO_SEED}" = "true" ] && [ -f dist/prisma/seed.js ]; then
         echo '🌱 AUTO_SEED=true — running compiled seed script';
         node dist/prisma/seed.js;
       else
-        echo 'ℹ️  Skipping automatic seed (AUTO_SEED not true or seed not found)';
+        echo 'Skipping automatic seed (AUTO_SEED not true or seed not found)';
       fi &&
       node dist/app/src/index.js
       "

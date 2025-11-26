@@ -33,6 +33,10 @@ describe("Header", () => {
       user: null,
       isAuthenticated: false,
       logout: vi.fn(),
+      loading: false,
+      signup: vi.fn(),
+      login: vi.fn(),
+      refreshUser: vi.fn(),
     });
 
     render(
@@ -52,6 +56,7 @@ describe("Header", () => {
       loading: false,
       signup: vi.fn(),
       login: vi.fn(),
+      refreshUser: vi.fn(),
     });
 
     render(
@@ -78,6 +83,7 @@ describe("Header", () => {
       loading: false,
       signup: vi.fn(),
       login: vi.fn(),
+      refreshUser: vi.fn(),
     });
 
     render(
@@ -106,6 +112,7 @@ describe("Header", () => {
       loading: false,
       signup: vi.fn(),
       login: vi.fn(),
+      refreshUser: vi.fn(),
     });
 
     render(
@@ -127,6 +134,7 @@ describe("Header", () => {
       loading: false,
       signup: vi.fn(),
       login: vi.fn(),
+      refreshUser: vi.fn(),
     });
 
     render(
