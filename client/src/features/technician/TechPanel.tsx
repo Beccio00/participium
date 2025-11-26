@@ -5,7 +5,7 @@ import { CheckCircle, XCircle } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { getReports, getPendingReports, rejectReport, getAssignableTechnicals, approveReport } from "../../api/api"; 
+import { getReports, getPendingReports, rejectReport, getAssignableTechnicals, approveReport, getAssignedReports } from "../../api/api"; 
 import type { Report as AppReport } from "../../types/report.types";
 import ReportCard from "../reports/ReportCard";
 import "../../styles/TechPanelstyle.css";
@@ -76,8 +76,8 @@ export default function TechPanel() {
         setPendingReports(pendingNormalized);
         setOtherReports(otherNormalized);
       } else {
-        const data = (await getReports()) as AppReport[];
-        // Normalize latitude/longitude to numbers (API returns strings to satisfy OpenAPI schema)
+        const data = (await getAssignedReports()) as AppReport[];
+        
         const normalized = (data || []).map((r: any) => ({
           ...r,
           latitude: Number(r.latitude),
@@ -224,7 +224,7 @@ export default function TechPanel() {
         (reports.length === 0 && !error) ? (
           <div className="empty-state">
             <h4>No reports found</h4>
-            <p>No active reports assigned to your department.</p>
+            <p>No active reports assigned to you.</p>
           </div>
         ) : (
           <Row>

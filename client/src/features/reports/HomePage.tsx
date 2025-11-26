@@ -21,6 +21,8 @@ export default function HomePage() {
   const [loadingReports, setLoadingReports] = useState(false);
   const [reportsError, setReportsError] = useState<string | null>(null);
 
+  const isTechnicalOfficer = isAuthenticated && user?.role && !["CITIZEN", "ADMINISTRATOR","PUBLIC_RELATIONS"].includes(user.role);
+
   // load reports from backend and filter statuses: appending, in progress, complete
   useEffect(() => {
     // Re-load reports when authentication state or user changes so that
@@ -113,17 +115,22 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Add Report Button */}
+      
       <div style={{ padding: '1.5rem', borderTop: '1px solid #f8f9fa', background: '#fdfdfd' }}>
         {isAuthenticated && user?.role === "PUBLIC_RELATIONS" ? (
           <Button onClick={() => navigate('/assign-reports')} variant="primary" fullWidth>
             <Pencil className="me-2" />
-            Assign technical
+            Manage reports
           </Button>
         ) : (!isAuthenticated || user?.role === "CITIZEN") ? (
           <Button onClick={handleAddReport} variant="primary" fullWidth>
             <Pencil className="me-2" />
             Select a location
+          </Button>
+        ) :  isTechnicalOfficer ? (
+          <Button onClick={() => navigate('/assign-reports')} variant="primary" fullWidth>
+            <Pencil className="me-2" />
+            My Reports
           </Button>
         ) : null}
 

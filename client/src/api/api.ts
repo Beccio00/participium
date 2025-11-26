@@ -178,6 +178,14 @@ export async function rejectReport(reportId: number, reason: string): Promise<an
   return handleResponse<any>(res);
 }
 
+export async function getAssignedReports(): Promise<Report[]> {
+  const res = await fetch(`${API_PREFIX}/reports/assigned`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<Report[]>(res);
+}
+
 export default {
   getSession,
   login,
