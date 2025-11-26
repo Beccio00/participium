@@ -51,13 +51,22 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+    volumes:
+      - ./seed-images:/seed-images:ro  # Monta la cartella con le immagini
     entrypoint: >
       /bin/sh -c "
       sleep 5;
       mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
       mc mb myminio/${MINIO_BUCKET_NAME:-reports-photos} --ignore-existing;
       mc anonymous set public myminio/${MINIO_BUCKET_NAME:-reports-photos};
-      echo 'MinIO bucket ${MINIO_BUCKET_NAME:-reports-photos} created successfully';
+      echo 'Uploading seed images...';
+      if [ -d /seed-images ]; then
+        mc cp --recursive /seed-images/* myminio/${MINIO_BUCKET_NAME:-reports-photos}/;
+        echo 'Seed images uploaded successfully';
+      else
+        echo 'No seed-images directory found, skipping upload';
+      fi;
+      echo 'MinIO bucket ${MINIO_BUCKET_NAME:-reports-photos} setup completed';
       exit 0;
       "
     networks:
