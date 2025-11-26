@@ -289,7 +289,7 @@ describe('passport configuration', () => {
         firstName: 'Luca',
         lastName: 'Verdi',
         email: 'tech@comune.torino.it',
-        role: Roles.TECHNICAL_OFFICE,
+        role: mockTechnicalUser.role as any,
         telegramUsername: null,
         emailNotificationsEnabled: true
       };

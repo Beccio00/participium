@@ -123,7 +123,7 @@ describe("constants configuration", () => {
       });
 
       it("should have correct HTTP methods", () => {
-        const expectedMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"];
+        const expectedMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"];
         expect(CONFIG.CORS.METHODS).toEqual(expectedMethods);
       });
     });
