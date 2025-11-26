@@ -27,3 +27,4 @@ lerna-debug.log*
 *.sln
 *.sw?
 Thumbs.db
+mydoc
