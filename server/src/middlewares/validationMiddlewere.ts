@@ -6,6 +6,6 @@ export const ApiValidationMiddleware = OpenApiValidator.middleware({
     validateRequests: true,
     validateResponses: true,
     validateSecurity: false,
-    fileUploader: false,  // Non gestire file upload - lascia fare a multer
-    ignorePaths: /\/api\/reports$/  // Ignora POST e GET /api/reports
+    fileUploader: false,  
+    ignorePaths: /\/api\/(reports|citizen)$/  
 });

@@ -12,6 +12,8 @@ async function main() {
   await prisma.reportMessage.deleteMany();
   // Delete photos (they reference reports)
   await prisma.reportPhoto.deleteMany();
+  // Delete citizen photos (they reference users)
+  await prisma.citizenPhoto.deleteMany();
   // Delete reports (they reference users)
   await prisma.report.deleteMany();
   // Now it's safe to delete users

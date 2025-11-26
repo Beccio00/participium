@@ -32,7 +32,21 @@ export function createApp(): Express {
 
   app.use(
     cors({
-      origin: CONFIG.CORS.ORIGIN,
+      origin: (origin: any, cb: any) => {
+        // allow requests with no origin (mobile apps, curl)
+        if (!origin) return cb(null, true);
+        const allowed = CONFIG.CORS.ORIGIN || [];
+        // if exact match allowed
+        if (allowed.includes(origin)) return cb(null, true);
+        // allow any localhost origin (different ports) and 127.0.0.1
+        try {
+          const u = new URL(origin);
+          if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return cb(null, true);
+        } catch (e) {
+          // ignore
+        }
+        return cb(new Error('Not allowed by CORS'));
+      },
       credentials: CONFIG.CORS.CREDENTIALS,
       methods: CONFIG.CORS.METHODS,
     })

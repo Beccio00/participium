@@ -69,9 +69,8 @@ import {
 } from "../services/reportService";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
-import minioClient, { BUCKET_NAME } from "../utils/minioClient";
+import minioClient, { BUCKET_NAME, getMinioObjectUrl } from "../utils/minioClient";
 import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
-import { asyncHandler } from "../middlewares/errorMiddleware";
 
 export async function createReport(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
@@ -218,19 +217,19 @@ export async function approveReport(
 ): Promise<void> {
   const reportId = parseInt(req.params.reportId);
   const user = req.user as { id: number };
-  const { assignedTechnicalId } = req.body;
+  const assignedTechnicalId = (req.body && req.body.assignedTechnicalId) as any;
 
   if (isNaN(reportId)) {
     throw new BadRequestError("Invalid report ID parameter");
   }
+  
+  const assignedIdNum = parseInt(assignedTechnicalId);
 
   if (!assignedTechnicalId || isNaN(parseInt(assignedTechnicalId))) {
     throw new BadRequestError(
       "Missing or invalid 'assignedTechnicalId' in request body"
     );
   }
-
-  const assignedIdNum = parseInt(assignedTechnicalId);
 
   const updatedReport = await approveReportService(
     reportId,

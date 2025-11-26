@@ -250,6 +250,228 @@ paths:
                 error: "InternalServerError"
                 message: "Unable to create user"
 
+  /citizen/me:
+    get:
+      tags:
+        - Citizens
+      summary: Get current citizen profile
+      description: Returns the authenticated citizen's profile and notification settings.
+      operationId: getCitizenProfile
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Citizen profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CitizenConfigResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "An unexpected error occurred"
+
+    patch:
+      tags:
+        - Citizens
+      summary: Update citizen profile configuration
+      description: Update name, surname, email, password, Telegram username and email notification preference. At least one field must be provided.
+      operationId: updateCitizenConfig
+      security:
+        - SessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CitizenConfigRequest"
+            example:
+              email: "mario.updated@example.com"
+      responses:
+        "200":
+          description: Configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CitizenConfigResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "At least one field must be provided"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Email already in use"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: "UnprocessableEntity"
+                message: "Invalid email format"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "An unexpected error occurred"
+
+  /citizen/me/photo:
+    post:
+      tags:
+        - Citizens
+      summary: Upload/update personal photo
+      description: Upload a personal profile photo. Accepts `multipart/form-data` with single file field `photo` (jpg/png). Replaces existing photo if present.
+      operationId: uploadCitizenPhoto
+      security:
+        - SessionAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+            encoding:
+              photo:
+                contentType: image/jpeg, image/png
+      responses:
+        "201":
+          description: Photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoUploadResponse"
+        "400":
+          description: Missing file or invalid file type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Photo file is required"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 413
+                error: "PayloadTooLarge"
+                message: "Photo file exceeds the maximum allowed size"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "An unexpected error occurred"
+    delete:
+      tags:
+        - Citizens
+      summary: Remove personal photo
+      description: Delete the currently stored personal photo for the authenticated citizen.
+      operationId: deleteCitizenPhoto
+      security:
+        - SessionAuth: []
+      responses:
+        "204":
+          description: Photo deleted successfully
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "404":
+          description: Photo not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Photo not found"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "An unexpected error occurred"
+
   /admin/municipality-users:
     post:
       tags:
@@ -2303,13 +2525,14 @@ components:
         status:
           $ref: "#/components/schemas/ReportStatus"
 
-    ReportPhoto:
+    Photo:
       type: object
       properties:
         id:
           type: integer
           format: int64
           example: 301
+          description: Photo ID (0 for new uploads, actual ID after saved)
         url:
           type: string
           format: uri
@@ -2363,6 +2586,7 @@ components:
         assignedOfficer:
           allOf:
             - $ref: "#/components/schemas/MunicipalityUserResponse"
+          type: object
           description: Details of the assigned officer (null if not assigned)
         messages:
           type: array
@@ -2375,7 +2599,7 @@ components:
         photos:
           type: array
           items:
-            $ref: "#/components/schemas/ReportPhoto"
+            $ref: "#/components/schemas/Photo"
         createdAt:
           type: string
           format: date-time
@@ -2417,6 +2641,87 @@ components:
         - PUBLIC_GREEN_AREAS_PLAYGROUNDS
         - OTHER
       example: ROADS_URBAN_FURNISHINGS
+
+    CitizenConfigRequest:
+      type: object
+      description: Fields that a citizen may update in their account. All fields are optional; only provided fields will be changed.
+      properties:
+        firstName:
+          type: string
+          minLength: 0
+          maxLength: 50
+          description: Citizen's first name
+          example: Mario
+        lastName:
+          type: string
+          minLength: 0
+          maxLength: 50
+          description: Citizen's last name
+          example: Rossi
+        email:
+          type: string
+          nullable: true
+          format: email
+          maxLength: 100
+          description: New email address (must be unique)
+          example: mario.updated@example.com
+
+        password:
+          type: string
+          minLength: 0
+          maxLength: 100
+          format: password
+          description: New password (minimum 8 characters)
+          example: NewSecurePass123!
+        telegramUsername:
+          type: string
+          nullable: true
+          minLength: 0
+          maxLength: 32
+          description: Telegram username (without @)
+          example: mario_rossi
+        emailNotificationsEnabled:
+          type: boolean
+          description: Toggle for email notifications
+          example: true
+
+    CitizenConfigResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 201
+        firstName:
+          type: string
+          example: Mario
+        lastName:
+          type: string
+          example: Rossi
+        email:
+          type: string
+          example: mario.rossi@example.com
+        telegramUsername:
+          type: string
+          nullable: true
+          example: mario_rossi
+        emailNotificationsEnabled:
+          type: boolean
+          example: true
+        photoUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://cdn.example.com/users/201/photo.jpg"
+
+    PhotoUploadResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Photo uploaded successfully"
+        photo:
+          $ref: "#/components/schemas/Photo"
 
     RejectReportRequest:
       type: object

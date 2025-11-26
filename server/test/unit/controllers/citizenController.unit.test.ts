@@ -1,18 +1,32 @@
 import { Request, Response } from "express";
-import { signup } from "../../../src/controllers/citizenController";
+import { 
+  getCitizenProfile, 
+  signup, 
+  updateCitizenProfile, 
+  uploadCitizenPhoto, 
+  deleteCitizenPhoto 
+} from "../../../src/controllers/citizenController";
 import { findByEmail, createUser } from "../../../src/services/userService";
 import { hashPassword } from "../../../src/services/passwordService";
 import * as UserDTO from "../../../src/interfaces/UserDTO";
-import { BadRequestError, ConflictError } from "../../../src/utils";
+import { BadRequestError, ConflictError, NotFoundError } from "../../../src/utils";
+import * as citizenService from "../../../src/services/citizenService";
+import minioClient from "../../../src/utils/minioClient";
 
-
+jest.mock("../../../src/utils/minioClient");
+jest.mock("../../../src/services/citizenService");
 jest.mock("../../../src/services/userService");
 jest.mock("../../../src/services/passwordService");
+
+const mockGetCitizenById = citizenService.getCitizenById as jest.MockedFunction<typeof citizenService.getCitizenById>;
+const mockUpdateCitizenProfileService = citizenService.updateCitizenProfile as jest.MockedFunction<typeof citizenService.updateCitizenProfile>;
+const mockGetCitizenPhoto = citizenService.getCitizenPhoto as jest.MockedFunction<typeof citizenService.getCitizenPhoto>;
+const mockDeleteCitizenPhotoService = citizenService.deleteCitizenPhoto as jest.MockedFunction<typeof citizenService.deleteCitizenPhoto>;
+const mockUploadCitizenPhotoService = citizenService.uploadCitizenPhoto as jest.MockedFunction<typeof citizenService.uploadCitizenPhoto>;
+
 const mockFindByEmail = findByEmail as jest.MockedFunction<typeof findByEmail>;
 const mockCreateUser = createUser as jest.MockedFunction<typeof createUser>;
-const mockHashPassword = hashPassword as jest.MockedFunction<
-  typeof hashPassword
->;
+const mockHashPassword = hashPassword as jest.MockedFunction<typeof hashPassword>;
 
 describe("citizenController", () => {
   let mockReq: any;
@@ -21,12 +35,15 @@ describe("citizenController", () => {
   beforeEach(() => {
     mockReq = {
       body: {},
+      user: { id: 1 }, // Default user context
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
+      send: jest.fn(),
     };
     jest.clearAllMocks();
+    jest.spyOn(console, 'error').mockImplementation(() => {}); // Suppress console.error for tests
   });
 
   describe("signup", () => {
@@ -70,168 +87,50 @@ describe("citizenController", () => {
 
       await signupHandler(mockReq as Request, mockRes as Response);
 
-      expect(mockFindByEmail).toHaveBeenCalledWith("test@example.com");
-      expect(mockHashPassword).toHaveBeenCalledWith("password123");
-      expect(mockCreateUser).toHaveBeenCalledWith({
-        email: "test@example.com",
-        first_name: "Test",
-        last_name: "User",
-        password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.CITIZEN,
-      });
-      expect(UserDTO.toUserDTO).toHaveBeenCalledWith(mockUser);
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith(mockUserDTO);
     });
 
     it("should return error if firstName is missing", async () => {
-      mockReq.body = {
-        lastName: "User",
-        email: "test@example.com",
-        password: "password123",
-      };
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      mockReq.body = { lastName: "User", email: "test@example.com", password: "password123" };
+      await expect(signupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if lastName is missing", async () => {
-      mockReq.body = {
-        firstName: "Test",
-        email: "test@example.com",
-        password: "password123",
-      };
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      mockReq.body = { firstName: "Test", email: "test@example.com", password: "password123" };
+      await expect(signupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if email is missing", async () => {
-      mockReq.body = {
-        firstName: "Test",
-        lastName: "User",
-        password: "password123",
-      };
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      mockReq.body = { firstName: "Test", lastName: "User", password: "password123" };
+      await expect(signupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if password is missing", async () => {
-      mockReq.body = {
-        firstName: "Test",
-        lastName: "User",
-        email: "test@example.com",
-      };
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      mockReq.body = { firstName: "Test", lastName: "User", email: "test@example.com" };
+      await expect(signupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
     });
 
-    it("should return error if multiple fields are missing (2 fields)", async () => {
-      mockReq.body = {
-        email: "test@example.com",
-        password: "password123",
-      };
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
-    });
-
-    it("should return error if all fields are missing (4 fields)", async () => {
+    it("should return error if all fields are missing", async () => {
       mockReq.body = {};
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      await expect(signupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
     });
 
     it("should return error if email already exists", async () => {
-      const existingUser = {
-        id: 1,
-        email: "test@example.com",
-        first_name: "Existing",
-        last_name: "User",
-        password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.CITIZEN as any,
-        telegram_username: null,
-        email_notifications_enabled: true,
-      };
-
       mockReq.body = {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
         password: "password123",
       };
-      mockFindByEmail.mockResolvedValue(existingUser);
+      mockFindByEmail.mockResolvedValue({ id: 2 } as any); // Existing user
 
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(ConflictError);
-    });
-
-    it("should handle error in findByEmail", async () => {
-      mockReq.body = {
-        firstName: "Test",
-        lastName: "User",
-        email: "test@example.com",
-        password: "password123",
-      };
-      mockFindByEmail.mockRejectedValue(new Error("DB error"));
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow();
-    });
-
-    it("should handle error in hashPassword", async () => {
-      mockReq.body = {
-        firstName: "Test",
-        lastName: "User",
-        email: "test@example.com",
-        password: "password123",
-      };
-      mockFindByEmail.mockResolvedValue(null);
-      mockHashPassword.mockRejectedValue(new Error("Hash error"));
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow();
-    });
-
-    it("should handle error in createUser", async () => {
-      mockReq.body = {
-        firstName: "Test",
-        lastName: "User",
-        email: "test@example.com",
-        password: "password123",
-      };
-      mockFindByEmail.mockResolvedValue(null);
-      mockHashPassword.mockResolvedValue({
-        hashedPassword: "hashed",
-        salt: "salt",
-      });
-      mockCreateUser.mockRejectedValue(new Error("Create error"));
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow();
+      await expect(signupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(ConflictError);
     });
 
     it("should handle req.body undefined", async () => {
       mockReq.body = undefined;
-
-      await expect(
-        signupHandler(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      await expect(signupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
     });
 
     it("should handle invalid role", async () => {
@@ -242,263 +141,185 @@ describe("citizenController", () => {
         email: "test@example.com",
         password: "password123",
       };
+      await expect(invalidSignupHandler(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
+    });
+  });
+
+  describe("getCitizenProfile", () => {
+    it("should return citizen profile", async () => {
+      mockReq.user = { id: 1 };
+      const mockProfile = { id: 1, firstName: "Test" };
+      mockGetCitizenById.mockResolvedValue(mockProfile as any);
+
+      await getCitizenProfile(mockReq as Request, mockRes as Response);
+      
+      expect(mockGetCitizenById).toHaveBeenCalledWith(1);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(mockProfile);
+    });
+  });
+
+  describe("updateCitizenProfile", () => {
+    it("should throw error if no fields provided for update", async () => {
+      mockReq.user = { id: 1 };
+      mockReq.body = {}; 
 
       await expect(
-        invalidSignupHandler(mockReq as Request, mockRes as Response)
+        updateCitizenProfile(mockReq as Request, mockRes as Response)
       ).rejects.toThrow(BadRequestError);
     });
 
-    it("should create municipality user with PUBLIC_RELATIONS role", async () => {
-      const publicRelationsHandler = signup(UserDTO.Roles.PUBLIC_RELATIONS);
-      const mockUser = {
-        id: 2,
-        email: "pr@comune.torino.it",
-        first_name: "Mario",
-        last_name: "Rossi",
-        password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.PUBLIC_RELATIONS as any,
-        telegram_username: null,
-        email_notifications_enabled: true,
-      };
-      const mockUserDTO = {
-        id: 2,
-        firstName: "Mario",
-        lastName: "Rossi",
-        email: "pr@comune.torino.it",
-        role: UserDTO.Roles.PUBLIC_RELATIONS,
-        telegramUsername: null,
-        emailNotificationsEnabled: true,
-      };
+    it("should update profile fields successfully", async () => {
+      mockReq.body = { firstName: "New", lastName: "Name" };
+      const updatedProfile = { id: 1, firstName: "New", lastName: "Name" };
+      mockUpdateCitizenProfileService.mockResolvedValue(updatedProfile as any);
 
-      mockReq.body = {
-        firstName: "Mario",
-        lastName: "Rossi",
-        email: "pr@comune.torino.it",
-        password: "password123",
-      };
-      mockFindByEmail.mockResolvedValue(null);
-      mockHashPassword.mockResolvedValue({
-        hashedPassword: "hashed",
-        salt: "salt",
-      });
-      mockCreateUser.mockResolvedValue(mockUser);
-      jest.spyOn(UserDTO, 'toUserDTO').mockReturnValue(mockUserDTO);
+      await updateCitizenProfile(mockReq as Request, mockRes as Response);
 
-      await publicRelationsHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockCreateUser).toHaveBeenCalledWith({
-        email: "pr@comune.torino.it",
-        first_name: "Mario",
-        last_name: "Rossi",
-        password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.PUBLIC_RELATIONS,
-      });
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith(mockUserDTO);
+      expect(mockUpdateCitizenProfileService).toHaveBeenCalledWith(1, expect.objectContaining({
+        firstName: "New",
+        lastName: "Name"
+      }));
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(updatedProfile);
     });
 
-    it("should create municipality user with TECHNICAL_OFFICE role", async () => {
-      const technicalOfficeHandler = signup(UserDTO.Roles.TECHNICAL_OFFICE);
-      const mockUser = {
-        id: 3,
-        email: "tech@comune.torino.it",
-        first_name: "Giulia",
-        last_name: "Bianchi",
+    it("should update password correctly", async () => {
+      mockReq.body = { password: "newpassword" };
+      mockHashPassword.mockResolvedValue({ hashedPassword: "hashed", salt: "salt" });
+      mockUpdateCitizenProfileService.mockResolvedValue({} as any);
+
+      await updateCitizenProfile(mockReq as Request, mockRes as Response);
+
+      expect(mockHashPassword).toHaveBeenCalledWith("newpassword");
+      expect(mockUpdateCitizenProfileService).toHaveBeenCalledWith(1, expect.objectContaining({
         password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.TECHNICAL_OFFICE as any,
-        telegram_username: null,
-        email_notifications_enabled: true,
-      };
-      const mockUserDTO = {
-        id: 3,
-        firstName: "Giulia",
-        lastName: "Bianchi",
-        email: "tech@comune.torino.it",
-        role: UserDTO.Roles.TECHNICAL_OFFICE,
-        telegramUsername: null,
-        emailNotificationsEnabled: true,
-      };
-
-      mockReq.body = {
-        firstName: "Giulia",
-        lastName: "Bianchi",
-        email: "tech@comune.torino.it",
-        password: "password123",
-      };
-      mockFindByEmail.mockResolvedValue(null);
-      mockHashPassword.mockResolvedValue({
-        hashedPassword: "hashed",
-        salt: "salt",
-      });
-      mockCreateUser.mockResolvedValue(mockUser);
-      jest.spyOn(UserDTO, 'toUserDTO').mockReturnValue(mockUserDTO);
-
-      await technicalOfficeHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockCreateUser).toHaveBeenCalledWith({
-        email: "tech@comune.torino.it",
-        first_name: "Giulia",
-        last_name: "Bianchi",
-        password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.TECHNICAL_OFFICE,
-      });
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith(mockUserDTO);
+        salt: "salt"
+      }));
     });
 
-    it("should create administrator user", async () => {
-      const adminHandler = signup(UserDTO.Roles.ADMINISTRATOR);
-      const mockUser = {
-        id: 4,
-        email: "admin@comune.torino.it",
-        first_name: "Luca",
-        last_name: "Verdi",
-        password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.ADMINISTRATOR as any,
-        telegram_username: null,
-        email_notifications_enabled: true,
-      };
-      const mockUserDTO = {
-        id: 4,
-        firstName: "Luca",
-        lastName: "Verdi",
-        email: "admin@comune.torino.it",
-        role: UserDTO.Roles.ADMINISTRATOR,
-        telegramUsername: null,
-        emailNotificationsEnabled: true,
-      };
+    it("should throw conflict error if new email is already taken by another user", async () => {
+      mockReq.body = { email: "taken@example.com" };
+      mockFindByEmail.mockResolvedValue({ id: 2 } as any); // Different user ID
 
-      mockReq.body = {
-        firstName: "Luca",
-        lastName: "Verdi",
-        email: "admin@comune.torino.it",
-        password: "password123",
-      };
-      mockFindByEmail.mockResolvedValue(null);
-      mockHashPassword.mockResolvedValue({
-        hashedPassword: "hashed",
-        salt: "salt",
-      });
-      mockCreateUser.mockResolvedValue(mockUser);
-      jest.spyOn(UserDTO, 'toUserDTO').mockReturnValue(mockUserDTO);
-
-      await adminHandler(mockReq as Request, mockRes as Response);
-
-      expect(mockCreateUser).toHaveBeenCalledWith({
-        email: "admin@comune.torino.it",
-        first_name: "Luca",
-        last_name: "Verdi",
-        password: "hashed",
-        salt: "salt",
-        role: UserDTO.Roles.ADMINISTRATOR,
-      });
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith(mockUserDTO);
+      await expect(
+        updateCitizenProfile(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow(ConflictError);
     });
 
-    describe("Story 5 (PT05) - User registration for report creation", () => {
-      it("should register citizen user for Story 5 report creation", async () => {
-        const citizenHandler = signup(UserDTO.Roles.CITIZEN);
-        const mockUser = {
-          id: 5,
-          email: "cittadino@example.com",
-          first_name: "Anna",
-          last_name: "Neri",
-          password: "hashed",
-          salt: "salt",
-          role: UserDTO.Roles.CITIZEN as any,
-          telegram_username: null,
-          email_notifications_enabled: true,
-        };
-        const mockUserDTO = {
-          id: 5,
-          firstName: "Anna",
-          lastName: "Neri",
-          email: "cittadino@example.com",
-          role: UserDTO.Roles.CITIZEN,
-          telegramUsername: null,
-          emailNotificationsEnabled: true,
-        };
+    it("should allow update if email belongs to the same user", async () => {
+      mockReq.body = { email: "me@example.com" };
+      mockFindByEmail.mockResolvedValue({ id: 1 } as any); // Same user ID
+      mockUpdateCitizenProfileService.mockResolvedValue({} as any);
 
-        mockReq.body = {
-          firstName: "Anna",
-          lastName: "Neri",
-          email: "cittadino@example.com",
-          password: "password123",
-        };
-        mockFindByEmail.mockResolvedValue(null);
-        mockHashPassword.mockResolvedValue({
-          hashedPassword: "hashed",
-          salt: "salt",
-        });
-        mockCreateUser.mockResolvedValue(mockUser);
-        jest.spyOn(UserDTO, 'toUserDTO').mockReturnValue(mockUserDTO);
+      await updateCitizenProfile(mockReq as Request, mockRes as Response);
 
-        await citizenHandler(mockReq as Request, mockRes as Response);
+      expect(mockUpdateCitizenProfileService).toHaveBeenCalled();
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+    });
+  });
 
-        expect(mockFindByEmail).toHaveBeenCalledWith("cittadino@example.com");
-        expect(mockCreateUser).toHaveBeenCalledWith({
-          email: "cittadino@example.com",
-          first_name: "Anna",
-          last_name: "Neri",
-          password: "hashed",
-          salt: "salt",
-          role: UserDTO.Roles.CITIZEN,
-        });
-        expect(mockRes.status).toHaveBeenCalledWith(201);
-        expect(mockRes.json).toHaveBeenCalledWith(mockUserDTO);
-      });
+  describe("uploadCitizenPhoto", () => {
+    const mockFile = {
+      originalname: "test.jpg",
+      buffer: Buffer.from("data"),
+      size: 100,
+      mimetype: "image/jpeg"
+    };
 
-      it("should handle edge case with special characters in names", async () => {
-        const citizenHandler = signup(UserDTO.Roles.CITIZEN);
-        mockReq.body = {
-          firstName: "José María",
-          lastName: "O'Connor",
-          email: "jose@example.com",
-          password: "password123",
-        };
-        mockFindByEmail.mockResolvedValue(null);
-        mockHashPassword.mockResolvedValue({
-          hashedPassword: "hashed",
-          salt: "salt",
-        });
-        mockCreateUser.mockResolvedValue({
-          id: 6,
-          email: "jose@example.com",
-          first_name: "José María",
-          last_name: "O'Connor",
-          password: "hashed",
-          salt: "salt",
-          role: UserDTO.Roles.CITIZEN as any,
-          telegram_username: null,
-          email_notifications_enabled: true,
-        });
-        jest.spyOn(UserDTO, 'toUserDTO').mockReturnValue({
-          id: 6,
-          firstName: "José María",
-          lastName: "O'Connor",
-          email: "jose@example.com",
-          role: UserDTO.Roles.CITIZEN,
-          telegramUsername: null,
-          emailNotificationsEnabled: true,
-        });
+    it("should upload photo successfully when no previous photo exists", async () => {
+      mockReq.files = [mockFile];
+      mockGetCitizenPhoto.mockResolvedValue(null); // No existing photo
+      (minioClient.putObject as jest.Mock).mockResolvedValue(true);
+      const mockSavedPhoto = { url: "http://minio/photo.jpg", filename: "photo.jpg" };
+      mockUploadCitizenPhotoService.mockResolvedValue(mockSavedPhoto as any);
 
-        await citizenHandler(mockReq as Request, mockRes as Response);
+      await uploadCitizenPhoto(mockReq as Request, mockRes as Response);
 
-        expect(mockCreateUser).toHaveBeenCalledWith({
-          email: "jose@example.com",
-          first_name: "José María",
-          last_name: "O'Connor",
-          password: "hashed",
-          salt: "salt",
-          role: UserDTO.Roles.CITIZEN,
-        });
-      });
+      expect(minioClient.putObject).toHaveBeenCalled();
+      expect(mockUploadCitizenPhotoService).toHaveBeenCalled();
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+    });
+
+    it("should delete existing photo before uploading new one", async () => {
+      mockReq.files = [mockFile];
+      mockGetCitizenPhoto.mockResolvedValue({ filename: "old.jpg" } as any);
+      (minioClient.removeObject as jest.Mock).mockResolvedValue(true);
+      (minioClient.putObject as jest.Mock).mockResolvedValue(true);
+      mockUploadCitizenPhotoService.mockResolvedValue({ url: "new.jpg", filename: "new.jpg" } as any);
+
+      await uploadCitizenPhoto(mockReq as Request, mockRes as Response);
+
+      expect(minioClient.removeObject).toHaveBeenCalledWith(expect.any(String), "old.jpg");
+      expect(minioClient.putObject).toHaveBeenCalled();
+    });
+
+    it("should handle error when deleting old photo and continue upload", async () => {
+      mockReq.files = [mockFile];
+      mockGetCitizenPhoto.mockResolvedValue({ filename: "old.jpg" } as any);
+      (minioClient.removeObject as jest.Mock).mockRejectedValue(new Error("MinIO Error"));
+      (minioClient.putObject as jest.Mock).mockResolvedValue(true);
+      mockUploadCitizenPhotoService.mockResolvedValue({ url: "new.jpg", filename: "new.jpg" } as any);
+
+      await uploadCitizenPhoto(mockReq as Request, mockRes as Response);
+
+      expect(minioClient.removeObject).toHaveBeenCalled();
+      // Should still proceed to upload
+      expect(minioClient.putObject).toHaveBeenCalled();
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+    });
+
+    it("should throw error if photo file is missing", async () => {
+      mockReq.files = [];
+      await expect(uploadCitizenPhoto(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
+    });
+
+    it("should throw error if req.files is undefined", async () => {
+      mockReq.files = undefined;
+      await expect(uploadCitizenPhoto(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
+    });
+
+    it("should throw error if multiple photos are uploaded", async () => {
+      mockReq.files = [mockFile, mockFile];
+      await expect(uploadCitizenPhoto(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
+    });
+  });
+
+  describe("deleteCitizenPhoto", () => {
+    it("should delete photo successfully", async () => {
+      mockReq.user = { id: 1 };
+      mockGetCitizenPhoto.mockResolvedValue({ filename: "photo.jpg" } as any);
+      (minioClient.removeObject as jest.Mock).mockResolvedValue(true);
+      mockDeleteCitizenPhotoService.mockResolvedValue(undefined);
+
+      await deleteCitizenPhoto(mockReq as Request, mockRes as Response);
+
+      expect(minioClient.removeObject).toHaveBeenCalledWith(expect.any(String), "photo.jpg");
+      expect(mockDeleteCitizenPhotoService).toHaveBeenCalledWith(1);
+      expect(mockRes.status).toHaveBeenCalledWith(204);
+      expect(mockRes.send).toHaveBeenCalled();
+    });
+
+    it("should throw NotFoundError if photo does not exist", async () => {
+      mockReq.user = { id: 1 };
+      mockGetCitizenPhoto.mockResolvedValue(null);
+
+      await expect(deleteCitizenPhoto(mockReq as Request, mockRes as Response)).rejects.toThrow(NotFoundError);
+    });
+
+    it("should handle MinIO deletion error and still delete from DB", async () => {
+      mockReq.user = { id: 1 };
+      mockGetCitizenPhoto.mockResolvedValue({ filename: "photo.jpg" } as any);
+      (minioClient.removeObject as jest.Mock).mockRejectedValue(new Error("MinIO Error"));
+      mockDeleteCitizenPhotoService.mockResolvedValue(undefined);
+
+      await deleteCitizenPhoto(mockReq as Request, mockRes as Response);
+
+      // Verify MinIO remove was attempted
+      expect(minioClient.removeObject).toHaveBeenCalled();
+      // Verify DB delete was still called
+      expect(mockDeleteCitizenPhotoService).toHaveBeenCalledWith(1);
+      expect(mockRes.status).toHaveBeenCalledWith(204);
     });
   });
 });

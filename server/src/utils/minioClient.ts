@@ -37,3 +37,11 @@ export const initMinio = async () => {
 };
 
 export default minioClient;
+
+export function getMinioObjectUrl(filename: string): string {
+  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+  // Use a public endpoint if provided (host the browser can resolve), fallback to internal endpoint
+  const host = process.env.MINIO_PUBLIC_ENDPOINT || process.env.MINIO_ENDPOINT || 'localhost';
+  const port = process.env.MINIO_PUBLIC_PORT ? `:${process.env.MINIO_PUBLIC_PORT}` : (process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : '');
+  return `${protocol}://${host}${port}/${BUCKET_NAME}/${filename}`;
+}
