@@ -1,17 +1,18 @@
 import React from "react";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useAuth, AuthProvider } from "../../../src/hooks/useAuth";
+import { vi } from "vitest";
 
 const wrapper = ({ children }: { children?: React.ReactNode }) =>
   React.createElement(AuthProvider, null, children as React.ReactNode);
 
 // Mock fetch
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
 
 describe("useAuth", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockFetch.mockClear();
   });
 
