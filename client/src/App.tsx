@@ -30,7 +30,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/technician" element={<TechPanel />} />
+          <Route path="/assign-reports" element={<TechPanel />} />
           <Route path="/report/new" element={<ReportForm />} />
         </Routes>
       </div>

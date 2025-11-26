@@ -1,40 +1,112 @@
+/**
+ * Restituisce i report assegnati all'utente tecnico autenticato
+ */
+export async function getAssignedReportsService(
+  userId: number,
+  status?: string,
+  sortBy: string = "createdAt",
+  order: "asc" | "desc" = "desc"
+): Promise<ReportDTO[]> {
+  // Only allow technical statuses
+  const allowedStatuses = [
+    ReportStatus.ASSIGNED,
+    ReportStatus.IN_PROGRESS,
+    ReportStatus.RESOLVED,
+  ];
+  let statusFilter: ReportStatus[] = allowedStatuses;
+  if (status && allowedStatuses.includes(status as ReportStatus)) {
+    statusFilter = [status as ReportStatus];
+  }
+  const reports = await prisma.report.findMany({
+    where: {
+      assignedToId: userId,
+      status: { in: statusFilter },
+    },
+    include: {
+      user: true,
+      assignedTo: true,
+      photos: true,
+      messages: {
+        include: { user: true },
+      },
+    },
+    orderBy: {
+      [sortBy]: order,
+    },
+  });
+  return reports.map(toReportDTO);
+}
 import { prisma } from "../utils/prismaClient";
 import { ReportDTO, toReportDTO } from "../interfaces/ReportDTO";
-import { ReportPhoto, ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
-import { NotFoundError, BadRequestError, UnprocessableEntityError } from "../utils/errors";
+import {
+  ReportPhoto,
+  ReportCategory,
+  ReportStatus,
+} from "../../../shared/ReportTypes";
+import {
+  NotFoundError,
+  BadRequestError,
+  UnprocessableEntityError,
+} from "../utils/errors";
 
 // =========================
 // ENUMS E MAPPATURA LOGICA
 // =========================
 
 export enum TechnicalType {
-  CULTURE_EVENTS_TOURISM_SPORTS = 'CULTURE_EVENTS_TOURISM_SPORTS',
-  LOCAL_PUBLIC_SERVICES = 'LOCAL_PUBLIC_SERVICES',
-  EDUCATION_SERVICES = 'EDUCATION_SERVICES',
-  PUBLIC_RESIDENTIAL_HOUSING = 'PUBLIC_RESIDENTIAL_HOUSING',
-  INFORMATION_SYSTEMS = 'INFORMATION_SYSTEMS',
-  MUNICIPAL_BUILDING_MAINTENANCE = 'MUNICIPAL_BUILDING_MAINTENANCE',
-  PRIVATE_BUILDINGS = 'PRIVATE_BUILDINGS',
-  INFRASTRUCTURES = 'INFRASTRUCTURES',
-  GREENSPACES_AND_ANIMAL_PROTECTION = 'GREENSPACES_AND_ANIMAL_PROTECTION',
-  WASTE_MANAGEMENT = 'WASTE_MANAGEMENT',
-  ROAD_MAINTENANCE = 'ROAD_MAINTENANCE',
-  CIVIL_PROTECTION = 'CIVIL_PROTECTION',
+  CULTURE_EVENTS_TOURISM_SPORTS = "CULTURE_EVENTS_TOURISM_SPORTS",
+  LOCAL_PUBLIC_SERVICES = "LOCAL_PUBLIC_SERVICES",
+  EDUCATION_SERVICES = "EDUCATION_SERVICES",
+  PUBLIC_RESIDENTIAL_HOUSING = "PUBLIC_RESIDENTIAL_HOUSING",
+  INFORMATION_SYSTEMS = "INFORMATION_SYSTEMS",
+  MUNICIPAL_BUILDING_MAINTENANCE = "MUNICIPAL_BUILDING_MAINTENANCE",
+  PRIVATE_BUILDINGS = "PRIVATE_BUILDINGS",
+  INFRASTRUCTURES = "INFRASTRUCTURES",
+  GREENSPACES_AND_ANIMAL_PROTECTION = "GREENSPACES_AND_ANIMAL_PROTECTION",
+  WASTE_MANAGEMENT = "WASTE_MANAGEMENT",
+  ROAD_MAINTENANCE = "ROAD_MAINTENANCE",
+  CIVIL_PROTECTION = "CIVIL_PROTECTION",
 }
 
 const categoryToTechnical: Record<ReportCategory, TechnicalType[]> = {
-  [ReportCategory.WATER_SUPPLY_DRINKING_WATER]: [TechnicalType.LOCAL_PUBLIC_SERVICES, TechnicalType.INFRASTRUCTURES],
-  [ReportCategory.ARCHITECTURAL_BARRIERS]: [TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE, TechnicalType.PRIVATE_BUILDINGS],
-  [ReportCategory.SEWER_SYSTEM]: [TechnicalType.INFRASTRUCTURES, TechnicalType.WASTE_MANAGEMENT],
-  [ReportCategory.PUBLIC_LIGHTING]: [TechnicalType.LOCAL_PUBLIC_SERVICES, TechnicalType.INFRASTRUCTURES],
-  [ReportCategory.WASTE]: [TechnicalType.WASTE_MANAGEMENT, TechnicalType.GREENSPACES_AND_ANIMAL_PROTECTION],
-  [ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS]: [TechnicalType.ROAD_MAINTENANCE, TechnicalType.INFRASTRUCTURES],
-  [ReportCategory.ROADS_URBAN_FURNISHINGS]: [TechnicalType.ROAD_MAINTENANCE, TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE],
-  [ReportCategory.PUBLIC_GREEN_AREAS_PLAYGROUNDS]: [TechnicalType.GREENSPACES_AND_ANIMAL_PROTECTION, TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE],
+  [ReportCategory.WATER_SUPPLY_DRINKING_WATER]: [
+    TechnicalType.LOCAL_PUBLIC_SERVICES,
+    TechnicalType.INFRASTRUCTURES,
+  ],
+  [ReportCategory.ARCHITECTURAL_BARRIERS]: [
+    TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
+    TechnicalType.PRIVATE_BUILDINGS,
+  ],
+  [ReportCategory.SEWER_SYSTEM]: [
+    TechnicalType.INFRASTRUCTURES,
+    TechnicalType.WASTE_MANAGEMENT,
+  ],
+  [ReportCategory.PUBLIC_LIGHTING]: [
+    TechnicalType.LOCAL_PUBLIC_SERVICES,
+    TechnicalType.INFRASTRUCTURES,
+  ],
+  [ReportCategory.WASTE]: [
+    TechnicalType.WASTE_MANAGEMENT,
+    TechnicalType.GREENSPACES_AND_ANIMAL_PROTECTION,
+  ],
+  [ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS]: [
+    TechnicalType.ROAD_MAINTENANCE,
+    TechnicalType.INFRASTRUCTURES,
+  ],
+  [ReportCategory.ROADS_URBAN_FURNISHINGS]: [
+    TechnicalType.ROAD_MAINTENANCE,
+    TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
+  ],
+  [ReportCategory.PUBLIC_GREEN_AREAS_PLAYGROUNDS]: [
+    TechnicalType.GREENSPACES_AND_ANIMAL_PROTECTION,
+    TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
+  ],
   [ReportCategory.OTHER]: Object.values(TechnicalType),
 };
 
-function getTechnicalTypesForCategory(category: ReportCategory): TechnicalType[] {
+function getTechnicalTypesForCategory(
+  category: ReportCategory
+): TechnicalType[] {
   return categoryToTechnical[category] || [];
 }
 
@@ -50,15 +122,17 @@ function getTechnicalTypesForCategory(category: ReportCategory): TechnicalType[]
 export async function getAssignableTechnicalsForReport(reportId: number) {
   const report = await prisma.report.findUnique({
     where: { id: reportId },
-    select: { category: true }
+    select: { category: true },
   });
   if (!report) throw new NotFoundError("Report not found");
-  const validTechnicalTypes = getTechnicalTypesForCategory(report.category as ReportCategory);
+  const validTechnicalTypes = getTechnicalTypesForCategory(
+    report.category as ReportCategory
+  );
   // Usiamo i Role esistenti in Prisma come tipi tecnici: filtriamo gli utenti il cui `role` è in validTechnicalTypes
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
   const technicals = await prisma.user.findMany({
     where: {
-      role: { in: validRoles as any }
+      role: { in: validRoles as any },
     },
     select: {
       id: true,
@@ -66,7 +140,7 @@ export async function getAssignableTechnicalsForReport(reportId: number) {
       first_name: true,
       last_name: true,
       role: true,
-    }
+    },
   });
   return technicals;
 }
@@ -86,8 +160,13 @@ type CreateReportData = Omit<
   | "user"
   | "rejectedReason"
   | "address"
+  | "latitude"
+  | "longitude"
 > & {
-  userId: number; //add userId to link report to user
+  // When creating a report, latitude/longitude are numbers coming from the client
+  latitude: number;
+  longitude: number;
+  userId: number; // add userId to link report to user
   photos: ReportPhoto[];
   address?: string;
 };
@@ -126,11 +205,17 @@ export async function createReport(data: CreateReportData) {
 /**
  * Restituisce i report approvati (assegnati, in corso, risolti)
  */
-export async function getApprovedReports(category?: ReportCategory): Promise<ReportDTO[]> {
+export async function getApprovedReports(
+  category?: ReportCategory
+): Promise<ReportDTO[]> {
   const reports = await prisma.report.findMany({
     where: {
       status: {
-        in: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED],
+        in: [
+          ReportStatus.ASSIGNED,
+          ReportStatus.IN_PROGRESS,
+          ReportStatus.RESOLVED,
+        ],
       },
       ...(category && { category }),
     },
@@ -177,7 +262,11 @@ export async function getPendingReports(): Promise<ReportDTO[]> {
 /**
  * Approva un report e lo assegna a un tecnico selezionato (solo PUBLIC_RELATIONS)
  */
-export async function approveReport(reportId: number, approverId: number, assignedTechnicalId: number): Promise<ReportDTO> {
+export async function approveReport(
+  reportId: number,
+  approverId: number,
+  assignedTechnicalId: number
+): Promise<ReportDTO> {
   const report = await prisma.report.findUnique({
     where: { id: reportId },
     include: { user: true },
@@ -187,22 +276,32 @@ export async function approveReport(reportId: number, approverId: number, assign
     throw new BadRequestError("Report is not in PENDING_APPROVAL status");
   }
   // Verifica che il tecnico assegnato sia valido per la categoria
-  const validTechnicalTypes = getTechnicalTypesForCategory(report.category as ReportCategory);
+  const validTechnicalTypes = getTechnicalTypesForCategory(
+    report.category as ReportCategory
+  );
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
   const assignedTechnical = await prisma.user.findUnique({
     where: { id: assignedTechnicalId },
-    select: { id: true, role: true, email: true, first_name: true, last_name: true }
+    select: {
+      id: true,
+      role: true,
+      email: true,
+      first_name: true,
+      last_name: true,
+    },
   });
   if (!assignedTechnical || !validRoles.includes(assignedTechnical.role)) {
-    throw new UnprocessableEntityError("Assigned technical is not valid for this report category");
+    throw new UnprocessableEntityError(
+      "Assigned technical is not valid for this report category"
+    );
   }
   await prisma.report.update({
     where: { id: reportId },
     // cast `data` to any because generated Prisma types may not expose the relation scalar in the union
-    data: ({
+    data: {
       status: ReportStatus.ASSIGNED,
       assignedToId: assignedTechnical.id,
-    } as unknown) as any,
+    } as unknown as any,
   });
 
   // Recupera il report e poi carica separatamente l'utente assegnato (per evitare problemi di typing con Prisma client)
@@ -221,7 +320,9 @@ export async function approveReport(reportId: number, approverId: number, assign
   if (!updatedBase) throw new NotFoundError("Report not found after update");
 
   if ((updatedBase as any).assignedToId) {
-    const assigned = await prisma.user.findUnique({ where: { id: (updatedBase as any).assignedToId } });
+    const assigned = await prisma.user.findUnique({
+      where: { id: (updatedBase as any).assignedToId },
+    });
     (updatedBase as any).assignedTo = assigned ?? null;
   }
 
@@ -231,12 +332,18 @@ export async function approveReport(reportId: number, approverId: number, assign
 /**
  * Rifiuta un report con motivazione (solo PUBLIC_RELATIONS)
  */
-export async function rejectReport(reportId: number, rejecterId: number, reason: string): Promise<ReportDTO> {
+export async function rejectReport(
+  reportId: number,
+  rejecterId: number,
+  reason: string
+): Promise<ReportDTO> {
   if (!reason || reason.trim().length === 0) {
     throw new BadRequestError("Rejection reason is required");
   }
   if (reason.length > 500) {
-    throw new UnprocessableEntityError("Rejection reason must be less than 500 characters");
+    throw new UnprocessableEntityError(
+      "Rejection reason must be less than 500 characters"
+    );
   }
   const report = await prisma.report.findUnique({
     where: { id: reportId },
@@ -251,7 +358,7 @@ export async function rejectReport(reportId: number, rejecterId: number, reason:
   const updatedReport = await prisma.report.update({
     where: { id: reportId },
     // cast to any to avoid mismatches with generated Prisma client types
-    data: ({
+    data: {
       status: ReportStatus.REJECTED,
       rejectedReason: reason,
       messages: {
@@ -260,7 +367,7 @@ export async function rejectReport(reportId: number, rejecterId: number, reason:
           senderId: rejecterId,
         },
       },
-    } as unknown) as any,
+    } as unknown as any,
     include: {
       user: true,
       photos: true,

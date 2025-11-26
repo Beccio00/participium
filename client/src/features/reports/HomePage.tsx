@@ -8,7 +8,7 @@ import AuthRequiredModal from "../auth/AuthRequiredModal.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
 import type { Report } from "../../types";
-import { ReportCategory } from "../../../../shared/ReportTypes";
+import { getReports as getReportsApi } from "../../api/api";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -17,39 +17,46 @@ export default function HomePage() {
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [showReportsSidebar, setShowReportsSidebar] = useState(false);
 
-  // Mock reports data - TODO: Replace with API call
-  const [reports] = useState<Report[]>([
-    {
-      id: 1,
-      title: "Broken street light on Via Roma",
-      description: "The street light at the corner of Via Roma and Via Milano has been out for a week.",
-      category: ReportCategory.PUBLIC_LIGHTING,
-      status: "In Progress",
-      createdAt: "2025-11-10",
-      latitude: 45.0703,
-      longitude: 7.6869,
-    },
-    {
-      id: 2,
-      title: "Pothole on Corso Vittorio",
-      description: "Large pothole causing traffic issues near the central station.",
-      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
-      status: "Assigned",
-      createdAt: "2025-11-08",
-      latitude: 45.0653,
-      longitude: 7.6789,
-    },
-    {
-      id: 3,
-      title: "Overflowing trash bin",
-      description: "Trash bin on Piazza Castello is overflowing and needs emptying.",
-      category: ReportCategory.WASTE,
-      status: "Resolved",
-      createdAt: "2025-11-05",
-      latitude: 45.0733,
-      longitude: 7.6839,
-    },
-  ]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [reportsError, setReportsError] = useState<string | null>(null);
+
+  // load reports from backend and filter statuses: appending, in progress, complete
+  useEffect(() => {
+    // Re-load reports when authentication state or user changes so that
+    // newly created reports (PENDING_APPROVAL) by the current user are shown.
+    let mounted = true;
+    async function load() {
+      setLoadingReports(true);
+      setReportsError(null);
+      try {
+        const data = await getReportsApi();
+        if (!mounted) return;
+        // Ensure citizens see their own pending reports even if backend didn't include them
+        const approvedStatuses = ["ASSIGNED", "IN_PROGRESS", "RESOLVED"];
+        const visible = (data || []).filter((r: any) => {
+          if (approvedStatuses.includes(r.status)) return true;
+          if (isAuthenticated && user && r.user && r.user.email === user.email) return true;
+          return false;
+        });
+        // Ensure latitude/longitude are numbers (API may return strings to satisfy OpenAPI schema)
+        const normalized = visible.map((r: any) => ({
+          ...r,
+          latitude: Number(r.latitude),
+          longitude: Number(r.longitude),
+        }));
+        setReports(normalized);
+      } catch (err: any) {
+        console.error("Failed to load reports:", err);
+        if (!mounted) return;
+        setReportsError(err?.message || String(err));
+      } finally {
+        if (mounted) setLoadingReports(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, [isAuthenticated, user?.email]);
 
   useEffect(() => {
     if (isAuthenticated && user?.role === "ADMINISTRATOR") {
@@ -77,7 +84,11 @@ export default function HomePage() {
 
       {/* Reports List */}
       <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
-        {reports.length > 0 ? (
+        {loadingReports ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>Caricamento report...</div>
+        ) : reportsError ? (
+          <div style={{ color: 'var(--danger)', padding: '1rem' }}>Errore nel caricamento: {reportsError}</div>
+        ) : reports.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {reports.map((report) => (
               <ReportCard
@@ -104,12 +115,17 @@ export default function HomePage() {
 
       {/* Add Report Button */}
       <div style={{ padding: '1.5rem', borderTop: '1px solid #f8f9fa', background: '#fdfdfd' }}>
-        {(!isAuthenticated || user?.role === "CITIZEN") && (
+        {isAuthenticated && user?.role === "PUBLIC_RELATIONS" ? (
+          <Button onClick={() => navigate('/assign-reports')} variant="primary" fullWidth>
+            <Pencil className="me-2" />
+            Assign technical
+          </Button>
+        ) : (!isAuthenticated || user?.role === "CITIZEN") ? (
           <Button onClick={handleAddReport} variant="primary" fullWidth>
             <Pencil className="me-2" />
             Select a location
           </Button>
-        )}
+        ) : null}
 
         {!isAuthenticated && (
           <p className="text-center text-muted mb-0 mt-3" style={{ fontSize: '0.85rem' }}>
@@ -212,19 +228,24 @@ export default function HomePage() {
                     <Clipboard />
                   </div>
                   <p style={{ fontSize: '1.1rem', margin: '0 0 0.5rem 0', color: '#6c757d', fontWeight: 500 }}>No reports yet</p>
-                  <small style={{ fontSize: '0.9rem', lineHeight: 1.4, color: '#adb5bd' }}>Reports will appear here once submitted by citizens.</small>
+                  <small style={{ fontSize: '0.9rem', lineHeight: 1.4, color: '#adb5bd' }}>Reports will appear here..</small>
                 </div>
               )}
             </div>
 
             {/* Add Report Button */}
             <div style={{ padding: '1.5rem', borderTop: '1px solid #f8f9fa', background: '#fdfdfd' }}>
-              {(!isAuthenticated || user?.role === "CITIZEN") && (
+              {isAuthenticated && user?.role === "PUBLIC_RELATIONS" ? (
+                <Button onClick={() => navigate('/assign-reports')} variant="primary" fullWidth>
+                  <Pencil className="me-2" />
+                  Assegna technical
+                </Button>
+              ) : (!isAuthenticated || user?.role === "CITIZEN") ? (
                 <Button onClick={handleAddReport} variant="primary" fullWidth>
                   <Pencil className="me-2" />
                   Select a location
                 </Button>
-              )}
+              ) : null}
 
               {!isAuthenticated && (
                 <p className="text-center text-muted mb-0 mt-3" style={{ fontSize: '0.85rem' }}>

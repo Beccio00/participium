@@ -17,17 +17,15 @@ export function errorHandler(
     statusCode = err.status;
     errorName = err.name;
     message = err.message;
-  } 
-  else if (err instanceof AppError) {
+  } else if (err instanceof AppError) {
     statusCode = err.statusCode;
     errorName = err.constructor.name.replace("Error", "");
     message = err.message;
-  } 
-
-  if (process.env.NODE_ENV !== "production") {
-    console.error(`[${statusCode}] ${errorName}: ${message}`);
-    if (err.stack) console.error(err.stack);
   }
+
+  // Logga sempre l'errore, anche in produzione
+  console.error(`[${statusCode}] ${errorName}: ${message}`);
+  if (err.stack) console.error(err.stack);
 
   const response: any = {
     code: statusCode,

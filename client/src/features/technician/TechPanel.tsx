@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Container, Row, Col, Card, Badge, Modal, Form } from "react-bootstrap";
-import { CheckCircle, XCircle, GeoAlt } from "react-bootstrap-icons"; 
+import { Container, Row, Col, Modal, Form } from "react-bootstrap";
+import { CheckCircle, XCircle } from "react-bootstrap-icons"; 
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { getReports, updateReportStatus } from "../../api/api"; 
+import { getReports, getPendingReports, rejectReport, getAssignableTechnicals, approveReport } from "../../api/api"; 
 import type { Report as AppReport } from "../../types/report.types";
+import ReportCard from "../reports/ReportCard";
 import "../../styles/TechPanelstyle.css";
 
 const ALLOWED_ROLES = [
@@ -30,10 +31,15 @@ export default function TechPanel() {
   const navigate = useNavigate();
   
   const [reports, setReports] = useState<AppReport[]>([]);
+  const [pendingReports, setPendingReports] = useState<AppReport[]>([]);
+  const [otherReports, setOtherReports] = useState<AppReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignableTechnicals, setAssignableTechnicals] = useState<any[]>([]);
+  const [selectedTechnicalId, setSelectedTechnicalId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
@@ -50,33 +56,81 @@ export default function TechPanel() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const data = await getReports() as AppReport[];
-
-      let filteredReports : AppReport[] = [];
-     
       if (isPublicRelations) {
-        filteredReports = data.filter(r=>
-          (r.status === "APPROVED" || r.status === "ASSIGNED")
-        )
-      }else{
+        // Public Relations: fetch both pending and other reports
+        const pendingData = (await getPendingReports()) as AppReport[];
+        const otherData = (await getReports()) as AppReport[];
 
+        const pendingNormalized = (pendingData || []).map((r: any) => ({
+          ...r,
+          latitude: Number(r.latitude),
+          longitude: Number(r.longitude),
+        }));
+
+        const otherNormalized = (otherData || []).map((r: any) => ({
+          ...r,
+          latitude: Number(r.latitude),
+          longitude: Number(r.longitude),
+        }));
+
+        setPendingReports(pendingNormalized);
+        setOtherReports(otherNormalized);
+      } else {
+        const data = (await getReports()) as AppReport[];
+        // Normalize latitude/longitude to numbers (API returns strings to satisfy OpenAPI schema)
+        const normalized = (data || []).map((r: any) => ({
+          ...r,
+          latitude: Number(r.latitude),
+          longitude: Number(r.longitude),
+        }));
+        setReports(normalized);
       }
-      setReports(filteredReports);
     } catch (err) {
+      console.error("Error fetching reports:", err);
       setError("Failed to load reports.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (id: number) => {
+  const openAssignModal = async (id: number) => {
     try {
       setProcessingId(id);
-      await updateReportStatus(id, "APPROVED");
-      
-      setReports(prev => prev.filter(r => r.id !== id));
+      const list = await getAssignableTechnicals(id);
+      setAssignableTechnicals(list || []);
+      setSelectedReportId(id);
+      // preselect first technical if available
+      setSelectedTechnicalId(list && list.length > 0 ? list[0].id : null);
+      setShowAssignModal(true);
     } catch (err) {
-      alert("Failed to approve report");
+      console.error('Failed to fetch assignable technicals', err);
+      alert('Failed to fetch assignable technicals');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleConfirmAssign = async () => {
+    if (!selectedReportId || !selectedTechnicalId) return;
+    try {
+      setProcessingId(selectedReportId);
+      const res = await approveReport(selectedReportId, selectedTechnicalId);
+      // API returns { message, report }
+      const updatedReport = res && res.report ? res.report : null;
+      if (updatedReport) {
+        const normalized = {
+          ...updatedReport,
+          latitude: Number((updatedReport as any).latitude),
+          longitude: Number((updatedReport as any).longitude),
+        } as AppReport;
+        // remove from pending and add to otherReports (top)
+        setPendingReports((prev) => prev.filter((r) => r.id !== selectedReportId));
+        setOtherReports((prev) => [normalized, ...(prev || [])]);
+      }
+      setShowAssignModal(false);
+    } catch (err) {
+      console.error('Failed to approve report', err);
+      alert((err as any)?.message || 'Failed to approve report');
     } finally {
       setProcessingId(null);
     }
@@ -93,111 +147,94 @@ export default function TechPanel() {
 
     try {
       setProcessingId(selectedReportId);
-      await updateReportStatus(selectedReportId, "REJECTED", rejectionReason);
-      
-      setReports(prev => prev.filter(r => r.id !== selectedReportId));
+      const res = await rejectReport(selectedReportId, rejectionReason);
+      const updatedReport = res && res.report ? res.report : null;
+      if (updatedReport) {
+        const normalized = {
+          ...updatedReport,
+          latitude: Number((updatedReport as any).latitude),
+          longitude: Number((updatedReport as any).longitude),
+        } as AppReport;
+        setPendingReports((prev) => prev.filter((r) => r.id !== selectedReportId));
+        setOtherReports((prev) => [normalized, ...(prev || [])]);
+      }
       setShowRejectModal(false);
     } catch (err) {
-      alert("Failed to reject report");
+      console.error('Failed to reject report', err);
+      alert((err as any)?.message || 'Failed to reject report');
     } finally {
       setProcessingId(null);
     }
   };
+
+  // statusVariant is now implemented in ReportCard; TechPanel no longer needs it
 
   if (loading) return <div className="loading-container"><LoadingSpinner /></div>;
 
   return (
     <Container className="py-4 tech-panel-container">
       <div className="mb-4">
-        <h2 className="tech-panel-title">
-          {isPublicRelations ? "Public Relations Dashboard" : "Department Dashboard"}
-        </h2>
-        <p className="text-muted">
-          {isPublicRelations 
-            ? "Review incoming reports and assign status." 
-            : `Managing active reports for ${user?.role?.replace(/_/g, " ")}`}
-        </p>
+        <h2 className="tech-panel-title">Reports Management</h2>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {reports.length === 0 && !error ? (
-        <div className="empty-state">
-          <h4>No reports found</h4>
-          <p>
-            {isPublicRelations 
-              ? "All incoming reports have been processed." 
-              : "No active reports assigned to your department."}
-          </p>
-        </div>
+      {isPublicRelations ? (
+        <>
+          {/* Top: all non-pending reports shown as cards side-by-side */}
+          <div className="mb-4">
+            <h4>All Reports</h4>
+            {otherReports.length === 0 ? (
+              <p className="text-muted">No non-pending reports available.</p>
+            ) : (
+              <Row>
+                {otherReports.map((report) => (
+                  <Col key={report.id} lg={4} md={6} className="mb-3">
+                    <ReportCard report={report} />
+                  </Col>
+                ))}
+              </Row>
+            )}
+          </div>
+
+          {/* Bottom: pending reports with actions */}
+          <div>
+            <h4>Pending Reports</h4>
+            {pendingReports.length === 0 ? (
+              <p className="text-muted">No pending reports.</p>
+            ) : (
+              <Row>
+                {pendingReports.map((report) => (
+                  <Col key={report.id} lg={6} xl={4} className="mb-4">
+                    <div className="h-100 shadow-sm report-card d-flex flex-column">
+                      <ReportCard report={report} />
+                      <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #f3f4f6', marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+                        <Button variant="danger" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openRejectModal(report.id)} disabled={processingId === report.id}><XCircle className="me-2" /> Reject</Button>
+                        <Button variant="primary" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openAssignModal(report.id)} disabled={processingId === report.id} isLoading={processingId === report.id}><CheckCircle className="me-2" /> Accept</Button>
+                      </div>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            )}
+          </div>
+        </>
       ) : (
-        <Row>
-          {reports.map((report) => (
-            <Col key={report.id} lg={6} xl={4} className="mb-4">
-              <Card className="h-100 shadow-sm report-card">
-                {report.photos && report.photos.length > 0 && (
-                  <div className="report-img-wrapper">
-                    <img 
-                      src={report.photos[0].url} 
-                      alt="Report" 
-                      className="report-img"
-                    />
-                  </div>
-                )}
-                
-                <Card.Body className="d-flex flex-column">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <Badge bg="info" className="text-uppercase">{report.category}</Badge>
-                    <small className="text-muted">{new Date(report.createdAt || "").toLocaleDateString()}</small>
-                  </div>
-                  
-                  <Card.Title className="report-card-title">{report.title}</Card.Title>
-                  <Card.Text className="report-card-text">
-                    {report.description}
-                  </Card.Text>
-                  
-                  <div className="mb-3 text-muted small">
-                    <div className="d-flex align-items-center mb-1">
-                      <GeoAlt className="me-2" />
-                      {report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}
-                    </div>
-                  </div>
-
-                  <hr className="report-divider" />
-
-                  {/* Public Relations */}
-                  {isPublicRelations ? (
-                    <div className="d-flex gap-2 mt-auto">
-                      <Button 
-                        variant="danger"
-                        className="flex-fill d-flex align-items-center justify-content-center"
-                        onClick={() => openRejectModal(report.id)}
-                        disabled={processingId === report.id}
-                      >
-                        <XCircle className="me-2" /> Reject
-                      </Button>
-                      <Button 
-                        variant="primary" 
-                        className="flex-fill d-flex align-items-center justify-content-center"
-                        onClick={() => handleApprove(report.id)}
-                        disabled={processingId === report.id}
-                        isLoading={processingId === report.id}
-                      >
-                        <CheckCircle className="me-2" /> Accept
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="mt-auto text-center">
-                      <Badge bg="success" className="p-2 w-100">
-                        Assigned to your Department
-                      </Badge>
-                    </div>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+        // Non-PR users: keep existing single list behavior
+        (reports.length === 0 && !error) ? (
+          <div className="empty-state">
+            <h4>No reports found</h4>
+            <p>No active reports assigned to your department.</p>
+          </div>
+        ) : (
+          <Row>
+            {reports.map((report) => (
+              <Col key={report.id} lg={6} xl={4} className="mb-4">
+                <ReportCard report={report} />
+              </Col>
+            ))}
+          </Row>
+        )
       )}
 
       {/* rejection */}
@@ -229,6 +266,29 @@ export default function TechPanel() {
             isLoading={processingId === selectedReportId}
           >
             Confirm Rejection
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* assign modal */}
+      <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Assign Report</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Select a technical user to assign this report to:</p>
+          <Form.Group>
+            <Form.Select value={selectedTechnicalId ?? ""} onChange={(e) => setSelectedTechnicalId(Number(e.target.value))}>
+              <option value="">-- Select technical --</option>
+              {assignableTechnicals.map((t) => (
+                <option key={t.id} value={t.id}>{t.first_name} {t.last_name} ({t.role})</option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAssignModal(false)}>Cancel</Button>
+          <Button variant="primary" onClick={handleConfirmAssign} disabled={!selectedTechnicalId} isLoading={processingId !== null}>
+            Confirm Assignment
           </Button>
         </Modal.Footer>
       </Modal>
