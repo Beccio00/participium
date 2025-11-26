@@ -82,3 +82,18 @@ export function toMunicipalityUserDTO(u: PrismaUser): MunicipalityUserDTO {
       : (String(u.role) as Role),
   };
 }
+
+export const TECHNICAL_ROLES: Role[] = [
+  Roles.CULTURE_EVENTS_TOURISM_SPORTS,
+  Roles.LOCAL_PUBLIC_SERVICES,
+  Roles.EDUCATION_SERVICES,
+  Roles.PUBLIC_RESIDENTIAL_HOUSING,
+  Roles.INFORMATION_SYSTEMS,
+  Roles.MUNICIPAL_BUILDING_MAINTENANCE,
+  Roles.PRIVATE_BUILDINGS,
+  Roles.INFRASTRUCTURES,
+  Roles.GREENSPACES_AND_ANIMAL_PROTECTION,
+  Roles.WASTE_MANAGEMENT,
+  Roles.ROAD_MAINTENANCE,
+  Roles.CIVIL_PROTECTION,
+];

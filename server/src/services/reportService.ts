@@ -37,17 +37,10 @@ export async function getAssignedReportsService(
   return reports.map(toReportDTO);
 }
 import { prisma } from "../utils/prismaClient";
-import { ReportDTO, toReportDTO } from "../interfaces/ReportDTO";
-import {
-  ReportPhoto,
-  ReportCategory,
-  ReportStatus,
-} from "../../../shared/ReportTypes";
-import {
-  NotFoundError,
-  BadRequestError,
-  UnprocessableEntityError,
-} from "../utils/errors";
+import { ReportDTO, toReportDTO, ReportMessageDTO } from "../interfaces/ReportDTO";
+import { ReportPhoto, ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
+import { NotFoundError, BadRequestError, UnprocessableEntityError, ForbiddenError } from "../utils/errors";
+import { notifyReportStatusChange, notifyNewMessage, notifyReportAssigned, notifyReportApproved, notifyReportRejected } from "./notificationService";
 
 // =========================
 // ENUMS E MAPPATURA LOGICA
@@ -326,6 +319,12 @@ export async function approveReport(
     (updatedBase as any).assignedTo = assigned ?? null;
   }
 
+  // Notify citizen about approval
+  await notifyReportApproved(report.id, report.userId, report.title);
+
+  // Notify technical user about assignment
+  await notifyReportAssigned(report.id, assignedTechnicalId, report.title);
+
   return toReportDTO(updatedBase as any);
 }
 
@@ -378,5 +377,148 @@ export async function rejectReport(
       },
     },
   });
+  // Notify citizen about rejection
+  await notifyReportRejected(report.id, report.userId, report.title, reason);
+
   return toReportDTO(updatedReport);
 }
+
+/**
+ * Aggiorna lo stato di un report (solo technical)
+ */
+export async function updateReportStatus(
+  reportId: number,
+  technicalUserId: number,
+  newStatus: ReportStatus
+): Promise<ReportDTO> {
+  const report = await prisma.report.findUnique({
+    where: { id: reportId },
+    include: { user: true, assignedTo: true },
+  });
+
+  if (!report) {
+    throw new NotFoundError("Report not found");
+  }
+
+  // Verifica che il technical sia assegnato a questo report
+  if (report.assignedToId !== technicalUserId) {
+    throw new ForbiddenError("You are not assigned to this report");
+  }
+
+  const oldStatus = report.status;
+
+  const updatedReport = await prisma.report.update({
+    where: { id: reportId },
+    data: { status: newStatus },
+    include: {
+      user: true,
+      photos: true,
+      messages: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  });
+
+  // Carica separatamente l'utente assegnato (per evitare problemi di typing con Prisma client)
+  if ((updatedReport as any).assignedToId) {
+    const assigned = await prisma.user.findUnique({
+      where: { id: (updatedReport as any).assignedToId },
+    });
+    (updatedReport as any).assignedTo = assigned ?? null;
+  }
+
+  // Notify citizen about status change
+  await notifyReportStatusChange(report.id, report.userId, oldStatus, newStatus);
+
+  return toReportDTO(updatedReport as any);
+}
+
+/**
+ * Invia un messaggio al cittadino (solo technical)
+ */
+export async function sendMessageToCitizen(
+  reportId: number,
+  technicalUserId: number,
+  content: string
+): Promise<ReportMessageDTO> {
+  const report = await prisma.report.findUnique({
+    where: { id: reportId },
+    include: { user: true, assignedTo: true },
+  });
+
+  if (!report) {
+    throw new NotFoundError("Report not found");
+  }
+
+  // Verifica che il technical sia assegnato a questo report
+  if (report.assignedToId !== technicalUserId) {
+    throw new ForbiddenError("You are not assigned to this report");
+  }
+
+  const message = await prisma.reportMessage.create({
+    data: {
+      content,
+      reportId,
+      senderId: technicalUserId,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  // Notifica il cittadino del nuovo messaggio
+  const senderName = `${report.assignedTo?.first_name} ${report.assignedTo?.last_name}`;
+  await notifyNewMessage(report.id, report.userId, senderName);
+
+  return {
+    id: message.id,
+    content: message.content,
+    createdAt: message.createdAt.toISOString(),
+    senderId: message.senderId,
+  };
+}
+
+/**
+ * Ottieni tutti i messaggi di un report (cittadino o technical)
+ */
+export async function getReportMessages(
+  reportId: number,
+  userId: number
+): Promise<ReportMessageDTO[]> {
+  const report = await prisma.report.findUnique({
+    where: { id: reportId },
+    include: {
+      messages: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+      user: true,
+    },
+  });
+
+  if (!report) {
+    throw new NotFoundError("Report not found");
+  }
+
+  // Verifica autorizzazione: il cittadino può vedere solo i propri report, il technical può vedere i report assegnati
+  const isReportOwner = report.userId === userId;
+  const isAssignedTechnical = report.assignedToId === userId;
+  
+  if (!isReportOwner && !isAssignedTechnical) {
+    throw new ForbiddenError("You are not authorized to view this conversation");
+  }
+
+  return report.messages.map((m) => ({
+    id: m.id,
+    content: m.content,
+    createdAt: m.createdAt.toISOString(),
+    senderId: m.senderId,
+  }));
+}
+
