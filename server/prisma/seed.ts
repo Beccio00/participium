@@ -286,7 +286,7 @@ async function main() {
     }
 
     if (status === "REJECTED") {
-      reportData.rejectionReason =
+      reportData.rejectedReason =
         "Segnalazione non pertinente al patrimonio comunale.";
     }
 
