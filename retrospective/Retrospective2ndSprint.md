@@ -49,8 +49,8 @@ we did not manage to finish the implementation of this story
 
 |            | Mean | StDev |
 |------------|------|-------|
-| Estimation | 86m | 71m30s | 
-| Actual     | 85m | 72m |
+| Estimation | 1h26m | 1h11m30s | 
+| Actual     | 1h25m | 1h12m |
 
 - Total estimation error ratio: sum of total hours spent / sum of total hours effort - 1
 
