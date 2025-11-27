@@ -305,8 +305,7 @@ async function main() {
 
     
     for (let p = 1; p <= 5; p++) {
-      if(p == 4) {
-        const photoUrl = `http://minio:9000/reports-photos/report` + i + `.jpeg`;
+        const photoUrl = `http://localhost:9000/reports-photos/report` + i + `.jpg`;
         await prisma.reportPhoto.create({
           data: {
             url: photoUrl,
@@ -315,16 +314,7 @@ async function main() {
           },
         });
 
-      } else {
-        const photoUrl = `http://minio:9000/reports-photos/report4.1.jpeg`
-        await prisma.reportPhoto.create({
-          data: {
-            url: photoUrl,
-            filename: `seed-${createdReport.id}-${p}.jpg`,
-            reportId: createdReport.id,
-          },
-        });
-      }
+      
       
     }
 
