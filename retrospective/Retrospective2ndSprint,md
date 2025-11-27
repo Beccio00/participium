@@ -96,10 +96,10 @@ sections:
 
 - What lessons did you learn (both positive and negative) in this sprint?
     - **Negative**: We learned that our docker management was poor, in fact we had several issues with its alignement with our server and client.
-    - **Positive**: We learned how to better describe tasks, in fact we did not have any kind of confusion when approaching a new story development.
+    - **Positive**: We learned how to better describe tasks, in fact we did not have any kind of confusion when approaching a new story development. Moreover, thanks to the frontend code refactoring, the implementation of new features was easier. 
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
-      We succedeed in improving the task description, in fact during this sprint there was no kind of confusion in what to do during specific tasks. Furthermore we did implement the "Swagger-first" approach, so we did not have alignement problems between tasks.
+      We succedeed in improving the task description, in fact during this sprint there was no kind of confusion in what to do during specific tasks. Furthermore, we did implement the "Swagger-first" approach, so we did not have alignement problems between tasks. Finally, we succeed to lower our total error ratio and absolute relative error.
   
 - Which ones you were not able to achieve? Why?
       We managed to achieve both goals set in the previous retrospective.
@@ -108,6 +108,7 @@ sections:
 
   > Propose one or two
   - Improve the docker configuration files: we need to adjust both the docker alignement with our db and the management of the docker files.
+  - Change from Prisma to TypeORM, due to the problems we encoutered.
 
 - One thing you are proud of as a Team!!
-  - We are proud of our excellent and proactive communication, which consistently kept each other updated on the project's status and fostered a strong, collaborative environment by regularly providing feedback on each other's work.
+  - We are proud of the efficient team collaboration: even if we encoutered many problems with Prisma and Docker, everytime someone had to solve one of them every member of the team was ready to support them.
