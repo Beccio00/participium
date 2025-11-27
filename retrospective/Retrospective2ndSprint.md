@@ -67,25 +67,29 @@ we did not manage to finish the implementation of this story
 ## QUALITY MEASURES 
 
 - Unit Testing:
-  - Total hours estimated: 6h (stories 1, 2, 3 & 4 done)
-  - Total hours spent: 5h (stories 1, 2, 3 & 4 done)
+  - Total hours estimated: 6h (stories 5, 6, 7, 8 & 9 done)
+  - Total hours spent: 6h 15min (stories 5, 6, 7, 8 & 9 done)
   - Nr of automated unit test cases : 189
   - Coverage (Jest report):
-    - Statements: 93.68 %
-    - Branches: 91.35 %
-    - Functions: 88.15 %
-    - Lines: 93.48 %
+    - Statements: 91 %
+    - Branches: 72.83 %
+    - Functions: 73.17 %
+    - Lines: 90.53 %
 - E2E testing:
-  - Total hours estimated: 1h 30m
-  - Total hours spent: 1h 30m
-  - Nr of test cases: 41
+  - Total hours estimated: 2h
+  - Total hours spent: 2h
+  - Nr of test cases: 43
+- E2E UI testing:
+  - Total hours estimated: 2h
+  - Total hours spent: 2h
+  - Nr of test cases: 41  
 - Integration testing:
-  - Total hours estimated: 6h (stories 1, 2, 3 & 4 done)
-  - Total hours spent: 6h 30m (stories 1, 2, 3 & 4 done)
-  - Nr of test cases: 64
+  - Total hours estimated: 7.5h (stories 5, 6, 7, 8 & 9 done)
+  - Total hours spent: 8h (stories 5, 6, 7, 8 & 9 done)
+  - Nr of test cases: 120
 - Code review 
-  - Total hours estimated: 10h (stories 1, 2, 3 & 4 done)
-  - Total hours spent: 9h 45m (stories 1, 2, 3 & 4 done)
+  - Total hours estimated: 11h (stories 5, 6, 7, 8 & 9 done)
+  - Total hours spent: 11h 6m (stories 5, 6, 7, 8 & 9 done)
   
 
 
