@@ -24,7 +24,7 @@ We leverage SonarCloud as our primary automated quality gate:
 
 - **Automatic Quality Assessment**: SonarCloud automatically analyzes code quality on every merge, providing immediate feedback on code health
 - **Branch-Level Monitoring**: Quality checks run on feature branches to give early warnings (non-blocking at this stage)
-- **Main Branch Protection**: Quality gates become **blocking** when merging into the main branch, ensuring only high-quality code reaches production
+- **Main Branch Monitoring**: Quality gates provide **informative feedback** when merging into the main branch, serving as a quality indicator to guide improvement efforts
 - **Quality Metrics**: SonarCloud evaluates multiple dimensions:
   - Code cleanliness (absence of code smells and duplications)
   - Security vulnerabilities
@@ -34,10 +34,10 @@ We leverage SonarCloud as our primary automated quality gate:
 ## 2. Technical Debt Payback Strategy
 
 ### 2.1 Priority Approach
-Our approach focuses on **resolving all blocking issues** identified by SonarCloud before merging to `main`. We don't maintain a formal priority hierarchy since:
-- SonarCloud quality gates clearly identify what must be fixed (blocking issues)
-- All blocking issues must be resolved before merge, regardless of their type
-- Non-blocking issues are addressed opportunistically during code review tasks
+Our approach focuses on **addressing critical issues** identified by SonarCloud when merging to `main`. We don't maintain a formal priority hierarchy since:
+- SonarCloud quality gates clearly identify areas for improvement
+- Critical issues are prioritized and addressed when feasible before merge
+- Other issues are addressed opportunistically during code review tasks or in subsequent iterations
 
 ### 2.2 Workflow
 
@@ -48,8 +48,8 @@ Our approach focuses on **resolving all blocking issues** identified by SonarClo
 
 #### Before Main Branch Merge (End of Sprint)
 1. After all features are implemented, create a pull request from `dev` into `main`
-2. Perform necessary refactoring tasks to resolve all SonarCloud blocking issues
-3. Once all quality gates pass, perform the merge
+2. Review SonarCloud feedback and address critical issues when feasible through dedicated tasks
+3. Document any remaining issues for future sprints and perform the merge
 
 #### Sprint 3: Legacy TD Payback
 At the start of Sprint 3, we will allocate dedicated time to address **Legacy TD Tasks**: tasks specifically addressing technical debt accumulated in Sprints 1 and 2, when quality controls were not yet in place. This is a one-time effort to bring the existing codebase up to our current quality standards.
