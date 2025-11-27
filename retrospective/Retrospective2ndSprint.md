@@ -40,7 +40,7 @@ sections:
 | User account customization | 9 | 3 | 9h35m | 9h50m |
 | Update report | 10 | 8 | 13h35m | 12h10m | 
 we did not manage to finish the implementation of this story 
-| **Total** | 67 | 24 | **96h** | **92h05m** |
+| **Total** | 67 | 24 | **96h** | **95h06m** |
 
 
 > story `Uncategorized` is for technical tasks, leave out story points (not applicable in this case)
