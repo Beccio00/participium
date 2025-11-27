@@ -13,11 +13,11 @@ sections:
 ### Macro statistics
 
 - Number of stories committed vs. done 
-    - 4 stories committed --- 4 stories done
+    - 6 stories committed --- 5 stories done
 - Total points committed vs. done 
-    - 14 points committed --- 14 points done
+    - 24 points committed --- 16 points done
 - Nr of hours planned vs. spent (as a team)
-    - time estimated: 96h --- time spent: 92h05m
+    - time estimated: 96h --- time spent: 95h06m
 
 **Remember**a story is done ONLY if it fits the Definition of Done:
  
@@ -32,12 +32,15 @@ sections:
 
 | Story | # Tasks | Points | Hours est. | Hours actual |
 |-------|--------:|-------:|-----------:|-------------:|
-| _Uncategorized_ | 14 | - | 45h | 43h48m |
-| Citizen registration | 9 | 2 | 11h45m | 10h15m |
-| Municipality users setup | 9 | 2 | 10h5m | 10h45m |
-| Municipality users role assignment | 10 | 2 | 10h5m | 8h47m |
-| Location selection | 12 | 8 | 19h5m | 18h30m |
-| **Total** | 54 | 14 | **96h** | **92h05m** |
+| _Uncategorized_ | 14 | - | 35h40m | 35h10m |
+| Report Details | 12 | 5 | 13h05m | 13h50m |
+| Report approval and rejection | 8 | 1 | 8h35m | 8h45m |
+| Report display on the map | 6 | 5 | 5h25m | 5h16m |
+| Report assign overview | 8 | 2 | 10h05m | 10h05m |
+| User account customization | 9 | 3 | 9h35m | 9h50m |
+| Update report | 10 | 8 | 13h35m | 12h10m | 
+we did not manage to finish the implementation of this story 
+| **Total** | 67 | 24 | **96h** | **95h06m** |
 
 
 > story `Uncategorized` is for technical tasks, leave out story points (not applicable in this case)
@@ -46,20 +49,20 @@ sections:
 
 |            | Mean | StDev |
 |------------|------|-------|
-| Estimation | 1h47m30s | 2h23m | 
-| Actual     | 1h43m | 2h25m |
+| Estimation | 1h26m | 1h11m30s | 
+| Actual     | 1h25m | 1h12m |
 
 - Total estimation error ratio: sum of total hours spent / sum of total hours effort - 1
 
     $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1$$
   
-  **Total Error Ration = -0,0412**
+  **Total Error Ration = -0,0094**
     
 - Absolute relative task estimation error: sum( abs( spent-task-i / estimation-task-i - 1))/n
 
     $$\frac{1}{n}\sum_i^n \left| \frac{spent_{task_i}}{estimation_{task_i}}-1 \right| $$
 
-  **Absolute Relative Error = 0,2433**
+  **Absolute Relative Error = 0,0688**
   
 ## QUALITY MEASURES 
 
