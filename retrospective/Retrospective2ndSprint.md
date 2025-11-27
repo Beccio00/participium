@@ -13,11 +13,11 @@ sections:
 ### Macro statistics
 
 - Number of stories committed vs. done 
-    - 4 stories committed --- 4 stories done
+    - 6 stories committed --- 5 stories done
 - Total points committed vs. done 
-    - 14 points committed --- 14 points done
+    - 24 points committed --- 16 points done
 - Nr of hours planned vs. spent (as a team)
-    - time estimated: 96h --- time spent: 92h05m
+    - time estimated: 96h --- time spent: 95h06m
 
 **Remember**a story is done ONLY if it fits the Definition of Done:
  
@@ -32,12 +32,15 @@ sections:
 
 | Story | # Tasks | Points | Hours est. | Hours actual |
 |-------|--------:|-------:|-----------:|-------------:|
-| _Uncategorized_ | 14 | - | 45h | 43h48m |
-| Citizen registration | 9 | 2 | 11h45m | 10h15m |
-| Municipality users setup | 9 | 2 | 10h5m | 10h45m |
-| Municipality users role assignment | 10 | 2 | 10h5m | 8h47m |
-| Location selection | 12 | 8 | 19h5m | 18h30m |
-| **Total** | 54 | 14 | **96h** | **92h05m** |
+| _Uncategorized_ | 14 | - | 35h40m | 35h10m |
+| Report Details | 12 | 5 | 13h05m | 13h50m |
+| Report approval and rejection | 8 | 1 | 8h35m | 8h45m |
+| Report display on the map | 6 | 5 | 5h25m | 5h16m |
+| Report assign overview | 8 | 2 | 10h05m | 10h05m |
+| User account customization | 9 | 3 | 9h35m | 9h50m |
+| Update report | 10 | 8 | 13h35m | 12h10m | 
+we did not manage to finish the implementation of this story 
+| **Total** | 67 | 24 | **96h** | **95h06m** |
 
 
 > story `Uncategorized` is for technical tasks, leave out story points (not applicable in this case)
@@ -89,29 +92,25 @@ sections:
 ## ASSESSMENT
 
 - What did go wrong in the sprint?
-    - The issues are related to task assignement which led to an uneven workload distribuition for each tema member. Compounding this, some task descriptions were too vague, making it difficult to understand the full scope of the work needed.
+    - The major issue has been the time management becuase we started implementing the stories too late, so we had most of the work done during the second week of the sprint. (This is due to the large number of projects all the team members are working on during this period)
 
 - What caused your errors in estimation (if any)?
-    - Our main estimation errors were overestimations, caused by two factors:
-      - decision tasks (e.g. Architecture design) took less tima than planned because many decicions were inherited from the previous project.
-      - database update tasks were estimated for stories that ultimately did not require big changes
-      We also had a few underestimated tasks, primarily due to unexpected issues with Git versioning.
+    - The errors in the estimation were caused by having encountered problems with docker configurations, in particular its alignement with the prisma schema.
 
 - What lessons did you learn (both positive and negative) in this sprint?
-    - **Negative**: We learned that our task descriptions must be more detailed during sprint planning to avoid ambiguity and ensure clarity.
-    - **Positive**: We confirmed that, despite issues with individual tasks, our overall time estimation for the sprint was quite precise.
+    - **Negative**: We learned that our docker management was poor, in fact we had several issues with its alignement with our server and client.
+    - **Positive**: We learned how to better describe tasks, in fact we did not have any kind of confusion when approaching a new story development.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
-    - First sprint, no previous set goals
+      We succedeed in improving the task description, in fact during this sprint there was no kind of confusion in what to do during specific tasks. Furthermore we did implement the "Swagger-first" approach, so we did not have alignement problems between tasks.
   
 - Which ones you were not able to achieve? Why?
-    - First sprint, no previous set goals
+      We managed to achieve both goals set in the previous retrospective.
 
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
   > Propose one or two
-  - Improve task definition and description during sprint planning to ensure a shared and clear understanding of the work to be done.
-  - Adoption of "Swagger-first" approach, starting all stories development from the APi definition, in order to improve team alignment and consistency.
+  - Improve the docker configuration files: we need to adjust both the docker alignement with our db and the management of the docker files.
 
 - One thing you are proud of as a Team!!
   - We are proud of our excellent and proactive communication, which consistently kept each other updated on the project's status and fostered a strong, collaborative environment by regularly providing feedback on each other's work.
