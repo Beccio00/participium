@@ -310,8 +310,8 @@ async function main() {
     }
 
     
-    for (let p = 1; p <= 5; p++) {
-        const photoUrl = `http://localhost:9000/reports-photos/report` + i + `.jpg`;
+    for (let p = 1; p <= 6; p++) {
+        const photoUrl = `http://localhost:9000/reports-photos/report` + (i+1) + `.jpg`;
         await prisma.reportPhoto.create({
           data: {
             url: photoUrl,

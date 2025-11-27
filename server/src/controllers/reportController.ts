@@ -150,7 +150,7 @@ export async function createReport(req: Request, res: Response): Promise<void> {
       );
 
       const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
-      const host = process.env.MINIO_ENDPOINT || "localhost";
+      const host = /*process.env.MINIO_ENDPOINT || */"localhost";
       const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : "";
       const url = `${protocol}://${host}${port}/${BUCKET_NAME}/${filename}`;
 
