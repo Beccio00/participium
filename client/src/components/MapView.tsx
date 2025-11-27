@@ -235,8 +235,12 @@ export default function MapView({
                 report.status
               )}; font-weight: bold; font-size: 12px;">${report.status}</span>
             </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Segnalato da: <b>${
-              report.isAnonymous ? "anonymous" : "utente"
+            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+              report.isAnonymous
+                ? "anonymous"
+                : report.user
+                ? `${report.user.firstName} ${report.user.lastName}`
+                : "user"
             }</b></div>
           </div>
         </div>
@@ -308,8 +312,12 @@ export default function MapView({
                 report.status
               )}; font-weight: bold; font-size: 12px;">${report.status}</span>
             </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Segnalato da: <b>${
-              report.isAnonymous ? "anonymous" : "utente"
+            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+              report.isAnonymous
+                ? "anonymous"
+                : report.user
+                ? `${report.user.firstName} ${report.user.lastName}`
+                : "user"
             }</b></div>
           </div>
         </div>
