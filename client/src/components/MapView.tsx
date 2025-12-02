@@ -81,6 +81,7 @@ interface MapViewProps {
   selectedLocation?: [number, number] | null;
   reports?: Report[];
   selectedReportId?: number | null;
+  customSelectedIcon?: L.DivIcon | null;
 }
 
 export default function MapView({
@@ -88,6 +89,7 @@ export default function MapView({
   selectedLocation,
   reports = [],
   selectedReportId,
+  customSelectedIcon,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -193,7 +195,7 @@ export default function MapView({
           map.removeLayer(markerRef.current);
         }
         markerRef.current = L.marker([lat, lng], {
-          icon: createSelectedLocationIcon(),
+          icon: customSelectedIcon || createSelectedLocationIcon(),
         }).addTo(map);
         onLocationSelect(lat, lng);
       });
@@ -203,7 +205,7 @@ export default function MapView({
     // Add initial marker if selectedLocation is provided
     if (selectedLocation) {
       markerRef.current = L.marker(selectedLocation, {
-        icon: createSelectedLocationIcon(),
+        icon: customSelectedIcon || createSelectedLocationIcon(),
       }).addTo(map);
     }
 
@@ -350,7 +352,7 @@ export default function MapView({
     }
     if (selectedLocation) {
       markerRef.current = L.marker(selectedLocation, {
-        icon: createSelectedLocationIcon(),
+        icon: customSelectedIcon || createSelectedLocationIcon(),
       }).addTo(mapInstanceRef.current);
     }
   }, [selectedLocation]);

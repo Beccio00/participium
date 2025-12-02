@@ -11,6 +11,30 @@ import {
 } from "react-bootstrap";
 import { GeoAlt, FileText, Tag, Camera, X } from "react-bootstrap-icons";
 import MapView from "./MapView";
+// Marker stile Google Maps puntatore, usato per la location selezionata
+import L from "leaflet";
+
+const createColoredIcon = (color: string) => {
+  const svg = `
+    <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g filter="url(#shadow)">
+        <path d="M19 2C9.6 2 2 9.6 2 19.1c0 10.2 15.1 32.7 16.1 34.2.5.7 1.3.7 1.8 0C20.9 51.8 36 29.3 36 19.1 36 9.6 28.4 2 19 2z" fill="#C86E62" stroke="white" stroke-width="3"/>
+        <circle cx="19" cy="19" r="7" fill="white"/>
+      </g>
+      <defs>
+        <filter id="shadow" x="0" y="0" width="38" height="54" filterUnits="userSpaceOnUse">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.3)"/>
+        </filter>
+      </defs>
+    </svg>
+  `;
+  return L.divIcon({
+    className: "custom-marker",
+    html: svg,
+    iconSize: [38, 54],
+    iconAnchor: [19, 54],
+  });
+};
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
 import { createReport } from "../api/api";
 import {
@@ -432,10 +456,19 @@ export default function ReportForm() {
                       issue.
                     </p>
 
-                    <div style={{ height: 'clamp(400px, 60vh, 600px)', ...mapContainerStyle }}>
+                    <div
+                      style={{
+                        height: "clamp(400px, 60vh, 600px)",
+                        ...mapContainerStyle,
+                        position: "relative",
+                      }}
+                    >
+                      {/* MapView con marker custom */}
                       <MapView
                         onLocationSelect={handleLocationSelect}
                         selectedLocation={selectedLocation}
+                        // Passo una prop customIcon per il marker selezionato
+                        customSelectedIcon={createColoredIcon("#C86E62")}
                       />
                     </div>
 
