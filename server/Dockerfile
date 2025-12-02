@@ -4,12 +4,15 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+# Copy package files first for better caching
 COPY server/package*.json ./
 COPY server/tsconfig.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --frozen-lockfile
 
 # Copy shared types from parent directory
 COPY shared/ /shared/
@@ -21,22 +24,29 @@ COPY server/seed ./seed
 # Build TypeScript
 RUN npm run build
 
-# Verify build output
-RUN ls -la dist/
+# Verify build output and structure
+RUN ls -la dist/ && \
+    if [ ! -d "dist" ]; then echo "Build failed: dist directory not found"; exit 1; fi
 
 # Stage 2: Production
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Install tini for proper signal handling
-RUN apk add --no-cache tini
+# Install runtime dependencies and tini
+RUN apk add --no-cache \
+    tini \
+    wget \
+    curl \
+    postgresql-client \
+    && addgroup -g 1001 -S nodejs \
+    && adduser -S nodejs -u 1001
 
 # Copy package files
 COPY server/package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm ci --only=production --frozen-lockfile && npm cache clean --force
 
 # Copy shared types
 COPY shared/ /shared/
@@ -44,15 +54,12 @@ COPY shared/ /shared/
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy documentation
+# Copy documentation to the dist folder where the app expects it
 COPY docs/ ./dist/docs/
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Change ownership
-RUN chown -R nodejs:nodejs /app
+# Create uploads directory and set permissions
+RUN mkdir -p uploads && chown -R nodejs:nodejs /app
+# Switch to non-root user
 
 USER nodejs
 
@@ -63,5 +70,5 @@ ENV NODE_ENV=production
 # Use tini to handle signals properly
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Start the application
+# Start the application with correct path from actual build output
 CMD ["node", "dist/app/src/index.js"]

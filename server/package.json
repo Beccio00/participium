@@ -51,7 +51,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/app/src/index.js",
     "dev": "nodemon src/index.ts",
     "seed": "node dist/app/seed/seed.js",
     "db:sync": "typeorm schema:sync -d src/utils/AppDataSource.ts",

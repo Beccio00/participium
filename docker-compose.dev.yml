@@ -1,0 +1,83 @@
+services:
+  # PostgreSQL Database - same as production
+  db:
+    image: postgres:15-alpine
+    container_name: participium-db-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-participium}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-participium_password}
+      POSTGRES_DB: ${POSTGRES_DB:-participium}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      # Optional: mount init scripts
+      # - ./server/database/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    networks:
+      - participium-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-participium}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # MinIO Object Storage - same as production but with exposed console
+  minio:
+    image: minio/minio:latest
+    container_name: participium-minio-dev
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data_dev:/data
+    restart: unless-stopped
+    networks:
+      - participium-network-dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MinIO Initialization
+  minio-init:
+    image: minio/mc:latest
+    container_name: participium-minio-init-dev
+    depends_on:
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./seed-images:/seed-images:ro
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
+      mc mb myminio/${MINIO_BUCKET_NAME:-reports-photos} --ignore-existing;
+      mc anonymous set public myminio/${MINIO_BUCKET_NAME:-reports-photos};
+      echo 'Development: Uploading seed images...';
+      if [ -d /seed-images ]; then
+        mc cp --recursive /seed-images/* myminio/${MINIO_BUCKET_NAME:-reports-photos}/;
+        echo 'Seed images uploaded successfully';
+      else
+        echo 'No seed-images directory found, skipping upload';
+      fi;
+      echo 'MinIO bucket setup completed for development';
+      exit 0;
+      "
+    networks:
+      - participium-network-dev
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  minio_data_dev:
+    driver: local
+
+networks:
+  participium-network-dev:
+    driver: bridge
