@@ -14,7 +14,7 @@ import MapView from "./MapView";
 // Marker stile Google Maps puntatore, usato per la location selezionata
 import L from "leaflet";
 
-const createColoredIcon = (color: string) => {
+const createColoredIcon = () => {
   const svg = `
     <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g filter="url(#shadow)">
@@ -468,7 +468,7 @@ export default function ReportForm() {
                         onLocationSelect={handleLocationSelect}
                         selectedLocation={selectedLocation}
                         // Passo una prop customIcon per il marker selezionato
-                        customSelectedIcon={createColoredIcon("#C86E62")}
+                        customSelectedIcon={createColoredIcon()}
                       />
                     </div>
 

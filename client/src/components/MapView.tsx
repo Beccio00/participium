@@ -82,6 +82,7 @@ interface MapViewProps {
   reports?: Report[];
   selectedReportId?: number | null;
   customSelectedIcon?: L.DivIcon | null;
+  onReportDetailsClick?: (reportId: number) => void;
 }
 
 export default function MapView({
@@ -90,6 +91,7 @@ export default function MapView({
   reports = [],
   selectedReportId,
   customSelectedIcon,
+  onReportDetailsClick,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -228,32 +230,45 @@ export default function MapView({
     reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).bindPopup(`
-        <div class="report-popup">
-          <div class="report-popup-header">${report.title}</div>
-          <div class="report-popup-body">
-            <div class="report-popup-location">${report.latitude.toFixed(
-              6
-            )}, ${report.longitude.toFixed(6)}</div>
-            <div class="report-popup-description">${report.description}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
-                report.category
-              }</span>
-              <span style="color: ${getStatusColor(
-                report.status
-              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
-            </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
-              report.isAnonymous
-                ? "anonymous"
-                : report.user
-                ? `${report.user.firstName} ${report.user.lastName}`
-                : "user"
-            }</b></div>
+      });
+      // Popup HTML con pulsante View Details
+      const popupContent = document.createElement("div");
+      popupContent.className = "report-popup";
+      popupContent.innerHTML = `
+        <div class="report-popup-header">${report.title}</div>
+        <div class="report-popup-body">
+          <div class="report-popup-location">${report.latitude.toFixed(
+            6
+          )}, ${report.longitude.toFixed(6)}</div>
+          <div class="report-popup-description">${report.description}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+            <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+              report.category
+            }</span>
+            <span style="color: ${getStatusColor(
+              report.status
+            )}; font-weight: bold; font-size: 12px;">${report.status}</span>
           </div>
+          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+            report.isAnonymous
+              ? "anonymous"
+              : report.user
+              ? `${report.user.firstName} ${report.user.lastName}`
+              : "user"
+          }</b></div>
         </div>
-      `);
+      `;
+      // Pulsante View Details
+      const detailsBtn = document.createElement("button");
+      detailsBtn.textContent = "View Details";
+      detailsBtn.className = "btn btn-sm btn-primary mt-2";
+      detailsBtn.style.width = "100%";
+      detailsBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (onReportDetailsClick) onReportDetailsClick(report.id);
+      };
+      popupContent.appendChild(detailsBtn);
+      marker.bindPopup(popupContent);
       reportMarkersRef.current.push(marker);
       markerCluster.addLayer(marker);
     });
@@ -305,32 +320,45 @@ export default function MapView({
     reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).bindPopup(`
-        <div class="report-popup">
-          <div class="report-popup-header">${report.title}</div>
-          <div class="report-popup-body">
-            <div class="report-popup-location">${report.latitude.toFixed(
-              6
-            )}, ${report.longitude.toFixed(6)}</div>
-            <div class="report-popup-description">${report.description}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
-                report.category
-              }</span>
-              <span style="color: ${getStatusColor(
-                report.status
-              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
-            </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
-              report.isAnonymous
-                ? "anonymous"
-                : report.user
-                ? `${report.user.firstName} ${report.user.lastName}`
-                : "user"
-            }</b></div>
+      });
+      // Popup HTML con pulsante View Details
+      const popupContent = document.createElement("div");
+      popupContent.className = "report-popup";
+      popupContent.innerHTML = `
+        <div class="report-popup-header">${report.title}</div>
+        <div class="report-popup-body">
+          <div class="report-popup-location">${report.latitude.toFixed(
+            6
+          )}, ${report.longitude.toFixed(6)}</div>
+          <div class="report-popup-description">${report.description}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+            <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+              report.category
+            }</span>
+            <span style="color: ${getStatusColor(
+              report.status
+            )}; font-weight: bold; font-size: 12px;">${report.status}</span>
           </div>
+          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+            report.isAnonymous
+              ? "anonymous"
+              : report.user
+              ? `${report.user.firstName} ${report.user.lastName}`
+              : "user"
+          }</b></div>
         </div>
-      `);
+      `;
+      // Pulsante View Details
+      const detailsBtn = document.createElement("button");
+      detailsBtn.textContent = "View Details";
+      detailsBtn.className = "btn btn-sm btn-primary mt-2";
+      detailsBtn.style.width = "100%";
+      detailsBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (onReportDetailsClick) onReportDetailsClick(report.id);
+      };
+      popupContent.appendChild(detailsBtn);
+      marker.bindPopup(popupContent);
       reportMarkersRef.current.push(marker);
       markerCluster.addLayer(marker);
     });
