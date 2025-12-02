@@ -1,6 +1,8 @@
 import { UserDTO, Role } from './UserDTO';
 import { ReportCategory, ReportStatus, ReportPhoto } from "../../../shared/ReportTypes";
 
+export { ReportCategory, ReportStatus };
+
 export type ReportDTO = {
   id: number;
   title: string;

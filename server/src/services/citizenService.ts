@@ -1,13 +1,14 @@
-import { prisma } from "../utils/prismaClient";
+import { UserRepository } from "../repositories/UserRepository";
+import { CitizenPhotoRepository } from "../repositories/CitizenPhotoRepository";
+import { CitizenPhoto } from "../entities/CitizenPhoto";
 import { NotFoundError } from "../utils/errors";
-import type { CitizenPhoto } from "@prisma/client";
 import { toCitizenProfileDTO, type CitizenProfileDTO } from "../interfaces/CitizenDTO";
 
+const userRepository = new UserRepository();
+const citizenPhotoRepository = new CitizenPhotoRepository();
+
 export async function getCitizenById(userId: number): Promise<CitizenProfileDTO> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { photo: true },
-  });
+  const user = await userRepository.findWithPhoto(userId);
 
   if (!user) {
     throw new NotFoundError("User not found");
@@ -28,23 +29,17 @@ export async function updateCitizenProfile(
     emailNotificationsEnabled?: boolean;
   }
 ): Promise<CitizenProfileDTO> {
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      ...(data.firstName && { first_name: data.firstName }),
-      ...(data.lastName && { last_name: data.lastName }),
-      ...(data.email && { email: data.email }),
-      ...(data.password && { password: data.password }),
-      ...(data.salt && { salt: data.salt }),
-      ...(data.telegramUsername !== undefined && { telegram_username: data.telegramUsername }),
-      ...(data.emailNotificationsEnabled !== undefined && {
-        email_notifications_enabled: data.emailNotificationsEnabled,
-      }),
-    },
-    include: { photo: true },
-  });
+  const updateData: any = {};
+  if (data.firstName) updateData.first_name = data.firstName;
+  if (data.lastName) updateData.last_name = data.lastName;
+  if (data.email) updateData.email = data.email;
+  if (data.password) updateData.password = data.password;
+  if (data.salt) updateData.salt = data.salt;
+  if (data.telegramUsername !== undefined) updateData.telegram_username = data.telegramUsername;
+  if (data.emailNotificationsEnabled !== undefined) updateData.email_notifications_enabled = data.emailNotificationsEnabled;
 
-  return toCitizenProfileDTO(updatedUser);
+  const updatedUser = await userRepository.update(userId, updateData);
+  return toCitizenProfileDTO(updatedUser!);
 }
 
 export async function uploadCitizenPhoto(
@@ -53,46 +48,33 @@ export async function uploadCitizenPhoto(
   filename: string
 ): Promise<{ url: string; filename: string }> {
   // Check if user already has a photo
-  const existingPhoto = await prisma.citizenPhoto.findUnique({
-    where: { userId },
-  });
+  const existingPhoto = await citizenPhotoRepository.findByUserId(userId);
 
   if (existingPhoto) {
     // Update existing photo
-    const updated = await prisma.citizenPhoto.update({
-      where: { userId },
-      data: { url: photoUrl, filename },
-    });
-    return { url: updated.url, filename: updated.filename };
+    const updated = await citizenPhotoRepository.updateByUserId(userId, { url: photoUrl, filename });
+    return { url: updated!.url, filename: updated!.filename };
   } else {
     // Create new photo
-    const created = await prisma.citizenPhoto.create({
-      data: {
-        userId,
-        url: photoUrl,
-        filename,
-      },
+    const created = await citizenPhotoRepository.create({
+      userId,
+      url: photoUrl,
+      filename,
     });
     return { url: created.url, filename: created.filename };
   }
 }
 
 export async function deleteCitizenPhoto(userId: number): Promise<void> {
-  const photo = await prisma.citizenPhoto.findUnique({
-    where: { userId },
-  });
+  const photo = await citizenPhotoRepository.findByUserId(userId);
 
   if (!photo) {
     throw new NotFoundError("Photo not found");
   }
 
-  await prisma.citizenPhoto.delete({
-    where: { userId },
-  });
+  await citizenPhotoRepository.deleteByUserId(userId);
 }
 
 export async function getCitizenPhoto(userId: number): Promise<CitizenPhoto | null> {
-  return await prisma.citizenPhoto.findUnique({
-    where: { userId },
-  });
+  return await citizenPhotoRepository.findByUserId(userId);
 }

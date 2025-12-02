@@ -8,7 +8,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^6.19.0",
     "@types/passport-local": "^1.0.38",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -21,7 +20,10 @@
     "multer": "^2.0.2",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
     "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.27",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
@@ -34,28 +36,31 @@
     "@types/minio": "^7.1.0",
     "@types/multer": "^2.0.0",
     "@types/passport": "^1.0.17",
+    "@types/pg": "^8.15.6",
     "@types/supertest": "^6.0.2",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/yamljs": "^0.2.34",
     "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "nodemon": "^3.1.10",
-    "prisma": "^6.19.0",
     "supertest": "^6.3.4",
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
+    "typeorm-cli": "^1.0.7",
     "typescript": "^5.9.3"
   },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "npx prisma migrate reset && npx prisma db push && npm run seed && nodemon src/index.ts",
-    "seed": "ts-node prisma/seed.ts",
-    "db:reset": "npx prisma db push --force-reset && npm run seed",
+    "dev": "nodemon src/index.ts",
+    "seed": "node dist/app/seed/seed.js",
+    "db:sync": "typeorm schema:sync -d src/utils/AppDataSource.ts",
+    "db:migration:generate": "typeorm migration:generate -d src/utils/AppDataSource.ts",
+    "db:migration:run": "typeorm migration:run -d src/utils/AppDataSource.ts",
     "generate:api": "openapi-generator-cli generate -i ../docs/swagger.yaml -g typescript-fetch -o ./src/generated",
-    "test": "npx jest --runInBand",
-    "test:watch": "cross-env NODE_ENV=test jest --watch",
-    "test:coverage": "cross-env NODE_ENV=test jest --coverage",
-    "test:verbose": "cross-env NODE_ENV=test jest --verbose"
+    "test": "echo \"Tests need to be updated for TypeORM\" && exit 1",
+    "test:watch": "echo \"Tests need to be updated for TypeORM\" && exit 1",
+    "test:coverage": "echo \"Tests need to be updated for TypeORM\" && exit 1",
+    "test:verbose": "echo \"Tests need to be updated for TypeORM\" && exit 1"
   }
 }

@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import type { User as PrismaUser } from "@prisma/client";
+import { User } from "../entities/User";
 
 // Genera un hash e un sale della password
 export async function hashPassword(plain: string): Promise<{ hashedPassword: string; salt: string }> {
@@ -9,7 +9,7 @@ export async function hashPassword(plain: string): Promise<{ hashedPassword: str
 }
 
 // Verifica se la password fornita corrisponde all'hash memorizzato nel db
-export async function verifyPassword(dbUser: PrismaUser | null | undefined, password: string): Promise<boolean> {
-  if (!dbUser || !(dbUser as any).password) return false;
-  return bcrypt.compare(password, (dbUser as any).password);
+export async function verifyPassword(dbUser: User | null | undefined, password: string): Promise<boolean> {
+  if (!dbUser || !dbUser.password) return false;
+  return bcrypt.compare(password, dbUser.password);
 }

@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { toUserDTO, UserDTO } from "../interfaces/UserDTO";
-import type { User as PrismaUser } from "@prisma/client";
+import { User } from "../entities/User";
 import { verifyPassword } from "../services/passwordService";
 import { findByEmail,findById } from "../services/userService";
 
@@ -9,7 +9,7 @@ export function configurePassport() {
   passport.use(
     new LocalStrategy({ usernameField: "email" }, async (email: string, password: string, done: (err: Error | null, user?: UserDTO | false) => void) => {
       try {
-        const dbUser: PrismaUser | null = await findByEmail(email);
+        const dbUser: User | null = await findByEmail(email);
         if (!dbUser) return done(null, false);
 
         const valid = await verifyPassword(dbUser, password);

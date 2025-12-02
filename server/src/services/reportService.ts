@@ -1,49 +1,32 @@
-/**
- * Restituisce i report assegnati all'utente tecnico autenticato
- */
-export async function getAssignedReportsService(
-  userId: number,
-  status?: string,
-  sortBy: string = "createdAt",
-  order: "asc" | "desc" = "desc"
-): Promise<ReportDTO[]> {
-  // Only allow technical statuses
-  const allowedStatuses = [
-    ReportStatus.ASSIGNED,
-    ReportStatus.IN_PROGRESS,
-    ReportStatus.RESOLVED,
-  ];
-  let statusFilter: ReportStatus[] = allowedStatuses;
-  if (status && allowedStatuses.includes(status as ReportStatus)) {
-    statusFilter = [status as ReportStatus];
-  }
-  const reports = await prisma.report.findMany({
-    where: {
-      assignedToId: userId,
-      status: { in: statusFilter },
-    },
-    include: {
-      user: true,
-      assignedTo: true,
-      photos: true,
-      messages: {
-        include: { user: true },
-      },
-    },
-    orderBy: {
-      [sortBy]: order,
-    },
-  });
-  return reports.map(toReportDTO);
-}
-import { prisma } from "../utils/prismaClient";
-import { ReportDTO, toReportDTO, ReportMessageDTO } from "../interfaces/ReportDTO";
-import { ReportPhoto, ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
-import { NotFoundError, BadRequestError, UnprocessableEntityError, ForbiddenError } from "../utils/errors";
+// =========================
+// IMPORTS
+// =========================
+
+// DTOs and interfaces
+import { ReportDTO, toReportDTO, ReportMessageDTO , ReportCategory, ReportStatus} from "../interfaces/ReportDTO";
+import { ReportPhoto as SharedReportPhoto } from "../../../shared/ReportTypes";
+
+// Repositories
+import { ReportRepository } from "../repositories/ReportRepository";
+import { ReportMessageRepository } from "../repositories/ReportMessageRepository";
+import { UserRepository } from "../repositories/UserRepository";
+import { ReportPhotoRepository } from "../repositories/ReportPhotoRepository";
+
+// Services and utilities
 import { notifyReportStatusChange, notifyNewMessage, notifyReportAssigned, notifyReportApproved, notifyReportRejected } from "./notificationService";
+import { NotFoundError, BadRequestError, UnprocessableEntityError, ForbiddenError } from "../utils/errors";
 
 // =========================
-// ENUMS E MAPPATURA LOGICA
+// REPOSITORY INSTANCES
+// =========================
+
+const reportRepository = new ReportRepository();
+const reportMessageRepository = new ReportMessageRepository(); 
+const userRepository = new UserRepository();
+const reportPhotoRepository = new ReportPhotoRepository();
+
+// =========================
+// ENUMS AND TYPES
 // =========================
 
 export enum TechnicalType {
@@ -60,6 +43,32 @@ export enum TechnicalType {
   ROAD_MAINTENANCE = "ROAD_MAINTENANCE",
   CIVIL_PROTECTION = "CIVIL_PROTECTION",
 }
+
+// Tipo per la creazione di un report
+type CreateReportData = Omit<
+  ReportDTO,
+  | "id"
+  | "status"
+  | "createdAt"
+  | "updatedAt"
+  | "messages"
+  | "user"
+  | "rejectedReason"
+  | "address"
+  | "latitude"
+  | "longitude"
+> & {
+  // When creating a report, latitude/longitude are numbers coming from the client
+  latitude: number;
+  longitude: number;
+  userId: number; // add userId to link report to user
+  photos: SharedReportPhoto[];
+  address?: string;
+};
+
+// =========================
+// MAPPINGS AND HELPERS
+// =========================
 
 const categoryToTechnical: Record<ReportCategory, TechnicalType[]> = {
   [ReportCategory.WATER_SUPPLY_DRINKING_WATER]: [
@@ -103,96 +112,82 @@ function getTechnicalTypesForCategory(
   return categoryToTechnical[category] || [];
 }
 
-// =========================
-// FUNZIONI DI SERVIZIO
-// =========================
-// (mapping and enums are declared above; duplicates removed)
-
 /**
  * Restituisce la lista di tecnici validi per la categoria del report
  * @param reportId id del report
  */
 export async function getAssignableTechnicalsForReport(reportId: number) {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    select: { category: true },
-  });
+  const report = await reportRepository.findById(reportId);
   if (!report) throw new NotFoundError("Report not found");
+  
   const validTechnicalTypes = getTechnicalTypesForCategory(
     report.category as ReportCategory
   );
-  // Usiamo i Role esistenti in Prisma come tipi tecnici: filtriamo gli utenti il cui `role` è in validTechnicalTypes
+  // Usiamo i Role esistenti come tipi tecnici: filtriamo gli utenti il cui `role` è in validTechnicalTypes
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
-  const technicals = await prisma.user.findMany({
-    where: {
-      role: { in: validRoles as any },
-    },
-    select: {
-      id: true,
-      email: true,
-      first_name: true,
-      last_name: true,
-      role: true,
-    },
-  });
+  
+  const technicals = await userRepository.findByRoles(validRoles as any);
   return technicals;
 }
 
 // =========================
-// TIPI
+// REPORT MANAGEMENT FUNCTIONS
 // =========================
 
-// Tipo per la creazione di un report
-type CreateReportData = Omit<
-  ReportDTO,
-  | "id"
-  | "status"
-  | "createdAt"
-  | "updatedAt"
-  | "messages"
-  | "user"
-  | "rejectedReason"
-  | "address"
-  | "latitude"
-  | "longitude"
-> & {
-  // When creating a report, latitude/longitude are numbers coming from the client
-  latitude: number;
-  longitude: number;
-  userId: number; // add userId to link report to user
-  photos: ReportPhoto[];
-  address?: string;
-};
+/**
+ * Restituisce i report assegnati all'utente tecnico autenticato
+ */
+export async function getAssignedReportsService(
+  userId: number,
+  status?: string,
+  sortBy: string = "createdAt",
+  order: "asc" | "desc" = "desc"
+): Promise<ReportDTO[]> {
+  // Only allow technical statuses
+  const allowedStatuses = [
+    ReportStatus.ASSIGNED,
+    ReportStatus.IN_PROGRESS,
+    ReportStatus.RESOLVED,
+  ];
+  let statusFilter: ReportStatus[] = allowedStatuses;
+  if (status && allowedStatuses.includes(status as ReportStatus)) {
+    statusFilter = [status as ReportStatus];
+  }
+  
+  const reports = await reportRepository.findAssignedToUser(userId, statusFilter);
+  return reports.map(toReportDTO);
+}
 
 /**
  * Crea un nuovo report
  */
 export async function createReport(data: CreateReportData) {
-  // Qui ci dovrebbe essere la validazione delle foto
-  const newReport = await prisma.report.create({
-    data: {
-      title: data.title,
-      description: data.description,
-      category: data.category as ReportCategory,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      address: data.address || null,
-      isAnonymous: data.isAnonymous,
-      status: ReportStatus.PENDING_APPROVAL,
-      userId: data.userId,
-      photos: {
-        create: data.photos.map((photo) => ({
-          url: photo.url,
-          filename: photo.filename,
-        })),
-      },
-    },
-    include: {
-      user: true,
-      photos: true,
-    },
+  // Create the report entity
+  const savedReport = await reportRepository.create({
+    title: data.title,
+    description: data.description,
+    category: data.category as ReportCategory,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    address: data.address || null,
+    isAnonymous: data.isAnonymous,
+    status: ReportStatus.PENDING_APPROVAL,
+    userId: data.userId,
   });
-  return newReport;
+
+  // Create photos separately if any
+  if (data.photos && data.photos.length > 0) {
+    const photosData = data.photos.map((photo) => ({
+      url: photo.url,
+      filename: photo.filename,
+      reportId: savedReport.id,
+    }));
+    await reportPhotoRepository.createMany(photosData);
+  }
+
+  // Return the report with all relations
+  const reportWithRelations = await reportRepository.findByIdWithRelations(savedReport.id);
+  return reportWithRelations!;
 }
 
 /**
@@ -201,30 +196,12 @@ export async function createReport(data: CreateReportData) {
 export async function getApprovedReports(
   category?: ReportCategory
 ): Promise<ReportDTO[]> {
-  const reports = await prisma.report.findMany({
-    where: {
-      status: {
-        in: [
-          ReportStatus.ASSIGNED,
-          ReportStatus.IN_PROGRESS,
-          ReportStatus.RESOLVED,
-        ],
-      },
-      ...(category && { category }),
-    },
-    include: {
-      user: true,
-      photos: true,
-      messages: {
-        include: {
-          user: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const reports = await reportRepository.findByStatusAndCategory([
+    ReportStatus.ASSIGNED,
+    ReportStatus.IN_PROGRESS,
+    ReportStatus.RESOLVED,
+  ], category);
+  
   return reports.map(toReportDTO);
 }
 
@@ -232,25 +209,13 @@ export async function getApprovedReports(
  * Restituisce i report in attesa di approvazione
  */
 export async function getPendingReports(): Promise<ReportDTO[]> {
-  const reports = await prisma.report.findMany({
-    where: {
-      status: ReportStatus.PENDING_APPROVAL,
-    },
-    include: {
-      user: true,
-      photos: true,
-      messages: {
-        include: {
-          user: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const reports = await reportRepository.findByStatus([ReportStatus.PENDING_APPROVAL]);
   return reports.map(toReportDTO);
 }
+
+// =========================
+// APPROVAL AND REJECTION FUNCTIONS
+// =========================
 
 /**
  * Approva un report e lo assegna a un tecnico selezionato (solo PUBLIC_RELATIONS)
@@ -260,64 +225,30 @@ export async function approveReport(
   approverId: number,
   assignedTechnicalId: number
 ): Promise<ReportDTO> {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    include: { user: true },
-  });
+  const report = await reportRepository.findByIdWithRelations(reportId);
   if (!report) throw new NotFoundError("Report not found");
   if (report.status !== ReportStatus.PENDING_APPROVAL) {
     throw new BadRequestError("Report is not in PENDING_APPROVAL status");
   }
+  
   // Verifica che il tecnico assegnato sia valido per la categoria
   const validTechnicalTypes = getTechnicalTypesForCategory(
     report.category as ReportCategory
   );
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
-  const assignedTechnical = await prisma.user.findUnique({
-    where: { id: assignedTechnicalId },
-    select: {
-      id: true,
-      role: true,
-      email: true,
-      first_name: true,
-      last_name: true,
-    },
-  });
+  const assignedTechnical = await userRepository.findById(assignedTechnicalId);
   if (!assignedTechnical || !validRoles.includes(assignedTechnical.role)) {
     throw new UnprocessableEntityError(
       "Assigned technical is not valid for this report category"
     );
   }
-  await prisma.report.update({
-    where: { id: reportId },
-    // cast `data` to any because generated Prisma types may not expose the relation scalar in the union
-    data: {
-      status: ReportStatus.ASSIGNED,
-      assignedToId: assignedTechnical.id,
-    } as unknown as any,
+  
+  const updatedReport = await reportRepository.update(reportId, {
+    status: ReportStatus.ASSIGNED,
+    assignedToId: assignedTechnical.id,
   });
 
-  // Recupera il report e poi carica separatamente l'utente assegnato (per evitare problemi di typing con Prisma client)
-  const updatedBase = await prisma.report.findUnique({
-    where: { id: reportId },
-    include: {
-      user: true,
-      photos: true,
-      messages: {
-        include: {
-          user: true,
-        },
-      },
-    },
-  });
-  if (!updatedBase) throw new NotFoundError("Report not found after update");
-
-  if ((updatedBase as any).assignedToId) {
-    const assigned = await prisma.user.findUnique({
-      where: { id: (updatedBase as any).assignedToId },
-    });
-    (updatedBase as any).assignedTo = assigned ?? null;
-  }
+  if (!updatedReport) throw new NotFoundError("Report not found after update");
 
   // Notify citizen about approval
   await notifyReportApproved(report.id, report.userId, report.title);
@@ -325,7 +256,7 @@ export async function approveReport(
   // Notify technical user about assignment
   await notifyReportAssigned(report.id, assignedTechnicalId, report.title);
 
-  return toReportDTO(updatedBase as any);
+  return toReportDTO(updatedReport);
 }
 
 /**
@@ -344,44 +275,39 @@ export async function rejectReport(
       "Rejection reason must be less than 500 characters"
     );
   }
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    include: { user: true },
-  });
+  
+  const report = await reportRepository.findByIdWithRelations(reportId);
   if (!report) {
     throw new NotFoundError("Report not found");
   }
   if (report.status !== ReportStatus.PENDING_APPROVAL) {
     throw new BadRequestError("Report is not in PENDING_APPROVAL status");
   }
-  const updatedReport = await prisma.report.update({
-    where: { id: reportId },
-    // cast to any to avoid mismatches with generated Prisma client types
-    data: {
-      status: ReportStatus.REJECTED,
-      rejectedReason: reason,
-      messages: {
-        create: {
-          content: "Report rejected by public relations officer",
-          senderId: rejecterId,
-        },
-      },
-    } as unknown as any,
-    include: {
-      user: true,
-      photos: true,
-      messages: {
-        include: {
-          user: true,
-        },
-      },
-    },
+  
+  // Update report status and reason
+  const updatedReport = await reportRepository.update(reportId, {
+    status: ReportStatus.REJECTED,
+    rejectedReason: reason,
   });
+  
+  // Create rejection message
+  await reportMessageRepository.create({
+    content: "Report rejected by public relations officer",
+    senderId: rejecterId,
+    reportId: reportId,
+  });
+  
+  if (!updatedReport) throw new NotFoundError("Report not found after update");
+  
   // Notify citizen about rejection
   await notifyReportRejected(report.id, report.userId, report.title, reason);
 
   return toReportDTO(updatedReport);
 }
+
+// =========================
+// TECHNICAL USER FUNCTIONS
+// =========================
 
 /**
  * Aggiorna lo stato di un report (solo technical)
@@ -391,10 +317,7 @@ export async function updateReportStatus(
   technicalUserId: number,
   newStatus: ReportStatus
 ): Promise<ReportDTO> {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    include: { user: true, assignedTo: true },
-  });
+  const report = await reportRepository.findByIdWithRelations(reportId);
 
   if (!report) {
     throw new NotFoundError("Report not found");
@@ -407,32 +330,13 @@ export async function updateReportStatus(
 
   const oldStatus = report.status;
 
-  const updatedReport = await prisma.report.update({
-    where: { id: reportId },
-    data: { status: newStatus },
-    include: {
-      user: true,
-      photos: true,
-      messages: {
-        include: {
-          user: true,
-        },
-      },
-    },
-  });
-
-  // Carica separatamente l'utente assegnato (per evitare problemi di typing con Prisma client)
-  if ((updatedReport as any).assignedToId) {
-    const assigned = await prisma.user.findUnique({
-      where: { id: (updatedReport as any).assignedToId },
-    });
-    (updatedReport as any).assignedTo = assigned ?? null;
-  }
+  const updatedReport = await reportRepository.update(reportId, { status: newStatus });
+  if (!updatedReport) throw new NotFoundError("Report not found after update");
 
   // Notify citizen about status change
   await notifyReportStatusChange(report.id, report.userId, oldStatus, newStatus);
 
-  return toReportDTO(updatedReport as any);
+  return toReportDTO(updatedReport);
 }
 
 /**
@@ -443,10 +347,7 @@ export async function sendMessageToCitizen(
   technicalUserId: number,
   content: string
 ): Promise<ReportMessageDTO> {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    include: { user: true, assignedTo: true },
-  });
+  const report = await reportRepository.findByIdWithRelations(reportId);
 
   if (!report) {
     throw new NotFoundError("Report not found");
@@ -457,15 +358,10 @@ export async function sendMessageToCitizen(
     throw new ForbiddenError("You are not assigned to this report");
   }
 
-  const message = await prisma.reportMessage.create({
-    data: {
-      content,
-      reportId,
-      senderId: technicalUserId,
-    },
-    include: {
-      user: true,
-    },
+  const savedMessage = await reportMessageRepository.create({
+    content,
+    reportId,
+    senderId: technicalUserId,
   });
 
   // Notifica il cittadino del nuovo messaggio
@@ -473,12 +369,16 @@ export async function sendMessageToCitizen(
   await notifyNewMessage(report.id, report.userId, senderName);
 
   return {
-    id: message.id,
-    content: message.content,
-    createdAt: message.createdAt.toISOString(),
-    senderId: message.senderId,
+    id: savedMessage.id,
+    content: savedMessage.content,
+    createdAt: savedMessage.createdAt.toISOString(),
+    senderId: savedMessage.senderId,
   };
 }
+
+// =========================
+// MESSAGE FUNCTIONS
+// =========================
 
 /**
  * Ottieni tutti i messaggi di un report (cittadino o technical)
@@ -487,20 +387,7 @@ export async function getReportMessages(
   reportId: number,
   userId: number
 ): Promise<ReportMessageDTO[]> {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    include: {
-      messages: {
-        include: {
-          user: true,
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-      user: true,
-    },
-  });
+  const report = await reportRepository.findByIdWithRelations(reportId);
 
   if (!report) {
     throw new NotFoundError("Report not found");
@@ -514,7 +401,9 @@ export async function getReportMessages(
     throw new ForbiddenError("You are not authorized to view this conversation");
   }
 
-  return report.messages.map((m) => ({
+  const messages = await reportMessageRepository.findByReportId(reportId);
+
+  return messages.map((m) => ({
     id: m.id,
     content: m.content,
     createdAt: m.createdAt.toISOString(),

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UnauthorizedError, ForbiddenError } from "../utils";
-import { User } from "@prisma/client";
+import { User } from "../entities/User";
 import { TECHNICAL_ROLES } from "../interfaces/UserDTO";
 
 export function isLoggedIn(req: Request & { isAuthenticated?: () => boolean }, res: Response, next: NextFunction) {

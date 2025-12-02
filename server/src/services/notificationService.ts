@@ -1,6 +1,9 @@
-import { prisma } from "../utils/prismaClient";
+import { NotificationRepository } from "../repositories/NotificationRepository";
+import { Notification, NotificationType } from "../entities/Notification";
 import { NotFoundError } from "../utils/errors";
-import { NotificationDTO, NotificationType, toNotificationDTO } from "../interfaces/NotificationDTO";
+import { NotificationDTO, toNotificationDTO } from "../interfaces/NotificationDTO";
+
+const notificationRepository = new NotificationRepository();
 
 /**
  * Crea una notifica per un utente
@@ -12,17 +15,15 @@ export async function createNotification(
   message: string,
   reportId?: number
 ): Promise<NotificationDTO> {
-  const notification = await prisma.notification.create({
-    data: {
-      userId,
-      type,
-      title,
-      message,
-      reportId: reportId || null,
-    },
+  const saved = await notificationRepository.create({
+    userId,
+    type,
+    title,
+    message,
+    reportId: reportId || null,
   });
 
-  return toNotificationDTO(notification);
+  return toNotificationDTO(saved);
 }
 
 /**
@@ -33,17 +34,7 @@ export async function getUserNotifications(
   unreadOnly?: boolean,
   limit?: number
 ): Promise<NotificationDTO[]> {
-  const notifications = await prisma.notification.findMany({
-    where: {
-      userId,
-      ...(unreadOnly ? { isRead: false } : {}),
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: limit,
-  });
-
+  const notifications = await notificationRepository.findByUserId(userId, unreadOnly, limit);
   return notifications.map(toNotificationDTO);
 }
 
@@ -54,20 +45,14 @@ export async function markNotificationAsRead(
   notificationId: number,
   userId: number
 ): Promise<NotificationDTO> {
-  const notification = await prisma.notification.findUnique({
-    where: { id: notificationId },
-  });
+  const notification = await notificationRepository.findById(notificationId);
 
   if (!notification) {
     throw new NotFoundError("Notification not found");
   }
 
-  const updatedNotification = await prisma.notification.update({
-    where: { id: notificationId },
-    data: { isRead: true },
-  });
-
-  return toNotificationDTO(updatedNotification);
+  const updatedNotification = await notificationRepository.markAsRead(notificationId);
+  return toNotificationDTO(updatedNotification!);
 }
 
 /**

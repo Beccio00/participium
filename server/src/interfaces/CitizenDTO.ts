@@ -1,4 +1,5 @@
-import type { User, CitizenPhoto } from "@prisma/client";
+import { User } from "../entities/User";
+import { CitizenPhoto } from "../entities/CitizenPhoto";
 
 export type CitizenProfileDTO = {
   id: number;
