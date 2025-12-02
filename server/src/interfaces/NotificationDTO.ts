@@ -1,4 +1,6 @@
-import { Notification as PrismaNotification } from "@prisma/client";
+import { Notification, NotificationType } from "../entities/Notification";
+
+export { NotificationType };
 
 export type NotificationDTO = {
   id: number;
@@ -10,15 +12,7 @@ export type NotificationDTO = {
   reportId: number | null;
 };
 
-export enum NotificationType {
-  REPORT_STATUS_CHANGED = "REPORT_STATUS_CHANGED",
-  MESSAGE_RECEIVED = "MESSAGE_RECEIVED",
-  REPORT_ASSIGNED = "REPORT_ASSIGNED",
-  REPORT_APPROVED = "REPORT_APPROVED",
-  REPORT_REJECTED = "REPORT_REJECTED",
-}
-
-export function toNotificationDTO(notification: PrismaNotification): NotificationDTO {
+export function toNotificationDTO(notification: Notification): NotificationDTO {
   return {
     id: notification.id,
     type: notification.type as NotificationType,

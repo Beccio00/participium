@@ -1,4 +1,5 @@
-import type { User as PrismaUser } from "@prisma/client";
+import { UserRepository } from "../repositories/UserRepository";
+import { User, Role } from "../entities/User";
 import {
   createUser,
   findByEmail,
@@ -7,11 +8,10 @@ import {
   deleteUser,
   findUsersByRoles,
 } from "./userService";
-import { Role, MUNICIPALITY_ROLES } from "../interfaces/UserDTO";
-import { PrismaClient } from "@prisma/client";
+import { MUNICIPALITY_ROLES } from "../interfaces/UserDTO";
 import { BadRequestError } from "../utils";
 
-const prisma = new PrismaClient();
+const userRepository = new UserRepository();
 
 export async function createMunicipalityUser(data: {
   email: string;
@@ -20,7 +20,7 @@ export async function createMunicipalityUser(data: {
   password: string;
   salt: string;
   role: Role;
-}): Promise<PrismaUser> {
+}): Promise<User> {
   const created = await createUser({
     email: data.email,
     first_name: data.first_name,
@@ -34,11 +34,11 @@ export async function createMunicipalityUser(data: {
   return created;
 }
 
-export async function getAllMunicipalityUsers(): Promise<PrismaUser[]> {
+export async function getAllMunicipalityUsers(): Promise<User[]> {
   return await findUsersByRoles(MUNICIPALITY_ROLES);
 }
 
-export async function getMunicipalityUserById(id: number): Promise<PrismaUser | null> {
+export async function getMunicipalityUserById(id: number): Promise<User | null> {
   const user = await findById(id);
   if (!user) return null;
   if (!MUNICIPALITY_ROLES.includes(user.role as Role)) return null;
@@ -52,7 +52,7 @@ export async function updateMunicipalityUser(id: number, data: {
   password?: string;
   salt?: string;
   role?: Role;
-}): Promise<PrismaUser | null> {
+}): Promise<User | null> {
   const existing = await getMunicipalityUserById(id);
   if (!existing) return null;
 
@@ -69,17 +69,14 @@ export async function updateMunicipalityUser(id: number, data: {
 }
 
 async function countAdministrators(): Promise<number> {
-  const count = await prisma.user.count({
-    where: { role: "ADMINISTRATOR" }
-  });
-  return count;
+  return await userRepository.countByRole(Role.ADMINISTRATOR);
 }
 
 export async function deleteMunicipalityUser(id: number): Promise<boolean> {
   const existing = await getMunicipalityUserById(id);
   if (!existing) return false;
 
-  if (existing.role === "ADMINISTRATOR") {
+  if (existing.role === Role.ADMINISTRATOR) {
     const adminCount = await countAdministrators();
     if (adminCount <= 1) {
       throw new BadRequestError("Cannot delete the last administrator account");
@@ -89,7 +86,7 @@ export async function deleteMunicipalityUser(id: number): Promise<boolean> {
   return await deleteUser(id);
 }
 
-export async function findMunicipalityUserByEmail(email: string): Promise<PrismaUser | null> {
+export async function findMunicipalityUserByEmail(email: string): Promise<User | null> {
   const user = await findByEmail(email);
   if (!user) return null;
   if (!MUNICIPALITY_ROLES.includes(user.role as Role)) return null;

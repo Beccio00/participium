@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CONFIG = void 0;
+const path_1 = __importDefault(require("path"));
 exports.CONFIG = {
     // Server
     PORT: process.env.PORT || 4000,
@@ -8,9 +12,9 @@ exports.CONFIG = {
     SESSION_SECRET: process.env.SESSION_SECRET || "shhhhh... it's a secret!",
     // CORS
     CORS: {
-        ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173",
+        ORIGIN: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ["http://localhost:5173", "http://localhost:3000"],
         CREDENTIALS: true,
-        METHODS: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        METHODS: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     },
     // Routes
     ROUTES: {
@@ -20,10 +24,11 @@ exports.CONFIG = {
         CITIZEN: "/api/citizen",
         ADMIN: "/api/admin",
         REPORTS: "/api/reports",
+        NOTIFICATIONS: "/api/notifications",
         SWAGGER: "/api-docs",
     },
     // Swagger
-    SWAGGER_FILE_PATH: "../docs/swagger.yaml",
+    SWAGGER_FILE_PATH: path_1.default.resolve(__dirname, "../../../docs/swagger.yaml"),
     // API Info
     API: {
         NAME: "Participium API",

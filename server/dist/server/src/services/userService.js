@@ -15,50 +15,55 @@ exports.createUser = createUser;
 exports.updateUser = updateUser;
 exports.deleteUser = deleteUser;
 exports.findUsersByRoles = findUsersByRoles;
-const client_1 = require("../../prisma/generated/client");
-const prisma = new client_1.PrismaClient();
+const UserRepository_1 = require("../repositories/UserRepository");
+const userRepository = new UserRepository_1.UserRepository();
 function findByEmail(email) {
     return __awaiter(this, void 0, void 0, function* () {
-        const u = yield prisma.user.findUnique({ where: { email } });
-        if (!u)
-            return null;
-        return u;
+        return yield userRepository.findByEmail(email);
     });
 }
 function findById(id) {
     return __awaiter(this, void 0, void 0, function* () {
-        const u = yield prisma.user.findUnique({ where: { id } });
-        if (!u)
-            return null;
-        return u;
+        return yield userRepository.findById(id);
     });
 }
 function createUser(data) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
-        const created = yield prisma.user.create({
-            data: {
-                email: data.email,
-                first_name: data.first_name,
-                last_name: data.last_name,
-                password: data.password,
-                salt: data.salt,
-                role: data.role,
-                telegram_username: (_a = data.telegram_username) !== null && _a !== void 0 ? _a : null,
-                email_notifications_enabled: (_b = data.email_notifications_enabled) !== null && _b !== void 0 ? _b : undefined,
-            },
+        return yield userRepository.create({
+            email: data.email,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            password: data.password,
+            salt: data.salt,
+            role: data.role,
+            telegram_username: (_a = data.telegram_username) !== null && _a !== void 0 ? _a : null,
+            email_notifications_enabled: (_b = data.email_notifications_enabled) !== null && _b !== void 0 ? _b : true,
         });
-        return created;
     });
 }
 function updateUser(id, data) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const updated = yield prisma.user.update({
-                where: { id },
-                data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (data.email && { email: data.email })), (data.first_name && { first_name: data.first_name })), (data.last_name && { last_name: data.last_name })), (data.password && { password: data.password })), (data.salt && { salt: data.salt })), (data.role && { role: data.role })), (data.telegram_username !== undefined && { telegram_username: data.telegram_username })), (data.email_notifications_enabled !== undefined && { email_notifications_enabled: data.email_notifications_enabled })),
-            });
-            return updated;
+            // Create a clean update object
+            const updateData = {};
+            if (data.email !== undefined)
+                updateData.email = data.email;
+            if (data.first_name !== undefined)
+                updateData.first_name = data.first_name;
+            if (data.last_name !== undefined)
+                updateData.last_name = data.last_name;
+            if (data.password !== undefined)
+                updateData.password = data.password;
+            if (data.salt !== undefined)
+                updateData.salt = data.salt;
+            if (data.role !== undefined)
+                updateData.role = data.role;
+            if (data.telegram_username !== undefined)
+                updateData.telegram_username = data.telegram_username;
+            if (data.email_notifications_enabled !== undefined)
+                updateData.email_notifications_enabled = data.email_notifications_enabled;
+            return yield userRepository.update(id, updateData);
         }
         catch (err) {
             return null;
@@ -68,8 +73,7 @@ function updateUser(id, data) {
 function deleteUser(id) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield prisma.user.delete({ where: { id } });
-            return true;
+            return yield userRepository.delete(id);
         }
         catch (err) {
             return false;
@@ -78,11 +82,6 @@ function deleteUser(id) {
 }
 function findUsersByRoles(roles) {
     return __awaiter(this, void 0, void 0, function* () {
-        const users = yield prisma.user.findMany({
-            where: {
-                role: { in: roles }
-            }
-        });
-        return users;
+        return yield userRepository.findByRoles(roles);
     });
 }

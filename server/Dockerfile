@@ -1,3 +1,4 @@
+
 # Stage 1: Build
 FROM node:18-alpine AS builder
 
@@ -6,19 +7,16 @@ WORKDIR /app
 # Copy package files
 COPY server/package*.json ./
 COPY server/tsconfig.json ./
-COPY server/prisma ./prisma/
 
 # Install dependencies
 RUN npm ci
-
-# Generate Prisma Client
-RUN npx prisma generate
 
 # Copy shared types from parent directory
 COPY shared/ /shared/
 
 # Copy source code
 COPY server/src ./src
+COPY server/seed ./seed
 
 # Build TypeScript
 RUN npm run build
@@ -36,13 +34,9 @@ RUN apk add --no-cache tini
 
 # Copy package files
 COPY server/package*.json ./
-COPY server/prisma ./prisma/
 
 # Install only production dependencies
 RUN npm ci --only=production
-
-# Generate Prisma Client
-RUN npx prisma generate
 
 # Copy shared types
 COPY shared/ /shared/

@@ -1,28 +1,43 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MUNICIPALITY_ROLES = exports.Roles = void 0;
+exports.TECHNICAL_ROLES = exports.MUNICIPALITY_ROLES = exports.Role = exports.Roles = void 0;
 exports.isValidRole = isValidRole;
 exports.toUserDTO = toUserDTO;
 exports.toMunicipalityUserDTO = toMunicipalityUserDTO;
-exports.Roles = {
-    CITIZEN: "CITIZEN",
-    ADMINISTRATOR: "ADMINISTRATOR",
-    PUBLIC_RELATIONS: "PUBLIC_RELATIONS",
-    CULTURE_EVENTS_TOURISM_SPORTS: "CULTURE_EVENTS_TOURISM_SPORTS",
-    LOCAL_PUBLIC_SERVICES: "LOCAL_PUBLIC_SERVICES",
-    EDUCATION_SERVICES: "EDUCATION_SERVICES",
-    PUBLIC_RESIDENTIAL_HOUSING: "PUBLIC_RESIDENTIAL_HOUSING",
-    INFORMATION_SYSTEMS: "INFORMATION_SYSTEMS",
-    MUNICIPAL_BUILDING_MAINTENANCE: "MUNICIPAL_BUILDING_MAINTENANCE",
-    PRIVATE_BUILDINGS: "PRIVATE_BUILDINGS",
-    INFRASTRUCTURES: "INFRASTRUCTURES",
-    GREENSPACES_AND_ANIMAL_PROTECTION: "GREENSPACES_AND_ANIMAL_PROTECTION",
-    WASTE_MANAGEMENT: "WASTE_MANAGEMENT",
-    ROAD_MAINTENANCE: "ROAD_MAINTENANCE",
-    CIVIL_PROTECTION: "CIVIL_PROTECTION",
-};
+const User_1 = require("../entities/User");
+Object.defineProperty(exports, "Role", { enumerable: true, get: function () { return User_1.Role; } });
+exports.Roles = User_1.Role;
+exports.MUNICIPALITY_ROLES = [
+    User_1.Role.PUBLIC_RELATIONS,
+    User_1.Role.CULTURE_EVENTS_TOURISM_SPORTS,
+    User_1.Role.LOCAL_PUBLIC_SERVICES,
+    User_1.Role.EDUCATION_SERVICES,
+    User_1.Role.PUBLIC_RESIDENTIAL_HOUSING,
+    User_1.Role.INFORMATION_SYSTEMS,
+    User_1.Role.MUNICIPAL_BUILDING_MAINTENANCE,
+    User_1.Role.PRIVATE_BUILDINGS,
+    User_1.Role.INFRASTRUCTURES,
+    User_1.Role.GREENSPACES_AND_ANIMAL_PROTECTION,
+    User_1.Role.WASTE_MANAGEMENT,
+    User_1.Role.ROAD_MAINTENANCE,
+    User_1.Role.CIVIL_PROTECTION,
+];
+exports.TECHNICAL_ROLES = [
+    User_1.Role.CULTURE_EVENTS_TOURISM_SPORTS,
+    User_1.Role.LOCAL_PUBLIC_SERVICES,
+    User_1.Role.EDUCATION_SERVICES,
+    User_1.Role.PUBLIC_RESIDENTIAL_HOUSING,
+    User_1.Role.INFORMATION_SYSTEMS,
+    User_1.Role.MUNICIPAL_BUILDING_MAINTENANCE,
+    User_1.Role.PRIVATE_BUILDINGS,
+    User_1.Role.INFRASTRUCTURES,
+    User_1.Role.GREENSPACES_AND_ANIMAL_PROTECTION,
+    User_1.Role.WASTE_MANAGEMENT,
+    User_1.Role.ROAD_MAINTENANCE,
+    User_1.Role.CIVIL_PROTECTION,
+];
 function isValidRole(v) {
-    return Object.values(exports.Roles).includes(v);
+    return Object.values(User_1.Role).includes(v);
 }
 function toUserDTO(u) {
     var _a, _b;
@@ -31,33 +46,21 @@ function toUserDTO(u) {
         firstName: u.first_name,
         lastName: u.last_name,
         email: u.email,
-        role: (Object.values(exports.Roles).includes(String(u.role)) ? u.role : String(u.role)),
+        role: Object.values(User_1.Role).includes(String(u.role))
+            ? u.role
+            : String(u.role),
         telegramUsername: (_a = u.telegram_username) !== null && _a !== void 0 ? _a : null,
         emailNotificationsEnabled: (_b = u.email_notifications_enabled) !== null && _b !== void 0 ? _b : true,
     };
 }
-exports.MUNICIPALITY_ROLES = [
-    exports.Roles.ADMINISTRATOR,
-    exports.Roles.PUBLIC_RELATIONS,
-    exports.Roles.CULTURE_EVENTS_TOURISM_SPORTS,
-    exports.Roles.LOCAL_PUBLIC_SERVICES,
-    exports.Roles.EDUCATION_SERVICES,
-    exports.Roles.PUBLIC_RESIDENTIAL_HOUSING,
-    exports.Roles.INFORMATION_SYSTEMS,
-    exports.Roles.MUNICIPAL_BUILDING_MAINTENANCE,
-    exports.Roles.PRIVATE_BUILDINGS,
-    exports.Roles.INFRASTRUCTURES,
-    exports.Roles.GREENSPACES_AND_ANIMAL_PROTECTION,
-    exports.Roles.WASTE_MANAGEMENT,
-    exports.Roles.ROAD_MAINTENANCE,
-    exports.Roles.CIVIL_PROTECTION,
-];
 function toMunicipalityUserDTO(u) {
     return {
         id: u.id,
         firstName: u.first_name,
         lastName: u.last_name,
         email: u.email,
-        role: (Object.values(exports.Roles).includes(String(u.role)) ? u.role : String(u.role)),
+        role: Object.values(User_1.Role).includes(String(u.role))
+            ? u.role
+            : String(u.role),
     };
 }

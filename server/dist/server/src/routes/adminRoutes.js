@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const errorMiddleware_1 = require("../middlewares/errorMiddleware");
-const routeProtection_1 = require("../middleware/routeProtection");
+const routeProtection_1 = require("../middlewares/routeProtection");
 const municipalityController_1 = require("../controllers/municipalityController");
 const router = (0, express_1.Router)();
 router.use(routeProtection_1.requireAdmin);

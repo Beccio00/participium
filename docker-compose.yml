@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # PostgreSQL Database
   db:
@@ -106,13 +104,12 @@ services:
       - ./server/uploads:/app/uploads
     command: >
       sh -c "
-      echo 'RESETTING DATABASE FOR DEMO...' &&
-      npx prisma migrate reset --force --skip-seed &&
-      if [ "${AUTO_SEED}" = "true" ] && [ -f dist/prisma/seed.js ]; then
-        echo '🌱 AUTO_SEED=true — running compiled seed script';
-        node dist/prisma/seed.js;
+      echo 'Starting server with TypeORM...' &&
+      if [ "${AUTO_SEED}" = "true" ]; then
+        echo '🌱 AUTO_SEED=true — running seed script';
+        npm run seed;
       else
-        echo 'Skipping automatic seed (AUTO_SEED not true or seed not found)';
+        echo 'Skipping automatic seed (AUTO_SEED not true)';
       fi &&
       node dist/app/src/index.js
       "
@@ -150,24 +147,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
-  # One-off seeding job (uses the builder stage so dev dependencies like ts-node are available)
-  seed:
-    build:
-      context: .
-      dockerfile: ./server/Dockerfile
-      target: builder
-    container_name: participium-seed
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-participium}:${POSTGRES_PASSWORD:-participium_password}@db:5432/${POSTGRES_DB:-participium}
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-    networks:
-      - participium-network
-    command: ["sh", "-c", "npm run seed"]
 
 volumes:
   postgres_data:

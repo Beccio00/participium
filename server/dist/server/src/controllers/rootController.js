@@ -22,6 +22,7 @@ function getApiInfo(req, res) {
                 citizens: constants_1.CONFIG.ROUTES.CITIZEN,
                 admin: constants_1.CONFIG.ROUTES.ADMIN,
                 reports: constants_1.CONFIG.ROUTES.REPORTS,
+                notifications: constants_1.CONFIG.ROUTES.NOTIFICATIONS,
                 docs: constants_1.CONFIG.ROUTES.SWAGGER,
             },
         });

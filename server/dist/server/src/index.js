@@ -9,16 +9,29 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require("reflect-metadata");
 require("dotenv/config");
 const app_1 = require("./app");
-const prismaClient_1 = require("./utils/prismaClient");
-const app = (0, app_1.createApp)();
-const port = process.env.PORT || 4000;
-// close Prisma connection
-process.on("SIGTERM", () => __awaiter(void 0, void 0, void 0, function* () {
-    yield prismaClient_1.prisma.$disconnect();
-}));
-// Start server
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+const database_1 = require("./config/database");
+const AppDataSource_1 = require("./utils/AppDataSource");
+const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Initialize database connection
+        yield (0, database_1.initializeDatabase)();
+        const app = (0, app_1.createApp)();
+        const port = process.env.PORT || 4000;
+        // Close database connection on shutdown
+        process.on("SIGTERM", () => __awaiter(void 0, void 0, void 0, function* () {
+            yield AppDataSource_1.AppDataSource.destroy();
+        }));
+        // Start server
+        app.listen(port, () => {
+            console.log(`Server is running on http://localhost:${port}`);
+        });
+    }
+    catch (error) {
+        console.error("Failed to start server:", error);
+        process.exit(1);
+    }
 });
+startServer();

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InternalServerError = exports.ConflictError = exports.NotFoundError = exports.ForbiddenError = exports.UnauthorizedError = exports.BadRequestError = exports.AppError = void 0;
+exports.InternalServerError = exports.UnprocessableEntityError = exports.ConflictError = exports.NotFoundError = exports.ForbiddenError = exports.UnauthorizedError = exports.BadRequestError = exports.AppError = void 0;
 exports.findOrThrowNotFound = findOrThrowNotFound;
 exports.throwConflictIfFound = throwConflictIfFound;
 class AppError extends Error {
@@ -48,6 +48,13 @@ class ConflictError extends AppError {
     }
 }
 exports.ConflictError = ConflictError;
+class UnprocessableEntityError extends AppError {
+    constructor(message = "Unprocessable Entity") {
+        super(message, 422);
+        Object.setPrototypeOf(this, UnprocessableEntityError.prototype);
+    }
+}
+exports.UnprocessableEntityError = UnprocessableEntityError;
 class InternalServerError extends AppError {
     constructor(message = "Internal Server Error") {
         super(message, 500, false);

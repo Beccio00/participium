@@ -15,11 +15,12 @@ exports.getMunicipalityUserById = getMunicipalityUserById;
 exports.updateMunicipalityUser = updateMunicipalityUser;
 exports.deleteMunicipalityUser = deleteMunicipalityUser;
 exports.findMunicipalityUserByEmail = findMunicipalityUserByEmail;
+const UserRepository_1 = require("../repositories/UserRepository");
+const User_1 = require("../entities/User");
 const userService_1 = require("./userService");
 const UserDTO_1 = require("../interfaces/UserDTO");
-const client_1 = require("../../prisma/generated/client");
 const utils_1 = require("../utils");
-const prisma = new client_1.PrismaClient();
+const userRepository = new UserRepository_1.UserRepository();
 function createMunicipalityUser(data) {
     return __awaiter(this, void 0, void 0, function* () {
         const created = yield (0, userService_1.createUser)({
@@ -61,10 +62,7 @@ function updateMunicipalityUser(id, data) {
 }
 function countAdministrators() {
     return __awaiter(this, void 0, void 0, function* () {
-        const count = yield prisma.user.count({
-            where: { role: "ADMINISTRATOR" }
-        });
-        return count;
+        return yield userRepository.countByRole(User_1.Role.ADMINISTRATOR);
     });
 }
 function deleteMunicipalityUser(id) {
@@ -72,7 +70,7 @@ function deleteMunicipalityUser(id) {
         const existing = yield getMunicipalityUserById(id);
         if (!existing)
             return false;
-        if (existing.role === "ADMINISTRATOR") {
+        if (existing.role === User_1.Role.ADMINISTRATOR) {
             const adminCount = yield countAdministrators();
             if (adminCount <= 1) {
                 throw new utils_1.BadRequestError("Cannot delete the last administrator account");
