@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { Clipboard, Pencil, List } from "react-bootstrap-icons";
 import { Offcanvas } from "react-bootstrap";
@@ -16,21 +16,24 @@ export default function HomePage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [showReportsSidebar, setShowReportsSidebar] = useState(false);
+  const sidebarScrollRef = useRef<number>(0);
 
   const [reports, setReports] = useState<Report[]>([]);
-  // Porta il report selezionato in cima e lo evidenzia
+  // Seleziona il report e scrolla alla sua posizione
   const handleReportDetailsClick = (reportId: number) => {
     setSelectedReportId(reportId);
-    setReports((prev) => {
-      const idx = prev.findIndex((r) => r.id === reportId);
-      if (idx <= 0) return prev;
-      const selected = prev[idx];
-      return [selected, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
-    });
-    // Apri la sidebar mobile solo se lo schermo è piccolo
     if (window.innerWidth < 992) {
       setShowReportsSidebar(true);
     }
+    // Scrolla alla posizione del report
+    setTimeout(() => {
+      const reportCard = document.querySelector(
+        `[data-report-id="${reportId}"]`
+      ) as HTMLElement;
+      if (reportCard) {
+        reportCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
   };
   const [loadingReports, setLoadingReports] = useState(false);
   const [reportsError, setReportsError] = useState<string | null>(null);
@@ -86,6 +89,16 @@ export default function HomePage() {
     }
   }, [isAuthenticated, user, navigate]);
 
+  // Ripristina la posizione scroll dopo il re-render
+  useEffect(() => {
+    const sidebar = document.querySelector(
+      ".reports-sidebar-scroll"
+    ) as HTMLElement;
+    if (sidebar && sidebarScrollRef.current > 0) {
+      sidebar.scrollTop = sidebarScrollRef.current;
+    }
+  }, [selectedReportId]);
+
   const handleAddReport = () => {
     if (isAuthenticated) {
       navigate("/report/new");
@@ -134,7 +147,10 @@ export default function HomePage() {
       </div>
 
       {/* Reports List */}
-      <div style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
+      <div
+        className="reports-sidebar-scroll"
+        style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}
+      >
         {loadingReports ? (
           <div
             style={{
@@ -158,6 +174,11 @@ export default function HomePage() {
                 report={report}
                 isSelected={selectedReportId === report.id}
                 onClick={() => {
+                  // Solo seleziona, non riordinare la lista
+                  const sidebar = document.querySelector(
+                    ".reports-sidebar-scroll"
+                  ) as HTMLElement;
+                  if (sidebar) sidebarScrollRef.current = sidebar.scrollTop;
                   setSelectedReportId(report.id);
                   setShowReportsSidebar(false);
                 }}
