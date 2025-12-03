@@ -67,6 +67,7 @@ import {
   sendMessageToCitizen as sendMessageToCitizenService,
   getReportMessages as getReportMessagesService
 } from "../services/reportService";
+import { getAssignableExternals as getAssignableExternalsService, assignReportToExternal as assignReportToExternalService } from "../services/reportService";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
 import minioClient, { BUCKET_NAME, getMinioObjectUrl } from "../utils/minioClient";
@@ -351,4 +352,45 @@ export async function getReportMessages(req: Request, res: Response): Promise<vo
 
   const messages = await getReportMessagesService(reportId, user.id);
   res.status(200).json(messages);
+}
+
+// List external companies and maintainers available for the report's category
+export async function getAssignableExternals(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  if (isNaN(reportId)) {
+    throw new BadRequestError("Invalid report ID parameter");
+  }
+  const result = await getAssignableExternalsService(reportId);
+  res.status(200).json(result);
+}
+
+// Assign a report to an external maintainer or company
+export async function assignReportToExternal(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number };
+  const { externalCompanyId, externalMaintainerId, notes } = req.body || {};
+
+  if (isNaN(reportId)) {
+    throw new BadRequestError("Invalid report ID parameter");
+  }
+  if (!externalCompanyId || isNaN(parseInt(externalCompanyId))) {
+    throw new BadRequestError("externalCompanyId is required and must be a valid integer");
+  }
+
+  const companyIdNum = parseInt(externalCompanyId);
+  const maintainerIdNum = externalMaintainerId !== null && externalMaintainerId !== undefined
+    ? parseInt(externalMaintainerId)
+    : null;
+
+  const updatedReport = await assignReportToExternalService(
+    reportId,
+    user.id,
+    companyIdNum,
+    maintainerIdNum,
+    typeof notes === "string" ? notes : undefined
+  );
+  res.status(200).json({
+    message: maintainerIdNum ? "Report assigned to external maintainer successfully" : "Report assigned to external company successfully",
+    report: updatedReport,
+  });
 }

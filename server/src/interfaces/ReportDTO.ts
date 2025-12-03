@@ -1,7 +1,6 @@
 import { UserDTO, Role } from './UserDTO';
 import { ReportCategory, ReportStatus, ReportPhoto } from "../../../shared/ReportTypes";
-import { ExternalCompanyDTO } from "./ExternalCompanyDTO";
-import { ExternalMaintainerDTO } from "./ExternalMaintainerDTO";
+import { ExternalHandlerDTO } from "./ExternalsDTO";
 
 export { ReportCategory, ReportStatus };
 
@@ -17,8 +16,7 @@ export type ReportDTO = {
   status: ReportStatus;
   user?: UserDTO;
   assignedOfficer?: UserDTO | null;
-  externalMaintainer?: ExternalMaintainerDTO | null;
-  externalCompany?: ExternalCompanyDTO | null;
+  externalHandler?: ExternalHandlerDTO | null;
   messages: ReportMessageDTO[];
   rejectedReason?: string | null;
   photos: ReportPhoto[];
@@ -56,26 +54,44 @@ export function toReportDTO(r: any): ReportDTO {
             telegramUsername: r.user.telegram_username ?? null,
             emailNotificationsEnabled: r.user.email_notifications_enabled ?? true,
         } : undefined,
-    assignedOfficer: r.assignedOfficer ? {
-      id: r.assignedOfficer.id,
-      firstName: r.assignedOfficer.first_name,
-      lastName: r.assignedOfficer.last_name,
-      email: r.assignedOfficer.email,
-      role: r.assignedOfficer.role as Role,
-      telegramUsername: r.assignedOfficer.telegram_username ?? null,
-      emailNotificationsEnabled: r.assignedOfficer.email_notifications_enabled ?? true,
-    } : null,
-    externalMaintainer: r.externalMaintainer && r.externalMaintainer.externalCompany ? {
-      id: r.externalMaintainer.id,
-      firstName: r.externalMaintainer.first_name,
-      lastName: r.externalMaintainer.last_name,
-      email: r.externalMaintainer.email,
-      role: r.externalMaintainer.role as Role,
-      telegramUsername: r.externalMaintainer.telegram_username ?? null,
-      emailNotificationsEnabled: r.externalMaintainer.email_notifications_enabled ?? true,
-      companyId: r.externalMaintainer.externalCompany.id,
-      companyName: r.externalMaintainer.externalCompany.name,
-    } : null,
+        assignedOfficer: r.assignedOfficer ? {
+          id: r.assignedOfficer.id,
+          firstName: r.assignedOfficer.first_name,
+          lastName: r.assignedOfficer.last_name,
+          email: r.assignedOfficer.email,
+          role: r.assignedOfficer.role as Role,
+          telegramUsername: r.assignedOfficer.telegram_username ?? null,
+          emailNotificationsEnabled: r.assignedOfficer.email_notifications_enabled ?? true,
+        } : null,
+        externalHandler:
+          r.externalMaintainer && r.externalMaintainer.externalCompany? ({
+            type: 'user',
+            user: {
+              id: r.externalMaintainer.id,
+              firstName: r.externalMaintainer.first_name,
+              lastName: r.externalMaintainer.last_name,
+              email: r.externalMaintainer.email,
+              role: r.externalMaintainer.role as Role,
+              telegramUsername: r.externalMaintainer.telegram_username ?? null,
+              emailNotificationsEnabled: r.externalMaintainer.email_notifications_enabled ?? true,
+              company: {
+                id: r.externalMaintainer.externalCompany.id,
+                name: r.externalMaintainer.externalCompany.name,
+                categories: r.externalMaintainer.externalCompany.categories ? r.externalMaintainer.externalCompany.categories.map((c: any) => c as ReportCategory) : [],
+                platformAccess: r.externalMaintainer.externalCompany.platformAccess,
+              }
+            }
+          }
+        ) : (r.externalCompany? ({
+            type: 'company',
+            company: {
+              id: r.externalCompany.id,
+              name: r.externalCompany.name,
+              categories: r.externalCompany.categories ? r.externalCompany.categories.map((c: any) => c as ReportCategory) : [],
+              platformAccess: r.externalCompany.platformAccess
+            }
+          }
+        ) : null),
         messages: r.messages.map((m: any) => ({
             id: m.id,
             content: m.content,
@@ -83,12 +99,6 @@ export function toReportDTO(r: any): ReportDTO {
             senderId: m.senderId,
             senderRole: m.user?.role as Role,
         })),
-        externalCompany: r.externalCompany ? {
-          id: r.externalCompany.id,
-          name: r.externalCompany.name,
-          categories: r.externalCompany.categories ? r.externalCompany.categories.map((c: any) => c as ReportCategory) : [],
-          platformAccess: r.externalCompany.platformAccess
-        } : null,
         rejectedReason: r.rejectedReason ?? r.rejectionReason ?? null,
         photos: r.photos,
         createdAt: r.createdAt,

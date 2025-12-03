@@ -13,6 +13,8 @@ import {
   updateReportStatus,
   sendMessageToCitizen,
   getReportMessages,
+  getAssignableExternals,
+  assignReportToExternal,
 } from '../controllers/reportController';
 import { upload } from '../middlewares/uploadsMiddleware';
 import { ApiValidationMiddleware } from '../middlewares/validationMiddlewere';
@@ -58,6 +60,21 @@ router.get(
   "/:reportId/assignable-technicals",
   requirePublicRelations,
   asyncHandler(getAssignableTechnicals)
+);
+
+// GET /api/reports/:reportId/assignable-externals - list external companies and maintainers
+router.get(
+  "/:reportId/assignable-externals",
+  requireTechnicalStaff,
+  asyncHandler(getAssignableExternals)
+);
+
+// POST /api/reports/:reportId/assign-external - assign to external maintainer or company
+router.post(
+  "/:reportId/assign-external",
+  requireTechnicalStaff,
+  ApiValidationMiddleware,
+  asyncHandler(assignReportToExternal)
 );
 
 export default router;
