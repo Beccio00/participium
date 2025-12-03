@@ -5,6 +5,11 @@ import {
   OneToMany,
   OneToOne,
 } from "typeorm";
+import { Report } from "./Report";
+import { ReportMessage } from "./ReportMessage";
+import { Notification } from "./Notification";
+import { CitizenPhoto } from "./CitizenPhoto";
+import { ExternalCompanyUser } from "./ExternalCompanyUser";
 
 export enum Role {
   CITIZEN = "CITIZEN",
@@ -22,6 +27,7 @@ export enum Role {
   WASTE_MANAGEMENT = "WASTE_MANAGEMENT",
   ROAD_MAINTENANCE = "ROAD_MAINTENANCE",
   CIVIL_PROTECTION = "CIVIL_PROTECTION",
+  EXTERNAL_MAINTAINER = "EXTERNAL_MAINTAINER",
 }
 
 @Entity("User")
@@ -58,17 +64,23 @@ export class User {
   email_notifications_enabled: boolean;
 
   @OneToMany("Report", "user")
-  reports: import("./Report").Report[];
+  reports: Report[];
 
   @OneToMany("ReportMessage", "user")
-  messages: import("./ReportMessage").ReportMessage[];
+  messages: ReportMessage[];
 
   @OneToMany("Report", "assignedTo")
-  assignedReports: import("./Report").Report[];
+  assignedReports: Report[];
 
   @OneToMany("Notification", "user")
-  notifications: import("./Notification").Notification[];
+  notifications: Notification[];
 
   @OneToOne("CitizenPhoto", "user")
-  photo: import("./CitizenPhoto").CitizenPhoto;
+  photo: CitizenPhoto;
+
+  @OneToMany("ExternalCompanyUser", "user")
+  externalCompanies: ExternalCompanyUser[];
+
+  @OneToMany("Report", "externalMaintainer")
+  externalReports: Report[];
 }

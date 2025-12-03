@@ -8,6 +8,11 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from "typeorm";
+import { User } from "./User";
+import { ReportPhoto } from "./ReportPhoto";
+import { ReportMessage } from "./ReportMessage";
+import { Notification } from "./Notification";
+import { ExternalCompany } from "./ExternalCompany";
 
 export enum ReportCategory {
   WATER_SUPPLY_DRINKING_WATER = "WATER_SUPPLY_DRINKING_WATER",
@@ -72,6 +77,15 @@ export class Report {
   @Column({ type: "int", nullable: true })
   assignedToId: number;
 
+  @Column({ type: "int", nullable: true })
+  externalCompanyId: number | null;
+
+  @Column({ type: "int", nullable: true })
+  externalMaintainerId: number | null;
+
+  @Column({ type: "datetime", nullable: true })
+  externalAssignedAt: Date | null;
+
   @Column({ type: "text", nullable: true })
   rejectedReason: string;
 
@@ -83,18 +97,26 @@ export class Report {
 
   @ManyToOne("User", "reports")
   @JoinColumn({ name: "userId" })
-  user: import("./User").User;
+  user: User;
 
   @ManyToOne("User", "assignedReports", { nullable: true })
   @JoinColumn({ name: "assignedToId" })
-  assignedTo: import("./User").User;
+  assignedTo: User;
 
   @OneToMany("ReportPhoto", "report")
-  photos: import("./ReportPhoto").ReportPhoto[];
+  photos: ReportPhoto[];
 
   @OneToMany("ReportMessage", "report")
-  messages: import("./ReportMessage").ReportMessage[];
+  messages: ReportMessage[];
 
   @OneToMany("Notification", "report")
-  notifications: import("./Notification").Notification[];
+  notifications: Notification[];
+
+  @ManyToOne("ExternalCompany", "reports", { nullable: true })
+  @JoinColumn({ name: "externalCompanyId" })
+  externalCompany: ExternalCompany | null;
+
+  @ManyToOne("User", "externalReports", { nullable: true })
+  @JoinColumn({ name: "externalMaintainerId" })
+  externalMaintainer: User | null;
 }
