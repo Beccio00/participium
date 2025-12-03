@@ -4,7 +4,7 @@ import {
   Column,
   OneToMany,
 } from "typeorm";
-import { ReportCategory } from "./Report";
+import { ReportCategory } from "../../../shared/ReportTypes";
 import { Report } from "./Report";
 import { ExternalCompanyUser } from "./ExternalCompanyUser";
 

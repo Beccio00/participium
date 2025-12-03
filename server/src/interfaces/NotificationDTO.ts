@@ -1,4 +1,5 @@
-import { Notification, NotificationType } from "../entities/Notification";
+import { Notification } from "../entities/Notification";
+import { NotificationType } from "../../../shared/ReportTypes";
 
 export { NotificationType };
 

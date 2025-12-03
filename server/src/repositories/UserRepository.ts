@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../utils/AppDataSource";
-import { User, Role } from "../entities/User";
+import { User } from "../entities/User";
+import { Role } from "../../../shared/RoleTypes";
 
 export class UserRepository {
   private repository: Repository<User>;
