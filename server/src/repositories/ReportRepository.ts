@@ -1,6 +1,7 @@
 import { Repository, In } from "typeorm";
 import { AppDataSource } from "../utils/AppDataSource";
-import { Report, ReportCategory, ReportStatus } from "../entities/Report";
+import { Report } from "../entities/Report";
+import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 
 export class ReportRepository {
   private repository: Repository<Report>;

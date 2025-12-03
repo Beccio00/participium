@@ -75,7 +75,7 @@ import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
 export async function createReport(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
   // Destructure fields from req.body and req.files
-  const { title, description, category, latitude, longitude, isAnonymous } =
+  const { title, description, category, latitude, longitude, isAnonymous, address } =
     req.body;
   // Multer stores files in req.files (array or object depending on config)
   let photos: any[] = [];
@@ -161,10 +161,24 @@ export async function createReport(req: Request, res: Response): Promise<void> {
       });
     }
   }
+  let newReport;
+  if (!address || address.trim() === "") {
+    const newAddress = await calculateAddress(parsedLatitude, parsedLongitude);
+    const reportData = {
+    title,
+    description,
+    category: category as ReportCategory,
+    latitude: parsedLatitude,
+    longitude: parsedLongitude,
+    address: newAddress,
+    isAnonymous: isAnonymous === "true",
+    photos: photoData,
+    userId: user.id,
+  };
+  newReport = await createReportService(reportData);
 
-  const address = await calculateAddress(parsedLatitude, parsedLongitude);
-
-  const reportData = {
+  }else{
+    const reportData = {
     title,
     description,
     category: category as ReportCategory,
@@ -176,7 +190,9 @@ export async function createReport(req: Request, res: Response): Promise<void> {
     userId: user.id,
   };
 
-  const newReport = await createReportService(reportData);
+  newReport = await createReportService(reportData);
+
+  }
 
   res.status(201).json({
     message: "Report created successfully",

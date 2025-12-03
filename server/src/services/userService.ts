@@ -1,5 +1,6 @@
 import { UserRepository } from "../repositories/UserRepository";
-import { User, Role } from "../entities/User";
+import { User } from "../entities/User";
+import { Role } from "../../../shared/RoleTypes";
 
 const userRepository = new UserRepository();
 

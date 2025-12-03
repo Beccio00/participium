@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import {query} from 'express-validator';
 import { asyncHandler } from '../middlewares/errorMiddleware';
 import { requireCitizen, requirePublicRelations, requireTechnicalStaff, isLoggedIn } from '../middlewares/routeProtection';
 import { validateTurinBoundaries } from '../middlewares/validateTurinBoundaries';
@@ -11,7 +12,7 @@ import {
   getAssignableTechnicals,
   updateReportStatus,
   sendMessageToCitizen,
-  getReportMessages
+  getReportMessages,
 } from '../controllers/reportController';
 import { upload } from '../middlewares/uploadsMiddleware';
 import { ApiValidationMiddleware } from '../middlewares/validationMiddlewere';

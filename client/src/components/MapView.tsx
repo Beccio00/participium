@@ -25,18 +25,25 @@ const getStatusColor = (status: string): string => {
 
 // Helper function to create colored marker icon
 const createColoredIcon = (color: string) => {
+  // marker svg
+  const svg = `
+    <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g filter="url(#shadow)">
+        <path d="M19 2C9.6 2 2 9.6 2 19.1c0 10.2 15.1 32.7 16.1 34.2.5.7 1.3.7 1.8 0C20.9 51.8 36 29.3 36 19.1 36 9.6 28.4 2 19 2z" fill="${color}" stroke="white" stroke-width="3"/>
+        <circle cx="19" cy="19" r="7" fill="white"/>
+      </g>
+      <defs>
+        <filter id="shadow" x="0" y="0" width="38" height="54" filterUnits="userSpaceOnUse">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.3)"/>
+        </filter>
+      </defs>
+    </svg>
+  `;
   return L.divIcon({
     className: "custom-marker",
-    html: `<div style="
-      background-color: ${color};
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    html: svg,
+    iconSize: [38, 54],
+    iconAnchor: [19, 54], //marker edge
   });
 };
 
@@ -74,6 +81,8 @@ interface MapViewProps {
   selectedLocation?: [number, number] | null;
   reports?: Report[];
   selectedReportId?: number | null;
+  customSelectedIcon?: L.DivIcon | null;
+  onReportDetailsClick?: (reportId: number) => void;
 }
 
 export default function MapView({
@@ -81,6 +90,8 @@ export default function MapView({
   selectedLocation,
   reports = [],
   selectedReportId,
+  customSelectedIcon,
+  onReportDetailsClick,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -186,7 +197,7 @@ export default function MapView({
           map.removeLayer(markerRef.current);
         }
         markerRef.current = L.marker([lat, lng], {
-          icon: createSelectedLocationIcon(),
+          icon: customSelectedIcon || createSelectedLocationIcon(),
         }).addTo(map);
         onLocationSelect(lat, lng);
       });
@@ -196,12 +207,12 @@ export default function MapView({
     // Add initial marker if selectedLocation is provided
     if (selectedLocation) {
       markerRef.current = L.marker(selectedLocation, {
-        icon: createSelectedLocationIcon(),
+        icon: customSelectedIcon || createSelectedLocationIcon(),
       }).addTo(map);
     }
 
     // Add markers for reports using MarkerClusterGroup
-    const markerCluster = (L as any).markerClusterGroup({
+    /* const markerCluster = (L as any).markerClusterGroup({
       showCoverageOnHover: false,
       maxClusterRadius: 60, // distanza in pixel per raggruppare
       spiderfyOnMaxZoom: true,
@@ -219,37 +230,48 @@ export default function MapView({
     reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).bindPopup(`
-        <div class="report-popup">
-          <div class="report-popup-header">${report.title}</div>
-          <div class="report-popup-body">
-            <div class="report-popup-location">${report.latitude.toFixed(
-              6
-            )}, ${report.longitude.toFixed(6)}</div>
-            <div class="report-popup-description">${report.description}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
-                report.category
-              }</span>
-              <span style="color: ${getStatusColor(
-                report.status
-              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
-            </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
-              report.isAnonymous
-                ? "anonymous"
-                : report.user
-                ? `${report.user.firstName} ${report.user.lastName}`
-                : "user"
-            }</b></div>
+      });
+      // Popup HTML con pulsante View Details
+      const popupContent = document.createElement("div");
+      popupContent.className = "report-popup";
+      popupContent.innerHTML = `
+        <div class="report-popup-header">${report.title}</div>
+        <div class="report-popup-body">
+          <div class="report-popup-location">${report.address}</div>
+          <div class="report-popup-description">${report.description}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+            <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+              report.category
+            }</span>
+            <span style="color: ${getStatusColor(
+              report.status
+            )}; font-weight: bold; font-size: 12px;">${report.status}</span>
           </div>
+          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+            report.isAnonymous
+              ? "anonymous"
+              : report.user
+              ? `${report.user.firstName} ${report.user.lastName}`
+              : "user"
+          }</b></div>
         </div>
-      `);
+      `;
+      // Pulsante View Details
+      const detailsBtn = document.createElement("button");
+      detailsBtn.textContent = "View Details";
+      detailsBtn.className = "btn btn-sm btn-primary mt-2";
+      detailsBtn.style.width = "100%";
+      detailsBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (onReportDetailsClick) onReportDetailsClick(report.id);
+      };
+      popupContent.appendChild(detailsBtn);
+      marker.bindPopup(popupContent);
       reportMarkersRef.current.push(marker);
       markerCluster.addLayer(marker);
     });
 
-    map.addLayer(markerCluster);
+    map.addLayer(markerCluster); */
 
     mapInstanceRef.current = map;
 
@@ -296,32 +318,43 @@ export default function MapView({
     reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).bindPopup(`
-        <div class="report-popup">
-          <div class="report-popup-header">${report.title}</div>
-          <div class="report-popup-body">
-            <div class="report-popup-location">${report.latitude.toFixed(
-              6
-            )}, ${report.longitude.toFixed(6)}</div>
-            <div class="report-popup-description">${report.description}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
-                report.category
-              }</span>
-              <span style="color: ${getStatusColor(
-                report.status
-              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
-            </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
-              report.isAnonymous
-                ? "anonymous"
-                : report.user
-                ? `${report.user.firstName} ${report.user.lastName}`
-                : "user"
-            }</b></div>
+      });
+      // Popup HTML con pulsante View Details
+      const popupContent = document.createElement("div");
+      popupContent.className = "report-popup";
+      popupContent.innerHTML = `
+        <div class="report-popup-header">${report.title}</div>
+        <div class="report-popup-body">
+          <div class="report-popup-location">${report.address}</div>
+          <div class="report-popup-description">${report.description}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+            <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+              report.category
+            }</span>
+            <span style="color: ${getStatusColor(
+              report.status
+            )}; font-weight: bold; font-size: 12px;">${report.status}</span>
           </div>
+          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+            report.isAnonymous
+              ? "anonymous"
+              : report.user
+              ? `${report.user.firstName} ${report.user.lastName}`
+              : "user"
+          }</b></div>
         </div>
-      `);
+      `;
+      // Pulsante View Details
+      const detailsBtn = document.createElement("button");
+      detailsBtn.textContent = "View Details";
+      detailsBtn.className = "btn btn-sm btn-primary mt-2";
+      detailsBtn.style.width = "100%";
+      detailsBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (onReportDetailsClick) onReportDetailsClick(report.id);
+      };
+      popupContent.appendChild(detailsBtn);
+      marker.bindPopup(popupContent);
       reportMarkersRef.current.push(marker);
       markerCluster.addLayer(marker);
     });
@@ -343,7 +376,7 @@ export default function MapView({
     }
     if (selectedLocation) {
       markerRef.current = L.marker(selectedLocation, {
-        icon: createSelectedLocationIcon(),
+        icon: customSelectedIcon || createSelectedLocationIcon(),
       }).addTo(mapInstanceRef.current);
     }
   }, [selectedLocation]);

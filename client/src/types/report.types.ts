@@ -13,6 +13,7 @@ export interface Report {
   description: string;
   category: ReportCategory;
   status: string; // Can be ReportStatus or custom display strings like "In Progress"
+  address: string;
   latitude: number;
   longitude: number;
   createdAt?: string;

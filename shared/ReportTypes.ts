@@ -19,6 +19,14 @@ export enum ReportStatus {
   RESOLVED = "RESOLVED"
 }
 
+export enum NotificationType {
+  REPORT_STATUS_CHANGED = "REPORT_STATUS_CHANGED",
+  MESSAGE_RECEIVED = "MESSAGE_RECEIVED",
+  REPORT_ASSIGNED = "REPORT_ASSIGNED",
+  REPORT_APPROVED = "REPORT_APPROVED",
+  REPORT_REJECTED = "REPORT_REJECTED",
+}
+
 export interface CreateReportRequest {
   title: string;
   description: string;

@@ -9,8 +9,32 @@ import {
   Form,
   Card,
 } from "react-bootstrap";
-import { GeoAlt, FileText, Tag, Camera, X } from "react-bootstrap-icons";
+import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon} from "react-bootstrap-icons";
 import MapView from "./MapView";
+// Marker stile Google Maps puntatore, usato per la location selezionata
+import L from "leaflet";
+
+const createColoredIcon = () => {
+  const svg = `
+    <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g filter="url(#shadow)">
+        <path d="M19 2C9.6 2 2 9.6 2 19.1c0 10.2 15.1 32.7 16.1 34.2.5.7 1.3.7 1.8 0C20.9 51.8 36 29.3 36 19.1 36 9.6 28.4 2 19 2z" fill="#C86E62" stroke="white" stroke-width="3"/>
+        <circle cx="19" cy="19" r="7" fill="white"/>
+      </g>
+      <defs>
+        <filter id="shadow" x="0" y="0" width="38" height="54" filterUnits="userSpaceOnUse">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.3)"/>
+        </filter>
+      </defs>
+    </svg>
+  `;
+  return L.divIcon({
+    className: "custom-marker",
+    html: svg,
+    iconSize: [38, 54],
+    iconAnchor: [19, 54],
+  });
+};
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
 import { createReport } from "../api/api";
 import {
@@ -37,6 +61,7 @@ import {
   mapDivStyle,
   submitButtonStyle,
 } from "../styles/ReportFormStyles";
+import { fetchAddressFromCoordinates } from "../utils/address";
 
 export default function ReportForm() {
   const navigate = useNavigate();
@@ -58,7 +83,8 @@ export default function ReportForm() {
   const [isDragging, setIsDragging] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [hoverPreview, setHoverPreview] = useState<number | null>(null);
-
+  const [address, setAddress] = useState<string | null>(null); 
+  const [loadingAddress, setLoadingAddress] = useState(false); 
   const topRef = useRef<HTMLDivElement>(null);
 
   const processFiles = (newFiles: File[]) => {
@@ -127,9 +153,13 @@ export default function ReportForm() {
     }
   };
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const handleLocationSelect = async (lat: number, lng: number) => {
     setSelectedLocation([lat, lng]);
     setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+    setLoadingAddress(true);
+    const fetchedAddress = await fetchAddressFromCoordinates(lat, lng);
+    setAddress(fetchedAddress);
+    setLoadingAddress(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,6 +190,7 @@ export default function ReportForm() {
       dataToSend.append("latitude", formData.latitude.toString());
       dataToSend.append("longitude", formData.longitude.toString());
       dataToSend.append("isAnonymous", formData.isAnonymous.toString());
+      dataToSend.append("address", address || "");
       files.forEach((file) => {
         dataToSend.append("photos", file);
       });
@@ -432,10 +463,19 @@ export default function ReportForm() {
                       issue.
                     </p>
 
-                    <div style={{ height: 'clamp(400px, 60vh, 600px)', ...mapContainerStyle }}>
+                    <div
+                      style={{
+                        height: "clamp(400px, 60vh, 600px)",
+                        ...mapContainerStyle,
+                        position: "relative",
+                      }}
+                    >
+                      {/* MapView con marker custom */}
                       <MapView
                         onLocationSelect={handleLocationSelect}
                         selectedLocation={selectedLocation}
+                        // Passo una prop customIcon per il marker selezionato
+                        customSelectedIcon={createColoredIcon()}
                       />
                     </div>
 
@@ -443,9 +483,20 @@ export default function ReportForm() {
                       <div style={coordinatesStyle}>
                         <h4 style={h4Style}>Selected Location</h4>
                         <div style={locationDivStyle}>
+                          {/*coordinates*/}
                           <div style={mapDivStyle}>
                             <GeoAlt /> {selectedLocation[0].toFixed(6)},{" "}
                             {selectedLocation[1].toFixed(6)}
+                          </div>
+                          {/*address*/}
+                          <div style={mapDivStyle}>
+                            {loadingAddress ? (
+                              <span>Loading address...</span>
+                            ) : (
+                              <span>
+                                <MapIcon /> {address || "No address available"}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
