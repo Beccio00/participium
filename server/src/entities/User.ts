@@ -71,4 +71,7 @@ export class User {
 
   @OneToOne("CitizenPhoto", "user")
   photo: import("./CitizenPhoto").CitizenPhoto;
+
+  @OneToMany("InternalNote", "author")
+  internalNotes: import("./InternalNote").InternalNote[];
 }

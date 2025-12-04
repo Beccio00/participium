@@ -97,4 +97,7 @@ export class Report {
 
   @OneToMany("Notification", "report")
   notifications: import("./Notification").Notification[];
+
+  @OneToMany("InternalNote", "report")
+  internalNotes: import("./InternalNote").InternalNote[];
 }
