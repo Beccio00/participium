@@ -92,15 +92,24 @@ paths:
                 error: "BadRequest"
                 message: "Already logged in"
         "401":
-          description: Invalid credentials
+          description: Invalid credentials or account not confirmed
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Invalid username or password"
+              examples:
+                invalidCredentials:
+                  summary: Wrong email or password
+                  value:
+                    code: 401
+                    error: "Unauthorized"
+                    message: "Invalid email or password"
+                accountNotConfirmed:
+                  summary: Account not confirmed
+                  value:
+                    code: 401
+                    error: "Unauthorized"
+                    message: "Please confirm your email address before logging in"
         "500":
           description: Internal server error
           content:
@@ -200,6 +209,8 @@ paths:
       description: |
         Self-service registration for citizens. No authentication required.
         Email must be unique in the system.
+        After successful registration, a confirmation email with a 6-digit code will be sent.
+        The account will be in pending status until confirmed via /citizen/confirm-registration.
       operationId: registerCitizen
       requestBody:
         required: true
@@ -214,11 +225,27 @@ paths:
               password: SecurePass123!
       responses:
         "201":
-          description: Registration successful
+          description: Registration successful. Confirmation email sent.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CitizenRegistrationResponse"
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Registration successful. Please check your email for confirmation code."
+                  email:
+                    type: string
+                    example: "mario.rossi@example.com"
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    description: "When the confirmation code expires (30 minutes from now)"
+                    example: "2025-12-04T11:00:00Z"
+                  userId:
+                    type: integer
+                    description: "ID of the created user (in pending status)"
+                    example: 123
         "400":
           description: Missing required fields
           content:
@@ -235,10 +262,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 409
-                error: "Conflict"
-                message: "Email already in use"
+              examples:
+                emailInUse:
+                  summary: Email already confirmed and in use
+                  value:
+                    code: 409
+                    error: "Conflict"
+                    message: "An account with this email already exists"
+                emailPending:
+                  summary: Email exists but not confirmed
+                  value:
+                    code: 409
+                    error: "Conflict"
+                    message: "An account with this email exists but is not confirmed. Please check your email or request a new confirmation code."
         "500":
           description: Unable to create user
           content:
@@ -249,6 +285,185 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Unable to create user"
+
+  /citizen/confirm-registration:
+    post:
+      tags:
+        - Citizens
+      summary: Confirm registration with email code
+      description: |
+        Confirm citizen registration using the 6-digit code sent via email.
+        The code is valid for 30 minutes from registration time.
+        Once confirmed, the user account becomes active and can be used for login.
+      operationId: confirmRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmRegistrationRequest"
+            example:
+              email: mario.rossi@example.com
+              confirmationCode: "123456"
+      responses:
+        "200":
+          description: Registration confirmed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Registration confirmed successfully. You can now login."
+                  user:
+                    $ref: "#/components/schemas/CitizenRegistrationResponse"
+        "400":
+          description: Invalid or missing confirmation code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidCode:
+                  summary: Invalid code format
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Confirmation code must be exactly 6 digits"
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Missing required fields: email, confirmationCode"
+        "401":
+          description: Invalid confirmation code or email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Invalid confirmation code or email"
+        "408":
+          description: Confirmation code expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 408
+                error: "RequestTimeout"
+                message: "Confirmation code has expired. Please use the resend confirmation endpoint to get a new code."
+        "409":
+          description: Account already confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Account is already confirmed"
+        "500":
+          description: Unable to confirm registration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to confirm registration"
+
+  /citizen/resend-confirmation:
+    post:
+      tags:
+        - Citizens
+      summary: Resend confirmation code
+      description: |
+        Resend the confirmation code to the user's email address.
+        This can be used if the original email was not received or the code expired.
+        A new 6-digit code will be generated and sent, valid for 30 minutes.
+      operationId: resendConfirmationCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendConfirmationRequest"
+            example:
+              email: mario.rossi@example.com
+      responses:
+        "200":
+          description: Confirmation code resent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Confirmation code resent. Please check your email."
+                  email:
+                    type: string
+                    example: "mario.rossi@example.com"
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    description: "When the new confirmation code expires"
+                    example: "2025-12-04T11:30:00Z"
+        "400":
+          description: Missing or invalid email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Invalid email address"
+        "404":
+          description: Email not found or account already confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                notFound:
+                  summary: Email not found
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "No pending registration found for this email address"
+                alreadyConfirmed:
+                  summary: Already confirmed
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "This account has already been confirmed"
+        "429":
+          description: Too many resend requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 429
+                error: "TooManyRequests"
+                message: "Too many confirmation code requests. Please wait 60 seconds before requesting again."
+        "500":
+          description: Unable to resend confirmation code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to resend confirmation code"
 
   /citizen/me:
     get:
@@ -380,6 +595,7 @@ paths:
                 photo:
                   type: string
                   format: binary
+                  description: "Profile photo file (JPEG or PNG, max 5MB)"
             encoding:
               photo:
                 contentType: image/jpeg, image/png
@@ -460,7 +676,7 @@ paths:
               example:
                 code: 404
                 error: "NotFound"
-                message: "Photo not found"
+                message: "No photo found for this user"
         "500":
           description: Internal server error
           content:
@@ -2237,6 +2453,10 @@ components:
     CitizenRegistrationResponse:
       type: object
       properties:
+        id:
+          type: integer
+          description: "Unique user identifier"
+          example: 123
         firstName:
           type: string
           example: Mario
@@ -2259,6 +2479,46 @@ components:
           type: boolean
           description: Whether email notifications are enabled
           example: true
+        isConfirmed:
+          type: boolean
+          description: "Whether the email address has been confirmed"
+          example: true
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: "When the account was confirmed"
+          example: "2025-12-04T10:30:00Z"
+
+    ConfirmRegistrationRequest:
+      type: object
+      required:
+        - email
+        - confirmationCode
+      properties:
+        email:
+          type: string
+          format: email
+          description: "Email address used during registration"
+          example: "mario.rossi@example.com"
+        confirmationCode:
+          type: string
+          pattern: "^[0-9]{6}$"
+          minLength: 6
+          maxLength: 6
+          description: "6-digit numeric confirmation code received via email (valid for 30 minutes)"
+          example: "123456"
+
+    ResendConfirmationRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: "Email address to resend confirmation code to"
+          example: "mario.rossi@example.com"
 
     LoginRequest:
       type: object
