@@ -7,11 +7,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "types": ["jest"],
+    "types": ["jest", "node"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false
   },
-  "include": ["src/**/*.ts", "seed/seed.ts"],
-  "exclude": ["node_modules", "test/**/*"]
+  "include": ["src/**/*.ts", "seed/seed.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
 }
