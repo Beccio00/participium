@@ -12,6 +12,7 @@ export const MUNICIPALITY_ROLES = [
   "WASTE_MANAGEMENT",
   "ROAD_MAINTENANCE",
   "CIVIL_PROTECTION",
+  "EXTERNAL_MAINTAINER",
 ];
 
 export function getRoleLabel(role: string) {
@@ -44,6 +45,8 @@ export function getRoleLabel(role: string) {
       return "Road Maintenance";
     case "CIVIL_PROTECTION":
       return "Civil Protection";
+    case "EXTERNAL_MAINTAINER":
+      return "External Maintainer";
     default:
       return role;
   }

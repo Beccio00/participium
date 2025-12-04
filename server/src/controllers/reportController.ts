@@ -340,10 +340,13 @@ export async function getAssignedReports(
 // List external companies and maintainers available for the report's category
 export async function getAssignableExternals(req: Request, res: Response): Promise<void> {
   const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number };
+  
   if (isNaN(reportId)) {
     throw new BadRequestError("Invalid report ID parameter");
   }
-  const result = await getAssignableExternalsService(reportId);
+  
+  const result = await getAssignableExternalsService(reportId, user.id);
   res.status(200).json(result);
 }
 

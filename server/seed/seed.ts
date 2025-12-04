@@ -4,6 +4,7 @@ import { UserRepository } from "../src/repositories/UserRepository";
 import { ReportRepository } from "../src/repositories/ReportRepository";
 import { ReportPhotoRepository } from "../src/repositories/ReportPhotoRepository";
 import { ReportMessageRepository } from "../src/repositories/ReportMessageRepository";
+import { ExternalCompanyRepository } from "../src/repositories/ExternalCompanyRepository";
 import { Role } from "../../shared/RoleTypes";
 import { ReportCategory, ReportStatus } from "../../shared/ReportTypes";
 import * as bcrypt from "bcrypt";
@@ -13,6 +14,7 @@ const seedDatabase = async () => {
   const reportRepository = new ReportRepository();
   const reportPhotoRepository = new ReportPhotoRepository();
   const reportMessageRepository = new ReportMessageRepository();
+  const externalCompanyRepository = new ExternalCompanyRepository();
 
   console.log("🌱 Starting database seed...");
 
@@ -47,6 +49,12 @@ const seedDatabase = async () => {
     await AppDataSource.query("DELETE FROM report");
   } catch (error) {
     console.log("Table report doesn't exist yet, skipping...");
+  }
+  
+  try {
+    await AppDataSource.query("DELETE FROM \"ExternalCompany\"");
+  } catch (error) {
+    console.log("Table ExternalCompany doesn't exist yet, skipping...");
   }
   
   try {
@@ -169,6 +177,13 @@ const seedDatabase = async () => {
       password: "techpass",
       role: Role.PUBLIC_RELATIONS,
     },
+    {
+      email: "external@enelx.com",
+      first_name: "Marco",
+      last_name: "Bianchi",
+      password: "externalpass",
+      role: Role.EXTERNAL_MAINTAINER,
+    },
   ];
 
   // Hash passwords and insert users
@@ -194,6 +209,35 @@ const seedDatabase = async () => {
     const created = await userRepository.create(userData);
     createdUsers.push(created);
     console.log(`✅ Created user: ${u.email}`);
+  }
+
+  // Create external companies
+  console.log("🏢 Creating external companies...");
+  
+  // Company with platform access
+  const companyWithAccess = await AppDataSource.query(
+    "INSERT INTO \"ExternalCompany\" (name, categories, \"platformAccess\") VALUES ($1, $2, $3) RETURNING *",
+    ["Enel X", JSON.stringify([ReportCategory.PUBLIC_LIGHTING]), true]
+  );
+  const enelXId = companyWithAccess[0].id;
+  console.log(`✅ Created external company with platform access: Enel X`);
+
+  // Company without platform access
+  const companyWithoutAccess = await AppDataSource.query(
+    "INSERT INTO \"ExternalCompany\" (name, categories, \"platformAccess\") VALUES ($1, $2, $3) RETURNING *",
+    ["IREN Ambiente", JSON.stringify([ReportCategory.WASTE]), false]
+  );
+  const irenId = companyWithoutAccess[0].id;
+  console.log(`✅ Created external company without platform access: IREN Ambiente`);
+
+  // Assign external maintainer to Enel X
+  const externalMaintainer = createdUsers.find(u => u.email === "external@enelx.com");
+  if (externalMaintainer) {
+    await AppDataSource.query(
+      "UPDATE \"User\" SET \"externalCompanyId\" = $1 WHERE id = $2",
+      [enelXId, externalMaintainer.id]
+    );
+    console.log(`✅ Assigned external maintainer ${externalMaintainer.email} to Enel X`);
   }
 
   // Create reports with different statuses and categories
@@ -346,12 +390,14 @@ const seedDatabase = async () => {
 
   console.log("\n✅ Database seed completed successfully!");
   console.log(`\nCreated ${users.length} sample users with hashed passwords`);
+  console.log(`Created 2 external companies (1 with platform access, 1 without)`);
   console.log(`Created ${statuses.length} sample reports with photos and messages`);
   console.log("\n📋 Test credentials:");
   console.log("  Admin: admin@participium.com / adminpass");
   console.log("  Citizen: citizen@participium.com / citizenpass");
   console.log("  PR: pr@participium.com / prpass");
   console.log("  Tech: tech@participium.com / techpass");
+  console.log("  External: external@enelx.com / externalpass");
 };
 
 const main = async () => {

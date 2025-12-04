@@ -44,6 +44,7 @@ export enum TechnicalType {
   WASTE_MANAGEMENT = "WASTE_MANAGEMENT",
   ROAD_MAINTENANCE = "ROAD_MAINTENANCE",
   CIVIL_PROTECTION = "CIVIL_PROTECTION",
+  EXTERNAL_MAINTAINER = "EXTERNAL_MAINTAINER"
 }
 
 // Tipo per la creazione di un report
@@ -419,9 +420,13 @@ export async function getReportMessages(
 // EXTERNAL ASSIGNMENT FUNCTIONS
 // =========================
 
-export async function getAssignableExternals(reportId: number) {
+export async function getAssignableExternals(reportId: number, technicalUserId: number) {
   const report = await reportRepository.findByIdWithRelations(reportId);
   if (!report) throw new NotFoundError("Report not found");
+  
+  if (report.assignedOfficerId !== technicalUserId) {
+    throw new ForbiddenError("Only the assigned technical officer can view assignable externals");
+  }
 
   const companies = await externalCompanyRepository.findByCategory(report.category as ReportCategory);
   return companies.map(c => ({
@@ -462,7 +467,10 @@ export async function assignReportToExternal(
       throw new BadRequestError("externalMaintainerId is required when company has platform access");
     }
     const maintainer = await userRepository.findById(externalMaintainerId);
-    if (!maintainer) throw new NotFoundError("External maintainer not found");
+    if (!maintainer) throw new NotFoundError("User not found");
+    if (maintainer.role !== "EXTERNAL_MAINTAINER") {
+      throw new BadRequestError("User is not an external maintainer");
+    }
     if (maintainer.externalCompanyId !== company.id) {
       throw new BadRequestError("External maintainer does not belong to the specified company");
     }

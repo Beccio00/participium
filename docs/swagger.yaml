@@ -1329,15 +1329,24 @@ paths:
                 error: "Unauthorized"
                 message: "Authentication required"
         "403":
-          description: Insufficient permissions (Technical office role required)
+          description: Insufficient permissions (must be assigned technical officer)
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Technical office staff privileges required"
+              examples:
+                notTechnicalStaff:
+                  summary: User does not have technical staff role
+                  value:
+                    code: 403
+                    error: "Forbidden"
+                    message: "Technical office staff privileges required"
+                notAssignedOfficer:
+                  summary: User is not the assigned technical officer for this report
+                  value:
+                    code: 403
+                    error: "Forbidden"
+                    message: "Only the assigned technical officer can view assignable externals"
         "404":
           description: Report not found
           content:
@@ -1528,6 +1537,18 @@ paths:
                     code: 400
                     error: "BadRequest"
                     message: "externalMaintainerId must be null when company does not have platform access"
+                userNotFound:
+                  summary: User not found
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "User not found"
+                notExternalMaintainer:
+                  summary: User is not an external maintainer
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "User is not an external maintainer"
                 maintainerNotInCompany:
                   summary: Maintainer does not belong to specified company
                   value:
@@ -1550,10 +1571,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Only the assigned technical officer can assign to external maintainers"
+              examples:
+                notTechnicalStaff:
+                  summary: User does not have technical staff role
+                  value:
+                    code: 403
+                    error: "Forbidden"
+                    message: "Technical office staff privileges required"
+                notAssignedOfficer:
+                  summary: User is not the assigned technical officer for this report
+                  value:
+                    code: 403
+                    error: "Forbidden"
+                    message: "Only the assigned technical officer can assign to external maintainers"
         "404":
           description: Report or external maintainer not found
           content:
@@ -3005,16 +3035,14 @@ components:
         user:
           $ref: "#/components/schemas/UserInfo"
         assignedOfficer:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/MunicipalityUserResponse"
-          type: object
-          nullable: true
+            - enum: [null]
           description: Details of the assigned officer (null if not assigned)
         externalHandler:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/ExternalHandler"
-          type: object
-          nullable: true
+            - enum: [null]
         messages:
           type: array
           items:
