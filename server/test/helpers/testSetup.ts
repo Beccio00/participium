@@ -1,33 +1,55 @@
-import { PrismaClient } from '@prisma/client';
+import "reflect-metadata";
+import { DataSource } from "typeorm";
+import { User } from "../../src/entities/User";
+import { CitizenPhoto } from "../../src/entities/CitizenPhoto";
+import { Report } from "../../src/entities/Report";
+import { ReportPhoto } from "../../src/entities/ReportPhoto";
+import { ReportMessage } from "../../src/entities/ReportMessage";
+import { Notification } from "../../src/entities/Notification";
 
-const prisma = new PrismaClient();
+// Test DataSource configuration
+export const TestDataSource = new DataSource({
+  type: "postgres",
+  url: process.env.DATABASE_URL || "postgresql://participium:participium_password@localhost:5432/participium_test",
+  entities: [User, CitizenPhoto, Report, ReportPhoto, ReportMessage, Notification],
+  synchronize: true,
+  dropSchema: true, // Clean database on each test run
+  logging: false,
+});
+
+/**
+ * Initialize test database connection
+ */
+export async function setupTestDatabase() {
+  if (!TestDataSource.isInitialized) {
+    await TestDataSource.initialize();
+  }
+}
 
 /**
  * Clean test database - runs before each test
  */
 export async function cleanDatabase() {
+  if (!TestDataSource.isInitialized) {
+    await setupTestDatabase();
+  }
+  
   // Delete in order to respect foreign key constraints
-  await prisma.reportMessage.deleteMany();
-  await prisma.reportPhoto.deleteMany();
-  await prisma.report.deleteMany();
-  await prisma.citizenPhoto.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.user.deleteMany();
+  await TestDataSource.getRepository(ReportMessage).delete({});
+  await TestDataSource.getRepository(ReportPhoto).delete({});
+  await TestDataSource.getRepository(Report).delete({});
+  await TestDataSource.getRepository(CitizenPhoto).delete({});
+  await TestDataSource.getRepository(Notification).delete({});
+  await TestDataSource.getRepository(User).delete({});
 }
 
 /**
  * Disconnect database connection - runs after all tests complete
  */
 export async function disconnectDatabase() {
-  await prisma.$disconnect();
+  if (TestDataSource.isInitialized) {
+    await TestDataSource.destroy();
+  }
 }
 
-/**
- * Initialize test database - runs before tests start
- */
-export async function setupTestDatabase() {
-  await cleanDatabase();
-}
-
-export { prisma };
-
+export { TestDataSource };

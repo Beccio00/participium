@@ -59,9 +59,12 @@
     "db:migration:generate": "typeorm migration:generate -d src/utils/AppDataSource.ts",
     "db:migration:run": "typeorm migration:run -d src/utils/AppDataSource.ts",
     "generate:api": "openapi-generator-cli generate -i ../docs/swagger.yaml -g typescript-fetch -o ./src/generated",
-    "test": "echo \"Tests need to be updated for TypeORM\" && exit 1",
-    "test:watch": "echo \"Tests need to be updated for TypeORM\" && exit 1",
-    "test:coverage": "echo \"Tests need to be updated for TypeORM\" && exit 1",
-    "test:verbose": "echo \"Tests need to be updated for TypeORM\" && exit 1"
+    "test": "cross-env NODE_ENV=test jest --testPathIgnorePatterns=e2e --testPathIgnorePatterns=integration",
+    "test:watch": "cross-env NODE_ENV=test jest --watch --testPathIgnorePatterns=e2e --testPathIgnorePatterns=integration",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --testPathIgnorePatterns=e2e --testPathIgnorePatterns=integration",
+    "test:verbose": "cross-env NODE_ENV=test jest --verbose --testPathIgnorePatterns=e2e --testPathIgnorePatterns=integration",
+    "test:unit": "cross-env NODE_ENV=test jest --testPathPattern=unit",
+    "test:integration": "cross-env NODE_ENV=test jest --testPathPattern=integration",
+    "test:e2e": "cross-env NODE_ENV=test jest --testPathPattern=e2e"
   }
 }

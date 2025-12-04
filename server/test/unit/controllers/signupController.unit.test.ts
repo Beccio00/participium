@@ -43,6 +43,12 @@ describe("signupController", () => {
         role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
         email_notifications_enabled: true,
+        // TypeORM relation fields
+        reports: [],
+        messages: [],
+        assignedReports: [],
+        notifications: [],
+        photo: null as any,
       };
       const mockUserDTO = {
         id: 1,
@@ -163,6 +169,12 @@ describe("signupController", () => {
         role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
         email_notifications_enabled: true,
+        // TypeORM relation fields
+        reports: [],
+        messages: [],
+        assignedReports: [],
+        notifications: [],
+        photo: null as any,
       };
 
       mockReq.body = {
