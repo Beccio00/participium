@@ -3,7 +3,13 @@
 // =========================
 
 // DTOs and interfaces
-import { ReportDTO, toReportDTO, ReportMessageDTO , ReportCategory, ReportStatus} from "../interfaces/ReportDTO";
+import {
+  ReportDTO,
+  toReportDTO,
+  ReportMessageDTO,
+  ReportCategory,
+  ReportStatus,
+} from "../interfaces/ReportDTO";
 import { ReportPhoto as SharedReportPhoto } from "../../../shared/ReportTypes";
 
 // Repositories
@@ -13,15 +19,26 @@ import { UserRepository } from "../repositories/UserRepository";
 import { ReportPhotoRepository } from "../repositories/ReportPhotoRepository";
 
 // Services and utilities
-import { notifyReportStatusChange, notifyNewMessage, notifyReportAssigned, notifyReportApproved, notifyReportRejected } from "./notificationService";
-import { NotFoundError, BadRequestError, UnprocessableEntityError, ForbiddenError } from "../utils/errors";
+import {
+  notifyReportStatusChange,
+  notifyNewMessage,
+  notifyReportAssigned,
+  notifyReportApproved,
+  notifyReportRejected,
+} from "./notificationService";
+import {
+  NotFoundError,
+  BadRequestError,
+  UnprocessableEntityError,
+  ForbiddenError,
+} from "../utils/errors";
 
 // =========================
 // REPOSITORY INSTANCES
 // =========================
 
 const reportRepository = new ReportRepository();
-const reportMessageRepository = new ReportMessageRepository(); 
+const reportMessageRepository = new ReportMessageRepository();
 const userRepository = new UserRepository();
 const reportPhotoRepository = new ReportPhotoRepository();
 
@@ -42,7 +59,7 @@ export enum TechnicalType {
   WASTE_MANAGEMENT = "WASTE_MANAGEMENT",
   ROAD_MAINTENANCE = "ROAD_MAINTENANCE",
   CIVIL_PROTECTION = "CIVIL_PROTECTION",
-  EXTERNAL_MAINTAINER = "EXTERNAL_MAINTAINER"
+  EXTERNAL_MAINTAINER = "EXTERNAL_MAINTAINER",
 }
 
 // Tipo per la creazione di un report
@@ -120,13 +137,13 @@ function getTechnicalTypesForCategory(
 export async function getAssignableTechnicalsForReport(reportId: number) {
   const report = await reportRepository.findById(reportId);
   if (!report) throw new NotFoundError("Report not found");
-  
+
   const validTechnicalTypes = getTechnicalTypesForCategory(
     report.category as ReportCategory
   );
   // Usiamo i Role esistenti come tipi tecnici: filtriamo gli utenti il cui `role` è in validTechnicalTypes
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
-  
+
   const technicals = await userRepository.findByRoles(validRoles as any);
   return technicals;
 }
@@ -144,9 +161,10 @@ export async function getAssignedReportsService(
   sortBy: string = "createdAt",
   order: "asc" | "desc" = "desc"
 ): Promise<ReportDTO[]> {
-  // Only allow technical statuses
+  // Only allow technical statuses (include EXTERNAL_ASSIGNED to show reports assigned to externals)
   const allowedStatuses = [
     ReportStatus.ASSIGNED,
+    ReportStatus.EXTERNAL_ASSIGNED,
     ReportStatus.IN_PROGRESS,
     ReportStatus.RESOLVED,
   ];
@@ -154,8 +172,11 @@ export async function getAssignedReportsService(
   if (status && allowedStatuses.includes(status as ReportStatus)) {
     statusFilter = [status as ReportStatus];
   }
-  
-  const reports = await reportRepository.findAssignedToUser(userId, statusFilter);
+
+  const reports = await reportRepository.findAssignedToUser(
+    userId,
+    statusFilter
+  );
   return reports.map(toReportDTO);
 }
 
@@ -178,8 +199,11 @@ export async function getAssignedReportsForExternalMaintainer(
   if (status && allowedStatuses.includes(status as ReportStatus)) {
     statusFilter = [status as ReportStatus];
   }
-  
-  const reports = await reportRepository.findAssignedToExternalMaintainer(externalMaintainerId, statusFilter);
+
+  const reports = await reportRepository.findAssignedToExternalMaintainer(
+    externalMaintainerId,
+    statusFilter
+  );
   return reports.map(toReportDTO);
 }
 
@@ -211,7 +235,9 @@ export async function createReport(data: CreateReportData) {
   }
 
   // Return the report with all relations
-  const reportWithRelations = await reportRepository.findByIdWithRelations(savedReport.id);
+  const reportWithRelations = await reportRepository.findByIdWithRelations(
+    savedReport.id
+  );
   return reportWithRelations!;
 }
 
@@ -221,12 +247,11 @@ export async function createReport(data: CreateReportData) {
 export async function getApprovedReports(
   category?: ReportCategory
 ): Promise<ReportDTO[]> {
-  const reports = await reportRepository.findByStatusAndCategory([
-    ReportStatus.ASSIGNED,
-    ReportStatus.IN_PROGRESS,
-    ReportStatus.RESOLVED,
-  ], category);
-  
+  const reports = await reportRepository.findByStatusAndCategory(
+    [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED],
+    category
+  );
+
   return reports.map(toReportDTO);
 }
 
@@ -234,7 +259,9 @@ export async function getApprovedReports(
  * Restituisce i report in attesa di approvazione
  */
 export async function getPendingReports(): Promise<ReportDTO[]> {
-  const reports = await reportRepository.findByStatus([ReportStatus.PENDING_APPROVAL]);
+  const reports = await reportRepository.findByStatus([
+    ReportStatus.PENDING_APPROVAL,
+  ]);
   return reports.map(toReportDTO);
 }
 
@@ -255,7 +282,7 @@ export async function approveReport(
   if (report.status !== ReportStatus.PENDING_APPROVAL) {
     throw new BadRequestError("Report is not in PENDING_APPROVAL status");
   }
-  
+
   // Verifica che il tecnico assegnato sia valido per la categoria
   const validTechnicalTypes = getTechnicalTypesForCategory(
     report.category as ReportCategory
@@ -267,7 +294,7 @@ export async function approveReport(
       "Assigned technical is not valid for this report category"
     );
   }
-  
+
   const updatedReport = await reportRepository.update(reportId, {
     status: ReportStatus.ASSIGNED,
     assignedOfficerId: assignedTechnical.id,
@@ -300,7 +327,7 @@ export async function rejectReport(
       "Rejection reason must be less than 500 characters"
     );
   }
-  
+
   const report = await reportRepository.findByIdWithRelations(reportId);
   if (!report) {
     throw new NotFoundError("Report not found");
@@ -308,22 +335,22 @@ export async function rejectReport(
   if (report.status !== ReportStatus.PENDING_APPROVAL) {
     throw new BadRequestError("Report is not in PENDING_APPROVAL status");
   }
-  
+
   // Update report status and reason
   const updatedReport = await reportRepository.update(reportId, {
     status: ReportStatus.REJECTED,
     rejectedReason: reason,
   });
-  
+
   // Create rejection message
   await reportMessageRepository.create({
     content: "Report rejected by public relations officer",
     senderId: rejecterId,
     reportId: reportId,
   });
-  
+
   if (!updatedReport) throw new NotFoundError("Report not found after update");
-  
+
   // Notify citizen about rejection
   await notifyReportRejected(report.id, report.userId, report.title, reason);
 
@@ -355,11 +382,18 @@ export async function updateReportStatus(
 
   const oldStatus = report.status;
 
-  const updatedReport = await reportRepository.update(reportId, { status: newStatus });
+  const updatedReport = await reportRepository.update(reportId, {
+    status: newStatus,
+  });
   if (!updatedReport) throw new NotFoundError("Report not found after update");
 
   // Notify citizen about status change
-  await notifyReportStatusChange(report.id, report.userId, oldStatus, newStatus);
+  await notifyReportStatusChange(
+    report.id,
+    report.userId,
+    oldStatus,
+    newStatus
+  );
 
   return toReportDTO(updatedReport);
 }
@@ -422,9 +456,11 @@ export async function getReportMessages(
   // Verifica autorizzazione: il cittadino può vedere solo i propri report, il technical può vedere i report assegnati
   const isReportOwner = report.userId === userId;
   const isAssignedTechnical = report.assignedOfficerId === userId;
-  
+
   if (!isReportOwner && !isAssignedTechnical) {
-    throw new ForbiddenError("You are not authorized to view this conversation");
+    throw new ForbiddenError(
+      "You are not authorized to view this conversation"
+    );
   }
 
   const messages = await reportMessageRepository.findByReportId(reportId);
@@ -441,9 +477,12 @@ export async function getReportMessages(
 /**
  * Get a single report by ID with access control
  */
-export async function getReportById(reportId: number, userId: number): Promise<ReportDTO> {
+export async function getReportById(
+  reportId: number,
+  userId: number
+): Promise<ReportDTO> {
   const report = await reportRepository.findByIdWithRelations(reportId);
-  
+
   if (!report) {
     throw new NotFoundError("Report not found");
   }
@@ -451,11 +490,10 @@ export async function getReportById(reportId: number, userId: number): Promise<R
   // Access control: users can only see reports they created or are assigned to
   const isReportOwner = report.userId === userId;
   const isAssignedTechnical = report.assignedOfficerId === userId;
-  
+
   if (!isReportOwner && !isAssignedTechnical) {
     throw new ForbiddenError("You are not authorized to view this report");
   }
 
   return toReportDTO(report);
 }
-
