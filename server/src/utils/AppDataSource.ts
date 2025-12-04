@@ -14,7 +14,7 @@ export const AppDataSource = new DataSource({
   migrations: ["dist/app/src/migrations/*.js"],
   // Force synchronization in Docker/production for setup
   synchronize: process.env.TYPEORM_SYNCHRONIZE === "true", 
-  logging: process.env.NODE_ENV === "development" || process.env.TYPEORM_LOGGING === "true",
+  logging: process.env.NODE_ENV === "development" && process.env.TYPEORM_LOGGING === "true",
   // Enable schema creation in Docker environment
   dropSchema: false,
   // Additional connection options for Docker

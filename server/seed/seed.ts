@@ -193,7 +193,10 @@ const seedDatabase = async () => {
 
     const created = await userRepository.create(userData);
     createdUsers.push(created);
-    console.log(`✅ Created user: ${u.email}`);
+    // Solo log per utenti principali
+    if (u.email.includes('admin') || u.email.includes('citizen') || u.email === 'pr@participium.com') {
+      console.log(`✅ Created user: ${u.email}`);
+    }
   }
 
   // Create reports with different statuses and categories
@@ -290,7 +293,10 @@ const seedDatabase = async () => {
     }
 
     const createdReport = await reportRepository.create(reportData);
-    console.log(`📝 Created report id=${createdReport.id} status=${status} category=${category}`);
+    // Log solo status importanti
+    if (status === ReportStatus.REJECTED || status === ReportStatus.RESOLVED) {
+      console.log(`📝 Created report id=${createdReport.id} status=${status} category=${category}`);
+    }
 
     // Log assignment info if present
     if (reportData.assignedToId) {
@@ -301,7 +307,6 @@ const seedDatabase = async () => {
     }
 
     // Add photos for each report
-    console.log(`📸 Adding photos for report ${createdReport.id}...`);
     for (let p = 1; p <= 6; p++) {
       const photoUrl = `http://localhost:9000/reports-photos/report${i+1}.jpg`;
       await reportPhotoRepository.create({
@@ -312,7 +317,6 @@ const seedDatabase = async () => {
     }
 
     // Add messages
-    console.log(`💬 Adding messages for report ${createdReport.id}...`);
     
     // Initial citizen message
     await reportMessageRepository.create({
