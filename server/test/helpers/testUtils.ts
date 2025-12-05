@@ -1,5 +1,6 @@
 import { hashPassword } from '../../src/services/passwordService';
-import { prisma } from './testSetup';
+import { AppDataSource } from '../../src/utils/AppDataSource';
+import { User } from '../../src/entities/User';
 
 /**
  * Create test user data
@@ -40,23 +41,25 @@ export async function createUserInDatabase(userData?: Partial<{
   const data = { ...defaultData, ...userData };
   const { hashedPassword, salt } = await hashPassword(data.password);
 
-  return await prisma.user.create({
-    data: {
-      email: data.email,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      password: hashedPassword,
-      salt: salt,
-      role: data.role as any,
-    },
+  const userRepository = AppDataSource.getRepository(User);
+  const user = userRepository.create({
+    email: data.email,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    password: hashedPassword,
+    salt: salt,
+    role: data.role as any,
   });
+
+  return await userRepository.save(user);
 }
 
 /**
  * Verify password is correctly hashed before storage
  */
 export async function verifyPasswordIsHashed(email: string, plainPassword: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const userRepository = AppDataSource.getRepository(User);
+  const user = await userRepository.findOne({ where: { email } });
   if (!user) return false;
   
   // Password should be a hash, not equal to plain password
