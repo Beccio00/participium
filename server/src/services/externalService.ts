@@ -118,12 +118,12 @@ export async function createExternalMaintainer(data: CreateExternalMaintainerDat
   if (!data.password || typeof data.password !== "string" || data.password.length < 8) {
     throw new BadRequestError("password is required and must be at least 8 characters");
   }
-  if (!data.externalCompanyId || isNaN(data.externalCompanyId)) {
+  if (!data.externalCompanyId || isNaN(parseInt(data.externalCompanyId))) {
     throw new BadRequestError("externalCompanyId is required and must be a valid integer");
   }
 
   // Check if company exists and has platform access
-  const company = await externalCompanyRepository.findById(data.externalCompanyId);
+  const company = await externalCompanyRepository.findById(parseInt(data.externalCompanyId));
   if (!company) {
     throw new NotFoundError("External company not found");
   }
@@ -152,7 +152,10 @@ export async function createExternalMaintainer(data: CreateExternalMaintainerDat
     role: Role.EXTERNAL_MAINTAINER,
     telegram_username: null,
     email_notifications_enabled: true,
-    externalCompanyId: data.externalCompanyId,
+    company:{
+      id: company.id,
+      name: company.name
+    }
   };
 
   const createdUser = await userRepository.create(userData);

@@ -9,6 +9,13 @@ import type {
 } from "../../../shared/MunicipalityUserTypes";
 import type { CreateReportResponse } from "../../../shared/ReportTypes";
 import type { Report } from "../types/report.types";
+import type { 
+  AssignReportToExternalResponse,
+  CreateExternalMaintainerData,
+  CreateExternalCompanyData,
+  ExternalCompanyResponse,
+  ExternalMaintainerResponse
+ } from "../../../shared/ExternalTypes";
 
 const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
@@ -70,7 +77,7 @@ export async function signup(form: SignupFormData): Promise<SignupResponse> {
   return handleResponse<SignupResponse>(res);
 }
 
-// ADMINISTRATION API
+// ADMINISTRATION API -(municipality users)
 
 export async function createMunicipalityUser(
   data: MunicipalityUserRequest
@@ -99,6 +106,104 @@ export async function deleteMunicipalityUser(userId: number): Promise<void> {
     method: "DELETE",
     credentials: "include",
   });
+  await handleResponse<unknown>(res);
+}
+
+// ADMINISTRATION API -(external company)
+
+// company
+
+export async function createExternalCompany(
+  data: CreateExternalCompanyData
+): Promise<ExternalCompanyResponse> {
+  const res = await fetch(`${API_PREFIX}/admin/external-companies`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<ExternalCompanyResponse>(res);
+}
+
+export async function getExternalCompanies(): Promise<ExternalCompanyResponse[]> {
+  const res = await fetch(`${API_PREFIX}/admin/external-companies`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<ExternalCompanyResponse[]>(res);
+}
+
+export async function getExternalCompaniesWithAccess(): Promise<
+  ExternalCompanyResponse[]
+> {
+  const res = await fetch(
+    `${API_PREFIX}/admin/external-companies/platform-access`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+  return handleResponse<ExternalCompanyResponse[]>(res);
+}
+
+export async function deleteExternalCompany(companyId: number): Promise<void> {
+  const res = await fetch(
+    `${API_PREFIX}/admin/external-companies/${companyId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    }
+  );
+  await handleResponse<unknown>(res);
+}
+
+// maintainers 
+
+export async function createExternalMaintainer(
+  data: CreateExternalMaintainerData
+): Promise<ExternalMaintainerResponse> {
+  const res = await fetch(`${API_PREFIX}/admin/external-maintainers`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<ExternalMaintainerResponse>(res);
+}
+
+export async function getExternalMaintainers(): Promise<
+  ExternalMaintainerResponse[]
+> {
+  const res = await fetch(`${API_PREFIX}/admin/external-maintainers`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<ExternalMaintainerResponse[]>(res);
+}
+
+export async function getExternalMaintainer(
+  maintainerId: number
+): Promise<ExternalMaintainerResponse> {
+  const res = await fetch(
+    `${API_PREFIX}/admin/external-maintainers/${maintainerId}`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+  return handleResponse<ExternalMaintainerResponse>(res);
+}
+
+export async function deleteExternalMaintainer(
+  maintainerId: number
+): Promise<void> {
+  const res = await fetch(
+    `${API_PREFIX}/admin/external-maintainers/${maintainerId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    }
+  );
   await handleResponse<unknown>(res);
 }
 

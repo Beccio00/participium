@@ -42,7 +42,7 @@ export async function createExternalMaintainerController(req: Request, res: Resp
     lastName,
     email,
     password,
-    externalCompanyId: parseInt(externalCompanyId),
+    externalCompanyId: externalCompanyId,
   });
 
   res.status(201).json(result);
