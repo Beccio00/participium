@@ -8,6 +8,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@jest/types": "^30.2.0",
     "@types/passport-local": "^1.0.38",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",

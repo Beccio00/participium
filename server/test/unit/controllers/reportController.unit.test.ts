@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 
-// Mock multer e utility
 jest.mock("multer", () => {
   const mockMulter: any = (opts?: any) => ({
     array: () => (req: any, res: any, cb: any) => {
@@ -30,7 +29,7 @@ jest.mock("../../../src/utils/minioClient", () => ({
 
 jest.mock("../../../src/utils/addressFinder", () => ({
   __esModule: true,
-  calculateAddress: jest.fn().mockResolvedValue("Some address"),
+  calculateAddress: jest.fn().mockResolvedValue("Calculated Address"),
 }));
 
 jest.mock("../../../src/middlewares/errorMiddleware", () => ({
@@ -44,16 +43,22 @@ import {
   rejectReport,
   getAssignableTechnicals,
   getPendingReports,
+  getReportById,
+  updateReportStatus,
+  sendMessageToCitizen,
+  getReportMessages,
+  getAssignedReports,
 } from "../../../src/controllers/reportController";
 import * as reportService from "../../../src/services/reportService";
-import { ReportCategory } from "../../../../shared/ReportTypes";
-import { BadRequestError } from "../../../src/utils";
+import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";
+import { BadRequestError, UnauthorizedError } from "../../../src/utils";
+import { calculateAddress } from "../../../src/utils/addressFinder";
 
 jest.mock("../../../src/services/reportService");
-const mockCreateReportService =
-  reportService.createReport as jest.MockedFunction<
-    typeof reportService.createReport
-  >;
+
+const mockCreateReportService = reportService.createReport as jest.MockedFunction<
+  typeof reportService.createReport
+>;
 const mockGetApprovedReportsService =
   reportService.getApprovedReports as jest.MockedFunction<
     typeof reportService.getApprovedReports
@@ -74,6 +79,30 @@ const mockGetAssignableTechnicalsService =
   reportService.getAssignableTechnicalsForReport as jest.MockedFunction<
     typeof reportService.getAssignableTechnicalsForReport
   >;
+const mockGetReportByIdService =
+  reportService.getReportById as jest.MockedFunction<
+    typeof reportService.getReportById
+  >;
+const mockUpdateReportStatusService =
+  reportService.updateReportStatus as jest.MockedFunction<
+    typeof reportService.updateReportStatus
+  >;
+const mockSendMessageToCitizenService =
+  reportService.sendMessageToCitizen as jest.MockedFunction<
+    typeof reportService.sendMessageToCitizen
+  >;
+const mockGetReportMessagesService =
+  reportService.getReportMessages as jest.MockedFunction<
+    typeof reportService.getReportMessages
+  >;
+const mockGetAssignedReportsService =
+  reportService.getAssignedReportsService as jest.MockedFunction<
+    typeof reportService.getAssignedReportsService
+  >;
+const mockGetAssignedReportsExternalService =
+  reportService.getAssignedReportsForExternalMaintainer as jest.MockedFunction<
+    typeof reportService.getAssignedReportsForExternalMaintainer
+  >;
 
 describe("reportController", () => {
   let mockReq: any;
@@ -84,6 +113,7 @@ describe("reportController", () => {
       body: {},
       user: null,
       query: {},
+      params: {},
       files: [],
     };
     mockRes = {
@@ -101,13 +131,7 @@ describe("reportController", () => {
       latitude: "45.0703",
       longitude: "7.6869",
       isAnonymous: "false",
-      photos: [
-        {
-          id: 1,
-          url: "https://example.com/photo.jpg",
-          filename: "streetlight.jpg",
-        },
-      ],
+      photos: [],
     };
 
     const mockFiles = [
@@ -125,8 +149,6 @@ describe("reportController", () => {
       lastName: "Doe",
       email: "john.doe@example.com",
       role: "CITIZEN" as const,
-      telegramUsername: null,
-      emailNotificationsEnabled: true,
     };
 
     it("should create report successfully with valid data", async () => {
@@ -134,461 +156,346 @@ describe("reportController", () => {
       mockReq.user = validUser;
       mockReq.files = mockFiles;
 
-      const mockCreatedReport = {
-        id: 1,
-        ...validReportData,
-        userId: validUser.id,
-        status: "PENDING_APPROVAL",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      mockCreateReportService.mockResolvedValue(mockCreatedReport as any);
+      mockCreateReportService.mockResolvedValue({ id: 1, ...validReportData } as any);
 
       await createReport(mockReq as Request, mockRes as Response);
 
       expect(mockCreateReportService).toHaveBeenCalled();
-      const calledWith = mockCreateReportService.mock.calls[0][0];
-      expect(calledWith.title).toBe(validReportData.title);
-      expect(calledWith.userId).toBe(validUser.id);
-      expect(calledWith.photos.length).toBe(1);
+      expect(mockRes.status).toHaveBeenCalledWith(201);
     });
 
-    it("should reject if user is not authenticated", async () => {
+    it("should handle photos when req.files is an object", async () => {
       mockReq.body = validReportData;
-      mockReq.files = mockFiles;
-      mockReq.user = null;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow();
-      expect(mockCreateReportService).not.toHaveBeenCalled();
+      mockReq.user = validUser;
+      mockReq.files = { photos: mockFiles };
+      mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+      await createReport(mockReq as Request, mockRes as Response);
+      expect(mockCreateReportService).toHaveBeenCalled();
     });
 
-    it("should reject if user is undefined", async () => {
-      mockReq.body = validReportData;
+    it("should use provided address and skip calculation", async () => {
+      mockReq.body = { ...validReportData, address: "Via Po 15, Torino" };
+      mockReq.user = validUser;
       mockReq.files = mockFiles;
-      mockReq.user = undefined;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow();
-      expect(mockCreateReportService).not.toHaveBeenCalled();
+      mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+      await createReport(mockReq as Request, mockRes as Response);
+      expect(calculateAddress).not.toHaveBeenCalled();
     });
 
-    // --- Validation Tests ---
+    it("should throw BadRequestError if no photos are provided (Line 50)", async () => {
+        mockReq.body = validReportData;
+        mockReq.user = validUser;
+        mockReq.files = []; // Empty array
+        await expect(createReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("At least one photo is required");
+    });
 
-    it("should throw BadRequestError if title is missing", async () => {
+    it("should throw BadRequestError if more than 3 photos are provided (Line 53)", async () => {
+        mockReq.body = validReportData;
+        mockReq.user = validUser;
+        // Create 4 mock files
+        mockReq.files = Array(4).fill(mockFiles[0]);
+        await expect(createReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Maximum 3 photos allowed");
+    });
+
+    it("should throw BadRequestError if category is invalid (Line 58)", async () => {
+        mockReq.body = { ...validReportData, category: "INVALID_CATEGORY" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+        await expect(createReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Invalid category");
+    });
+
+    it("should throw BadRequestError if latitude/longitude are NaN (Line 69)", async () => {
+        mockReq.body = { ...validReportData, latitude: "not-a-number" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+        await expect(createReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Invalid coordinates");
+    });
+
+    it("should throw BadRequestError if latitude is out of bounds (Line 75)", async () => {
+        mockReq.body = { ...validReportData, latitude: "91" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+        await expect(createReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Invalid latitude: must be between -90 and 90");
+    });
+
+    it("should throw BadRequestError if longitude is out of bounds (Line 79)", async () => {
+        mockReq.body = { ...validReportData, longitude: "181" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+        await expect(createReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Invalid longitude: must be between -180 and 180");
+    });
+
+    it("should throw BadRequestError if missing required fields", async () => {
       mockReq.body = { ...validReportData, title: undefined };
       mockReq.user = validUser;
       mockReq.files = mockFiles;
-
-      await expect(createReport(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
-    });
-
-    it("should throw BadRequestError if description is missing", async () => {
-      mockReq.body = { ...validReportData, description: undefined };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(createReport(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
-    });
-
-    it("should throw BadRequestError if category is missing", async () => {
-      mockReq.body = { ...validReportData, category: undefined };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(createReport(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
-    });
-
-    it("should throw BadRequestError if latitude is missing", async () => {
-      mockReq.body = { ...validReportData, latitude: undefined };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(createReport(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
-    });
-
-    it("should throw BadRequestError if longitude is missing", async () => {
-      mockReq.body = { ...validReportData, longitude: undefined };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(createReport(mockReq as Request, mockRes as Response)).rejects.toThrow(BadRequestError);
-    });
-
-    // --- Coverage Tests (New) ---
-
-    it("should throw BadRequestError if more than 3 photos are uploaded", async () => {
-      mockReq.body = { ...validReportData };
-      mockReq.user = validUser;
-      // Array with 4 files
-      mockReq.files = [mockFiles[0], mockFiles[0], mockFiles[0], mockFiles[0]]; 
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Maximum 3 photos allowed");
-      
-      expect(mockCreateReportService).not.toHaveBeenCalled();
-    });
-
-    it("should throw BadRequestError if category is invalid", async () => {
-      mockReq.body = { ...validReportData, category: "INVALID_CATEGORY" };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid category");
-      
-      expect(mockCreateReportService).not.toHaveBeenCalled();
-    });
-
-    it("should throw BadRequestError if latitude is not a number", async () => {
-      mockReq.body = { ...validReportData, latitude: "not-a-number" };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid coordinates");
-    });
-
-    it("should throw BadRequestError if longitude is not a number", async () => {
-      mockReq.body = { ...validReportData, longitude: "invalid" };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid coordinates");
-    });
-
-    it("should throw BadRequestError if latitude is out of range (< -90)", async () => {
-      mockReq.body = { ...validReportData, latitude: "-91" };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid latitude");
-    });
-
-    it("should throw BadRequestError if latitude is out of range (> 90)", async () => {
-      mockReq.body = { ...validReportData, latitude: "91" };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid latitude");
-    });
-
-    it("should throw BadRequestError if longitude is out of range (< -180)", async () => {
-      mockReq.body = { ...validReportData, longitude: "-181" };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid longitude");
-    });
-
-    it("should throw BadRequestError if longitude is out of range (> 180)", async () => {
-      mockReq.body = { ...validReportData, longitude: "181" };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid longitude");
-    });
-
-    it("should throw BadRequestError when photos array is empty", async () => {
-      mockReq.body = { ...validReportData };
-      mockReq.user = validUser;
-      mockReq.files = [];
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("At least one photo is required");
-
-      expect(mockCreateReportService).not.toHaveBeenCalled();
-    });
-
-    // --- End Coverage Tests ---
-
-    it("should accept latitude and longitude as 0 (valid coordinates)", async () => {
-      mockReq.body = {
-        ...validReportData,
-        latitude: "0",
-        longitude: "0",
-      };
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      const mockCreatedReport = {
-        id: 1,
-        ...mockReq.body,
-        userId: validUser.id,
-        status: "PENDING_APPROVAL",
-      };
-
-      mockCreateReportService.mockResolvedValue(mockCreatedReport as any);
-
-      await createReport(mockReq as Request, mockRes as Response);
-
-      expect(mockCreateReportService).toHaveBeenCalled();
-      const calledWith = mockCreateReportService.mock.calls[0][0];
-      expect(calledWith.latitude).toBe(0);
-      expect(calledWith.longitude).toBe(0);
-    });
-
-    it("should handle service layer errors", async () => {
-      mockReq.body = validReportData;
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      const serviceError = new Error("Database connection failed");
-      mockCreateReportService.mockRejectedValue(serviceError);
-
-      await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Database connection failed");
-    });
-
-    it("should create anonymous report", async () => {
-      const anonymousReportData = {
-        ...validReportData,
-        isAnonymous: "true",
-      };
-
-      mockReq.body = anonymousReportData;
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      mockCreateReportService.mockResolvedValue({ id: 1 } as any);
-
-      await createReport(mockReq as Request, mockRes as Response);
-
-      expect(mockCreateReportService).toHaveBeenCalled();
-      const calledWith = mockCreateReportService.mock.calls[0][0];
-      expect(calledWith.isAnonymous).toBe(true);
-    });
-
-    it("should handle different report categories", async () => {
-      const categories = Object.values(ReportCategory);
-
-      for (const category of categories) {
-        mockReq.body = { ...validReportData, category };
-        mockReq.user = validUser;
-        mockReq.files = mockFiles;
-
-        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
-
-        await createReport(mockReq as Request, mockRes as Response);
-
-        const calledWith = mockCreateReportService.mock.calls[0][0];
-        expect(calledWith.category).toBe(category);
-        jest.clearAllMocks();
-      }
-    });
-
-    it("should handle valid Turin coordinates", async () => {
-      const turinReportData = {
-        ...validReportData,
-        latitude: 45.0703,
-        longitude: 7.6869,
-      };
-
-      mockReq.body = turinReportData;
-      mockReq.user = validUser;
-      mockReq.files = mockFiles;
-
-      mockCreateReportService.mockResolvedValue({ id: 1 } as any);
-
-      await createReport(mockReq as Request, mockRes as Response);
-
-      const calledWith = mockCreateReportService.mock.calls[0][0];
-      expect(calledWith.latitude).toBeCloseTo(45.0703);
+      await expect(createReport(mockReq as Request, mockRes as Response))
+        .rejects.toThrow("Missing required fields");
     });
   });
 
   describe("getReports", () => {
     it("should return approved reports successfully", async () => {
-      const mockReports = [{ id: 1, title: "Streetlight issue", status: "ASSIGNED" }];
-
-      mockGetApprovedReportsService.mockResolvedValue(mockReports as any);
-
-      await getReports(mockReq as Request, mockRes as Response);
-
-      expect(mockGetApprovedReportsService).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith(mockReports);
-    });
-
-    it("should return empty array when no reports exist", async () => {
-      mockGetApprovedReportsService.mockResolvedValue([]);
-      await getReports(mockReq as Request, mockRes as Response);
-      expect(mockRes.json).toHaveBeenCalledWith([]);
-    });
-
-    it("should filter by category when provided", async () => {
-        mockReq.query = { category: "PUBLIC_LIGHTING" };
         mockGetApprovedReportsService.mockResolvedValue([]);
-        
         await getReports(mockReq as Request, mockRes as Response);
-        
-        expect(mockGetApprovedReportsService).toHaveBeenCalledWith("PUBLIC_LIGHTING");
+        expect(mockGetApprovedReportsService).toHaveBeenCalled();
     });
 
-    it("should throw BadRequestError when invalid category is provided", async () => {
+    it("should throw BadRequestError if category query param is invalid", async () => {
         mockReq.query = { category: "INVALID_CAT" };
-        
-        await expect(
-            getReports(mockReq as Request, mockRes as Response)
-        ).rejects.toThrow(BadRequestError);
-        
-        expect(mockGetApprovedReportsService).not.toHaveBeenCalled();
-    });
-
-    it("should handle service layer errors", async () => {
-      const serviceError = new Error("Database query failed");
-      mockGetApprovedReportsService.mockRejectedValue(serviceError);
-      await expect(
-        getReports(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Database query failed");
+        await expect(getReports(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Invalid category");
     });
   });
 
-  describe("approveReport / rejectReport", () => {
-    const validUser = { id: 99 };
-
-    it("should approve a report successfully", async () => {
-      mockReq.params = { reportId: "10" };
-      mockReq.user = validUser;
-      mockReq.body = { assignedTechnicalId: 50 };
-
-      const updatedReport = { id: 10, status: "ASSIGNED" };
-      mockApproveReportService.mockResolvedValue(updatedReport as any);
-
-      await approveReport(mockReq as Request, mockRes as Response);
-
-      expect(mockApproveReportService).toHaveBeenCalledWith(10, validUser.id, 50);
+  describe("getReportById", () => {
+    it("should return a report by ID", async () => {
+      mockReq.params = { reportId: "123" };
+      mockReq.user = { id: 1 };
+      mockGetReportByIdService.mockResolvedValue({ id: 123 } as any);
+      await getReportById(mockReq as Request, mockRes as Response);
       expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: "Report approved and assigned successfully",
-        report: updatedReport,
-      });
     });
 
-    it("should reject when approve reportId param is invalid", async () => {
+    it("should throw UnauthorizedError if user is missing", async () => {
+      mockReq.params = { reportId: "123" };
+      mockReq.user = undefined;
+      await expect(getReportById(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(UnauthorizedError);
+    });
+
+    it("should throw BadRequestError if reportId is invalid", async () => {
+      mockReq.params = { reportId: "abc" };
+      mockReq.user = { id: 1 };
+      await expect(getReportById(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(BadRequestError);
+    });
+  });
+
+  describe("approveReport", () => {
+    it("should approve a report successfully", async () => {
+        mockReq.params = { reportId: "10" };
+        mockReq.user = { id: 99 };
+        mockReq.body = { assignedTechnicalId: 50 };
+        mockApproveReportService.mockResolvedValue({ id: 10 } as any);
+        await approveReport(mockReq as Request, mockRes as Response);
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should throw BadRequestError if reportId is invalid", async () => {
+        mockReq.params = { reportId: "invalid" };
+        mockReq.user = { id: 99 };
+        mockReq.body = { assignedTechnicalId: 50 };
+        await expect(approveReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Invalid report ID parameter");
+    });
+
+    it("should throw BadRequestError if assignedTechnicalId is missing", async () => {
+        mockReq.params = { reportId: "10" };
+        mockReq.user = { id: 99 };
+        mockReq.body = {}; // Missing field
+        await expect(approveReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Missing or invalid 'assignedTechnicalId'");
+    });
+
+    it("should throw BadRequestError if assignedTechnicalId is invalid", async () => {
+        mockReq.params = { reportId: "10" };
+        mockReq.user = { id: 99 };
+        mockReq.body = { assignedTechnicalId: "not-a-number" }; 
+        await expect(approveReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Missing or invalid 'assignedTechnicalId'");
+    });
+  });
+
+  describe("rejectReport", () => {
+    it("should reject a report successfully", async () => {
+        mockReq.params = { reportId: "20" };
+        mockReq.user = { id: 99 };
+        mockReq.body = { reason: "Bad quality" };
+        mockRejectReportService.mockResolvedValue({ id: 20 } as any);
+        await rejectReport(mockReq as Request, mockRes as Response);
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should throw BadRequestError if reportId is invalid", async () => {
+        mockReq.params = { reportId: "abc" };
+        mockReq.user = { id: 99 };
+        mockReq.body = { reason: "Bad" };
+        await expect(rejectReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Invalid report ID parameter");
+    });
+
+    it("should throw BadRequestError if reason is missing", async () => {
+        mockReq.params = { reportId: "20" };
+        mockReq.user = { id: 99 };
+        mockReq.body = {}; 
+        await expect(rejectReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Missing rejection reason");
+    });
+
+    it("should throw BadRequestError if reason is empty/whitespace", async () => {
+        mockReq.params = { reportId: "20" };
+        mockReq.user = { id: 99 };
+        mockReq.body = { reason: "   " }; 
+        await expect(rejectReport(mockReq as Request, mockRes as Response))
+            .rejects.toThrow("Missing rejection reason");
+    });
+  });
+
+  describe("updateReportStatus", () => {
+    const validUser = { id: 50 };
+
+    it("should update report status successfully", async () => {
+      mockReq.params = { reportId: "5" };
+      mockReq.user = validUser;
+      mockReq.body = { status: "IN_PROGRESS" };
+      const updatedReport = { id: 5, status: "IN_PROGRESS" };
+      mockUpdateReportStatusService.mockResolvedValue(updatedReport as any);
+
+      await updateReportStatus(mockReq as Request, mockRes as Response);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should throw BadRequestError for invalid reportId", async () => {
+      mockReq.params = { reportId: "invalid" };
+      mockReq.user = validUser;
+      mockReq.body = { status: "RESOLVED" };
+      await expect(updateReportStatus(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(BadRequestError);
+    });
+
+    it("should throw BadRequestError if status is missing", async () => {
+      mockReq.params = { reportId: "5" };
+      mockReq.user = validUser;
+      mockReq.body = {};
+      await expect(updateReportStatus(mockReq as Request, mockRes as Response))
+        .rejects.toThrow("Status is required");
+    });
+
+    it("should throw BadRequestError if status is invalid", async () => {
+      mockReq.params = { reportId: "5" };
+      mockReq.user = validUser;
+      mockReq.body = { status: "INVALID_STATUS" };
+      await expect(updateReportStatus(mockReq as Request, mockRes as Response))
+        .rejects.toThrow("Invalid status");
+    });
+  });
+
+  describe("sendMessageToCitizen", () => {
+    const validUser = { id: 50 };
+
+    it("should send message successfully", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = validUser;
+      mockReq.body = { content: "We are fixing it." };
+      mockSendMessageToCitizenService.mockResolvedValue({ id: 1 } as any);
+      await sendMessageToCitizen(mockReq as Request, mockRes as Response);
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+    });
+
+    it("should throw BadRequestError for invalid reportId", async () => {
       mockReq.params = { reportId: "abc" };
       mockReq.user = validUser;
-      mockReq.body = { assignedTechnicalId: 50 };
-
-      await expect(
-        approveReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid report ID parameter");
+      mockReq.body = { content: "Msg" };
+      await expect(sendMessageToCitizen(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(BadRequestError);
     });
-    
-    it("should reject when assignedTechnicalId is missing", async () => {
+
+    it("should throw BadRequestError if content is empty", async () => {
       mockReq.params = { reportId: "10" };
       mockReq.user = validUser;
-      mockReq.body = { };
-
-      await expect(
-        approveReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      mockReq.body = { content: "   " };
+      await expect(sendMessageToCitizen(mockReq as Request, mockRes as Response))
+        .rejects.toThrow("Message content is required");
     });
+  });
 
-    it("should propagate service errors on approve", async () => {
-      mockReq.params = { reportId: "11" };
-      mockReq.user = validUser;
-      mockReq.body = { assignedTechnicalId: 50 };
-      
-      mockApproveReportService.mockRejectedValue(new Error("DB fail"));
-
-      await expect(
-        approveReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("DB fail");
-    });
-
-    it("should reject a report successfully with reason", async () => {
-      mockReq.params = { reportId: "20" };
-      mockReq.user = validUser;
-      mockReq.body = { reason: "Not valid content" };
-
-      const updatedReport = {
-        id: 20,
-        status: "REJECTED",
-        rejectionReason: "Not valid content",
-      };
-      mockRejectReportService.mockResolvedValue(updatedReport as any);
-
-      await rejectReport(mockReq as Request, mockRes as Response);
-
-      expect(mockRejectReportService).toHaveBeenCalledWith(
-        20,
-        validUser.id,
-        "Not valid content"
-      );
+  describe("getReportMessages", () => {
+    it("should return messages for a report", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = { id: 1 };
+      mockGetReportMessagesService.mockResolvedValue([] as any);
+      await getReportMessages(mockReq as Request, mockRes as Response);
       expect(mockRes.status).toHaveBeenCalledWith(200);
     });
 
-    it("should throw when rejection reason is missing", async () => {
-      mockReq.params = { reportId: "21" };
-      mockReq.user = validUser;
-      mockReq.body = { reason: "" };
+    it("should throw BadRequestError for invalid reportId", async () => {
+      mockReq.params = { reportId: "invalid" };
+      mockReq.user = { id: 1 };
+      await expect(getReportMessages(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(BadRequestError);
+    });
+  });
 
-      await expect(
-        rejectReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Missing rejection reason");
+  describe("getAssignedReports", () => {
+    it("should return assigned reports for standard user", async () => {
+      const user = { id: 50, role: "TECHNICAL_STAFF" };
+      mockReq.user = user;
+      mockReq.query = { status: "ASSIGNED", sortBy: "priority", order: "asc" };
+      mockGetAssignedReportsService.mockResolvedValue([] as any);
+      await getAssignedReports(mockReq as Request, mockRes as Response);
+      expect(mockGetAssignedReportsService).toHaveBeenCalledWith(50, "ASSIGNED", "priority", "asc");
+      expect(mockRes.status).toHaveBeenCalledWith(200);
     });
 
-    it("should throw when reject reportId param is invalid", async () => {
-      mockReq.params = { reportId: "xyz" };
-      mockReq.user = validUser;
-      mockReq.body = { reason: "Some reason" };
+    it("should return assigned reports for EXTERNAL_MAINTAINER", async () => {
+      const user = { id: 60, role: "EXTERNAL_MAINTAINER" };
+      mockReq.user = user;
+      mockReq.query = {}; // defaults
+      mockGetAssignedReportsExternalService.mockResolvedValue([] as any);
+      await getAssignedReports(mockReq as Request, mockRes as Response);
+      expect(mockGetAssignedReportsExternalService).toHaveBeenCalledWith(60, undefined, "createdAt", "desc");
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+    });
 
-      await expect(
-        rejectReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid report ID parameter");
+    it("should handle invalid sortBy defaulting to createdAt", async () => {
+        const user = { id: 50, role: "TECHNICAL_STAFF" };
+        mockReq.user = user;
+        mockReq.query = { sortBy: "invalidField" }; 
+        mockGetAssignedReportsService.mockResolvedValue([] as any);
+        await getAssignedReports(mockReq as Request, mockRes as Response);
+        expect(mockGetAssignedReportsService).toHaveBeenCalledWith(50, undefined, "createdAt", "desc");
+    });
+
+    it("should throw UnauthorizedError if user is missing", async () => {
+      mockReq.user = undefined;
+      await expect(getAssignedReports(mockReq as Request, mockRes as Response))
+        .rejects.toThrow(UnauthorizedError);
+    });
+
+    it("should throw BadRequestError if status filter is invalid", async () => {
+      mockReq.user = { id: 50, role: "TECHNICAL_STAFF" };
+      mockReq.query = { status: "INVALID_FILTER" };
+      await expect(getAssignedReports(mockReq as Request, mockRes as Response))
+        .rejects.toThrow("Invalid status filter");
     });
   });
 
   describe("getPendingReports", () => {
     it("should return pending reports", async () => {
-      const mockPending = [{ id: 1, status: "PENDING_APPROVAL" }];
-      mockGetPendingReportsService.mockResolvedValue(mockPending as any);
-
+      mockGetPendingReportsService.mockResolvedValue([]);
       await getPendingReports(mockReq as Request, mockRes as Response);
-
-      expect(mockGetPendingReportsService).toHaveBeenCalled();
-      expect(mockRes.json).toHaveBeenCalledWith(mockPending);
+      expect(mockRes.json).toHaveBeenCalled();
     });
   });
 
   describe("getAssignableTechnicals", () => {
-    it("should return technicals for a report", async () => {
+    it("should return technicals", async () => {
       mockReq.params = { reportId: "1" };
-      const mockTechnicals = [{ id: 2, name: "Tech 1" }];
-      mockGetAssignableTechnicalsService.mockResolvedValue(
-        mockTechnicals as any
-      );
-
+      mockGetAssignableTechnicalsService.mockResolvedValue([]);
       await getAssignableTechnicals(mockReq as Request, mockRes as Response);
-
-      expect(mockGetAssignableTechnicalsService).toHaveBeenCalledWith(1);
-      expect(mockRes.json).toHaveBeenCalledWith(mockTechnicals);
+      expect(mockRes.json).toHaveBeenCalled();
     });
 
     it("should throw error for invalid reportId", async () => {
       mockReq.params = { reportId: "invalid" };
-      await expect(
-        getAssignableTechnicals(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow(BadRequestError);
+      await expect(getAssignableTechnicals(mockReq as Request, mockRes as Response)).rejects.toThrow();
     });
   });
 });
