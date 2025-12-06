@@ -375,8 +375,10 @@ export async function updateReportStatus(
     throw new NotFoundError("Report not found");
   }
 
-  // Verifica che il technical sia assegnato a questo report
-  if (report.assignedOfficerId !== technicalUserId) {
+  const isInternalTech = report.assignedOfficerId === technicalUserId;
+  const isExternalTech = report.externalMaintainerId === technicalUserId;
+
+  if (!isInternalTech && !isExternalTech) {
     throw new ForbiddenError("You are not assigned to this report");
   }
 
@@ -412,8 +414,11 @@ export async function sendMessageToCitizen(
     throw new NotFoundError("Report not found");
   }
 
+  const isInternalTech = report.assignedOfficerId === technicalUserId;
+  const isExternalTech = report.externalMaintainerId === technicalUserId;
+
   // Verifica che il technical sia assegnato a questo report
-  if (report.assignedOfficerId !== technicalUserId) {
+  if (!isInternalTech && !isExternalTech) {
     throw new ForbiddenError("You are not assigned to this report");
   }
 

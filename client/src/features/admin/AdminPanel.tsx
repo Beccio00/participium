@@ -108,8 +108,6 @@ export default function AdminPanel() {
         getExternalCompanies()
       ]);
 
-      console.log("euser", eUsers);
-
       setInternalUsers(mUsers);
       setExternalUsers(eUsers);
       setCompanies(comps);
