@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Container, Row, Col, Modal, Form } from "react-bootstrap";
-import { CheckCircle, XCircle } from "react-bootstrap-icons";
+import { CheckCircle, XCircle, Tools } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
@@ -14,6 +14,7 @@ import {
   getAssignedReports,
   getAssignableExternals,
   assignReportToExternal,
+  updateReportStatus,
 } from "../../api/api";
 import type { Report as AppReport } from "../../types/report.types";
 import ReportCard from "../reports/ReportCard";
@@ -29,8 +30,12 @@ export default function TechPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Modals state
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+
+  // Selection state
   const [assignableTechnicals, setAssignableTechnicals] = useState<any[]>([]);
   const [assignableExternals, setAssignableExternals] = useState<any[]>([]);
   const [selectedTechnicalId, setSelectedTechnicalId] = useState<number | null>(
@@ -40,11 +45,20 @@ export default function TechPanel() {
     null
   );
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+
+  // Form data state
+  const [targetStatus, setTargetStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   const isPublicRelations = user?.role === "PUBLIC_RELATIONS";
   const isExternalMaintainer = user?.role === "EXTERNAL_MAINTAINER";
+
+  const TECHNICAL_ALLOWED_STATUSES = [
+    { value: "IN_PROGRESS", label: "In Progress" },
+    { value: "RESOLVED", label: "Resolved" },
+    { value: "SUSPENDED", label: "Work suspended" },
+  ];
 
   useEffect(() => {
     if (
@@ -81,10 +95,13 @@ export default function TechPanel() {
       } else if (isExternalMaintainer) {
         // External maintainer: only show EXTERNAL_ASSIGNED reports as "Assigned to me"
         const assignedData = (await getAssignedReports()) as AppReport[];
-        console.log("[TechPanel] Assigned reports fetched:", assignedData);
 
         const pendingNormalized = (assignedData || [])
-          .filter((r: any) => r.status === "EXTERNAL_ASSIGNED")
+          .filter(
+            (r: any) =>
+              r.status === "EXTERNAL_ASSIGNED" ||
+              TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status)
+          )
           .map((r: any) => ({
             ...r,
             latitude: Number(r.latitude),
@@ -96,11 +113,14 @@ export default function TechPanel() {
       } else {
         // Technical office: fetch assigned reports
         const assignedData = (await getAssignedReports()) as AppReport[];
-        console.log("[TechPanel] Assigned reports fetched:", assignedData);
 
-        // Separate into pending (ASSIGNED status) and assigned to external (EXTERNAL_ASSIGNED status)
+        // Separate into pending (Assigned to me directly) and assigned to external
         const pendingNormalized = (assignedData || [])
-          .filter((r: any) => r.status === "ASSIGNED")
+          .filter(
+            (r: any) =>
+              r.status === "ASSIGNED" ||
+              TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status)
+          )
           .map((r: any) => ({
             ...r,
             latitude: Number(r.latitude),
@@ -126,6 +146,8 @@ export default function TechPanel() {
     }
   };
 
+  // --- ASSIGNMENT LOGIC ---
+
   const openAssignModal = async (id: number) => {
     try {
       setProcessingId(id);
@@ -145,6 +167,7 @@ export default function TechPanel() {
         "ROAD_MAINTENANCE",
         "CIVIL_PROTECTION",
       ];
+
       if (user && user.role === "PUBLIC_RELATIONS") {
         try {
           technicals = await getAssignableTechnicals(id);
@@ -153,33 +176,26 @@ export default function TechPanel() {
             "[TechPanel] Failed to fetch assignable technicals",
             err
           );
-          setError(
-            "Errore nel recupero dei tecnici assegnabili: " +
-              ((err && (err as any)?.message) || "")
-          );
+          setError("Errore nel recupero dei tecnici assegnabili.");
           setProcessingId(null);
           return;
         }
       } else if (user && technicalRoles.includes(user.role)) {
         try {
           externals = await getAssignableExternals(id);
-          console.log("[TechPanel] Assignable externals:", externals);
         } catch (err) {
           console.error(
             "[TechPanel] Failed to fetch assignable externals",
             err
           );
-          setError(
-            "Errore nel recupero delle compagnie esterne assegnabili: " +
-              ((err && (err as any)?.message) || "")
-          );
+          setError("Errore nel recupero delle compagnie esterne assegnabili.");
           setProcessingId(null);
           return;
         }
       }
       setAssignableTechnicals(technicals || []);
       setAssignableExternals(externals || []);
-      console.log("[TechPanel] Set assignableExternals:", externals || []);
+
       setSelectedReportId(id);
       setSelectedTechnicalId(
         technicals && technicals.length > 0 ? technicals[0].id : null
@@ -189,10 +205,7 @@ export default function TechPanel() {
       );
       setShowAssignModal(true);
     } catch (err) {
-      setError(
-        "Errore inatteso nell’apertura della modale di assegnazione: " +
-          ((err && (err as any)?.message) || "")
-      );
+      setError("Errore inatteso nell’apertura della modale di assegnazione.");
       console.error("[TechPanel] Errore inatteso openAssignModal", err);
     } finally {
       setProcessingId(null);
@@ -211,28 +224,11 @@ export default function TechPanel() {
         updatedReport = res && res.report ? res.report : null;
       }
       // Technical office: assign to external company or technician
-      else if (
-        user &&
-        [
-          "CULTURE_EVENTS_TOURISM_SPORTS",
-          "LOCAL_PUBLIC_SERVICES",
-          "EDUCATION_SERVICES",
-          "PUBLIC_RESIDENTIAL_HOUSING",
-          "INFORMATION_SYSTEMS",
-          "MUNICIPAL_BUILDING_MAINTENANCE",
-          "PRIVATE_BUILDINGS",
-          "INFRASTRUCTURES",
-          "GREENSPACES_AND_ANIMAL_PROTECTION",
-          "WASTE_MANAGEMENT",
-          "ROAD_MAINTENANCE",
-          "CIVIL_PROTECTION",
-        ].includes(user.role) &&
-        selectedExternalId
-      ) {
-        // Se la compagnia ha users e uno è selezionato, assegna a tecnico, altrimenti a compagnia
+      else if (user && selectedExternalId) {
         const selectedCompany = assignableExternals.find(
           (ext) => ext.id === selectedExternalId
         );
+        // Check if specific technician is selected within company
         if (
           selectedCompany &&
           selectedCompany.hasPlatformAccess &&
@@ -263,7 +259,7 @@ export default function TechPanel() {
           longitude: Number((updatedReport as any).longitude),
         } as AppReport;
 
-        // Both PUBLIC_RELATIONS and technical office: move report from pending to other
+        // Move report from pending to other
         setPendingReports((prev) =>
           prev.filter((r) => r.id !== selectedReportId)
         );
@@ -283,6 +279,41 @@ export default function TechPanel() {
       setProcessingId(null);
     }
   };
+
+  // --- STATUS UPDATE LOGIC (For Technicians) ---
+
+  const openStatusModal = (id: number) => {
+    setSelectedReportId(id);
+    setTargetStatus("");
+    setShowStatusModal(true);
+  };
+
+  const handleStatusConfirm = async () => {
+    if (!selectedReportId || !targetStatus) return;
+
+    try {
+      setProcessingId(selectedReportId);
+      await updateReportStatus(selectedReportId, targetStatus);
+
+      // Update local state to reflect change immediately without refetching everything
+      setPendingReports((prev) =>
+        prev.map((r) =>
+          r.id === selectedReportId ? { ...r, status: targetStatus } : r
+        )
+      );
+
+      setShowStatusModal(false);
+      setSelectedReportId(null);
+      setTargetStatus("");
+    } catch (err) {
+      console.error("Failed to update status", err);
+      alert((err as any)?.message || "Failed to update status");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // --- REJECTION LOGIC (For PR) ---
 
   const openRejectModal = (id: number) => {
     setSelectedReportId(id);
@@ -317,8 +348,6 @@ export default function TechPanel() {
     }
   };
 
-  // statusVariant is now implemented in ReportCard; TechPanel no longer needs it
-
   if (loading)
     return (
       <div className="loading-container">
@@ -336,7 +365,9 @@ export default function TechPanel() {
 
       {isPublicRelations ? (
         <>
-          {/* Top: all non-pending reports shown as cards side-by-side */}
+          {/* --- PUBLIC RELATIONS VIEW --- */}
+
+          {/* Top: all non-pending reports */}
           <div className="mb-4">
             <h4>All Reports</h4>
             {otherReports.length === 0 ? (
@@ -352,7 +383,7 @@ export default function TechPanel() {
             )}
           </div>
 
-          {/* Bottom: pending reports with actions */}
+          {/* Bottom: pending reports with Approve/Reject actions */}
           <div>
             <h4>Pending Reports</h4>
             {pendingReports.length === 0 ? (
@@ -363,36 +394,33 @@ export default function TechPanel() {
                   <Col key={report.id} lg={6} xl={4} className="mb-4">
                     <div className="h-100 shadow-sm report-card d-flex flex-column">
                       <ReportCard report={report} />
-                      {/* Show approve/reject controls only for PUBLIC_RELATIONS */}
-                      {user && user.role === "PUBLIC_RELATIONS" && (
-                        <div
-                          style={{
-                            padding: "0.75rem 1rem",
-                            borderTop: "1px solid #f3f4f6",
-                            marginTop: "auto",
-                            display: "flex",
-                            gap: "0.5rem",
-                          }}
+                      <div
+                        style={{
+                          padding: "0.75rem 1rem",
+                          borderTop: "1px solid #f3f4f6",
+                          marginTop: "auto",
+                          display: "flex",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <Button
+                          variant="danger"
+                          className="flex-fill d-flex align-items-center justify-content-center"
+                          onClick={() => openRejectModal(report.id)}
+                          disabled={processingId === report.id}
                         >
-                          <Button
-                            variant="danger"
-                            className="flex-fill d-flex align-items-center justify-content-center"
-                            onClick={() => openRejectModal(report.id)}
-                            disabled={processingId === report.id}
-                          >
-                            <XCircle className="me-2" /> Reject
-                          </Button>
-                          <Button
-                            variant="primary"
-                            className="flex-fill d-flex align-items-center justify-content-center"
-                            onClick={() => openAssignModal(report.id)}
-                            disabled={processingId === report.id}
-                            isLoading={processingId === report.id}
-                          >
-                            <CheckCircle className="me-2" /> Accept
-                          </Button>
-                        </div>
-                      )}
+                          <XCircle className="me-2" /> Reject
+                        </Button>
+                        <Button
+                          variant="primary"
+                          className="flex-fill d-flex align-items-center justify-content-center"
+                          onClick={() => openAssignModal(report.id)}
+                          disabled={processingId === report.id}
+                          isLoading={processingId === report.id}
+                        >
+                          <CheckCircle className="me-2" /> Accept
+                        </Button>
+                      </div>
                     </div>
                   </Col>
                 ))}
@@ -401,8 +429,9 @@ export default function TechPanel() {
           </div>
         </>
       ) : (
-        // Non-PR technical office users and external maintainers
         <>
+          {/* --- TECHNICAL OFFICE & EXTERNAL VIEW --- */}
+
           <div>
             <h4>Assigned to me</h4>
             {pendingReports.length === 0 ? (
@@ -413,29 +442,45 @@ export default function TechPanel() {
                   <Col key={report.id} lg={6} xl={4} className="mb-4">
                     <div className="h-100 shadow-sm report-card d-flex flex-column">
                       <ReportCard report={report} />
-                      {/* Show assign button only for technical office users, not external maintainers */}
-                      {!isExternalMaintainer && (
-                        <div
-                          style={{
-                            padding: "0.75rem 1rem",
-                            borderTop: "1px solid #f3f4f6",
-                            marginTop: "auto",
-                            display: "flex",
-                            gap: "0.5rem",
-                          }}
+
+                      {/* Show actions for both Technical Office and Externals */}
+                      <div
+                        style={{
+                          padding: "0.75rem 1rem",
+                          borderTop: "1px solid #f3f4f6",
+                          marginTop: "auto",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        {/* UPDATE STATUS: Visible for both */}
+                        <Button
+                          variant="primary"
+                          className="w-100 d-flex align-items-center justify-content-center"
+                          onClick={() => openStatusModal(report.id)}
+                          disabled={processingId === report.id}
                         >
+                          <Tools className="me-2" />
+                          Update Status
+                        </Button>
+
+                        {/* ASSIGN TO EXTERNAL: Visible ONLY for Technical Office (NOT External Maintainers) */}
+                        {!isExternalMaintainer && (
                           <Button
                             variant="primary"
-                            className="flex-fill d-flex align-items-center justify-content-center"
+                            className="w-100 d-flex align-items-center justify-content-center"
                             onClick={() => openAssignModal(report.id)}
                             disabled={processingId === report.id}
-                            isLoading={processingId === report.id}
+                            isLoading={
+                              processingId === report.id && showAssignModal
+                            }
                           >
                             <CheckCircle className="me-2" />
-                            Assign to external maintainer
+                            Assign to external
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </Col>
                 ))}
@@ -443,7 +488,7 @@ export default function TechPanel() {
             )}
           </div>
 
-          {/* Show 'Assigned to External' section only for technical office users, not external maintainers */}
+          {/* Show 'Assigned to External' only for technical office */}
           {!isExternalMaintainer && (
             <div className="mt-5">
               <h4>Assigned to External</h4>
@@ -467,7 +512,9 @@ export default function TechPanel() {
         </>
       )}
 
-      {/* rejection */}
+      {/* --- MODALS --- */}
+
+      {/* 1. REJECT MODAL */}
       <Modal
         show={showRejectModal}
         onHide={() => setShowRejectModal(false)}
@@ -506,7 +553,8 @@ export default function TechPanel() {
           </Button>
         </Modal.Footer>
       </Modal>
-      {/* assign modal */}
+
+      {/* 2. ASSIGN MODAL */}
       <Modal
         show={showAssignModal}
         onHide={() => setShowAssignModal(false)}
@@ -516,22 +564,8 @@ export default function TechPanel() {
           <Modal.Title>Assign Report</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {/* Technical office users: select company and optionally technician */}
-          {user &&
-          [
-            "CULTURE_EVENTS_TOURISM_SPORTS",
-            "LOCAL_PUBLIC_SERVICES",
-            "EDUCATION_SERVICES",
-            "PUBLIC_RESIDENTIAL_HOUSING",
-            "INFORMATION_SYSTEMS",
-            "MUNICIPAL_BUILDING_MAINTENANCE",
-            "PRIVATE_BUILDINGS",
-            "INFRASTRUCTURES",
-            "GREENSPACES_AND_ANIMAL_PROTECTION",
-            "WASTE_MANAGEMENT",
-            "ROAD_MAINTENANCE",
-            "CIVIL_PROTECTION",
-          ].includes(user.role) ? (
+          {/* Technical office: select company and optionally technician */}
+          {!isPublicRelations && user && (
             <>
               <p>Seleziona una compagnia esterna:</p>
               {assignableExternals.length === 0 ? (
@@ -559,7 +593,7 @@ export default function TechPanel() {
                 </Form.Group>
               )}
 
-              {/* Se la compagnia selezionata ha dipendenti, mostra la select obbligatoria dei tecnici */}
+              {/* Se la compagnia ha dipendenti, select dei tecnici */}
               {(() => {
                 const selectedCompany = assignableExternals.find(
                   (ext) => ext.id === selectedExternalId
@@ -594,10 +628,10 @@ export default function TechPanel() {
                 return null;
               })()}
             </>
-          ) : null}
+          )}
 
           {/* Public Relations: select technical user */}
-          {user && user.role === "PUBLIC_RELATIONS" ? (
+          {isPublicRelations && (
             <>
               <p>Select a technical user to assign this report to:</p>
               <Form.Group>
@@ -616,7 +650,7 @@ export default function TechPanel() {
                 </Form.Select>
               </Form.Group>
             </>
-          ) : null}
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowAssignModal(false)}>
@@ -626,42 +660,61 @@ export default function TechPanel() {
             variant="primary"
             onClick={handleConfirmAssign}
             disabled={
-              user &&
-              [
-                "CULTURE_EVENTS_TOURISM_SPORTS",
-                "LOCAL_PUBLIC_SERVICES",
-                "EDUCATION_SERVICES",
-                "PUBLIC_RESIDENTIAL_HOUSING",
-                "INFORMATION_SYSTEMS",
-                "MUNICIPAL_BUILDING_MAINTENANCE",
-                "PRIVATE_BUILDINGS",
-                "INFRASTRUCTURES",
-                "GREENSPACES_AND_ANIMAL_PROTECTION",
-                "WASTE_MANAGEMENT",
-                "ROAD_MAINTENANCE",
-                "CIVIL_PROTECTION",
-              ].includes(user.role)
+              !isPublicRelations
                 ? (() => {
                     const selectedCompany = assignableExternals.find(
                       (ext) => ext.id === selectedExternalId
                     );
                     if (!selectedExternalId) return true;
-                    if (
-                      selectedCompany &&
-                      Array.isArray(selectedCompany.maintainers) &&
-                      selectedCompany.maintainers.length > 0
-                    ) {
-                      return !selectedTechnicalId;
-                    }
+                    // If company has maintainers, technician is required? usually optional unless enforced
                     return false;
                   })()
-                : user && user.role === "PUBLIC_RELATIONS"
-                ? !selectedTechnicalId
-                : true
+                : !selectedTechnicalId
             }
             isLoading={processingId !== null}
           >
             Confirm Assignment
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* 3. STATUS UPDATE MODAL (New) */}
+      <Modal
+        show={showStatusModal}
+        onHide={() => setShowStatusModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Update Report Status</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Select the new status for this report:</p>
+          <Form.Group>
+            <Form.Label>Status</Form.Label>
+            <Form.Select
+              value={targetStatus}
+              onChange={(e) => setTargetStatus(e.target.value)}
+            >
+              <option value="">-- Select Status --</option>
+              {TECHNICAL_ALLOWED_STATUSES.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowStatusModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleStatusConfirm}
+            disabled={!targetStatus || processingId === selectedReportId}
+            isLoading={processingId === selectedReportId}
+          >
+            Update Status
           </Button>
         </Modal.Footer>
       </Modal>

@@ -17,6 +17,8 @@ export interface Report {
   latitude: number;
   longitude: number;
   createdAt?: string;
+  assignedOfficerId?: number;
+  assignedExternalMaintainerId?: number;
   photos?: ReportPhoto[];
   isAnonymous?: boolean;
   user?: {
