@@ -11,6 +11,7 @@ const mockReport = {
   description: "The street light on Main St is not working",
   category: "PUBLIC_LIGHTING" as ReportCategory,
   status: "Pending" as const,
+  address: "Main St, 123",
   latitude: 45.0703,
   longitude: 7.6869,
   createdAt: "2023-10-01T10:00:00Z",

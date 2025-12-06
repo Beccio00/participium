@@ -1,6 +1,7 @@
 import { Repository, In } from "typeorm";
 import { AppDataSource } from "../utils/AppDataSource";
-import { Report, ReportCategory, ReportStatus } from "../entities/Report";
+import { Report } from "../entities/Report";
+import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 
 export class ReportRepository {
   private repository: Repository<Report>;
@@ -16,7 +17,16 @@ export class ReportRepository {
   async findByIdWithRelations(id: number): Promise<Report | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: ["user", "assignedTo", "photos", "messages", "messages.user"]
+        relations: [
+          "user",
+          "assignedOfficer",
+          "photos",
+          "messages",
+          "messages.user",
+          "externalMaintainer",
+          "externalMaintainer.externalCompany",
+          "externalCompany"
+        ]
     });
   }
 
@@ -44,10 +54,39 @@ export class ReportRepository {
   async findAssignedToUser(userId: number, statuses: ReportStatus[]): Promise<Report[]> {
     return await this.repository.find({
       where: {
-        assignedToId: userId,
+          assignedOfficerId: userId,
         status: In(statuses)
       },
-      relations: ["user", "assignedTo", "photos", "messages", "messages.user"],
+        relations: [
+          "user",
+          "assignedOfficer",
+          "photos",
+          "messages",
+          "messages.user",
+          "externalMaintainer",
+          "externalMaintainer.externalCompany",
+          "externalCompany"
+        ],
+      order: { createdAt: "DESC" }
+    });
+  }
+
+  async findAssignedToExternalMaintainer(externalMaintainerId: number, statuses: ReportStatus[]): Promise<Report[]> {
+    return await this.repository.find({
+      where: {
+        externalMaintainerId: externalMaintainerId,
+        status: In(statuses)
+      },
+      relations: [
+        "user",
+        "assignedOfficer",
+        "photos",
+        "messages",
+        "messages.user",
+        "externalMaintainer",
+        "externalMaintainer.externalCompany",
+        "externalCompany"
+      ],
       order: { createdAt: "DESC" }
     });
   }

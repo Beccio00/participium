@@ -1,5 +1,6 @@
 import { NotificationRepository } from "../repositories/NotificationRepository";
-import { Notification, NotificationType } from "../entities/Notification";
+import { Notification } from "../entities/Notification";
+import { NotificationType } from "../../../shared/ReportTypes";
 import { NotFoundError } from "../utils/errors";
 import { NotificationDTO, toNotificationDTO } from "../interfaces/NotificationDTO";
 

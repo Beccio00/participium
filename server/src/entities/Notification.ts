@@ -6,14 +6,7 @@ import {
   CreateDateColumn,
   JoinColumn,
 } from "typeorm";
-
-export enum NotificationType {
-  REPORT_STATUS_CHANGED = "REPORT_STATUS_CHANGED",
-  MESSAGE_RECEIVED = "MESSAGE_RECEIVED",
-  REPORT_ASSIGNED = "REPORT_ASSIGNED",
-  REPORT_APPROVED = "REPORT_APPROVED",
-  REPORT_REJECTED = "REPORT_REJECTED",
-}
+import { NotificationType } from "../../../shared/ReportTypes";
 
 @Entity("Notification")
 export class Notification {

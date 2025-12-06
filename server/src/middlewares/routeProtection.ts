@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { UnauthorizedError, ForbiddenError } from "../utils";
 import { User } from "../entities/User";
-import { TECHNICAL_ROLES } from "../interfaces/UserDTO";
+import { TECHNICAL_ROLES, TECHNICAL_AND_EXTERNAL_ROLES } from "../interfaces/UserDTO";
+import { Role } from "../../../shared/RoleTypes";
 
 export function isLoggedIn(req: Request & { isAuthenticated?: () => boolean }, res: Response, next: NextFunction) {
   if (req.isAuthenticated && req.isAuthenticated()) return next();
@@ -50,7 +51,8 @@ export function requirePublicRelations(req: Request, res: Response, next: NextFu
   return next();
 }
 
-export function requireTechnicalStaff(req: Request, res: Response, next: NextFunction) {
+
+export function requireTechnicalStaffOnly(req: Request, res: Response, next: NextFunction) {
   const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
@@ -62,7 +64,39 @@ export function requireTechnicalStaff(req: Request, res: Response, next: NextFun
   }
 
   if (!TECHNICAL_ROLES.includes(authReq.user.role)) {
-    throw new ForbiddenError("Technical staff privileges required");
+    throw new ForbiddenError("Municipality technical staff privileges required");
+  }
+
+  return next();
+}
+
+export function requireTechnicalOrExternal(req: Request, res: Response, next: NextFunction) {
+  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+
+  if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (!authReq.user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (!TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
+    throw new ForbiddenError("Technical staff or external maintainer privileges required");
+  }
+
+  return next();
+}
+
+export function requireExternalMaintainer(req: Request, res: Response, next: NextFunction) {
+  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+
+  if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (!authReq.user || authReq.user.role !== Role.EXTERNAL_MAINTAINER) {
+    throw new ForbiddenError("External maintainer privileges required");
   }
 
   return next();

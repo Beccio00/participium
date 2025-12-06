@@ -18,6 +18,8 @@ const getStatusColor = (status: string): string => {
       return "#ffc107";
     case "assigned":
       return "#007bff";
+    case "external_assigned":
+      return "#8b5cf6"; // purple for external
     default:
       return "#6c757d";
   }

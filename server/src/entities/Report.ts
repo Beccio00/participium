@@ -8,27 +8,12 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from "typeorm";
-
-export enum ReportCategory {
-  WATER_SUPPLY_DRINKING_WATER = "WATER_SUPPLY_DRINKING_WATER",
-  ARCHITECTURAL_BARRIERS = "ARCHITECTURAL_BARRIERS",
-  SEWER_SYSTEM = "SEWER_SYSTEM",
-  PUBLIC_LIGHTING = "PUBLIC_LIGHTING",
-  WASTE = "WASTE",
-  ROAD_SIGNS_TRAFFIC_LIGHTS = "ROAD_SIGNS_TRAFFIC_LIGHTS",
-  ROADS_URBAN_FURNISHINGS = "ROADS_URBAN_FURNISHINGS",
-  PUBLIC_GREEN_AREAS_PLAYGROUNDS = "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
-  OTHER = "OTHER",
-}
-
-export enum ReportStatus {
-  PENDING_APPROVAL = "PENDING_APPROVAL",
-  ASSIGNED = "ASSIGNED",
-  IN_PROGRESS = "IN_PROGRESS",
-  SUSPENDED = "SUSPENDED",
-  REJECTED = "REJECTED",
-  RESOLVED = "RESOLVED",
-}
+import { User } from "./User";
+import { ReportPhoto } from "./ReportPhoto";
+import { ReportMessage } from "./ReportMessage";
+import { Notification } from "./Notification";
+import { ExternalCompany } from "./ExternalCompany";
+import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 
 @Entity("Report")
 export class Report {
@@ -70,7 +55,13 @@ export class Report {
   userId: number;
 
   @Column({ type: "int", nullable: true })
-  assignedToId: number;
+  assignedOfficerId: number | null;
+
+  @Column({ type: "int", nullable: true })
+  externalMaintainerId: number | null;
+
+  @Column({ type: "int", nullable: true })
+  externalCompanyId: number | null;
 
   @Column({ type: "text", nullable: true })
   rejectedReason: string;
@@ -83,18 +74,26 @@ export class Report {
 
   @ManyToOne("User", "reports")
   @JoinColumn({ name: "userId" })
-  user: import("./User").User;
+  user: User;
 
   @ManyToOne("User", "assignedReports", { nullable: true })
-  @JoinColumn({ name: "assignedToId" })
-  assignedTo: import("./User").User;
+  @JoinColumn({ name: "assignedOfficerId" })
+  assignedOfficer: User | null;
 
   @OneToMany("ReportPhoto", "report")
-  photos: import("./ReportPhoto").ReportPhoto[];
+  photos: ReportPhoto[];
 
   @OneToMany("ReportMessage", "report")
-  messages: import("./ReportMessage").ReportMessage[];
+  messages: ReportMessage[];
 
   @OneToMany("Notification", "report")
-  notifications: import("./Notification").Notification[];
+  notifications: Notification[];
+
+  @ManyToOne("User", "reports", { nullable: true })
+  @JoinColumn({ name: "externalMaintainerId" })
+  externalMaintainer: User | null;
+
+  @ManyToOne("ExternalCompany", "reports", { nullable: true })
+  @JoinColumn({ name: "externalCompanyId" })
+  externalCompany: ExternalCompany | null;
 }

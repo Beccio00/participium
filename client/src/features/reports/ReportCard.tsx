@@ -15,6 +15,8 @@ function statusVariant(status?: string) {
       return "#f59e0b"; // warning - orange
     case "ASSIGNED":
       return "#3b82f6"; // primary - blue
+    case "EXTERNAL_ASSIGNED":
+      return "#8b5cf6"; // purple - for external assignment
     case "IN_PROGRESS":
       return "#06b6d4"; // info - cyan
     case "RESOLVED":

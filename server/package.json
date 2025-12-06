@@ -8,6 +8,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@jest/types": "^30.2.0",
     "@types/passport-local": "^1.0.38",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -60,9 +61,9 @@
     "db:migration:generate": "typeorm migration:generate -d src/utils/AppDataSource.ts",
     "db:migration:run": "typeorm migration:run -d src/utils/AppDataSource.ts",
     "generate:api": "openapi-generator-cli generate -i ../docs/swagger.yaml -g typescript-fetch -o ./src/generated",
-    "test": "echo \"Tests need to be updated for TypeORM\" && exit 1",
-    "test:watch": "echo \"Tests need to be updated for TypeORM\" && exit 1",
-    "test:coverage": "echo \"Tests need to be updated for TypeORM\" && exit 1",
-    "test:verbose": "echo \"Tests need to be updated for TypeORM\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
   }
 }

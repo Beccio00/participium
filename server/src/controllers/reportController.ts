@@ -1,59 +1,3 @@
-// Get reports assigned to the authenticated technical officer
-import { getAssignedReportsService } from "../services/reportService";
-export async function getAssignedReports(
-  req: Request,
-  res: Response
-): Promise<void> {
-  const user = req.user as { id: number; role: string };
-  if (!user || !user.id) {
-    throw new UnauthorizedError("Authentication required");
-  }
-  // Only allow technical roles (not citizens, admins, public relations)
-  const technicalRoles = [
-    "CULTURE_EVENTS_TOURISM_SPORTS",
-    "LOCAL_PUBLIC_SERVICES",
-    "EDUCATION_SERVICES",
-    "PUBLIC_RESIDENTIAL_HOUSING",
-    "INFORMATION_SYSTEMS",
-    "MUNICIPAL_BUILDING_MAINTENANCE",
-    "PRIVATE_BUILDINGS",
-    "INFRASTRUCTURES",
-    "GREENSPACES_AND_ANIMAL_PROTECTION",
-    "WASTE_MANAGEMENT",
-    "ROAD_MAINTENANCE",
-    "CIVIL_PROTECTION",
-  ];
-  if (!technicalRoles.includes(user.role)) {
-    throw new ForbiddenError("Technical office staff privileges required");
-  }
-  const status =
-    typeof req.query.status === "string" ? req.query.status : undefined;
-  const sortBy =
-    typeof req.query.sortBy === "string" ? req.query.sortBy : undefined;
-  const order =
-    typeof req.query.order === "string" ? req.query.order : undefined;
-  // Validate status
-  let statusFilter;
-  if (status) {
-    const allowed = ["ASSIGNED", "IN_PROGRESS", "RESOLVED"];
-    if (!allowed.includes(status)) {
-      throw new BadRequestError("Invalid status filter");
-    }
-    statusFilter = status;
-  }
-  // Validate sortBy and order
-  const allowedSort = ["createdAt", "priority"];
-  const sortField = allowedSort.includes(sortBy ?? "") ? sortBy! : "createdAt";
-  const sortOrder = order === "asc" ? "asc" : "desc";
-  // Call service
-  const reports = await getAssignedReportsService(
-    user.id,
-    statusFilter,
-    sortField,
-    sortOrder
-  );
-  res.status(200).json(reports);
-}
 import { Request, Response } from "express";
 import path from "path";
 import {
@@ -65,12 +9,15 @@ import {
   getAssignableTechnicalsForReport as getAssignableTechnicalsForReportService,
   updateReportStatus as updateReportStatusService,
   sendMessageToCitizen as sendMessageToCitizenService,
-  getReportMessages as getReportMessagesService
+  getReportMessages as getReportMessagesService,
+  getAssignedReportsService,
+  getAssignedReportsForExternalMaintainer,
+  getReportById as getReportByIdService
 } from "../services/reportService";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
-import minioClient, { BUCKET_NAME, getMinioObjectUrl } from "../utils/minioClient";
-import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
+import minioClient, { BUCKET_NAME } from "../utils/minioClient";
+import { BadRequestError, UnauthorizedError } from "../utils";
 
 export async function createReport(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
@@ -213,10 +160,28 @@ export async function getReports(req: Request, res: Response): Promise<void> {
   }
 
   const reports = await getApprovedReportsService(
-    category as ReportCategory | undefined
+    category as ReportCategory
   );
   res.status(200).json(reports);
 }
+
+export async function getReportById(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const authReq = req as Request & { user?: any };
+  const user = authReq.user;
+
+  if (!user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (isNaN(reportId)) {
+    throw new BadRequestError("Invalid report ID format");
+  }
+
+  const report = await getReportByIdService(reportId, user.id);
+  res.status(200).json(report);
+}
+
 // Get pending reports (PUBLIC_RELATIONS only)
 export async function getPendingReports(
   req: Request,
@@ -351,4 +316,54 @@ export async function getReportMessages(req: Request, res: Response): Promise<vo
 
   const messages = await getReportMessagesService(reportId, user.id);
   res.status(200).json(messages);
+}
+
+export async function getAssignedReports(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const user = req.user as { id: number; role: string };
+  if (!user || !user.id) {
+    throw new UnauthorizedError("Authentication required");
+  }
+  const status =
+    typeof req.query.status === "string" ? req.query.status : undefined;
+  const sortBy =
+    typeof req.query.sortBy === "string" ? req.query.sortBy : undefined;
+  const order =
+    typeof req.query.order === "string" ? req.query.order : undefined;
+  // Validate status
+  let statusFilter;
+  if (status) {
+    const allowed = ["ASSIGNED", "EXTERNAL_ASSIGNED", "IN_PROGRESS", "RESOLVED"];
+    if (!allowed.includes(status)) {
+      throw new BadRequestError("Invalid status filter");
+    }
+    statusFilter = status;
+  }
+  // Validate sortBy and order
+  const allowedSort = ["createdAt", "priority"];
+  const sortField = allowedSort.includes(sortBy ?? "") ? sortBy! : "createdAt";
+  const sortOrder = order === "asc" ? "asc" : "desc";
+  
+  // Call appropriate service based on user role
+  let reports;
+  if (user.role === "EXTERNAL_MAINTAINER") {
+    reports = await getAssignedReportsForExternalMaintainer(
+      user.id,
+      statusFilter,
+      sortField,
+      sortOrder
+    );
+  } else {
+    // For internal staff (TECHNICAL_STAFF, PUBLIC_RELATIONS_OFFICER, etc.)
+    reports = await getAssignedReportsService(
+      user.id,
+      statusFilter,
+      sortField,
+      sortOrder
+    );
+  }
+  
+  res.status(200).json(reports);
 }
