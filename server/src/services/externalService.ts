@@ -152,10 +152,7 @@ export async function createExternalMaintainer(data: CreateExternalMaintainerDat
     role: Role.EXTERNAL_MAINTAINER,
     telegram_username: null,
     email_notifications_enabled: true,
-    company:{
-      id: company.id,
-      name: company.name
-    }
+    externalCompany: company,
   };
 
   const createdUser = await userRepository.create(userData);

@@ -38,8 +38,12 @@ export default function TechPanel() {
   // Selection state
   const [assignableTechnicals, setAssignableTechnicals] = useState<any[]>([]);
   const [assignableExternals, setAssignableExternals] = useState<any[]>([]);
-  const [selectedTechnicalId, setSelectedTechnicalId] = useState<number | null>(null);
-  const [selectedExternalId, setSelectedExternalId] = useState<number | null>(null);
+  const [selectedTechnicalId, setSelectedTechnicalId] = useState<number | null>(
+    null
+  );
+  const [selectedExternalId, setSelectedExternalId] = useState<number | null>(
+    null
+  );
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
 
   // Form data state
@@ -93,7 +97,11 @@ export default function TechPanel() {
         const assignedData = (await getAssignedReports()) as AppReport[];
 
         const pendingNormalized = (assignedData || [])
-          .filter((r: any) => r.status === "EXTERNAL_ASSIGNED")
+          .filter(
+            (r: any) =>
+              r.status === "EXTERNAL_ASSIGNED" ||
+              TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status)
+          )
           .map((r: any) => ({
             ...r,
             latitude: Number(r.latitude),
@@ -164,7 +172,10 @@ export default function TechPanel() {
         try {
           technicals = await getAssignableTechnicals(id);
         } catch (err) {
-          console.error("[TechPanel] Failed to fetch assignable technicals", err);
+          console.error(
+            "[TechPanel] Failed to fetch assignable technicals",
+            err
+          );
           setError("Errore nel recupero dei tecnici assegnabili.");
           setProcessingId(null);
           return;
@@ -173,7 +184,10 @@ export default function TechPanel() {
         try {
           externals = await getAssignableExternals(id);
         } catch (err) {
-          console.error("[TechPanel] Failed to fetch assignable externals", err);
+          console.error(
+            "[TechPanel] Failed to fetch assignable externals",
+            err
+          );
           setError("Errore nel recupero delle compagnie esterne assegnabili.");
           setProcessingId(null);
           return;
@@ -181,10 +195,14 @@ export default function TechPanel() {
       }
       setAssignableTechnicals(technicals || []);
       setAssignableExternals(externals || []);
-      
+
       setSelectedReportId(id);
-      setSelectedTechnicalId(technicals && technicals.length > 0 ? technicals[0].id : null);
-      setSelectedExternalId(externals && externals.length > 0 ? externals[0].id : null);
+      setSelectedTechnicalId(
+        technicals && technicals.length > 0 ? technicals[0].id : null
+      );
+      setSelectedExternalId(
+        externals && externals.length > 0 ? externals[0].id : null
+      );
       setShowAssignModal(true);
     } catch (err) {
       setError("Errore inatteso nell’apertura della modale di assegnazione.");
@@ -242,7 +260,9 @@ export default function TechPanel() {
         } as AppReport;
 
         // Move report from pending to other
-        setPendingReports((prev) => prev.filter((r) => r.id !== selectedReportId));
+        setPendingReports((prev) =>
+          prev.filter((r) => r.id !== selectedReportId)
+        );
         setOtherReports((prev) => [normalized, ...(prev || [])]);
       }
       setShowAssignModal(false);
@@ -251,7 +271,10 @@ export default function TechPanel() {
       setSelectedExternalId(null);
     } catch (err) {
       console.error("[TechPanel] Failed to assign report:", err);
-      alert("Failed to assign report: " + ((err as any)?.message || JSON.stringify(err)));
+      alert(
+        "Failed to assign report: " +
+          ((err as any)?.message || JSON.stringify(err))
+      );
     } finally {
       setProcessingId(null);
     }
@@ -311,7 +334,9 @@ export default function TechPanel() {
           latitude: Number((updatedReport as any).latitude),
           longitude: Number((updatedReport as any).longitude),
         } as AppReport;
-        setPendingReports((prev) => prev.filter((r) => r.id !== selectedReportId));
+        setPendingReports((prev) =>
+          prev.filter((r) => r.id !== selectedReportId)
+        );
         setOtherReports((prev) => [normalized, ...(prev || [])]);
       }
       setShowRejectModal(false);
@@ -341,7 +366,7 @@ export default function TechPanel() {
       {isPublicRelations ? (
         <>
           {/* --- PUBLIC RELATIONS VIEW --- */}
-          
+
           {/* Top: all non-pending reports */}
           <div className="mb-4">
             <h4>All Reports</h4>
@@ -406,7 +431,7 @@ export default function TechPanel() {
       ) : (
         <>
           {/* --- TECHNICAL OFFICE & EXTERNAL VIEW --- */}
-          
+
           <div>
             <h4>Assigned to me</h4>
             {pendingReports.length === 0 ? (
@@ -417,41 +442,45 @@ export default function TechPanel() {
                   <Col key={report.id} lg={6} xl={4} className="mb-4">
                     <div className="h-100 shadow-sm report-card d-flex flex-column">
                       <ReportCard report={report} />
-                      
-                      {/* Show actions for TECHNICAL OFFICE users (not External) */}
-                      {!isExternalMaintainer && (
-                        <div
-                          style={{
-                            padding: "0.75rem 1rem",
-                            borderTop: "1px solid #f3f4f6",
-                            marginTop: "auto",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "0.5rem",
-                          }}
+
+                      {/* Show actions for both Technical Office and Externals */}
+                      <div
+                        style={{
+                          padding: "0.75rem 1rem",
+                          borderTop: "1px solid #f3f4f6",
+                          marginTop: "auto",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        {/* UPDATE STATUS: Visible for both */}
+                        <Button
+                          variant="primary"
+                          className="w-100 d-flex align-items-center justify-content-center"
+                          onClick={() => openStatusModal(report.id)}
+                          disabled={processingId === report.id}
                         >
-                          <Button
-                            variant="primary"
-                            className="w-100 d-flex align-items-center justify-content-center"
-                            onClick={() => openStatusModal(report.id)}
-                            disabled={processingId === report.id}
-                          >
-                            <Tools className="me-2" />
-                            Update Status
-                          </Button>
-                          
+                          <Tools className="me-2" />
+                          Update Status
+                        </Button>
+
+                        {/* ASSIGN TO EXTERNAL: Visible ONLY for Technical Office (NOT External Maintainers) */}
+                        {!isExternalMaintainer && (
                           <Button
                             variant="primary"
                             className="w-100 d-flex align-items-center justify-content-center"
                             onClick={() => openAssignModal(report.id)}
                             disabled={processingId === report.id}
-                            isLoading={processingId === report.id && showAssignModal}
+                            isLoading={
+                              processingId === report.id && showAssignModal
+                            }
                           >
                             <CheckCircle className="me-2" />
                             Assign to external
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </Col>
                 ))}
@@ -464,7 +493,9 @@ export default function TechPanel() {
             <div className="mt-5">
               <h4>Assigned to External</h4>
               {otherReports.length === 0 ? (
-                <p className="text-muted">No reports assigned to externals yet.</p>
+                <p className="text-muted">
+                  No reports assigned to externals yet.
+                </p>
               ) : (
                 <Row>
                   {otherReports.map((report) => (
@@ -575,10 +606,14 @@ export default function TechPanel() {
                 ) {
                   return (
                     <Form.Group className="mb-3">
-                      <Form.Label>Seleziona un tecnico della compagnia:</Form.Label>
+                      <Form.Label>
+                        Seleziona un tecnico della compagnia:
+                      </Form.Label>
                       <Form.Select
                         value={selectedTechnicalId ?? ""}
-                        onChange={(e) => setSelectedTechnicalId(Number(e.target.value))}
+                        onChange={(e) =>
+                          setSelectedTechnicalId(Number(e.target.value))
+                        }
                       >
                         <option value="">-- Seleziona tecnico --</option>
                         {selectedCompany.users.map((tech: any) => (
@@ -602,7 +637,9 @@ export default function TechPanel() {
               <Form.Group>
                 <Form.Select
                   value={selectedTechnicalId ?? ""}
-                  onChange={(e) => setSelectedTechnicalId(Number(e.target.value))}
+                  onChange={(e) =>
+                    setSelectedTechnicalId(Number(e.target.value))
+                  }
                 >
                   <option value="">-- Select technical --</option>
                   {assignableTechnicals.map((t) => (
@@ -630,7 +667,7 @@ export default function TechPanel() {
                     );
                     if (!selectedExternalId) return true;
                     // If company has maintainers, technician is required? usually optional unless enforced
-                    return false; 
+                    return false;
                   })()
                 : !selectedTechnicalId
             }
@@ -681,7 +718,6 @@ export default function TechPanel() {
           </Button>
         </Modal.Footer>
       </Modal>
-
     </Container>
   );
 }
