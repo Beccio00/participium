@@ -101,3 +101,22 @@ export function requireExternalMaintainer(req: Request, res: Response, next: Nex
 
   return next();
 }
+
+
+export function requireCitizenOrTechnical(req: Request, res: Response, next: NextFunction) {
+  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+
+  if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (!authReq.user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (authReq.user.role !== 'CITIZEN' && !TECHNICAL_ROLES.includes(authReq.user.role)) {
+    throw new ForbiddenError("Citizen or municipality technical staff privileges required");
+  }
+
+  return next();
+}

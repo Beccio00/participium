@@ -143,7 +143,7 @@ export async function createReport(req: Request, res: Response): Promise<void> {
 
   res.status(201).json({
     message: "Report created successfully",
-    id: newReport.id,
+    report: newReport
   });
 }
 

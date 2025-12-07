@@ -5,7 +5,6 @@ import {
   markNotificationAsRead as markNotificationAsReadService,
 } from "../services/notificationService";
 
-// Get user notifications
 export async function getUserNotifications(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
   const { unreadOnly, limit } = req.query;
@@ -26,7 +25,6 @@ export async function getUserNotifications(req: Request, res: Response): Promise
   res.status(200).json(notifications);
 }
 
-// Mark notification as read
 export async function markNotificationAsRead(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
   const notificationId = parseInt(req.params.notificationId);
