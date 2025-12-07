@@ -24,22 +24,13 @@ export default function HomePage() {
   const sidebarScrollRef = useRef<number>(0);
 
   const [reports, setReports] = useState<Report[]>([]);
-  // Seleziona il report e scrolla alla sua posizione
+  // Seleziona il report e mostra i dettagli
   const handleReportDetailsClick = (reportId: number) => {
     setSelectedReportId(reportId);
     setShowDetailsModal(true);
     if (window.innerWidth < 992) {
       setShowReportsSidebar(true);
     }
-    // Scrolla alla posizione del report
-    setTimeout(() => {
-      const reportCard = document.querySelector(
-        `[data-report-id="${reportId}"]`
-      ) as HTMLElement;
-      if (reportCard) {
-        reportCard.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }, 100);
   };
   const [loadingReports, setLoadingReports] = useState(false);
   const [reportsError, setReportsError] = useState<string | null>(null);
