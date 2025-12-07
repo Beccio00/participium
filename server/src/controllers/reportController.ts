@@ -352,3 +352,34 @@ export async function getReportMessages(req: Request, res: Response): Promise<vo
   const messages = await getReportMessagesService(reportId, user.id);
   res.status(200).json(messages);
 }
+
+// =========================
+// INTERNAL NOTES CONTROLLERS (PT26)
+// =========================
+
+import { createInternalNote as createInternalNoteService } from "../services/internalNoteService";
+import { Role } from "../entities/User";
+
+/**
+ * POST /api/reports/:reportId/internal-notes
+ * Create a new internal note for a report
+ * PT26: Endpoint API to create and save a comment with input validation
+ */
+export async function createInternalNote(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number; role: Role };
+  const { content } = req.body;
+
+  // Input validation: reportId must be a valid number
+  if (isNaN(reportId)) {
+    throw new BadRequestError("Invalid report ID parameter");
+  }
+
+  // Input validation: content is required
+  if (!content) {
+    throw new BadRequestError("Content is required");
+  }
+
+  const note = await createInternalNoteService(reportId, content, user.id, user.role);
+  res.status(201).json(note);
+}

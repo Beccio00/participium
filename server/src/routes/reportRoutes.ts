@@ -13,6 +13,7 @@ import {
   updateReportStatus,
   sendMessageToCitizen,
   getReportMessages,
+  createInternalNote,
 } from '../controllers/reportController';
 import { upload } from '../middlewares/uploadsMiddleware';
 import { ApiValidationMiddleware } from '../middlewares/validationMiddlewere';
@@ -58,6 +59,14 @@ router.get(
   "/:reportId/assignable-technicals",
   requirePublicRelations,
   asyncHandler(getAssignableTechnicals)
+);
+
+// POST /api/reports/:reportId/internal-notes - Create internal note (PT26)
+router.post(
+  '/:reportId/internal-notes',
+  requireTechnicalStaff,
+  ApiValidationMiddleware,
+  asyncHandler(createInternalNote)
 );
 
 export default router;
