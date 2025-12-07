@@ -1,12 +1,12 @@
 import { Badge } from "react-bootstrap";
-import { Carousel } from "react-responsive-carousel";
-import "react-responsive-carousel/lib/styles/carousel.min.css";
 import type { Report } from "../../types";
+// onOpenDetails prop allows parent to open the shared details modal
 
 interface ReportCardProps {
   report: Report;
   isSelected?: boolean;
   onClick?: () => void;
+  onOpenDetails?: (reportId: number) => void;
 }
 
 function statusVariant(status?: string) {
@@ -34,6 +34,7 @@ export default function ReportCard({
   report,
   isSelected = false,
   onClick,
+  onOpenDetails,
 }: ReportCardProps) {
   // Ensure status is uppercase to match backend enums
   const statusText =
@@ -65,51 +66,20 @@ export default function ReportCard({
           borderRadius: 8,
         }}
       >
-        {report.photos && report.photos.length > 1 ? (
-          <Carousel
-            showThumbs={false}
-            showStatus={false}
-            infiniteLoop
-            emulateTouch
-            swipeable
-            dynamicHeight={false}
-          >
-            {[...new Map(report.photos.map((p) => [p.url, p])).values()].map(
-              (photo, idx) => (
-                <div
-                  key={photo.url}
-                  style={{ width: "100%", height: 160, background: "#eee" }}
-                >
-                  <img
-                    src={photo.url}
-                    alt={report.title + " photo " + (idx + 1)}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
-                  />
-                </div>
-              )
-            )}
-          </Carousel>
-        ) : (
-          <img
-            src={
-              report.photos && report.photos.length > 0 && report.photos[0].url
-                ? report.photos[0].url
-                : "https://via.placeholder.com/800x600?text=No+Image"
-            }
-            alt={report.title}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-          />
-        )}
+        <img
+          src={
+            report.photos && report.photos.length > 0 && report.photos[0].url
+              ? report.photos[0].url
+              : "https://via.placeholder.com/800x600?text=No+Image"
+          }
+          alt={report.title}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -223,11 +193,24 @@ export default function ReportCard({
               gap: "0.4rem",
             }}
           >
-            📍{" "}
+            <i className="bi bi-geo-alt" style={{ marginRight: "0.25rem" }} aria-hidden></i>
             <span style={{ fontFamily: "monospace" }}>
               {report.address}
             </span>
           </span>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.75rem" }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (typeof onOpenDetails === "function") onOpenDetails(report.id);
+            }}
+            className="btn btn-outline-primary btn-sm"
+            style={{ fontWeight: 600 }}
+          >
+            View details
+          </button>
         </div>
       </div>
     </div>

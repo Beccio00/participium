@@ -7,14 +7,19 @@ import Button from "../../components/ui/Button.tsx";
 import AuthRequiredModal from "../auth/AuthRequiredModal.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
+import ReportDetailsModal from "./ReportDetailsModal";
 import type { Report } from "../../types";
 import { getReports as getReportsApi } from "../../api/api";
+import { Role } from "../../../../shared/RoleTypes.ts";
+import { ReportStatus } from "../../../../shared/ReportTypes.ts";
+import "../../styles/HomePage.css";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReportsSidebar, setShowReportsSidebar] = useState(false);
   const sidebarScrollRef = useRef<number>(0);
 
@@ -22,6 +27,7 @@ export default function HomePage() {
   // Seleziona il report e scrolla alla sua posizione
   const handleReportDetailsClick = (reportId: number) => {
     setSelectedReportId(reportId);
+    setShowDetailsModal(true);
     if (window.innerWidth < 992) {
       setShowReportsSidebar(true);
     }
@@ -41,7 +47,7 @@ export default function HomePage() {
   const isTechnicalOfficer =
     isAuthenticated &&
     user?.role &&
-    !["CITIZEN", "ADMINISTRATOR", "PUBLIC_RELATIONS"].includes(user.role);
+    ![Role.CITIZEN.toString(), Role.ADMINISTRATOR.toString(), Role.PUBLIC_RELATIONS.toString()].includes(user.role);
 
   // load reports from backend and filter statuses: appending, in progress, complete
   useEffect(() => {
@@ -55,7 +61,7 @@ export default function HomePage() {
         const data = await getReportsApi();
         if (!mounted) return;
         // Ensure citizens see their own pending reports even if backend didn't include them
-        const approvedStatuses = ["ASSIGNED", "EXTERNAL_ASSIGNED", "IN_PROGRESS", "RESOLVED"];
+        const approvedStatuses = [ReportStatus.ASSIGNED.toString(), ReportStatus.EXTERNAL_ASSIGNED.toString(), ReportStatus.IN_PROGRESS.toString(), ReportStatus.RESOLVED.toString()];
         const visible = (data || []).filter((r: any) => {
           if (approvedStatuses.includes(r.status)) return true;
           if (isAuthenticated && user && r.user && r.user.email === user.email)
@@ -84,7 +90,7 @@ export default function HomePage() {
   }, [isAuthenticated, user?.email]);
 
   useEffect(() => {
-    if (isAuthenticated && user?.role === "ADMINISTRATOR") {
+    if (isAuthenticated && user?.role === Role.ADMINISTRATOR.toString()) {
       navigate("/admin", { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
@@ -120,36 +126,34 @@ export default function HomePage() {
           background: "#fdfdfd",
         }}
       >
-        <h3
-          style={{
-            color: "var(--text)",
-            margin: 0,
-            fontSize: "1.3rem",
-            fontWeight: 700,
-          }}
-        >
-          Recent Reports
-        </h3>
-        <span
-          style={{
-            background: "var(--text)",
-            color: "var(--surface)",
-            padding: "0.3rem 0.8rem",
-            borderRadius: "20px",
-            fontSize: "0.8rem",
-            fontWeight: 600,
-            minWidth: "20px",
-            textAlign: "center",
-          }}
-        >
-          {reports.length}
-        </span>
+        <div>
+          <h3
+            style={{
+              color: "var(--text)",
+              margin: 0,
+              fontSize: "1.3rem",
+              fontWeight: 700,
+            }}
+          >
+            Recent Reports
+          </h3>
+          <small style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}>
+            Showing the 10 most recent reports
+          </small>
+        </div>
       </div>
 
       {/* Reports List */}
       <div
         className="reports-sidebar-scroll"
-        style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}
+        style={{ 
+          flex: 1, 
+          padding: "1.5rem", 
+          overflowY: "auto",
+          /* Custom scrollbar styles */
+          scrollbarWidth: "thin",
+          scrollbarColor: "#d1d5db #f9fafb"
+        }}
       >
         {loadingReports ? (
           <div
@@ -168,22 +172,33 @@ export default function HomePage() {
           </div>
         ) : reports.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {reports.map((report) => (
-              <ReportCard
-                key={report.id}
-                report={report}
-                isSelected={selectedReportId === report.id}
-                onClick={() => {
-                  // Solo seleziona, non riordinare la lista
-                  const sidebar = document.querySelector(
-                    ".reports-sidebar-scroll"
-                  ) as HTMLElement;
-                  if (sidebar) sidebarScrollRef.current = sidebar.scrollTop;
-                  setSelectedReportId(report.id);
-                  setShowReportsSidebar(false);
-                }}
-              />
-            ))}
+            {(() => {
+              // compute the latest 10 reports sorted by createdAt descending
+              const recent = [...reports]
+                .sort((a: any, b: any) => {
+                  const ta = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+                  const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+                  return tb - ta;
+                })
+                .slice(0, 10);
+              return recent.map((report) => (
+                <ReportCard
+                  key={report.id}
+                  report={report}
+                  isSelected={selectedReportId === report.id}
+                  onClick={() => {
+                    // Solo seleziona, non riordinare la lista
+                    const sidebar = document.querySelector(
+                      ".reports-sidebar-scroll"
+                    ) as HTMLElement;
+                    if (sidebar) sidebarScrollRef.current = sidebar.scrollTop;
+                    setSelectedReportId(report.id);
+                    setShowReportsSidebar(false);
+                  }}
+                  onOpenDetails={handleReportDetailsClick}
+                />
+              ));
+            })()}
           </div>
         ) : (
           <div
@@ -316,27 +331,6 @@ export default function HomePage() {
               }}
               className="px-md-4"
             >
-              <div style={{ marginBottom: "2rem", textAlign: "center" }}>
-                <h2
-                  style={{
-                    color: "var(--text)",
-                    fontSize: "clamp(1.3rem, 4vw, 1.8rem)",
-                    margin: "0 0 0.5rem 0",
-                    fontWeight: 700,
-                  }}
-                >
-                  Interactive Map
-                </h2>
-                <p
-                  style={{
-                    color: "#666",
-                    margin: 0,
-                    fontSize: "clamp(0.85rem, 2vw, 1rem)",
-                  }}
-                >
-                  Municipality territory view
-                </p>
-              </div>
               <div
                 style={{ flex: 1, display: "flex", flexDirection: "column" }}
               >
@@ -424,6 +418,7 @@ export default function HomePage() {
                         setSelectedReportId(report.id);
                         setShowReportsSidebar(false);
                       }}
+                      onOpenDetails={handleReportDetailsClick}
                     />
                   ))}
                 </div>
@@ -537,6 +532,18 @@ export default function HomePage() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
+      {selectedReportId !== null && (
+        (() => {
+          const reportToShow = reports.find((r) => r.id === selectedReportId);
+          return reportToShow ? (
+            <ReportDetailsModal
+              show={showDetailsModal}
+              onHide={() => setShowDetailsModal(false)}
+              report={reportToShow}
+            />
+          ) : null;
+        })()
+      )}
     </>
   );
 }
