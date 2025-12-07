@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Navbar, Container, Nav, Button, Badge, Image } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
-import { MUNICIPALITY_ROLES, getRoleLabel } from '../utils/roles';
+import { MUNICIPALITY_AND_EXTERNAL_ROLES, getRoleLabel } from '../utils/roles';
 import { PersonCircle, ArrowLeft, GearFill } from 'react-bootstrap-icons';
 
 
@@ -197,7 +197,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
               <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2">
                 {/* User info only on desktop in the collapse */}
                 <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-3">
-                  {MUNICIPALITY_ROLES.includes(user.role) && (
+                  {MUNICIPALITY_AND_EXTERNAL_ROLES.includes(user.role) && (
                     <Badge 
                       bg="dark" 
                       className="bg-opacity-25"
