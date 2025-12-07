@@ -311,7 +311,7 @@ export async function assignReportToExternal(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ externalCompanyId, externalMaintainerId }),
   });
-  return handleResponse<any>(res);
+  return handleResponse<AssignReportToExternalResponse>(res);
 }
 
 export async function approveReport(

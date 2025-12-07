@@ -662,9 +662,6 @@ export default function TechPanel() {
             disabled={
               !isPublicRelations
                 ? (() => {
-                    const selectedCompany = assignableExternals.find(
-                      (ext) => ext.id === selectedExternalId
-                    );
                     if (!selectedExternalId) return true;
                     // If company has maintainers, technician is required? usually optional unless enforced
                     return false;
