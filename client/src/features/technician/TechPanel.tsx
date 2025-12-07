@@ -203,19 +203,19 @@ export default function TechPanel() {
             {pendingReports.length === 0 ? (
               <p className="text-muted">No pending reports.</p>
             ) : (
-              <Row>
-                {pendingReports.map((report) => (
-                  <Col key={report.id} lg={6} xl={4} className="mb-4">
-                    <div className="h-100 shadow-sm report-card d-flex flex-column">
-                      <ReportCard report={report} />
-                      <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #f3f4f6', marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
-                        <Button variant="danger" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openRejectModal(report.id)} disabled={processingId === report.id}><XCircle className="me-2" /> Reject</Button>
-                        <Button variant="primary" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openAssignModal(report.id)} disabled={processingId === report.id} isLoading={processingId === report.id}><CheckCircle className="me-2" /> Accept</Button>
+                <Row>
+                  {pendingReports.map((report) => (
+                    <Col key={report.id} lg={6} xl={4} className="mb-4">
+                      <div className="h-100 shadow-sm report-card d-flex flex-column">
+                        <ReportCard report={report} />
+                        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #f3f4f6', marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+                          <Button variant="danger" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openRejectModal(report.id)} disabled={processingId === report.id}><XCircle className="me-2" /> Reject</Button>
+                          <Button variant="primary" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openAssignModal(report.id)} disabled={processingId === report.id} isLoading={processingId === report.id}><CheckCircle className="me-2" /> Accept</Button>
+                        </div>
                       </div>
-                    </div>
-                  </Col>
-                ))}
-              </Row>
+                    </Col>
+                  ))}
+                </Row>
             )}
           </div>
         </>
@@ -231,6 +231,12 @@ export default function TechPanel() {
             {reports.map((report) => (
               <Col key={report.id} lg={6} xl={4} className="mb-4">
                 <ReportCard report={report} />
+                <Button 
+                  variant="secondary" 
+                  className="mt-2 w-100"
+                >
+                  Comment button (placeholder)
+                </Button>
               </Col>
             ))}
           </Row>
