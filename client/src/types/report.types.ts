@@ -1,10 +1,17 @@
 // Client-specific report types
 import type {
   CreateReportRequest,
+  CreateReportResponse,
   ReportCategory,
   ReportPhoto,
   ReportStatus,
 } from "../../../shared/ReportTypes";
+
+import type{
+  InternalNote,
+  CreateInternalNoteRequest,
+  CreateInternalNoteResponse
+}from "../../../shared/InternalNotes";
 
 // Extended Report interface with optional fields for client display
 export interface Report {
@@ -29,4 +36,4 @@ export interface Report {
 }
 
 // Re-export shared report types
-export type { CreateReportRequest, ReportCategory, ReportPhoto, ReportStatus };
+export type { CreateReportRequest, CreateReportResponse,InternalNote, CreateInternalNoteRequest, CreateInternalNoteResponse, ReportCategory, ReportPhoto, ReportStatus };

@@ -8,9 +8,12 @@ import type {
   MunicipalityUserResponse,
 } from "../../../shared/MunicipalityUserTypes";
 import type { 
-  CreateReportResponse 
-} from "../../../shared/ReportTypes";
-import type { Report } from "../types/report.types";
+  Report,
+  CreateReportResponse,
+  InternalNote,
+  CreateInternalNoteRequest,
+  CreateInternalNoteResponse
+} from "../types/report.types";
 
 const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
@@ -225,6 +228,20 @@ export async function getAssignedReports(): Promise<Report[]> {
     credentials: "include",
   });
   return handleResponse<Report[]>(res);
+}
+
+// Internal Notes API
+export async function createInternalNote(
+  reportId: number,
+  data: CreateInternalNoteRequest
+): Promise<CreateInternalNoteResponse> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/internal-notes`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<CreateInternalNoteResponse>(res);
 }
 
 export default {

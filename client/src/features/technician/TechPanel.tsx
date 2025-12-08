@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Container, Row, Col, Modal, Form } from "react-bootstrap";
-import { CheckCircle, XCircle } from "react-bootstrap-icons"; 
+import { CheckCircle, XCircle, FileText } from "react-bootstrap-icons"; 
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { getReports, getPendingReports, rejectReport, getAssignableTechnicals, approveReport, getAssignedReports } from "../../api/api"; 
+import { 
+  getReports, 
+  getPendingReports, 
+  rejectReport, 
+  getAssignableTechnicals,
+  approveReport, 
+  getAssignedReports,
+  createInternalNote,
+} from "../../api/api"; 
 import type { Report as AppReport } from "../../types/report.types";
 import ReportCard from "../reports/ReportCard";
 import "../../styles/TechPanelstyle.css";
@@ -38,10 +46,15 @@ export default function TechPanel() {
 
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showInternalNoteModal, setShowInternalNoteModal] = useState(false);
+
   const [assignableTechnicals, setAssignableTechnicals] = useState<any[]>([]);
   const [selectedTechnicalId, setSelectedTechnicalId] = useState<number | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+
   const [rejectionReason, setRejectionReason] = useState("");
+  const [internalNoteContent, setInternalNoteContent] = useState("");
+
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   const isPublicRelations = user?.role === "PUBLIC_RELATIONS";
@@ -167,6 +180,33 @@ export default function TechPanel() {
     }
   };
 
+  const openNoteModal = (id: number) => {
+    setSelectedReportId(id);
+    setInternalNoteContent("");
+    setShowInternalNoteModal(true);
+  }
+
+  const handleInternalNoteSubmit = async () =>{
+    if (!selectedReportId || !internalNoteContent.trim()) return;
+
+    try{
+      setProcessingId(selectedReportId);
+      const res = await createInternalNote(selectedReportId, {
+        reportId: selectedReportId,
+        content: internalNoteContent,
+        authorId: user!.id,
+      });
+
+      alert("Internal note created successfully");
+      setShowInternalNoteModal(false);
+    }catch(e){
+      console.error("Failed to create internal note", e);
+      alert("Failed to create internal note");
+    }finally{
+      setProcessingId(null);
+    }
+  }
+
   // statusVariant is now implemented in ReportCard; TechPanel no longer needs it
 
   if (loading) return <div className="loading-container"><LoadingSpinner /></div>;
@@ -233,9 +273,11 @@ export default function TechPanel() {
                 <ReportCard report={report} />
                 <Button 
                   variant="secondary" 
-                  className="mt-2 w-100"
-                >
-                  Comment button (placeholder)
+                  className="mt-2 w-100 d-flex align-items-center justify-content-center"
+                  onClick={() => openNoteModal(report.id)}
+                  disabled={processingId === report.id}
+                  >
+                  <FileText className="me-2" /> Add Internal Note
                 </Button>
               </Col>
             ))}
@@ -295,6 +337,35 @@ export default function TechPanel() {
           <Button variant="secondary" onClick={() => setShowAssignModal(false)}>Cancel</Button>
           <Button variant="primary" onClick={handleConfirmAssign} disabled={!selectedTechnicalId} isLoading={processingId !== null}>
             Confirm Assignment
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+      {/* internal note modal */}
+      <Modal show={showInternalNoteModal} onHide={() => setShowInternalNoteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Internal Note</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-muted small">
+            This note will be visible to other technicians and admins, but <strong>not</strong> to the citizen.
+          </p>
+          <Form.Group>
+            <Form.Label>Note Content *</Form.Label>
+            <Form.Control 
+              as="textarea"
+              rows={4}
+              value={internalNoteContent}
+              onChange={(e) => setInternalNoteContent(e.target.value)}
+              placeholder="Enter internal note content here..."
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowInternalNoteModal(false)}>Cancel</Button>
+          <Button variant="primary" onClick={handleInternalNoteSubmit} disabled={!internalNoteContent.trim() || processingId !== null} isLoading={processingId !== null}>
+            Save Note
           </Button>
         </Modal.Footer>
       </Modal>
