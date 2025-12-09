@@ -1,3 +1,11 @@
+// Notification API
+export async function getNotifications(): Promise<any[]> {
+  const res = await fetch(`${API_PREFIX}/notifications`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<any[]>(res);
+}
 import type { LoginResponse, SessionInfo } from "../../../shared/LoginTypes";
 import type {
   SignupFormData,
@@ -9,13 +17,13 @@ import type {
 } from "../../../shared/MunicipalityUserTypes";
 import type { CreateReportResponse } from "../../../shared/ReportTypes";
 import type { Report } from "../types/report.types";
-import type { 
+import type {
   AssignReportToExternalResponse,
   CreateExternalMaintainerData,
   CreateExternalCompanyData,
   ExternalCompanyResponse,
-  ExternalMaintainerResponse
- } from "../../../shared/ExternalTypes";
+  ExternalMaintainerResponse,
+} from "../../../shared/ExternalTypes";
 
 const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
@@ -125,7 +133,9 @@ export async function createExternalCompany(
   return handleResponse<ExternalCompanyResponse>(res);
 }
 
-export async function getExternalCompanies(): Promise<ExternalCompanyResponse[]> {
+export async function getExternalCompanies(): Promise<
+  ExternalCompanyResponse[]
+> {
   const res = await fetch(`${API_PREFIX}/admin/external-companies`, {
     method: "GET",
     credentials: "include",
@@ -157,7 +167,7 @@ export async function deleteExternalCompany(companyId: number): Promise<void> {
   await handleResponse<unknown>(res);
 }
 
-// maintainers 
+// maintainers
 
 export async function createExternalMaintainer(
   data: CreateExternalMaintainerData
@@ -368,6 +378,36 @@ export async function getAssignedReports(): Promise<Report[]> {
   return handleResponse<Report[]>(res);
 }
 
+// Send message to citizen (external maintainer/technical)
+export async function sendReportMessage(
+  reportId: number,
+  content: string
+): Promise<void> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/messages`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || "Failed to send message");
+  }
+}
+
+// Get all messages for a report
+export async function getReportMessages(reportId: number): Promise<any[]> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}/messages`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || "Failed to fetch messages");
+  }
+  return await res.json();
+}
+
 export default {
   getSession,
   login,
@@ -386,4 +426,5 @@ export default {
   uploadCitizenPhoto,
   deleteCitizenPhoto,
   deleteMunicipalityUser,
+  getNotifications,
 };

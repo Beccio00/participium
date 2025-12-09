@@ -1,16 +1,29 @@
+import { ReportRepository } from "../repositories/ReportRepository";
 import { Request, Response, NextFunction } from "express";
 import { UnauthorizedError, ForbiddenError } from "../utils";
 import { User } from "../entities/User";
-import { TECHNICAL_ROLES, TECHNICAL_AND_EXTERNAL_ROLES } from "../interfaces/UserDTO";
+import {
+  TECHNICAL_ROLES,
+  TECHNICAL_AND_EXTERNAL_ROLES,
+} from "../interfaces/UserDTO";
 import { Role } from "../../../shared/RoleTypes";
 
-export function isLoggedIn(req: Request & { isAuthenticated?: () => boolean }, res: Response, next: NextFunction) {
+export function isLoggedIn(
+  req: Request & { isAuthenticated?: () => boolean },
+  res: Response,
+  next: NextFunction
+) {
   if (req.isAuthenticated && req.isAuthenticated()) return next();
-  throw new UnauthorizedError("You don't have the right to access this resource");
+  throw new UnauthorizedError(
+    "You don't have the right to access this resource"
+  );
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
     throw new UnauthorizedError("Authentication required");
@@ -23,8 +36,15 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
-export function requireCitizen(req: Request, res: Response, next: NextFunction) {
-  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+export function requireCitizen(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
     throw new UnauthorizedError("Authentication required");
@@ -37,23 +57,36 @@ export function requireCitizen(req: Request, res: Response, next: NextFunction) 
   return next();
 }
 
-export function requirePublicRelations(req: Request, res: Response, next: NextFunction) {
-  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+export function requirePublicRelations(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || authReq.user.role !== 'PUBLIC_RELATIONS') {
+  if (!authReq.user || authReq.user.role !== "PUBLIC_RELATIONS") {
     throw new ForbiddenError("Public relations officer privileges required");
   }
 
   return next();
 }
 
-
-export function requireTechnicalStaffOnly(req: Request, res: Response, next: NextFunction) {
-  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+export function requireTechnicalStaffOnly(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
     throw new UnauthorizedError("Authentication required");
@@ -64,32 +97,74 @@ export function requireTechnicalStaffOnly(req: Request, res: Response, next: Nex
   }
 
   if (!TECHNICAL_ROLES.includes(authReq.user.role)) {
-    throw new ForbiddenError("Municipality technical staff privileges required");
+    throw new ForbiddenError(
+      "Municipality technical staff privileges required"
+    );
   }
 
   return next();
 }
 
-export function requireTechnicalOrExternal(req: Request, res: Response, next: NextFunction) {
-  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+export async function requireTechnicalOrExternal(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
-    throw new UnauthorizedError("Authentication required");
+    return next(new UnauthorizedError("Authentication required"));
   }
 
   if (!authReq.user) {
-    throw new UnauthorizedError("Authentication required");
+    return next(new UnauthorizedError("Authentication required"));
   }
 
+  // Permetti ai cittadini di inviare messaggi solo per i report di cui sono autori
+  if (authReq.user.role === Role.CITIZEN) {
+    const reportId = req.params.reportId;
+    const repo = new ReportRepository();
+    try {
+      const report = await repo.findById(Number(reportId));
+      if (report && report.userId === authReq.user.id) {
+        return next();
+      } else {
+        return next(
+          new ForbiddenError(
+            "Citizens can only send messages for their own reports"
+          )
+        );
+      }
+    } catch {
+      return next(
+        new ForbiddenError(
+          "Citizens can only send messages for their own reports"
+        )
+      );
+    }
+  }
   if (!TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
-    throw new ForbiddenError("Technical staff or external maintainer privileges required");
+    return next(
+      new ForbiddenError(
+        "Technical staff or external maintainer privileges required"
+      )
+    );
   }
-
   return next();
 }
 
-export function requireExternalMaintainer(req: Request, res: Response, next: NextFunction) {
-  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+export function requireExternalMaintainer(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
     throw new UnauthorizedError("Authentication required");
@@ -102,11 +177,15 @@ export function requireExternalMaintainer(req: Request, res: Response, next: Nex
   return next();
 }
 
-
-
-
-export function requireCitizenOrTechnicalOrExternal(req: Request, res: Response, next: NextFunction) {
-  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+export function requireCitizenOrTechnicalOrExternal(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
     throw new UnauthorizedError("Authentication required");
@@ -116,8 +195,13 @@ export function requireCitizenOrTechnicalOrExternal(req: Request, res: Response,
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (authReq.user.role !== Role.CITIZEN && !TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
-    throw new ForbiddenError("Citizen, technical staff, or external maintainer privileges required");
+  if (
+    authReq.user.role !== Role.CITIZEN &&
+    !TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)
+  ) {
+    throw new ForbiddenError(
+      "Citizen, technical staff, or external maintainer privileges required"
+    );
   }
 
   return next();

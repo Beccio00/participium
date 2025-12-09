@@ -11,10 +11,7 @@ import { ReportMessageRepository } from "../repositories/ReportMessageRepository
 
 // Services and utilities
 import { notifyNewMessage } from "./notificationService";
-import {
-  NotFoundError,
-  ForbiddenError,
-} from "../utils/errors";
+import { NotFoundError, ForbiddenError } from "../utils/errors";
 
 // =========================
 // REPOSITORY INSTANCES
@@ -36,16 +33,27 @@ export async function sendMessageToCitizen(
   content: string
 ): Promise<ReportMessageDTO> {
   const report = await reportRepository.findByIdWithRelations(reportId);
+  if (!report) {
+    throw new NotFoundError("Report not found");
+  }
+  const isInternalTech = report.assignedOfficerId === technicalUserId;
+  const isExternalTech = report.externalMaintainerId === technicalUserId;
 
   if (!report) {
     throw new NotFoundError("Report not found");
   }
 
-  const isInternalTech = report.assignedOfficerId === technicalUserId;
-  const isExternalTech = report.externalMaintainerId === technicalUserId;
-
-  // Verifica che il technical sia assegnato a questo report
-  if (!isInternalTech && !isExternalTech) {
+  // Permetti anche al cittadino autore del report di inviare messaggi
+  const isCitizenOwner = report.userId === technicalUserId;
+  const senderRole =
+    report.user && report.user.id === technicalUserId
+      ? report.user.role
+      : undefined;
+  if (
+    !isInternalTech &&
+    !isExternalTech &&
+    !(isCitizenOwner && senderRole === "CITIZEN")
+  ) {
     throw new ForbiddenError("You are not assigned to this report");
   }
 
@@ -57,9 +65,9 @@ export async function sendMessageToCitizen(
 
   let senderName = "";
   // Notifica il cittadino del nuovo messaggio
-  if (report.assignedOfficer){
+  if (report.assignedOfficer) {
     senderName = `${report.assignedOfficer?.first_name} ${report.assignedOfficer?.last_name} (Technical)`;
-  } else if (report.externalMaintainer){
+  } else if (report.externalMaintainer) {
     senderName = `${report.externalMaintainer?.first_name} ${report.externalMaintainer?.last_name} (External Maintainer)`;
   } else {
     senderName = "Technical Staff";

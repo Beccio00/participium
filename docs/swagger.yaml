@@ -32,7 +32,7 @@ info:
 
     **TECHNICAL_AND_EXTERNAL_ROLES** (technical staff + external maintainers):
     - All TECHNICAL_ROLES + EXTERNAL_MAINTAINER (for shared operations like viewing assigned reports)
-    
+
     **External roles:**
     - EXTERNAL_MAINTAINER: External company maintainer with platform access for specialized interventions
   version: 1.1.0
@@ -920,7 +920,7 @@ paths:
                 invalidName:
                   value:
                     code: 400
-                    error: "BadRequest" 
+                    error: "BadRequest"
                     message: "Company name is required"
                 invalidCategories:
                   value:
@@ -947,7 +947,7 @@ paths:
                 code: 403
                 error: "Forbidden"
                 message: "Administrator privileges required"
-    
+
     get:
       tags:
         - Administration
@@ -1600,7 +1600,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
-                  
+
         "400":
           description: Missing required fields
           content:
@@ -1676,7 +1676,8 @@ paths:
         Reports with status PENDING_APPROVAL or REJECTED are NOT included in the response.
 
         This endpoint is designed for citizen-facing map views where users can see all active and resolved 
-        issues in their area. The response includes reporter information (name or "anonymous" flag), location 
+        issues in their area, including those assigned to external maintainers (EXTERNAL_ASSIGNED).
+        The response includes reporter information (name or "anonymous" flag), location 
         coordinates, and other details needed for map markers and popups.
 
         Optionally filter by a bounding box using the `bbox` query parameter in the format 
@@ -1743,7 +1744,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
-                  
+
                 - id: 1025
                   title: "Broken street light"
                   description: "Street light not working"
@@ -1770,7 +1771,7 @@ paths:
                   photos: []
                   createdAt: "2025-11-10T09:00:00Z"
                   updatedAt: "2025-11-12T08:00:00Z"
-                  
+
         "400":
           description: Invalid category parameter
           content:
@@ -1843,7 +1844,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T10:12:34Z"
-                  
+
         "401":
           description: Not authenticated
           content:
@@ -1965,11 +1966,11 @@ paths:
       description: |
         Return the list of external companies and their maintainer users that can handle the given report.
         The backend filters available external companies according to the report's category (e.g., Enel X for PUBLIC_LIGHTING).
-        
+
         Returns two types of assignees:
         - **Users**: For companies with platform access (has_platform_access=true), returns individual maintainer users
         - **Companies**: For companies without platform access (has_platform_access=false), returns only company information
-        
+
         This endpoint is intended for use by municipality TECHNICAL_ROLES staff members when they need to assign a report to an external entity.
         External maintainers cannot access this endpoint as they cannot assign reports to other externals.
       operationId: getAssignableExternals
@@ -2076,21 +2077,21 @@ paths:
         Only technical office staff members can perform this operation.
         The report status changes from PENDING_APPROVAL or ASSIGNED to EXTERNAL_ASSIGNED when assigned to external entities.
         External assignment creates a specialized workflow for external company maintenance.
-        
+
         **Assignment logic based on company platform access:**
-        
+
         - **Companies WITH platform access** (platformAccess=true):
           - Technical officer selects a specific maintainer user from the company
           - Request must include `externalMaintainerId`
           - The selected user can log into Participium and manage the report directly
           - User can update status to IN_PROGRESS and eventually RESOLVED
-        
+
         - **Companies WITHOUT platform access** (platformAccess=false):
           - Technical officer assigns to the company as a whole
           - Request must include `externalCompanyId`
           - Company handles intervention outside the platform
           - Technical officer manually updates the report when work is completed
-        
+
         External maintainers and technical office can exchange internal comments on the report (not visible to citizens).
       operationId: assignReportToExternal
       security:
@@ -2173,7 +2174,7 @@ paths:
                             categories:
                               - PUBLIC_LIGHTING
                             platformAccess: true
-                      
+
                 companyAssignment:
                   summary: Assigned to external company
                   value:
@@ -2209,8 +2210,7 @@ paths:
                             - WASTE
                             - ROADS_URBAN_FURNISHINGS
                           platformAccess: false
-                      
-                  
+
         "400":
           description: Invalid request or report not in appropriate status
           content:
@@ -2399,7 +2399,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T11:15:00Z"
-                  
+
         "400":
           description: Invalid report ID or report not in PENDING_APPROVAL status
           content:
@@ -2536,7 +2536,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-11T11:15:00Z"
-                  
+
         "400":
           description: Invalid report ID, missing rejection reason, or report not in PENDING_APPROVAL status
           content:
@@ -2617,7 +2617,7 @@ paths:
         Retrieve all reports assigned to the authenticated technical officer or external maintainer.
         Available for TECHNICAL_AND_EXTERNAL_ROLES (both municipality technical staff and external maintainers).
         Returns reports with status ASSIGNED, EXTERNAL_ASSIGNED, IN_PROGRESS, or RESOLVED that are assigned to the current user.
-        
+
         For internal staff: filters by assignedOfficerId
         For external maintainers: filters by externalMaintainerId
         The user ID is extracted from the session token, ensuring users can only see their own assigned reports.
@@ -2706,7 +2706,7 @@ paths:
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
                   updatedAt: "2025-11-12T09:00:00Z"
-                  
+
                 - id: 1026
                   title: "Broken street light"
                   description: "Street light not working on Via Torino"
@@ -2741,7 +2741,7 @@ paths:
                   photos: []
                   createdAt: "2025-11-10T09:00:00Z"
                   updatedAt: "2025-11-13T10:30:00Z"
-                  
+
         "401":
           description: Not authenticated
           content:
@@ -2786,7 +2786,7 @@ paths:
         - IN_PROGRESS → RESOLVED
         - IN_PROGRESS → SUSPENDED
         - SUSPENDED → IN_PROGRESS
-        
+
         A notification is automatically created for the citizen when the status changes.
       operationId: updateReportStatus
       security:
@@ -2885,11 +2885,11 @@ paths:
     post:
       tags:
         - Reports
-      summary: Send message to citizen
+      summary: Send message in report chat
       description: |
-        Send a message to the citizen who created the report. Available for TECHNICAL_AND_EXTERNAL_ROLES.
-        Only technical staff or external maintainers assigned to the report can send messages.
-        A notification is automatically created for the citizen.
+        Send a message in the report chat. Available for technical staff, external maintainers assigned to the report, and the citizen who created the report.
+        Technical staff and external maintainers assigned to the report, as well as the citizen who created the report, can send messages.
+        A notification is automatically created for the recipient.
       operationId: sendReportMessage
       security:
         - SessionAuth: []
@@ -3056,7 +3056,7 @@ paths:
       description: |
         Retrieve all notifications for the authenticated user. 
         Frontend should poll this endpoint only when the page refreshes.
-        
+
         Notifications are generated when:
         - Report status changes (for citizens)
         - New messages are received (for citizens)
@@ -3540,9 +3540,9 @@ components:
         - externalCompanyId
       description: |
         Request to assign a report to an external company and optionally to a specific maintainer user.
-        
+
         **Validation rules:**
-        
+
         - `externalCompanyId` is **always required**
         - If the company has **platform access** (platformAccess=true):
           - `externalMaintainerId` **must be provided** (not null)
@@ -3550,7 +3550,7 @@ components:
           - The user must have role EXTERNAL_MAINTAINER
         - If the company has **no platform access** (platformAccess=false):
           - `externalMaintainerId` **must be null**
-        
+
         The backend will validate these constraints and return 400 Bad Request if violated.
       properties:
         externalCompanyId:
@@ -3568,10 +3568,9 @@ components:
             ID of the external maintainer user to assign.
             - **Must be provided** (not null) if the company has platform access (platformAccess=true)
             - **Must be null** if the company does NOT have platform access (platformAccess=false)
-            
+
             The user must belong to the specified company and have EXTERNAL_MAINTAINER role.
           example: 501
-
 
     MunicipalityRole:
       type: string
@@ -3785,8 +3784,6 @@ components:
           type: string
           format: date-time
           example: "2025-11-11T10:12:34Z"
-        
-      
 
     ReportStatus:
       type: string

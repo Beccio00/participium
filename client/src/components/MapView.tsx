@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getReports } from "../api/api";
 import L from "leaflet";
 import "leaflet.markercluster/dist/leaflet.markercluster.js";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -92,7 +93,7 @@ interface MapViewProps {
 export default function MapView({
   onLocationSelect,
   selectedLocation,
-  reports = [],
+  reports: initialReports = [],
   selectedReportId,
   customSelectedIcon,
   onReportDetailsClick,
@@ -107,6 +108,28 @@ export default function MapView({
   const [turinData, setTurinData] = useState<any | null>(null);
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [reports, setReports] = useState<Report[]>(initialReports);
+  // Polling per aggiornare i report ogni 10 secondi
+  useEffect(() => {
+    let polling = true;
+    const fetchReports = async () => {
+      try {
+        const data = await getReports();
+        // Filtra solo i report non risolti
+        setReports(data.filter((r) => r.status.toLowerCase() !== "resolved"));
+      } catch (err) {
+        // Puoi gestire errori qui se vuoi
+      }
+    };
+    fetchReports();
+    const interval = setInterval(() => {
+      if (polling) fetchReports();
+    }, 10000);
+    return () => {
+      polling = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     fetch("/turin-boundary3.geojson")
@@ -363,9 +386,11 @@ export default function MapView({
         </div>
       `;
       // Attach handler to embedded button
-      const detailsBtn = popupContent.querySelector('.view-details-btn') as HTMLButtonElement | null;
+      const detailsBtn = popupContent.querySelector(
+        ".view-details-btn"
+      ) as HTMLButtonElement | null;
       if (detailsBtn) {
-        detailsBtn.addEventListener('click', (e) => {
+        detailsBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           if (onReportDetailsClick) onReportDetailsClick(report.id);
         });

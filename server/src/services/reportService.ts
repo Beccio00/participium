@@ -124,7 +124,6 @@ const categoryToTechnical: Record<ReportCategory, TechnicalType[]> = {
   [ReportCategory.OTHER]: Object.values(TechnicalType),
 };
 
-
 // =========================
 // REPORT PUBLIC SERVICES
 // =========================
@@ -194,14 +193,17 @@ export async function getApprovedReports(
   category?: ReportCategory
 ): Promise<ReportDTO[]> {
   const reports = await reportRepository.findByStatusAndCategory(
-    [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED],
+    [
+      ReportStatus.ASSIGNED,
+      ReportStatus.EXTERNAL_ASSIGNED,
+      ReportStatus.IN_PROGRESS,
+      ReportStatus.RESOLVED,
+    ],
     category
   );
 
   return reports.map(toReportDTO);
 }
-
-
 
 // =========================
 // REPORT PR SERVICES
@@ -240,7 +242,6 @@ export async function getPendingReports(): Promise<ReportDTO[]> {
   ]);
   return reports.map(toReportDTO);
 }
-
 
 /**
  * Approva un report e lo assegna a un tecnico selezionato
@@ -330,8 +331,6 @@ export async function rejectReport(
 
   return toReportDTO(updatedReport);
 }
-
-
 
 // =========================
 // REPORT TECH/EXTERNAL SERVICES
