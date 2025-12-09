@@ -6,7 +6,6 @@ import {
   prisma,
 } from "../../helpers/testSetup";
 import { createUserInDatabase } from "../../helpers/testUtils";
-import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";
 
 const app = createApp();
 

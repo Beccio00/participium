@@ -88,27 +88,4 @@ describe("uploadsMiddleware", () => {
       expect(documentsUpload).toBeDefined();
     });
   });
-
-  // Middleware integration tests commented out
-  // Multer internal behavior is difficult to mock correctly in unit tests
-  // The middleware functionality is covered in integration tests
-  /*
-  describe("Middleware integration", () => {
-    let mockReq: Partial<Request>;
-    let mockRes: Partial<Response>;
-    let mockNext: NextFunction;
-
-    beforeEach(() => {
-      mockReq = {};
-      mockRes = {};
-      mockNext = jest.fn();
-    });
-
-    it("should call next when invoked without error", () => {
-      const middleware = upload.array("photos", 3);
-      middleware(mockReq as Request, mockRes as Response, mockNext);
-      expect(mockNext).toHaveBeenCalled();
-    });
-  });
-  */
 });
