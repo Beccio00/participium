@@ -8,11 +8,16 @@ import { BadRequestError, ConflictError } from "../../../src/utils";
 
 jest.mock("../../../src/services/userService");
 jest.mock("../../../src/services/passwordService");
+jest.mock("../../../src/services/citizenService");
 const mockFindByEmail = findByEmail as jest.MockedFunction<typeof findByEmail>;
 const mockCreateUser = createUser as jest.MockedFunction<typeof createUser>;
 const mockHashPassword = hashPassword as jest.MockedFunction<
   typeof hashPassword
 >;
+const mockSendCitizenVerification = jest.fn();
+
+// ensure the citizen service mock exposes sendCitizenVerification
+(require("../../../src/services/citizenService") as any).sendCitizenVerification = mockSendCitizenVerification;
 
 describe("signupController", () => {
   let mockReq: any;
@@ -43,12 +48,16 @@ describe("signupController", () => {
         role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
         email_notifications_enabled: true,
-        // TypeORM relation fields
         reports: [],
         messages: [],
         assignedReports: [],
         notifications: [],
         photo: null as any,
+        isVerified: true,
+        verificationToken: null,
+        verificationCodeExpiresAt: null,
+        externalCompanyId: null,
+        externalCompany: null,
       };
       const mockUserDTO = {
         id: 1,
@@ -58,6 +67,7 @@ describe("signupController", () => {
         role: UserDTO.Roles.CITIZEN,
         telegramUsername: null,
         emailNotificationsEnabled: true,
+        isVerified: true,
       };
 
       mockReq.body = {
@@ -85,6 +95,8 @@ describe("signupController", () => {
         password: "hashed",
         salt: "salt",
         role: UserDTO.Roles.CITIZEN,
+        telegram_username: null,
+        email_notifications_enabled: true,
       });
       expect(UserDTO.toUserDTO).toHaveBeenCalledWith(mockUser);
       expect(mockRes.status).toHaveBeenCalledWith(201);
@@ -175,6 +187,11 @@ describe("signupController", () => {
         assignedReports: [],
         notifications: [],
         photo: null as any,
+        isVerified: true,
+        verificationToken: null,
+        verificationCodeExpiresAt: null,
+        externalCompanyId: null,
+        externalCompany: null,
       };
 
       mockReq.body = {

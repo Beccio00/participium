@@ -212,11 +212,14 @@ describe("reportService", () => {
       });
       mockUserFindById.mockResolvedValue(null);
 
-    it("should throw UnprocessableEntityError if technical has wrong role", async () => {
-      mockReportRepo.findByIdWithRelations.mockResolvedValue(createMockReportEntity({ category: ReportCategory.WATER_SUPPLY_DRINKING_WATER }));
-      mockUserRepo.findById.mockResolvedValue({ id: 99, role: "WRONG_ROLE" });
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+    });
 
-      await expect(reportService.approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+    it("should throw UnprocessableEntityError if technical has wrong role", async () => {
+      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity({ category: ReportCategory.WATER_SUPPLY_DRINKING_WATER }));
+      mockUserFindById.mockResolvedValue({ id: 99, role: "WRONG_ROLE" });
+
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
     });
 
     it("should throw UnprocessableEntityError if technical role invalid for category", async () => {
@@ -230,16 +233,19 @@ describe("reportService", () => {
         role: TechnicalType.WASTE_MANAGEMENT,
       });
 
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+    });
+
     it("should succeed, update status, and notify", async () => {
-      mockReportRepo.findByIdWithRelations.mockResolvedValue(createMockReportEntity());
-      mockUserRepo.findById.mockResolvedValue({ id: 99, role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE });
-      mockReportRepo.update.mockResolvedValue(createMockReportEntity({ 
+      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity());
+      mockUserFindById.mockResolvedValue({ id: 99, role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE });
+      mockReportUpdate.mockResolvedValue(createMockReportEntity({ 
         status: ReportStatus.ASSIGNED, 
         assignedOfficerId: 99 
       }));
 
-      const res = await reportService.approveReport(1, 2, 99);
-      expect(mockReportRepo.update).toHaveBeenCalled();
+      const res = await approveReport(1, 2, 99);
+      expect(mockReportUpdate).toHaveBeenCalled();
       expect(res.status).toBe(ReportStatus.ASSIGNED);
     });
   });

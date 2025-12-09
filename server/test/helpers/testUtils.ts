@@ -1,6 +1,8 @@
-import { Role, User } from "../../src/entities/User";
-import { Report, ReportStatus, ReportCategory } from "../../src/entities/Report";
+import { User } from "../../src/entities/User";
+import { Report } from "../../src/entities/Report";
 import { UserDTO, MunicipalityUserDTO } from "../../src/interfaces/UserDTO";
+import { Role } from "../../../shared/RoleTypes";
+import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 
 /**
  * 创建一个完整的 mock User 对象（包含所有 TypeORM 关联字段）
@@ -16,6 +18,11 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     role: Role.CITIZEN,
     telegram_username: null,
     email_notifications_enabled: true,
+    isVerified: true,
+    verificationToken: null,
+    verificationCodeExpiresAt: null,
+    externalCompanyId: null,
+    externalCompany: null,
     // TypeORM 关联字段
     reports: [],
     messages: [],
@@ -36,6 +43,7 @@ export function createMockUserDTO(overrides: Partial<UserDTO> = {}): UserDTO {
     firstName: "Test",
     lastName: "User",
     role: Role.CITIZEN,
+    isVerified: true,
     telegramUsername: null,
     emailNotificationsEnabled: true,
     ...overrides,
@@ -64,20 +72,23 @@ export function createMockReport(overrides: Partial<Report> = {}): Report {
     id: 1,
     title: "Test Report",
     description: "Test Description",
-    category: ReportCategory.ROAD_SIGNS_AND_TRAFFIC_LIGHTS,
+    category: ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS,
     status: ReportStatus.PENDING_APPROVAL,
     latitude: 45.0703,
     longitude: 7.6869,
-    street_name: "Via Roma",
-    street_number: "1",
+    address: "Via Roma 1",
+    isAnonymous: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     userId: 1,
     user: null as any,
-    assignedToId: null,
-    assignedTo: null as any,
+    assignedOfficerId: null,
+    externalMaintainerId: null,
+    externalCompanyId: null,
+    rejectedReason: null,
     photos: [],
     messages: [],
+    notifications: [],
     ...overrides,
   } as Report;
 }

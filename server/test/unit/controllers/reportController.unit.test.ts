@@ -45,16 +45,17 @@ import {
   getPendingReports,
   getReportById,
   updateReportStatus,
-  sendMessageToCitizen,
-  getReportMessages,
   getAssignedReports,
 } from "../../../src/controllers/reportController";
+import { sendMessageToCitizen, getReportMessages } from "../../../src/controllers/messageController";
 import * as reportService from "../../../src/services/reportService";
+import * as messageService from "../../../src/services/messageService";
 import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";
 import { BadRequestError, UnauthorizedError } from "../../../src/utils";
 import { calculateAddress } from "../../../src/utils/addressFinder";
 
 jest.mock("../../../src/services/reportService");
+jest.mock("../../../src/services/messageService");
 
 const mockCreateReportService = reportService.createReport as jest.MockedFunction<
   typeof reportService.createReport
@@ -88,12 +89,12 @@ const mockUpdateReportStatusService =
     typeof reportService.updateReportStatus
   >;
 const mockSendMessageToCitizenService =
-  reportService.sendMessageToCitizen as jest.MockedFunction<
-    typeof reportService.sendMessageToCitizen
+  messageService.sendMessageToCitizen as jest.MockedFunction<
+    typeof messageService.sendMessageToCitizen
   >;
 const mockGetReportMessagesService =
-  reportService.getReportMessages as jest.MockedFunction<
-    typeof reportService.getReportMessages
+  messageService.getReportMessages as jest.MockedFunction<
+    typeof messageService.getReportMessages
   >;
 const mockGetAssignedReportsService =
   reportService.getAssignedReportsService as jest.MockedFunction<

@@ -3,6 +3,7 @@ import * as CitizenDTO from "../../../src/interfaces/CitizenDTO";
 
 // Create mock functions for repositories
 const mockFindWithPhoto = jest.fn();
+const mockFindByEmail = jest.fn();
 const mockUpdate = jest.fn();
 const mockFindByUserId = jest.fn();
 const mockCreate = jest.fn();
@@ -14,6 +15,7 @@ jest.mock("../../../src/repositories/UserRepository", () => {
   return {
     UserRepository: jest.fn().mockImplementation(() => ({
       findWithPhoto: mockFindWithPhoto,
+      findByEmail: mockFindByEmail,
       update: mockUpdate,
     })),
   };
@@ -31,6 +33,11 @@ jest.mock("../../../src/repositories/CitizenPhotoRepository", () => {
   };
 });
 
+// Mock UserRepository.findByEmail and emailService for verification flows
+jest.mock('../../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn(),
+}));
+
 // Import services after mocks
 import {
   getCitizenById,
@@ -38,7 +45,72 @@ import {
   uploadCitizenPhoto,
   deleteCitizenPhoto,
   getCitizenPhoto,
+  sendCitizenVerification,
+  verifyCitizenEmail,
 } from "../../../src/services/citizenService";
+
+describe('citizen verification flows', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('sendCitizenVerification updates user token and calls emailService', async () => {
+    const dummyUser = { id: 1, email: 'u@example.com', role: 'CITIZEN', isVerified: false } as any;
+    mockFindByEmail.mockResolvedValue(dummyUser);
+    mockUpdate.mockResolvedValue({});
+
+    await sendCitizenVerification('u@example.com');
+
+    expect(mockFindByEmail).toHaveBeenCalledWith('u@example.com');
+    expect(mockUpdate).toHaveBeenCalledWith(dummyUser.id, expect.objectContaining({ verificationToken: expect.any(String) }));
+  });
+
+  it('sendCitizenVerification throws BadRequestError when email sending fails', async () => {
+    const dummyUser = { id: 9, email: 'fail@example.com', role: 'CITIZEN', isVerified: false } as any;
+    mockFindByEmail.mockResolvedValue(dummyUser);
+    mockUpdate.mockResolvedValue({});
+    const emailService = require('../../../src/services/emailService');
+    emailService.sendVerificationEmail.mockRejectedValue(new Error('boom'));
+
+    await expect(sendCitizenVerification('fail@example.com')).rejects.toThrow('Failed to send verification email');
+  });
+
+  it('sendCitizenVerification throws if user not found or role invalid or already verified', async () => {
+    mockFindByEmail.mockResolvedValue(null);
+    await expect(sendCitizenVerification('missing@example.com')).rejects.toThrow();
+
+    mockFindByEmail.mockResolvedValue({ id: 2, email: 'a', role: 'PUBLIC_RELATIONS', isVerified: false } as any);
+    await expect(sendCitizenVerification('a')).rejects.toThrow();
+
+    mockFindByEmail.mockResolvedValue({ id: 3, email: 'b', role: 'CITIZEN', isVerified: true } as any);
+    await expect(sendCitizenVerification('b')).rejects.toThrow();
+  });
+
+  it('verifyCitizenEmail accepts valid code and marks user verified', async () => {
+    const token = '123456';
+    const future = new Date(Date.now() + 1000000);
+    mockFindByEmail.mockResolvedValue({ id: 4, email: 'v@example.com', role: 'CITIZEN', isVerified: false, verificationToken: token, verificationCodeExpiresAt: future } as any);
+    mockUpdate.mockResolvedValue({});
+
+    const res = await verifyCitizenEmail('v@example.com', token);
+    expect(res).toEqual({ alreadyVerified: false });
+    expect(mockUpdate).toHaveBeenCalledWith(4, expect.objectContaining({ isVerified: true }));
+  });
+
+  it('verifyCitizenEmail returns alreadyVerified when appropriate and throws on invalid code/expired', async () => {
+    mockFindByEmail.mockResolvedValue({ id: 5, email: 'x@example.com', role: 'CITIZEN', isVerified: true } as any);
+    const res = await verifyCitizenEmail('x@example.com', 'whatever');
+    expect(res).toEqual({ alreadyVerified: true });
+
+    const past = new Date(Date.now() - 10000);
+    mockFindByEmail.mockResolvedValue({ id: 6, email: 'y@example.com', role: 'CITIZEN', isVerified: false, verificationToken: 't', verificationCodeExpiresAt: past } as any);
+    await expect(verifyCitizenEmail('y@example.com', 't')).rejects.toThrow();
+
+    const future = new Date(Date.now() + 1000000);
+    mockFindByEmail.mockResolvedValue({ id: 7, email: 'z@example.com', role: 'CITIZEN', isVerified: false, verificationToken: 't2', verificationCodeExpiresAt: future } as any);
+    await expect(verifyCitizenEmail('z@example.com', 'wrong')).rejects.toThrow();
+  });
+});
 
 describe("citizenService", () => {
   beforeEach(() => {

@@ -1,14 +1,16 @@
-import { Role } from "../../../src/entities/User";
+import { Role } from "../../../../shared/RoleTypes";
 import { BadRequestError } from "../../../src/utils";
 
 // Create mock functions for UserRepository
 const mockCountByRole = jest.fn();
+const mockUpdate = jest.fn();
 
 // Mock UserRepository BEFORE imports
 jest.mock("../../../src/repositories/UserRepository", () => {
   return {
     UserRepository: jest.fn().mockImplementation(() => ({
       countByRole: mockCountByRole,
+      update: mockUpdate,
     })),
   };
 });
@@ -69,6 +71,7 @@ describe("municipalityUserService", () => {
         role: Role.PUBLIC_RELATIONS,
       };
       mockCreateUser.mockResolvedValue({ id: 1 } as any);
+      mockUpdate.mockResolvedValue({ id: 1, isVerified: true } as any);
       await createMunicipalityUser(data);
       expect(mockCreateUser).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -77,6 +80,7 @@ describe("municipalityUserService", () => {
           email_notifications_enabled: true,
         })
       );
+      expect(mockUpdate).toHaveBeenCalledWith(1, { isVerified: true });
     });
   });
 

@@ -69,7 +69,8 @@ describe('passport configuration', () => {
           email: 'test@example.com',
           role: Roles.CITIZEN,
           telegramUsername: null,
-          emailNotificationsEnabled: true
+          emailNotificationsEnabled: true,
+          isVerified: true
         };
 
         mockFindByEmail.mockResolvedValue(mockUser as any);
@@ -159,7 +160,8 @@ describe('passport configuration', () => {
         email: 'test@example.com',
         role: Roles.CITIZEN,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       };
 
       mockFindById.mockResolvedValue(mockUser as any);
@@ -232,7 +234,8 @@ describe('passport configuration', () => {
         email: 'citizen@example.com',
         role: Roles.CITIZEN,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       };
 
       mockFindByEmail.mockResolvedValue(mockCitizenUser as any);
@@ -263,7 +266,8 @@ describe('passport configuration', () => {
         email: 'pr@comune.torino.it',
         role: Roles.PUBLIC_RELATIONS,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       };
 
       mockFindByEmail.mockResolvedValue(mockMunicipalityUser as any);
@@ -291,7 +295,8 @@ describe('passport configuration', () => {
         email: 'tech@comune.torino.it',
         role: mockTechnicalUser.role as any,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       };
 
       mockFindByEmail.mockResolvedValue(mockTechnicalUser as any);
@@ -319,7 +324,8 @@ describe('passport configuration', () => {
         email: 'admin@comune.torino.it',
         role: Roles.ADMINISTRATOR,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       };
 
       mockFindByEmail.mockResolvedValue(mockAdminUser as any);
@@ -347,7 +353,8 @@ describe('passport configuration', () => {
         email: 'valid.email+test@example.com',
         role: Roles.CITIZEN,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       };
 
       mockFindByEmail.mockResolvedValue(mockUser as any);
@@ -437,7 +444,8 @@ describe('passport configuration', () => {
         email: 'test@example.com',
         role: Roles.CITIZEN,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       });
 
       const doneSpy = jest.fn();
@@ -465,7 +473,8 @@ describe('passport configuration', () => {
         email: 'concurrent@example.com',
         role: Roles.CITIZEN,
         telegramUsername: null,
-        emailNotificationsEnabled: true
+        emailNotificationsEnabled: true,
+        isVerified: true
       });
 
       const doneSpy1 = jest.fn();
@@ -516,7 +525,8 @@ describe('passport configuration', () => {
           email: 'update@example.com',
           role: Roles.CITIZEN,
           telegramUsername: null,
-          emailNotificationsEnabled: true
+          emailNotificationsEnabled: true,
+          isVerified: true
         })
         .mockReturnValueOnce({
           id: 100,
@@ -525,7 +535,8 @@ describe('passport configuration', () => {
           email: 'update@example.com',
           role: Roles.CITIZEN,
           telegramUsername: null,
-          emailNotificationsEnabled: true
+          emailNotificationsEnabled: true,
+          isVerified: true
         });
 
       const doneSpy1 = jest.fn();

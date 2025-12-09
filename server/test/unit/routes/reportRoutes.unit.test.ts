@@ -2,7 +2,7 @@
 jest.mock("../../../src/controllers/reportController", () => ({
   createReport: jest.fn((req: any, res: any) => res.status(201).json({})),
   getReports: jest.fn((req: any, res: any) => res.json([])),
-  getReportDetails: jest.fn((req: any, res: any) => res.json({})),
+  getReportById: jest.fn((req: any, res: any) => res.json({})),
   getPendingReports: jest.fn((req: any, res: any) => res.json([])),
   getAssignedReports: jest.fn((req: any, res: any) => res.json([])),
   approveReport: jest.fn((req: any, res: any) => res.json({})),
@@ -17,7 +17,8 @@ jest.mock("../../../src/controllers/reportController", () => ({
 jest.mock("../../../src/middlewares/routeProtection", () => ({
   requireCitizen: jest.fn((req: any, res: any, next: any) => next()),
   requirePublicRelations: jest.fn((req: any, res: any, next: any) => next()),
-  requireTechnicalStaff: jest.fn((req: any, res: any, next: any) => next()),
+  requireTechnicalStaffOnly: jest.fn((req: any, res: any, next: any) => next()),
+  requireTechnicalOrExternal: jest.fn((req: any, res: any, next: any) => next()),
   isLoggedIn: jest.fn((req: any, res: any, next: any) => next()),
 }));
 

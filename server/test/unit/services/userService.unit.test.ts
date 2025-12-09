@@ -1,4 +1,4 @@
-import { Role } from "../../../src/entities/User";
+import { Role } from "../../../../shared/RoleTypes";
 
 // 创建 mock 函数
 const mockFindByEmail = jest.fn();

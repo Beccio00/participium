@@ -6,7 +6,8 @@ import {
   toUserDTO,
   UserDTO,
 } from "../../../src/interfaces/UserDTO";
-import { Role, User } from "../../../src/entities/User";
+import { User } from "../../../src/entities/User";
+import { Role } from "../../../../shared/RoleTypes";
 
 // 辅助函数：创建完整的 mock User 对象
 function createMockUser(overrides: Partial<User> = {}): User {
@@ -94,6 +95,7 @@ describe("UserDTO", () => {
         lastName: "User",
         email: "test@example.com",
         role: Role.CITIZEN,
+        isVerified: false,
         telegramUsername: "telegram",
         emailNotificationsEnabled: false,
       });

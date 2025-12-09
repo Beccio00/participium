@@ -7,7 +7,7 @@ import {
 import { authenticate, getSession } from "../../../src/services/authService";
 import { BadRequestError, UnauthorizedError } from "../../../src/utils";
 import type { UserDTO } from "../../../src/interfaces/UserDTO";
-import { Role } from "../../../src/entities/User";
+import { Role } from "../../../../shared/RoleTypes";
 
 
 jest.mock("../../../src/services/authService");
@@ -52,6 +52,7 @@ describe("authController", () => {
         lastName: "User",
         email: "test@example.com",
         role: Role.CITIZEN,
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
@@ -93,6 +94,7 @@ describe("authController", () => {
         lastName: "User",
         email: "test@example.com",
         role: Role.CITIZEN,
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
@@ -124,6 +126,7 @@ describe("authController", () => {
         lastName: "User", 
         email: "test@example.com", 
         role: Role.CITIZEN,
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: true
       };
@@ -230,6 +233,7 @@ describe("authController", () => {
         lastName: "User",
         email: "test@example.com",
         role: Role.CITIZEN,
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
