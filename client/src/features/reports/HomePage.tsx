@@ -38,7 +38,11 @@ export default function HomePage() {
   const isTechnicalOfficer =
     isAuthenticated &&
     user?.role &&
-    ![Role.CITIZEN.toString(), Role.ADMINISTRATOR.toString(), Role.PUBLIC_RELATIONS.toString()].includes(user.role);
+    ![
+      Role.CITIZEN.toString(),
+      Role.ADMINISTRATOR.toString(),
+      Role.PUBLIC_RELATIONS.toString(),
+    ].includes(user.role);
 
   // load reports from backend and filter statuses: appending, in progress, complete
   useEffect(() => {
@@ -52,7 +56,12 @@ export default function HomePage() {
         const data = await getReportsApi();
         if (!mounted) return;
         // Ensure citizens see their own pending reports even if backend didn't include them
-        const approvedStatuses = [ReportStatus.ASSIGNED.toString(), ReportStatus.EXTERNAL_ASSIGNED.toString(), ReportStatus.IN_PROGRESS.toString(), ReportStatus.RESOLVED.toString()];
+        const approvedStatuses = [
+          ReportStatus.ASSIGNED.toString(),
+          ReportStatus.EXTERNAL_ASSIGNED.toString(),
+          ReportStatus.IN_PROGRESS.toString(),
+          ReportStatus.RESOLVED.toString(),
+        ];
         const visible = (data || []).filter((r: any) => {
           if (approvedStatuses.includes(r.status)) return true;
           if (isAuthenticated && user && r.user && r.user.email === user.email)
@@ -128,7 +137,9 @@ export default function HomePage() {
           >
             Recent Reports
           </h3>
-          <small style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}>
+          <small
+            style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}
+          >
             Showing the 10 most recent reports
           </small>
         </div>
@@ -137,13 +148,13 @@ export default function HomePage() {
       {/* Reports List */}
       <div
         className="reports-sidebar-scroll"
-        style={{ 
-          flex: 1, 
-          padding: "1.5rem", 
+        style={{
+          flex: 1,
+          padding: "1.5rem",
           overflowY: "auto",
           /* Custom scrollbar styles */
           scrollbarWidth: "thin",
-          scrollbarColor: "#d1d5db #f9fafb"
+          scrollbarColor: "#d1d5db #f9fafb",
         }}
       >
         {loadingReports ? (
@@ -172,23 +183,49 @@ export default function HomePage() {
                   return tb - ta;
                 })
                 .slice(0, 10);
-              return recent.map((report) => (
-                <ReportCard
-                  key={report.id}
-                  report={report}
-                  isSelected={selectedReportId === report.id}
-                  onClick={() => {
-                    // Solo seleziona, non riordinare la lista
-                    const sidebar = document.querySelector(
-                      ".reports-sidebar-scroll"
-                    ) as HTMLElement;
-                    if (sidebar) sidebarScrollRef.current = sidebar.scrollTop;
-                    setSelectedReportId(report.id);
-                    setShowReportsSidebar(false);
-                  }}
-                  onOpenDetails={handleReportDetailsClick}
-                />
-              ));
+              return recent.map((report) => {
+                const isOwnReport =
+                  isAuthenticated &&
+                  user &&
+                  report.user &&
+                  user.email === report.user.email;
+                return (
+                  <div key={report.id} style={{ position: "relative" }}>
+                    {isOwnReport && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          background: "#e0f7fa",
+                          color: "#00796b",
+                          fontWeight: 700,
+                          fontSize: "0.85rem",
+                          padding: "2px 8px",
+                          borderRadius: "0.5rem 0 0.5rem 0",
+                          zIndex: 2,
+                        }}
+                      >
+                        Your report
+                      </div>
+                    )}
+                    <ReportCard
+                      report={report}
+                      isSelected={selectedReportId === report.id}
+                      onClick={() => {
+                        const sidebar = document.querySelector(
+                          ".reports-sidebar-scroll"
+                        ) as HTMLElement;
+                        if (sidebar)
+                          sidebarScrollRef.current = sidebar.scrollTop;
+                        setSelectedReportId(report.id);
+                        setShowReportsSidebar(false);
+                      }}
+                      onOpenDetails={handleReportDetailsClick}
+                    />
+                  </div>
+                );
+              });
             })()}
           </div>
         ) : (
@@ -523,7 +560,7 @@ export default function HomePage() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
-      {selectedReportId !== null && (
+      {selectedReportId !== null &&
         (() => {
           const reportToShow = reports.find((r) => r.id === selectedReportId);
           return reportToShow ? (
@@ -533,8 +570,7 @@ export default function HomePage() {
               report={reportToShow}
             />
           ) : null;
-        })()
-      )}
+        })()}
     </>
   );
 }

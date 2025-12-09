@@ -40,7 +40,9 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
   const [messagesError, setMessagesError] = useState("");
 
   // Stato per la visibilità della chat
-  const [canSeeChat, setCanSeeChat] = useState(false); // This line is being removed
+  const [canSeeChat, setCanSeeChat] = useState(false);
+  // Stato per la visibilità del box di update status
+  const [canUpdateStatus, setCanUpdateStatus] = useState(false);
 
   // Scroll automatico in fondo ogni volta che arrivano nuovi messaggi
   useEffect(() => {
@@ -180,9 +182,6 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
           api.getSession()
         );
         const user = session?.user;
-        // Debug: log user e report
-        // console.log("Auth check", { user, display });
-        if (!user) return setCanSeeChat(false);
         // Cittadino autore
         if (
           display?.user &&
@@ -191,8 +190,11 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
           "id" in user &&
           user.id === display.user.id &&
           user.role === "CITIZEN"
-        )
-          return setCanSeeChat(true);
+        ) {
+          setCanSeeChat(true);
+          setCanUpdateStatus(false);
+          return;
+        }
         // External maintainer assegnato (usa externalHandler.user.id)
         const extId =
           display?.externalHandler?.user && "id" in display.externalHandler.user
@@ -204,11 +206,30 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
           "id" in user &&
           user.id === extId &&
           user.role === "EXTERNAL_MAINTAINER"
-        )
-          return setCanSeeChat(true);
+        ) {
+          setCanSeeChat(true);
+          setCanUpdateStatus(true);
+          return;
+        }
+        // Technical staff assegnato
+        if (
+          display?.assignedOfficer &&
+          user &&
+          "id" in user &&
+          user.id === display.assignedOfficer.id &&
+          user.role &&
+          user.role.startsWith("MUNICIPAL")
+        ) {
+          setCanSeeChat(true);
+          setCanUpdateStatus(true);
+          return;
+        }
+        // Non loggato o non autorizzato
         setCanSeeChat(false);
+        setCanUpdateStatus(false);
       } catch {
         setCanSeeChat(false);
+        setCanUpdateStatus(false);
       }
     }
     checkAuth();
@@ -216,6 +237,7 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
     display?.user?.id,
     display?.assignedExternalMaintainerId,
     display?.externalMaintainer?.id,
+    display?.assignedOfficer?.id,
   ]);
   const allowedStatuses = [
     ReportStatus.IN_PROGRESS,
@@ -541,7 +563,7 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
         style={{ flexDirection: "column", alignItems: "stretch", gap: "1rem" }}
       >
         {/* Status update per utenti autorizzati */}
-        {canSeeChat && (
+        {canUpdateStatus && (
           <div
             style={{
               width: "100%",
@@ -602,7 +624,16 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
             }}
           >
             <h6 style={{ fontWeight: 600, marginBottom: 8 }}>
-              Chat with citizen
+              {(() => {
+                if (
+                  display?.user &&
+                  currentUserId === display.user.id &&
+                  display.user.role === "CITIZEN"
+                ) {
+                  return "Chat with municipal officer";
+                }
+                return "Chat with citizen";
+              })()}
             </h6>
             {messagesLoading ? (
               <div>Loading messages...</div>
