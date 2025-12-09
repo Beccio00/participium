@@ -1,3 +1,4 @@
+// story 6 
 import request from "supertest";
 import { createApp } from "../../../src/app";
 import {
@@ -6,7 +7,6 @@ import {
   prisma,
 } from "../../helpers/testSetup";
 import { createUserInDatabase } from "../../helpers/testUtils";
-import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";
 
 const app = createApp();
 

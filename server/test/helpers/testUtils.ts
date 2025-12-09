@@ -1,75 +1,86 @@
-import { hashPassword } from '../../src/services/passwordService';
-import { AppDataSource } from '../../src/utils/AppDataSource';
-import { User } from '../../src/entities/User';
+import { Role, User } from "../../src/entities/User";
+import { Report, ReportStatus, ReportCategory } from "../../src/entities/Report";
+import { UserDTO, MunicipalityUserDTO } from "../../src/interfaces/UserDTO";
 
 /**
- * Create test user data
+ * 创建一个完整的 mock User 对象（包含所有 TypeORM 关联字段）
  */
-export function createTestUserData(overrides?: Partial<{
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-}>) {
+export function createMockUser(overrides: Partial<User> = {}): User {
   return {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@test.com',
-    password: 'Test1234!',
+    id: 1,
+    email: "test@test.com",
+    first_name: "Test",
+    last_name: "User",
+    password: "hashedPassword",
+    salt: "salt",
+    role: Role.CITIZEN,
+    telegram_username: null,
+    email_notifications_enabled: true,
+    // TypeORM 关联字段
+    reports: [],
+    messages: [],
+    assignedReports: [],
+    notifications: [],
+    photo: null as any,
     ...overrides,
   };
 }
 
 /**
- * Create user directly in database (for test setup)
+ * 创建一个 mock UserDTO 对象
  */
-export async function createUserInDatabase(userData?: Partial<{
-  email: string;
-  first_name: string;
-  last_name: string;
-  password: string;
-  role: string;
-}>) {
-  const defaultData = {
-    email: 'existing@test.com',
-    first_name: 'Existing',
-    last_name: 'User',
-    password: 'Test1234!',
-    role: 'CITIZEN',
+export function createMockUserDTO(overrides: Partial<UserDTO> = {}): UserDTO {
+  return {
+    id: 1,
+    email: "test@test.com",
+    firstName: "Test",
+    lastName: "User",
+    role: Role.CITIZEN,
+    telegramUsername: null,
+    emailNotificationsEnabled: true,
+    ...overrides,
   };
-
-  const data = { ...defaultData, ...userData };
-  const { hashedPassword, salt } = await hashPassword(data.password);
-
-  const userRepository = AppDataSource.getRepository(User);
-  const user = userRepository.create({
-    email: data.email,
-    first_name: data.first_name,
-    last_name: data.last_name,
-    password: hashedPassword,
-    salt: salt,
-    role: data.role as any,
-  });
-
-  return await userRepository.save(user);
 }
 
 /**
- * Verify password is correctly hashed before storage
+ * 创建一个 mock MunicipalityUserDTO 对象
  */
-export async function verifyPasswordIsHashed(email: string, plainPassword: string) {
-  const userRepository = AppDataSource.getRepository(User);
-  const user = await userRepository.findOne({ where: { email } });
-  if (!user) return false;
-  
-  // Password should be a hash, not equal to plain password
-  return user.password !== plainPassword && user.password.length > 50;
+export function createMockMunicipalityUserDTO(overrides: Partial<MunicipalityUserDTO> = {}): MunicipalityUserDTO {
+  return {
+    id: 1,
+    email: "municipality@test.com",
+    firstName: "Municipality",
+    lastName: "User",
+    role: Role.PUBLIC_RELATIONS,
+    ...overrides,
+  };
 }
 
 /**
- * Wait for specified time (for async operations)
+ * 创建一个 mock Report 对象
  */
-export function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export function createMockReport(overrides: Partial<Report> = {}): Report {
+  return {
+    id: 1,
+    title: "Test Report",
+    description: "Test Description",
+    category: ReportCategory.ROAD_SIGNS_AND_TRAFFIC_LIGHTS,
+    status: ReportStatus.PENDING_APPROVAL,
+    latitude: 45.0703,
+    longitude: 7.6869,
+    street_name: "Via Roma",
+    street_number: "1",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    userId: 1,
+    user: null as any,
+    assignedToId: null,
+    assignedTo: null as any,
+    photos: [],
+    messages: [],
+    ...overrides,
+  } as Report;
 }
 
+// 重新导出 Role 枚举，方便测试文件使用
+export { Role };

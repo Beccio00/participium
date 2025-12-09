@@ -1,5 +1,5 @@
 import request from 'supertest';
-import express, { Express, Router } from 'express';
+import express, { Express } from 'express';
 
 // Mock all route imports to return router instances
 jest.mock('../../src/routes/authRoutes', () => express.Router());
@@ -11,7 +11,30 @@ jest.mock('../../src/routes/reportRoutes', () => express.Router());
 jest.mock('../../src/config/passport', () => ({
   configurePassport: jest.fn()
 }));
-jest.mock('../../prisma/generated/client');
+
+// Mock TypeORM DataSource
+jest.mock('../../src/utils/AppDataSource', () => ({
+  AppDataSource: {
+    isInitialized: true,
+    initialize: jest.fn().mockResolvedValue(undefined),
+    getRepository: jest.fn().mockReturnValue({
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
+      delete: jest.fn(),
+    }),
+  },
+  default: {
+    isInitialized: true,
+    initialize: jest.fn().mockResolvedValue(undefined),
+    getRepository: jest.fn().mockReturnValue({
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
+      delete: jest.fn(),
+    }),
+  },
+}));
 
 // Import createApp after mocking
 import { createApp } from '../../src/app';

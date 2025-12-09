@@ -7,6 +7,7 @@ import {
 import { authenticate, getSession } from "../../../src/services/authService";
 import { BadRequestError, UnauthorizedError } from "../../../src/utils";
 import type { UserDTO } from "../../../src/interfaces/UserDTO";
+import { Role } from "../../../src/entities/User";
 
 
 jest.mock("../../../src/services/authService");
@@ -50,7 +51,7 @@ describe("authController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: "CITIZEN",
+        role: Role.CITIZEN,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
@@ -91,7 +92,7 @@ describe("authController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: "CITIZEN",
+        role: Role.CITIZEN,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
@@ -122,7 +123,7 @@ describe("authController", () => {
         firstName: "Test", 
         lastName: "User", 
         email: "test@example.com", 
-        role: "CITIZEN",
+        role: Role.CITIZEN,
         telegramUsername: null,
         emailNotificationsEnabled: true
       };
@@ -228,7 +229,7 @@ describe("authController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: "CITIZEN",
+        role: Role.CITIZEN,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };

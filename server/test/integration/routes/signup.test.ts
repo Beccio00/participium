@@ -70,80 +70,75 @@ describe("POST /api/citizen/signup", () => {
   });
 
   describe("Validation - Missing required fields", () => {
-    // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-    // it('should return 400 when firstName is missing', async () => {
-    //   // Arrange
-    //   const userData = createTestUserData();
-    //   delete (userData as any).firstName;
-    //   // Act
-    //   const response = await request(app)
-    //     .post('/api/citizen/signup')
-    //     .send(userData)
-    //     .expect(400);
-    //   // Assert
-    //   expect(response.body).toHaveProperty('error', 'BadRequest');
-    //   expect(response.body.message).toContain('firstName');
-    // });
-    // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-    // it('should return 400 when lastName is missing', async () => {
-    //   // Arrange
-    //   const userData = createTestUserData();
-    //   delete (userData as any).lastName;
-    //   // Act
-    //   const response = await request(app)
-    //     .post('/api/citizen/signup')
-    //     .send(userData)
-    //     .expect(400);
-    //   // Assert
-    //   expect(response.body).toHaveProperty('error', 'BadRequest');
-    //   expect(response.body.message).toContain('lastName');
-    // });
-    // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-    // it('should return 400 when email is missing', async () => {
-    //   // Arrange
-    //   const userData = createTestUserData();
-    //   delete (userData as any).email;
-    //   // Act
-    //   const response = await request(app)
-    //     .post('/api/citizen/signup')
-    //     .send(userData)
-    //     .expect(400);
-    //   // Assert
-    //   expect(response.body).toHaveProperty('error', 'BadRequest');
-    //   expect(response.body.message).toContain('email');
-    // });
-    // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-    // it('should return 400 when password is missing', async () => {
-    //   // Arrange
-    //   const userData = createTestUserData();
-    //   delete (userData as any).password;
-    //   // Act
-    //   const response = await request(app)
-    //     .post('/api/citizen/signup')
-    //     .send(userData)
-    //     .expect(400);
-    //   // Assert
-    //   expect(response.body).toHaveProperty('error', 'BadRequest');
-    //   expect(response.body.message).toContain('password');
-    // });
-    // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-    // it('should return 400 when multiple fields are missing', async () => {
-    //   // Arrange
-    //   const userData = {
-    //     firstName: 'John',
-    //     // lastName, email, password missing
-    //   };
-    //   // Act
-    //   const response = await request(app)
-    //     .post('/api/citizen/signup')
-    //     .send(userData)
-    //     .expect(400);
-    //   // Assert
-    //   expect(response.body).toHaveProperty('error', 'BadRequest');
-    //   expect(response.body.message).toContain('lastName');
-    //   expect(response.body.message).toContain('email');
-    //   expect(response.body.message).toContain('password');
-    // });
+    it('should return 400 when firstName is missing', async () => {
+      // Arrange
+      const userData = createTestUserData();
+      delete (userData as any).firstName;
+      // Act
+      const response = await request(app)
+        .post('/api/citizen/signup')
+        .send(userData)
+        .expect(400);
+      // Assert
+      expect(response.body).toHaveProperty('error', 'Bad Request');
+      expect(response.body.message).toContain('firstName');
+    });
+    it('should return 400 when lastName is missing', async () => {
+      // Arrange
+      const userData = createTestUserData();
+      delete (userData as any).lastName;
+      // Act
+      const response = await request(app)
+        .post('/api/citizen/signup')
+        .send(userData)
+        .expect(400);
+      // Assert
+      expect(response.body).toHaveProperty('error', 'Bad Request');
+      expect(response.body.message).toContain('lastName');
+    });
+    it('should return 400 when email is missing', async () => {
+      // Arrange
+      const userData = createTestUserData();
+      delete (userData as any).email;
+      // Act
+      const response = await request(app)
+        .post('/api/citizen/signup')
+        .send(userData)
+        .expect(400);
+      // Assert
+      expect(response.body).toHaveProperty('error', 'Bad Request');
+      expect(response.body.message).toContain('email');
+    });
+    it('should return 400 when password is missing', async () => {
+      // Arrange
+      const userData = createTestUserData();
+      delete (userData as any).password;
+      // Act
+      const response = await request(app)
+        .post('/api/citizen/signup')
+        .send(userData)
+        .expect(400);
+      // Assert
+      expect(response.body).toHaveProperty('error', 'Bad Request');
+      expect(response.body.message).toContain('password');
+    });
+    it('should return 400 when multiple fields are missing', async () => {
+      // Arrange
+      const userData = {
+        firstName: 'John',
+        // lastName, email, password missing
+      };
+      // Act
+      const response = await request(app)
+        .post('/api/citizen/signup')
+        .send(userData)
+        .expect(400);
+      // Assert
+      expect(response.body).toHaveProperty('error', 'Bad Request');
+      expect(response.body.message).toContain('lastName');
+      expect(response.body.message).toContain('email');
+      expect(response.body.message).toContain('password');
+    });
   });
 
   describe("Validation - Email conflict", () => {
@@ -182,23 +177,22 @@ describe("POST /api/citizen/signup", () => {
   });
 
   describe("Edge cases", () => {
-    // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-    // it('should handle empty string fields as missing', async () => {
-    //   // Arrange
-    //   const userData = {
-    //     firstName: '',
-    //     lastName: 'Doe',
-    //     email: 'test@test.com',
-    //     password: 'Test1234!',
-    //   };
-    //   // Act
-    //   const response = await request(app)
-    //     .post('/api/citizen/signup')
-    //     .send(userData)
-    //     .expect(400);
-    //   // Assert
-    //   expect(response.body).toHaveProperty('error', 'BadRequest');
-    //   expect(response.body.message).toContain('firstName');
-    // });
+    it('should handle empty string fields as missing', async () => {
+      // Arrange
+      const userData = {
+        firstName: '',
+        lastName: 'Doe',
+        email: 'test@test.com',
+        password: 'Test1234!',
+      };
+      // Act
+      const response = await request(app)
+        .post('/api/citizen/signup')
+        .send(userData)
+        .expect(400);
+      // Assert
+      expect(response.body).toHaveProperty('error', 'Bad Request');
+      expect(response.body.message).toContain('firstName');
+    });
   });
 });
