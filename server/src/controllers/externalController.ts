@@ -14,6 +14,12 @@ import {
 } from "../services/externalService";
 import { AssignReportToExternalResponse } from "../../../shared/ExternalTypes";
 
+
+
+// =========================
+// EXTERNAL COMPANY CONTROLLERS (ADMIN ONLY)
+// =========================
+
 // Create external company
 export async function createExternalCompanyController(req: Request, res: Response): Promise<void> {
   const { name, categories, platformAccess } = req.body;
@@ -31,21 +37,6 @@ export async function createExternalCompanyController(req: Request, res: Respons
 export async function listExternalCompaniesController(req: Request, res: Response): Promise<void> {
   const companies = await listExternalCompanies();
   res.status(200).json(companies);
-}
-
-// Create external maintainer
-export async function createExternalMaintainerController(req: Request, res: Response): Promise<void> {
-  const { firstName, lastName, email, password, externalCompanyId } = req.body;
-
-  const result = await createExternalMaintainer({
-    firstName,
-    lastName,
-    email,
-    password,
-    externalCompanyId: externalCompanyId,
-  });
-
-  res.status(201).json(result);
 }
 
 // Get external companies with platform access (for maintainer creation)
@@ -66,6 +57,73 @@ export async function deleteExternalCompanyController(req: Request, res: Respons
   await deleteExternalCompany(companyId);
   res.status(204).send();
 }
+
+
+
+// =========================
+// EXTERNAL MAINTAINER CONTROLLERS (ADMIN ONLY)
+// =========================
+
+// Create external maintainer
+export async function createExternalMaintainerController(req: Request, res: Response): Promise<void> {
+  const { firstName, lastName, email, password, externalCompanyId } = req.body;
+
+  const result = await createExternalMaintainer({
+    firstName,
+    lastName,
+    email,
+    password,
+    externalCompanyId: externalCompanyId,
+  });
+
+  res.status(201).json(result);
+}
+
+// Get all external maintainers
+export async function listExternalMaintainersController(req: Request, res: Response): Promise<void> {
+  const maintainers = await getAllExternalMaintainers();
+  res.status(200).json(maintainers);
+}
+
+// Get external maintainer by ID
+export async function getExternalMaintainerController(req: Request, res: Response): Promise<void> {
+  const maintainerId = parseInt(req.params.id);
+  
+  if (isNaN(maintainerId)) {
+    throw new BadRequestError("Invalid maintainer ID format");
+  }
+
+  const maintainer = await getExternalMaintainerById(maintainerId);
+  
+  if (!maintainer) {
+    throw new NotFoundError("External maintainer not found");
+  }
+
+  res.status(200).json(maintainer);
+}
+
+// Delete external maintainer
+export async function deleteExternalMaintainerController(req: Request, res: Response): Promise<void> {
+  const maintainerId = parseInt(req.params.id);
+  
+  if (isNaN(maintainerId)) {
+    throw new BadRequestError("Invalid maintainer ID format");
+  }
+
+  const deleted = await deleteExternalMaintainer(maintainerId);
+  
+  if (!deleted) {
+    throw new NotFoundError("External maintainer not found");
+  }
+
+  res.status(204).send();
+}
+
+
+
+// =========================
+// REPORT ASSIGNMENT CONTROLLERS (TECH ONLY)
+// =========================
 
 // List external companies and maintainers available for the report's category
 export async function getAssignableExternals(req: Request, res: Response): Promise<void> {
@@ -109,44 +167,4 @@ export async function assignReportToExternal(req: Request, res: Response): Promi
     report: updatedReport,
   };
   res.status(200).json(response);
-}
-
-// Get all external maintainers
-export async function listExternalMaintainersController(req: Request, res: Response): Promise<void> {
-  const maintainers = await getAllExternalMaintainers();
-  res.status(200).json(maintainers);
-}
-
-// Get external maintainer by ID
-export async function getExternalMaintainerController(req: Request, res: Response): Promise<void> {
-  const maintainerId = parseInt(req.params.id);
-  
-  if (isNaN(maintainerId)) {
-    throw new BadRequestError("Invalid maintainer ID format");
-  }
-
-  const maintainer = await getExternalMaintainerById(maintainerId);
-  
-  if (!maintainer) {
-    throw new NotFoundError("External maintainer not found");
-  }
-
-  res.status(200).json(maintainer);
-}
-
-// Delete external maintainer
-export async function deleteExternalMaintainerController(req: Request, res: Response): Promise<void> {
-  const maintainerId = parseInt(req.params.id);
-  
-  if (isNaN(maintainerId)) {
-    throw new BadRequestError("Invalid maintainer ID format");
-  }
-
-  const deleted = await deleteExternalMaintainer(maintainerId);
-  
-  if (!deleted) {
-    throw new NotFoundError("External maintainer not found");
-  }
-
-  res.status(204).send();
 }

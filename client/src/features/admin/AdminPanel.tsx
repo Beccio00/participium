@@ -27,6 +27,7 @@ import type {
   CreateExternalCompanyData,
   ReportCategory
 } from "../../types"; 
+import { Role } from "../../../../shared/RoleTypes";
 import { PersonPlus, Trash, People, Briefcase, Building } from "react-bootstrap-icons";
 import { MUNICIPALITY_ROLES, getRoleLabel } from "../../utils/roles";
 
@@ -86,7 +87,7 @@ export default function AdminPanel() {
   const [showForm, setShowForm] = useState(false);
   const { loadingState, setLoading, setIdle } = useLoadingState();
 
-  const isAdmin = isAuthenticated && user?.role === "ADMINISTRATOR";
+  const isAdmin = isAuthenticated && user?.role === Role.ADMINISTRATOR.toString();
 
   useEffect(() => {
     if (!isAdmin) {
@@ -106,8 +107,6 @@ export default function AdminPanel() {
         getExternalMaintainers(),
         getExternalCompanies()
       ]);
-
-      console.log("euser", eUsers);
 
       setInternalUsers(mUsers);
       setExternalUsers(eUsers);
@@ -219,12 +218,12 @@ export default function AdminPanel() {
   let addButtonLabel = 'Staff';
 
   if (activeTab === 'external') {
-    tabColor = '#fd7e14';
+    tabColor = 'var(--primary)';
     tabTitle = 'External Maintainers';
     TabIcon = Briefcase;
     addButtonLabel = 'Maintainer';
   } else if (activeTab === 'companies') {
-    tabColor = '#198754';
+    tabColor = 'var(--primary)';
     tabTitle = 'External Companies';
     TabIcon = Building;
     addButtonLabel = 'Company';
@@ -255,7 +254,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="internal" 
               onClick={() => handleTabChange('internal')}
-              className={activeTab === 'internal' ? 'fw-bold' : ''}
+              className={activeTab === 'internal' ? 'fw-bold text-dark' : 'text-muted'}
             >
               <People className="me-2" /> Internal Staff
             </Nav.Link>
@@ -273,7 +272,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="companies" 
               onClick={() => handleTabChange('companies')}
-              className={activeTab === 'companies' ? 'fw-bold text-success' : 'text-muted'}
+              className={activeTab === 'companies' ? 'fw-bold text-dark' : 'text-muted'}
             >
               <Building className="me-2" /> Partner Companies
             </Nav.Link>
@@ -441,6 +440,10 @@ export default function AdminPanel() {
                               label={cat.replace(/_/g, " ")}
                               checked={form.values.categories.includes(cat)}
                               onChange={() => handleCategoryToggle(cat)}
+                              disabled={
+                                form.values.categories.length >= 2 &&
+                                !form.values.categories.includes(cat)
+                              }
                             />
                           ))}
                         </div>

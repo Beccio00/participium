@@ -19,11 +19,17 @@ import {
   CreateExternalCompanyData, 
   CreateExternalMaintainerData 
 } from "../../../shared/ExternalTypes";
+import { notifyReportAssigned, notifyReportStatusChange } from "./notificationService";
 
 const externalCompanyRepository = new ExternalCompanyRepository();
 const userRepository = new UserRepository();
 const reportRepository = new ReportRepository();
 const reportMessageRepository = new ReportMessageRepository();
+
+
+// =========================
+// EXTERNAL COMPANY CRUD SERVICES (ADMIN ONLY)
+// =========================
 
 /**
  * Create a new external company
@@ -102,6 +108,32 @@ export async function getExternalCompaniesWithAccess(): Promise<ExternalCompanyW
 }
 
 /**
+ * Delete an external company
+ */
+export async function deleteExternalCompany(id: number): Promise<void> {
+  const company = await externalCompanyRepository.findById(id);
+  if (!company) {
+    throw new NotFoundError("External company not found");
+  }
+
+  // Check if company has maintainers
+  if (company.maintainers && company.maintainers.length > 0) {
+    throw new BadRequestError("Cannot delete company with existing maintainers. Remove all maintainers first.");
+  }
+
+  const deleted = await externalCompanyRepository.deleteById(id);
+  if (!deleted) {
+    throw new BadRequestError("Failed to delete external company");
+  }
+}
+
+
+
+// =========================
+// EXTERNAL MAINTAINER CRUD SERVICES (ADMIN ONLY)
+// =========================
+
+/**
  * Create a new external maintainer
  */
 export async function createExternalMaintainer(data: CreateExternalMaintainerData): Promise<ExternalMaintainerDTO> {
@@ -167,24 +199,50 @@ export async function createExternalMaintainer(data: CreateExternalMaintainerDat
 }
 
 /**
- * Delete an external company
+ * Get all external maintainers
  */
-export async function deleteExternalCompany(id: number): Promise<void> {
-  const company = await externalCompanyRepository.findById(id);
-  if (!company) {
-    throw new NotFoundError("External company not found");
-  }
-
-  // Check if company has maintainers
-  if (company.maintainers && company.maintainers.length > 0) {
-    throw new BadRequestError("Cannot delete company with existing maintainers. Remove all maintainers first.");
-  }
-
-  const deleted = await externalCompanyRepository.deleteById(id);
-  if (!deleted) {
-    throw new BadRequestError("Failed to delete external company");
-  }
+export async function getAllExternalMaintainers(): Promise<ExternalMaintainerDTO[]> {
+  const maintainers = await userRepository.findExternalMaintainersWithCompany();
+  
+  return maintainers
+    .map(toExternalMaintainerDTO)
+    .filter((dto): dto is ExternalMaintainerDTO => dto !== null);
 }
+
+/**
+ * Get external maintainer by ID
+ */
+export async function getExternalMaintainerById(id: number): Promise<ExternalMaintainerDTO | null> {
+  const maintainer = await userRepository.findExternalMaintainerByIdWithCompany(id);
+  if (!maintainer) {
+    return null;
+  }
+  return toExternalMaintainerDTO(maintainer);
+}
+
+/**
+ * Delete external maintainer
+ */
+export async function deleteExternalMaintainer(id: number): Promise<boolean> {
+  const maintainer = await userRepository.findById(id);
+  if (!maintainer || maintainer.role !== Role.EXTERNAL_MAINTAINER) {
+    return false;
+  }
+
+  // Check if maintainer has assigned reports
+  const assignedReports = await reportRepository.findAssignedToUser(id, [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED]);
+  if (assignedReports.length > 0) {
+    throw new BadRequestError("Cannot delete external maintainer with assigned reports");
+  }
+
+  return await userRepository.delete(id);
+}
+
+
+
+// =========================
+// REPORT ASSIGNMENT SERVICES (TECH ONLY)
+// =========================
 
 /**
     * Get external companies and maintainers available for the report's category
@@ -266,6 +324,8 @@ export async function assignReportToExternal(
       senderId: technicalUserId,
       reportId,
     });
+    await notifyReportStatusChange(reportId, report.userId, ReportStatus.ASSIGNED, ReportStatus.EXTERNAL_ASSIGNED);
+    await notifyReportAssigned(reportId, maintainer.id, report.title);
     return toReportDTO(updated!);
   } else {
     // No platform access: must not include maintainer
@@ -283,46 +343,7 @@ export async function assignReportToExternal(
       senderId: technicalUserId,
       reportId,
     });
+    await notifyReportStatusChange(reportId, report.userId, ReportStatus.ASSIGNED, ReportStatus.EXTERNAL_ASSIGNED);
     return toReportDTO(updated!);
   }
-}
-
-/**
- * Get all external maintainers
- */
-export async function getAllExternalMaintainers(): Promise<ExternalMaintainerDTO[]> {
-  const maintainers = await userRepository.findExternalMaintainersWithCompany();
-  
-  return maintainers
-    .map(toExternalMaintainerDTO)
-    .filter((dto): dto is ExternalMaintainerDTO => dto !== null);
-}
-
-/**
- * Get external maintainer by ID
- */
-export async function getExternalMaintainerById(id: number): Promise<ExternalMaintainerDTO | null> {
-  const maintainer = await userRepository.findExternalMaintainerByIdWithCompany(id);
-  if (!maintainer) {
-    return null;
-  }
-  return toExternalMaintainerDTO(maintainer);
-}
-
-/**
- * Delete external maintainer
- */
-export async function deleteExternalMaintainer(id: number): Promise<boolean> {
-  const maintainer = await userRepository.findById(id);
-  if (!maintainer || maintainer.role !== Role.EXTERNAL_MAINTAINER) {
-    return false;
-  }
-
-  // Check if maintainer has assigned reports
-  const assignedReports = await reportRepository.findAssignedToUser(id, [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED]);
-  if (assignedReports.length > 0) {
-    throw new BadRequestError("Cannot delete external maintainer with assigned reports");
-  }
-
-  return await userRepository.delete(id);
 }

@@ -12,10 +12,12 @@ import {
   rejectReport,
   getAssignableTechnicals,
   updateReportStatus,
-  sendMessageToCitizen,
-  getReportMessages,
   getAssignedReports
 } from '../controllers/reportController';
+import {
+  sendMessageToCitizen,
+  getReportMessages,
+} from '../controllers/messageController';
 import { getAssignableExternals, assignReportToExternal } from '../controllers/externalController';
 import { upload } from '../middlewares/uploadsMiddleware';
 import { ApiValidationMiddleware } from '../middlewares/validationMiddlewere';
@@ -40,8 +42,8 @@ router.get("/assigned", requireTechnicalOrExternal, ApiValidationMiddleware, asy
 // GET /api/reports/pending - Get pending reports for review
 router.get("/pending", requirePublicRelations, ApiValidationMiddleware, asyncHandler(getPendingReports));
 
-// GET /api/reports/:reportId - Get single report details (technical staff and external maintainers)
-router.get("/:reportId", requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(getReportById));
+// GET /api/reports/:reportId - Get single report details
+router.get("/:reportId", isLoggedIn, ApiValidationMiddleware, asyncHandler(getReportById));
 
 // GET /api/reports/:reportId/assignable-technicals - list municipality technicals valid for this report (no externals)
 router.get("/:reportId/assignable-technicals", requirePublicRelations, ApiValidationMiddleware, asyncHandler(getAssignableTechnicals));

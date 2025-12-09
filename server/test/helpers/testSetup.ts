@@ -6,6 +6,7 @@ import { Report } from "../../src/entities/Report";
 import { ReportPhoto } from "../../src/entities/ReportPhoto";
 import { ReportMessage } from "../../src/entities/ReportMessage";
 import { Notification } from "../../src/entities/Notification";
+import { ExternalCompany } from "../../src/entities/ExternalCompany";
 
 // Test DataSource configuration
 export const TestDataSource = new DataSource({
@@ -41,6 +42,7 @@ export async function cleanDatabase() {
   await TestDataSource.getRepository(CitizenPhoto).delete({});
   await TestDataSource.getRepository(Notification).delete({});
   await TestDataSource.getRepository(User).delete({});
+  await TestDataSource.getRepository(ExternalCompany).delete({});
 }
 
 /**

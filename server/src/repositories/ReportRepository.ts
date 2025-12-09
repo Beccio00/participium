@@ -33,7 +33,16 @@ export class ReportRepository {
   async findByStatus(statuses: ReportStatus[]): Promise<Report[]> {
     return await this.repository.find({
       where: { status: In(statuses) },
-      relations: ["user", "photos", "messages", "messages.user"],
+      relations: [
+        "user",
+        "photos",
+        "messages",
+        "messages.user",
+        "assignedOfficer",
+        "externalMaintainer",
+        "externalMaintainer.externalCompany",
+        "externalCompany"
+      ],
       order: { createdAt: "DESC" }
     });
   }
@@ -46,7 +55,16 @@ export class ReportRepository {
 
     return await this.repository.find({
       where: whereCondition,
-      relations: ["user", "photos", "messages", "messages.user"],
+      relations: [
+        "user",
+        "photos",
+        "messages",
+        "messages.user",
+        "assignedOfficer",
+        "externalMaintainer",
+        "externalMaintainer.externalCompany",
+        "externalCompany"
+      ],
       order: { createdAt: "DESC" }
     });
   }

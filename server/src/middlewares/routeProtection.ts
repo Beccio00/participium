@@ -16,7 +16,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || authReq.user.role !== 'ADMINISTRATOR') {
+  if (!authReq.user || authReq.user.role !== Role.ADMINISTRATOR) {
     throw new ForbiddenError("Administrator privileges required");
   }
 
@@ -30,7 +30,7 @@ export function requireCitizen(req: Request, res: Response, next: NextFunction) 
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || authReq.user.role !== 'CITIZEN') {
+  if (!authReq.user || authReq.user.role !== Role.CITIZEN) {
     throw new ForbiddenError("Only citizens can create reports");
   }
 
@@ -97,6 +97,27 @@ export function requireExternalMaintainer(req: Request, res: Response, next: Nex
 
   if (!authReq.user || authReq.user.role !== Role.EXTERNAL_MAINTAINER) {
     throw new ForbiddenError("External maintainer privileges required");
+  }
+
+  return next();
+}
+
+
+
+
+export function requireCitizenOrTechnicalOrExternal(req: Request, res: Response, next: NextFunction) {
+  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
+
+  if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (!authReq.user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (authReq.user.role !== Role.CITIZEN && !TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
+    throw new ForbiddenError("Citizen, technical staff, or external maintainer privileges required");
   }
 
   return next();

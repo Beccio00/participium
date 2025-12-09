@@ -18,7 +18,10 @@ import {
 } from "../../api/api";
 import type { Report as AppReport } from "../../types/report.types";
 import ReportCard from "../reports/ReportCard";
-import { MUNICIPALITY_AND_EXTERNAL_ROLES } from "../../utils/roles";
+import ReportDetailsModal from "../reports/ReportDetailsModal";
+import { MUNICIPALITY_AND_EXTERNAL_ROLES,  TECHNICIAN_ROLES} from "../../utils/roles";
+import { Role } from "../../../../shared/RoleTypes";
+import { ReportStatus } from "../../../../shared/ReportTypes";
 import "../../styles/TechPanelstyle.css";
 
 export default function TechPanel() {
@@ -45,19 +48,20 @@ export default function TechPanel() {
     null
   );
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Form data state
   const [targetStatus, setTargetStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  const isPublicRelations = user?.role === "PUBLIC_RELATIONS";
-  const isExternalMaintainer = user?.role === "EXTERNAL_MAINTAINER";
+  const isPublicRelations = user?.role === Role.PUBLIC_RELATIONS.toString();
+  const isExternalMaintainer = user?.role === Role.EXTERNAL_MAINTAINER.toString();
 
   const TECHNICAL_ALLOWED_STATUSES = [
-    { value: "IN_PROGRESS", label: "In Progress" },
-    { value: "RESOLVED", label: "Resolved" },
-    { value: "SUSPENDED", label: "Work suspended" },
+    { value: ReportStatus.IN_PROGRESS.toString(), label: "In Progress" },
+    { value: ReportStatus.RESOLVED.toString(), label: "Resolved" },
+    { value: ReportStatus.SUSPENDED.toString(), label: "Work suspended" },
   ];
 
   useEffect(() => {
@@ -99,7 +103,7 @@ export default function TechPanel() {
         const pendingNormalized = (assignedData || [])
           .filter(
             (r: any) =>
-              r.status === "EXTERNAL_ASSIGNED" ||
+              r.status === ReportStatus.EXTERNAL_ASSIGNED.toString() ||
               TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status)
           )
           .map((r: any) => ({
@@ -118,7 +122,7 @@ export default function TechPanel() {
         const pendingNormalized = (assignedData || [])
           .filter(
             (r: any) =>
-              r.status === "ASSIGNED" ||
+              r.status === ReportStatus.ASSIGNED.toString() ||
               TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status)
           )
           .map((r: any) => ({
@@ -128,7 +132,7 @@ export default function TechPanel() {
           }));
 
         const otherNormalized = (assignedData || [])
-          .filter((r: any) => r.status === "EXTERNAL_ASSIGNED")
+          .filter((r: any) => r.status === ReportStatus.EXTERNAL_ASSIGNED.toString())
           .map((r: any) => ({
             ...r,
             latitude: Number(r.latitude),
@@ -153,22 +157,8 @@ export default function TechPanel() {
       setProcessingId(id);
       let technicals = [];
       let externals = [];
-      const technicalRoles = [
-        "CULTURE_EVENTS_TOURISM_SPORTS",
-        "LOCAL_PUBLIC_SERVICES",
-        "EDUCATION_SERVICES",
-        "PUBLIC_RESIDENTIAL_HOUSING",
-        "INFORMATION_SYSTEMS",
-        "MUNICIPAL_BUILDING_MAINTENANCE",
-        "PRIVATE_BUILDINGS",
-        "INFRASTRUCTURES",
-        "GREENSPACES_AND_ANIMAL_PROTECTION",
-        "WASTE_MANAGEMENT",
-        "ROAD_MAINTENANCE",
-        "CIVIL_PROTECTION",
-      ];
 
-      if (user && user.role === "PUBLIC_RELATIONS") {
+      if (user && user.role === Role.PUBLIC_RELATIONS.toString()) {
         try {
           technicals = await getAssignableTechnicals(id);
         } catch (err) {
@@ -180,7 +170,7 @@ export default function TechPanel() {
           setProcessingId(null);
           return;
         }
-      } else if (user && technicalRoles.includes(user.role)) {
+      } else if (user && TECHNICIAN_ROLES.includes(user.role)) {
         try {
           externals = await getAssignableExternals(id);
         } catch (err) {
@@ -212,6 +202,15 @@ export default function TechPanel() {
     }
   };
 
+  const handleReportDetailsClick = (reportId: number) => {
+    setSelectedReportId(reportId);
+    setShowDetailsModal(true);
+    setTimeout(() => {
+      const reportCard = document.querySelector(`[data-report-id="${reportId}"]`) as HTMLElement;
+      if (reportCard) reportCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
+
   const handleConfirmAssign = async () => {
     if (!selectedReportId) return;
     try {
@@ -219,7 +218,7 @@ export default function TechPanel() {
       let updatedReport = null;
 
       // PUBLIC_RELATIONS: assign to technical user
-      if (user && user.role === "PUBLIC_RELATIONS" && selectedTechnicalId) {
+      if (user && user.role === Role.PUBLIC_RELATIONS.toString() && selectedTechnicalId) {
         const res = await approveReport(selectedReportId, selectedTechnicalId);
         updatedReport = res && res.report ? res.report : null;
       }
@@ -376,7 +375,7 @@ export default function TechPanel() {
               <Row>
                 {otherReports.map((report) => (
                   <Col key={report.id} lg={4} md={6} className="mb-3">
-                    <ReportCard report={report} />
+                    <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
                   </Col>
                 ))}
               </Row>
@@ -393,7 +392,7 @@ export default function TechPanel() {
                 {pendingReports.map((report) => (
                   <Col key={report.id} lg={6} xl={4} className="mb-4">
                     <div className="h-100 shadow-sm report-card d-flex flex-column">
-                      <ReportCard report={report} />
+                      <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
                       <div
                         style={{
                           padding: "0.75rem 1rem",
@@ -441,7 +440,7 @@ export default function TechPanel() {
                 {pendingReports.map((report) => (
                   <Col key={report.id} lg={6} xl={4} className="mb-4">
                     <div className="h-100 shadow-sm report-card d-flex flex-column">
-                      <ReportCard report={report} />
+                      <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
 
                       {/* Show actions for both Technical Office and Externals */}
                       <div
@@ -466,20 +465,41 @@ export default function TechPanel() {
                         </Button>
 
                         {/* ASSIGN TO EXTERNAL: Visible ONLY for Technical Office (NOT External Maintainers) */}
-                        {!isExternalMaintainer && (
-                          <Button
-                            variant="primary"
-                            className="w-100 d-flex align-items-center justify-content-center"
-                            onClick={() => openAssignModal(report.id)}
-                            disabled={processingId === report.id}
-                            isLoading={
-                              processingId === report.id && showAssignModal
-                            }
-                          >
-                            <CheckCircle className="me-2" />
-                            Assign to external
-                          </Button>
-                        )}
+                        {!isExternalMaintainer && (() => {
+                          const disabledByStatus = report.status !== "ASSIGNED";
+                          const assignDisabled = processingId === report.id || disabledByStatus;
+                          const tooltip = disabledByStatus
+                            ? "A report can be assigned to an external company only when its status is ASSIGNED. Once it moves to IN_PROGRESS it can no longer be assigned externally."
+                            : "";
+
+                          // Native tooltips don't show on disabled elements in some browsers,
+                          // so attach the title to a wrapper when disabled by status.
+                          const Wrapper: any = (props: any) => (
+                            <div
+                              title={assignDisabled && tooltip ? tooltip : undefined}
+                              style={{ width: "100%" }}
+                            >
+                              {props.children}
+                            </div>
+                          );
+
+                          return (
+                            <Wrapper>
+                              <Button
+                                variant="primary"
+                                className="w-100 d-flex align-items-center justify-content-center"
+                                onClick={() => openAssignModal(report.id)}
+                                disabled={assignDisabled}
+                                isLoading={
+                                  processingId === report.id && showAssignModal
+                                }
+                              >
+                                <CheckCircle className="me-2" />
+                                Assign to external
+                              </Button>
+                            </Wrapper>
+                          );
+                        })()}
                       </div>
                     </div>
                   </Col>
@@ -498,10 +518,10 @@ export default function TechPanel() {
                 </p>
               ) : (
                 <Row>
-                  {otherReports.map((report) => (
+                        {otherReports.map((report) => (
                     <Col key={report.id} lg={6} xl={4} className="mb-4">
                       <div className="h-100 shadow-sm report-card d-flex flex-column">
-                        <ReportCard report={report} />
+                        <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
                       </div>
                     </Col>
                   ))}
@@ -714,6 +734,19 @@ export default function TechPanel() {
           </Button>
         </Modal.Footer>
       </Modal>
+      {selectedReportId !== null && (
+        (() => {
+          const allReports = [...pendingReports, ...otherReports];
+          const reportToShow = allReports.find((r) => r.id === selectedReportId);
+          return reportToShow ? (
+            <ReportDetailsModal
+              show={showDetailsModal}
+              onHide={() => setShowDetailsModal(false)}
+              report={reportToShow}
+            />
+          ) : null;
+        })()
+      )}
     </Container>
   );
 }

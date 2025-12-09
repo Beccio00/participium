@@ -8,8 +8,6 @@ import {
   rejectReport as rejectReportService,
   getAssignableTechnicalsForReport as getAssignableTechnicalsForReportService,
   updateReportStatus as updateReportStatusService,
-  sendMessageToCitizen as sendMessageToCitizenService,
-  getReportMessages as getReportMessagesService,
   getAssignedReportsService,
   getAssignedReportsForExternalMaintainer,
   getReportById as getReportByIdService
@@ -18,6 +16,12 @@ import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
 import minioClient, { BUCKET_NAME } from "../utils/minioClient";
 import { BadRequestError, UnauthorizedError } from "../utils";
+import { Role } from "../interfaces/UserDTO";
+
+
+// =========================
+// REPORT PUBLIC CONTROLLERS
+// =========================
 
 export async function createReport(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
@@ -143,7 +147,7 @@ export async function createReport(req: Request, res: Response): Promise<void> {
 
   res.status(201).json({
     message: "Report created successfully",
-    id: newReport.id,
+    report: newReport
   });
 }
 
@@ -182,7 +186,13 @@ export async function getReportById(req: Request, res: Response): Promise<void> 
   res.status(200).json(report);
 }
 
-// Get pending reports (PUBLIC_RELATIONS only)
+
+
+// =========================
+// REPORT PR CONTROLLERS
+// =========================
+
+// Get pending reports
 export async function getPendingReports(
   req: Request,
   res: Response
@@ -191,7 +201,7 @@ export async function getPendingReports(
   res.status(200).json(reports);
 }
 
-// Approve a report (PUBLIC_RELATIONS only)
+// Approve a report
 export async function approveReport(
   req: Request,
   res: Response
@@ -223,7 +233,7 @@ export async function approveReport(
   });
 }
 
-// Get list of assignable technicals for a report (PUBLIC_RELATIONS only)
+// Get list of assignable technicals for a report
 export async function getAssignableTechnicals(
   req: Request,
   res: Response
@@ -257,6 +267,12 @@ export async function rejectReport(req: Request, res: Response): Promise<void> {
   });
 }
 
+
+
+// =========================
+// REPORT TECH/EXTERNAL CONTROLLERS
+// =========================
+
 // Update report status
 export async function updateReportStatus(req: Request, res: Response): Promise<void> {
   const reportId = parseInt(req.params.reportId);
@@ -282,40 +298,6 @@ export async function updateReportStatus(req: Request, res: Response): Promise<v
     message: "Report status updated successfully",
     report: updatedReport,
   });
-}
-
-// Send message to citizen
-export async function sendMessageToCitizen(req: Request, res: Response): Promise<void> {
-  const reportId = parseInt(req.params.reportId);
-  const user = req.user as { id: number };
-  const { content } = req.body;
-
-  if (isNaN(reportId)) {
-    throw new BadRequestError("Invalid report ID parameter");
-  }
-
-  if (!content || typeof content !== "string" || content.trim().length === 0) {
-    throw new BadRequestError("Message content is required");
-  }
-
-  const message = await sendMessageToCitizenService(reportId, user.id, content);
-  res.status(201).json({
-    message: "Message sent successfully",
-    data: message,
-  });
-}
-
-// Get report conversation history
-export async function getReportMessages(req: Request, res: Response): Promise<void> {
-  const reportId = parseInt(req.params.reportId);
-  const user = req.user as { id: number };
-
-  if (isNaN(reportId)) {
-    throw new BadRequestError("Invalid report ID parameter");
-  }
-
-  const messages = await getReportMessagesService(reportId, user.id);
-  res.status(200).json(messages);
 }
 
 export async function getAssignedReports(
@@ -348,7 +330,7 @@ export async function getAssignedReports(
   
   // Call appropriate service based on user role
   let reports;
-  if (user.role === "EXTERNAL_MAINTAINER") {
+  if (user.role === Role.EXTERNAL_MAINTAINER) {
     reports = await getAssignedReportsForExternalMaintainer(
       user.id,
       statusFilter,
@@ -356,7 +338,7 @@ export async function getAssignedReports(
       sortOrder
     );
   } else {
-    // For internal staff (TECHNICAL_STAFF, PUBLIC_RELATIONS_OFFICER, etc.)
+    // For internal staff
     reports = await getAssignedReportsService(
       user.id,
       statusFilter,
