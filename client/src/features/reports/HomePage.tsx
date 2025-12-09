@@ -24,6 +24,27 @@ export default function HomePage() {
   const sidebarScrollRef = useRef<number>(0);
 
   const [reports, setReports] = useState<Report[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Aggiorna un report nella lista
+  const handleReportUpdate = (updatedReport: Report) => {
+    setReports((prevReports) =>
+      prevReports.map((r) => (r.id === updatedReport.id ? updatedReport : r))
+    );
+  };
+
+  // Ricarica tutti i report
+  const refreshReports = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  // Ascolta eventi di refresh report
+  useEffect(() => {
+    const handleRefresh = () => refreshReports();
+    window.addEventListener("refreshReports", handleRefresh);
+    return () => window.removeEventListener("refreshReports", handleRefresh);
+  }, []);
+
   // Seleziona il report e mostra i dettagli
   const handleReportDetailsClick = (reportId: number) => {
     setSelectedReportId(reportId);
@@ -87,7 +108,7 @@ export default function HomePage() {
     return () => {
       mounted = false;
     };
-  }, [isAuthenticated, user?.email]);
+  }, [isAuthenticated, user?.email, refreshTrigger]);
 
   useEffect(() => {
     if (isAuthenticated && user?.role === Role.ADMINISTRATOR.toString()) {
@@ -568,6 +589,7 @@ export default function HomePage() {
               show={showDetailsModal}
               onHide={() => setShowDetailsModal(false)}
               report={reportToShow}
+              onReportUpdate={handleReportUpdate}
             />
           ) : null;
         })()}

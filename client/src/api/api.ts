@@ -1,3 +1,11 @@
+// Notification API
+export async function getNotifications(): Promise<any[]> {
+  const res = await fetch(`${API_PREFIX}/notifications`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<any[]>(res);
+}
 import type { LoginResponse, SessionInfo } from "../../../shared/LoginTypes";
 import type {
   SignupFormData,
@@ -418,4 +426,5 @@ export default {
   uploadCitizenPhoto,
   deleteCitizenPhoto,
   deleteMunicipalityUser,
+  getNotifications,
 };

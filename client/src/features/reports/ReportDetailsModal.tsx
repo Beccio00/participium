@@ -7,6 +7,7 @@ interface Props {
   show: boolean;
   onHide: () => void;
   report: Report;
+  onReportUpdate?: (report: Report) => void;
 }
 
 function statusVariant(status?: string) {
@@ -30,7 +31,12 @@ function statusVariant(status?: string) {
   }
 }
 
-export default function ReportDetailsModal({ show, onHide, report }: Props) {
+export default function ReportDetailsModal({
+  show,
+  onHide,
+  report,
+  onReportUpdate,
+}: Props) {
   // Ref per la chat container
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +83,28 @@ export default function ReportDetailsModal({ show, onHide, report }: Props) {
       ignore = true;
     };
   }, []);
+
+  // Aggiorna il report dal backend quando il modale viene aperto
+  useEffect(() => {
+    let mounted = true;
+    async function fetchUpdatedReport() {
+      try {
+        const allReports = await import("../../api/api").then((api) =>
+          api.getReports()
+        );
+        const updated = allReports.find((r) => r.id === report.id);
+        if (updated && onReportUpdate && mounted) {
+          onReportUpdate(updated);
+        }
+      } catch {}
+    }
+    if (show && report?.id) {
+      fetchUpdatedReport();
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [show, report?.id]);
 
   // Fetch messages when modal opens or report changes, e polling ogni 5s senza flash
   useEffect(() => {
