@@ -3,13 +3,16 @@ import type {
   SignupFormData,
   SignupResponse,
 } from "../../../shared/SignupTypes";
+
+// Email verification API
+export { verifyEmailCode, resendVerificationCode } from "./emailVerification";
 import type {
   MunicipalityUserRequest,
   MunicipalityUserResponse,
 } from "../../../shared/MunicipalityUserTypes";
 import type { CreateReportResponse } from "../../../shared/ReportTypes";
 import type { Report } from "../types/report.types";
-import type { 
+import type {
   AssignReportToExternalResponse,
   CreateExternalMaintainerData,
   CreateExternalCompanyData,
@@ -17,7 +20,7 @@ import type {
   ExternalMaintainerResponse,
 } from "../../../shared/ExternalTypes";
 
-const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
+export const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
@@ -125,7 +128,9 @@ export async function createExternalCompany(
   return handleResponse<ExternalCompanyResponse>(res);
 }
 
-export async function getExternalCompanies(): Promise<ExternalCompanyResponse[]> {
+export async function getExternalCompanies(): Promise<
+  ExternalCompanyResponse[]
+> {
   const res = await fetch(`${API_PREFIX}/admin/external-companies`, {
     method: "GET",
     credentials: "include",
@@ -157,7 +162,7 @@ export async function deleteExternalCompany(companyId: number): Promise<void> {
   await handleResponse<unknown>(res);
 }
 
-// maintainers 
+// maintainers
 
 export async function createExternalMaintainer(
   data: CreateExternalMaintainerData
