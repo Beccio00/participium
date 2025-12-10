@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Container, Row, Col, Modal, Form } from "react-bootstrap";
-import { CheckCircle, XCircle, Tools } from "react-bootstrap-icons";
+import { CheckCircle, XCircle, Tools, FileText } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
@@ -15,8 +15,10 @@ import {
   getAssignableExternals,
   assignReportToExternal,
   updateReportStatus,
+  createInternalNote,
+  getInternalNotes,
 } from "../../api/api";
-import type { Report as AppReport } from "../../types/report.types";
+import type { Report as AppReport, InternalNote } from "../../types/report.types";
 import ReportCard from "../reports/ReportCard";
 import ReportDetailsModal from "../reports/ReportDetailsModal";
 import { MUNICIPALITY_AND_EXTERNAL_ROLES,  TECHNICIAN_ROLES} from "../../utils/roles";
@@ -39,6 +41,8 @@ export default function TechPanel() {
   const [showStatusModal, setShowStatusModal] = useState(false);
 
   // Selection state
+  const [showInternalNoteModal, setShowInternalNoteModal] = useState(false);
+
   const [assignableTechnicals, setAssignableTechnicals] = useState<any[]>([]);
   const [assignableExternals, setAssignableExternals] = useState<any[]>([]);
   const [selectedTechnicalId, setSelectedTechnicalId] = useState<number | null>(
@@ -52,7 +56,13 @@ export default function TechPanel() {
 
   // Form data state
   const [targetStatus, setTargetStatus] = useState<string>("");
+
   const [rejectionReason, setRejectionReason] = useState("");
+  const [internalNoteContent, setInternalNoteContent] = useState("");
+
+  const [internalNotes, setInternalNotes] = useState<InternalNote[]>([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   const isPublicRelations = user?.role === Role.PUBLIC_RELATIONS.toString();
@@ -73,6 +83,8 @@ export default function TechPanel() {
     }
     fetchReports();
   }, [isAuthenticated, user, navigate]);
+
+  console.log("user auth", user)
 
   const fetchReports = async () => {
     try {
@@ -347,12 +359,54 @@ export default function TechPanel() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="loading-container">
-        <LoadingSpinner />
-      </div>
-    );
+  const openNoteModal = async (id: number) => {
+    setSelectedReportId(id);
+    setInternalNoteContent("");
+    setInternalNotes([]);
+    setShowInternalNoteModal(true);
+
+    try {
+      setLoadingNotes(true);
+      const notes = await getInternalNotes(id);
+      setInternalNotes(notes);
+    } catch (e) {
+      console.error("Failed to fetch internal notes", e);
+    } finally {
+      setLoadingNotes(false);
+    }
+  }
+
+  const handleInternalNoteSubmit = async () =>{
+    if (!selectedReportId || !internalNoteContent.trim()) return;
+
+    try{
+      setProcessingId(selectedReportId);
+       await createInternalNote(selectedReportId, {
+        reportId: selectedReportId,
+        content: internalNoteContent,
+        authorId: user!.id,
+      });
+
+      alert("Internal note created successfully");
+      setShowInternalNoteModal(false);
+    }catch(e){
+      console.error("Failed to create internal note", e);
+      alert("Failed to create internal note");
+    }finally{
+      setProcessingId(null);
+    }
+  }
+  
+
+  const formatDate = (dateString: Date | string) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleString();
+  };
+  
+
+  // statusVariant is now implemented in ReportCard; TechPanel no longer needs it
+
+  if (loading) return <div className="loading-container"><LoadingSpinner /></div>;
 
   return (
     <Container className="py-4 tech-panel-container">
@@ -388,42 +442,19 @@ export default function TechPanel() {
             {pendingReports.length === 0 ? (
               <p className="text-muted">No pending reports.</p>
             ) : (
-              <Row>
-                {pendingReports.map((report) => (
-                  <Col key={report.id} lg={6} xl={4} className="mb-4">
-                    <div className="h-100 shadow-sm report-card d-flex flex-column">
-                      <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
-                      <div
-                        style={{
-                          padding: "0.75rem 1rem",
-                          borderTop: "1px solid #f3f4f6",
-                          marginTop: "auto",
-                          display: "flex",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        <Button
-                          variant="danger"
-                          className="flex-fill d-flex align-items-center justify-content-center"
-                          onClick={() => openRejectModal(report.id)}
-                          disabled={processingId === report.id}
-                        >
-                          <XCircle className="me-2" /> Reject
-                        </Button>
-                        <Button
-                          variant="primary"
-                          className="flex-fill d-flex align-items-center justify-content-center"
-                          onClick={() => openAssignModal(report.id)}
-                          disabled={processingId === report.id}
-                          isLoading={processingId === report.id}
-                        >
-                          <CheckCircle className="me-2" /> Accept
-                        </Button>
+                <Row>
+                  {pendingReports.map((report) => (
+                    <Col key={report.id} lg={6} xl={4} className="mb-4">
+                      <div className="h-100 shadow-sm report-card d-flex flex-column">
+                        <ReportCard report={report} />
+                        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #f3f4f6', marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
+                          <Button variant="danger" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openRejectModal(report.id)} disabled={processingId === report.id}><XCircle className="me-2" /> Reject</Button>
+                          <Button variant="primary" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openAssignModal(report.id)} disabled={processingId === report.id} isLoading={processingId === report.id}><CheckCircle className="me-2" /> Accept</Button>
+                        </div>
                       </div>
-                    </div>
-                  </Col>
-                ))}
-              </Row>
+                    </Col>
+                  ))}
+                </Row>
             )}
           </div>
         </>
@@ -530,6 +561,23 @@ export default function TechPanel() {
             </div>
           )}
         </>
+        ) : (
+          <Row>
+            {reports.map((report) => (
+              <Col key={report.id} lg={6} xl={4} className="mb-4">
+                <ReportCard report={report} />
+                <Button 
+                  variant="primary" 
+                  className="mt-2 w-100 d-flex align-items-center justify-content-center"
+                  onClick={() => openNoteModal(report.id)}
+                  disabled={processingId === report.id}
+                  >
+                  <FileText className="me-2" /> Internal Notes
+                </Button>
+              </Col>
+            ))}
+          </Row>
+        )
       )}
 
       {/* --- MODALS --- */}
@@ -748,6 +796,59 @@ export default function TechPanel() {
           ) : null;
         })()
       )}
+
+
+      {/* internal note modal */}
+      <Modal show={showInternalNoteModal} onHide={() => setShowInternalNoteModal(false)} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Internal Notes</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-4">
+            <h6 className="mb-3">History</h6>
+            {loadingNotes ? (
+              <div className="text-center py-3"><LoadingSpinner /></div>
+            ) : internalNotes.length === 0 ? (
+              <p className="text-muted small fst-italic">No internal notes found for this report.</p>
+            ) : (
+              <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px', backgroundColor: '#f8f9fa' }}>
+                {internalNotes.map((note) => (
+                  <div key={note.id} className="mb-3 pb-3 border-bottom last-child-no-border">
+                    <div className="d-flex justify-content-between align-items-start mb-1">
+                      <strong>{note.authorName} <span className="text-muted" style={{ fontSize: '0.85em', fontWeight: 'normal' }}>({note.authorRole})</span></strong>
+                      <span className="text-muted small" style={{ fontSize: '0.8em' }}>{formatDate(note.createdAt)}</span>
+                    </div>
+                    <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <hr />
+
+          <h6 className="mb-3">Add New Note</h6>
+          <p className="text-muted small">
+            This note will be visible to other technicians and admins, but <strong>not</strong> to the citizen.
+          </p>
+          <Form.Group>
+            <Form.Label>Note Content *</Form.Label>
+            <Form.Control 
+              as="textarea"
+              rows={3}
+              value={internalNoteContent}
+              onChange={(e) => setInternalNoteContent(e.target.value)}
+              placeholder="Enter internal note content here..."
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowInternalNoteModal(false)}>Close</Button>
+          <Button variant="primary" onClick={handleInternalNoteSubmit} disabled={!internalNoteContent.trim() || processingId !== null} isLoading={processingId !== null}>
+            Save Note
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }

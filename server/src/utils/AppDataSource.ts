@@ -7,11 +7,12 @@ import { ReportPhoto } from "../entities/ReportPhoto";
 import { ReportMessage } from "../entities/ReportMessage";
 import { Notification } from "../entities/Notification";
 import { ExternalCompany } from "../entities/ExternalCompany";
+import { InternalNote } from "../entities/InternalNote";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
   url: process.env.DATABASE_URL,
-  entities: [User, CitizenPhoto, Report, ReportPhoto, ReportMessage, Notification, ExternalCompany],
+  entities: [User, CitizenPhoto, Report, ReportPhoto, ReportMessage, Notification, ExternalCompany, InternalNote],
   migrations: ["dist/app/src/migrations/*.js"],
   // Force synchronization in Docker/production for setup
   synchronize: process.env.TYPEORM_SYNCHRONIZE === "true" || process.env.NODE_ENV === "development", 

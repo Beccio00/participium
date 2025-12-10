@@ -67,4 +67,7 @@ export class User {
   @ManyToOne("ExternalCompany", "maintainers", { nullable: true })
   @JoinColumn({ name: "externalCompanyId" })
   externalCompany: import("./ExternalCompany").ExternalCompany | null;
+
+  @OneToMany("InternalNote", "author")
+  internalNotes: import("./InternalNote").InternalNote[];
 }

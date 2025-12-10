@@ -12,7 +12,9 @@ import {
   rejectReport,
   getAssignableTechnicals,
   updateReportStatus,
-  getAssignedReports
+  getAssignedReports,
+  createInternalNote,
+  getInternalNote
 } from '../controllers/reportController';
 import {
   sendMessageToCitizen,
@@ -68,5 +70,14 @@ router.post('/:reportId/messages', requireTechnicalOrExternal, ApiValidationMidd
 
 // POST /api/reports/:reportId/assign-external - assign to external maintainer or company (municipality staff only)
 router.post("/:reportId/assign-external", requireTechnicalStaffOnly, ApiValidationMiddleware, asyncHandler(assignReportToExternal));
+
+
+//FIXME: add the logic with the external users
+
+// POST /api/reports/:reportId/internal-notes - Create internal note
+router.post('/:reportId/internal-notes', requireTechnicalStaff, ApiValidationMiddleware, asyncHandler(createInternalNote));
+
+// GET /api/reports/:reportId/internal-notes - See internal note 
+router.get('/:reportId/internal-notes', requireTechnicalStaff, ApiValidationMiddleware, asyncHandler(getInternalNote));
 
 export default router;

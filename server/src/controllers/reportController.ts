@@ -14,14 +14,11 @@ import {
 } from "../services/reportService";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
-import minioClient, { BUCKET_NAME } from "../utils/minioClient";
-import { BadRequestError, UnauthorizedError } from "../utils";
-import { Role } from "../interfaces/UserDTO";
-
-
-// =========================
-// REPORT PUBLIC CONTROLLERS
-// =========================
+import minioClient, { BUCKET_NAME, getMinioObjectUrl } from "../utils/minioClient";
+import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
+import { createInternalNote as createInternalNoteService } from "../services/internalNoteService";
+import { Role } from "../entities/User";
+import { getInternalNotes } from "../services/internalNoteService";
 
 export async function createReport(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
@@ -349,3 +346,21 @@ export async function getAssignedReports(
   
   res.status(200).json(reports);
 }
+
+export async function createInternalNote(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number; role: Role };
+  const { content } = req.body;
+
+  const note = await createInternalNoteService(reportId, content, user.id, user.role);
+  res.status(201).json(note);
+}
+
+export async function getInternalNote(req: Request, res: Response): Promise<void> {
+  const reportId = parseInt(req.params.reportId);
+  const user = req.user as { id: number; role: Role };
+
+  const messages = await getInternalNotes(reportId, user.id);
+  res.status(200).json(messages);
+}
+

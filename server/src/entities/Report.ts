@@ -96,4 +96,7 @@ export class Report {
   @ManyToOne("ExternalCompany", "reports", { nullable: true })
   @JoinColumn({ name: "externalCompanyId" })
   externalCompany: ExternalCompany | null;
+
+  @OneToMany("InternalNote", "report")
+  internalNotes: import("./InternalNote").InternalNote[];
 }
