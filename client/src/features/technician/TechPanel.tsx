@@ -446,7 +446,7 @@ export default function TechPanel() {
                   {pendingReports.map((report) => (
                     <Col key={report.id} lg={6} xl={4} className="mb-4">
                       <div className="h-100 shadow-sm report-card d-flex flex-column">
-                        <ReportCard report={report} />
+                        <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
                         <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #f3f4f6', marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
                           <Button variant="danger" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openRejectModal(report.id)} disabled={processingId === report.id}><XCircle className="me-2" /> Reject</Button>
                           <Button variant="primary" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openAssignModal(report.id)} disabled={processingId === report.id} isLoading={processingId === report.id}><CheckCircle className="me-2" /> Accept</Button>
@@ -535,7 +535,7 @@ export default function TechPanel() {
                         {!isPublicRelations && (
                         <Button 
                           variant="primary" 
-                          className="mt-2 w-100 d-flex align-items-center justify-content-center"
+                          className="w-100 d-flex align-items-center justify-content-center"
                           onClick={() => openNoteModal(report.id)}
                           disabled={processingId === report.id}
                           >
@@ -566,7 +566,7 @@ export default function TechPanel() {
                         <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
                         <Button 
                           variant="primary" 
-                          className="mt-2 w-100 d-flex align-items-center justify-content-center"
+                          className="w-100 d-flex align-items-center justify-content-center"
                           onClick={() => openNoteModal(report.id)}
                           disabled={processingId === report.id}
                           >
