@@ -531,6 +531,17 @@ export default function TechPanel() {
                             </Wrapper>
                           );
                         })()}
+                        {/* INTERNAL NOTES BUTTON (not for Public Relations) */}
+                        {!isPublicRelations && (
+                        <Button 
+                          variant="primary" 
+                          className="mt-2 w-100 d-flex align-items-center justify-content-center"
+                          onClick={() => openNoteModal(report.id)}
+                          disabled={processingId === report.id}
+                          >
+                          <FileText className="me-2" /> Internal Notes
+                      </Button>
+                        )}
                       </div>
                     </div>
                   </Col>
@@ -553,6 +564,14 @@ export default function TechPanel() {
                     <Col key={report.id} lg={6} xl={4} className="mb-4">
                       <div className="h-100 shadow-sm report-card d-flex flex-column">
                         <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
+                        <Button 
+                          variant="primary" 
+                          className="mt-2 w-100 d-flex align-items-center justify-content-center"
+                          onClick={() => openNoteModal(report.id)}
+                          disabled={processingId === report.id}
+                          >
+                          <FileText className="me-2" /> Internal Notes
+                      </Button>
                       </div>
                     </Col>
                   ))}
@@ -561,23 +580,6 @@ export default function TechPanel() {
             </div>
           )}
         </>
-        ) : (
-          <Row>
-            {reports.map((report) => (
-              <Col key={report.id} lg={6} xl={4} className="mb-4">
-                <ReportCard report={report} />
-                <Button 
-                  variant="primary" 
-                  className="mt-2 w-100 d-flex align-items-center justify-content-center"
-                  onClick={() => openNoteModal(report.id)}
-                  disabled={processingId === report.id}
-                  >
-                  <FileText className="me-2" /> Internal Notes
-                </Button>
-              </Col>
-            ))}
-          </Row>
-        )
       )}
 
       {/* --- MODALS --- */}
@@ -851,4 +853,5 @@ export default function TechPanel() {
       </Modal>
     </Container>
   );
+
 }

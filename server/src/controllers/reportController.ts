@@ -17,7 +17,7 @@ import { calculateAddress } from "../utils/addressFinder";
 import minioClient, { BUCKET_NAME, getMinioObjectUrl } from "../utils/minioClient";
 import { BadRequestError, UnauthorizedError, ForbiddenError } from "../utils";
 import { createInternalNote as createInternalNoteService } from "../services/internalNoteService";
-import { Role } from "../entities/User";
+import { Role } from "../../../shared/RoleTypes";
 import { getInternalNotes } from "../services/internalNoteService";
 
 export async function createReport(req: Request, res: Response): Promise<void> {

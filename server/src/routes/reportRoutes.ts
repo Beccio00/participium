@@ -72,12 +72,10 @@ router.post('/:reportId/messages', requireTechnicalOrExternal, ApiValidationMidd
 router.post("/:reportId/assign-external", requireTechnicalStaffOnly, ApiValidationMiddleware, asyncHandler(assignReportToExternal));
 
 
-//FIXME: add the logic with the external users
-
 // POST /api/reports/:reportId/internal-notes - Create internal note
-router.post('/:reportId/internal-notes', requireTechnicalStaff, ApiValidationMiddleware, asyncHandler(createInternalNote));
+router.post('/:reportId/internal-notes', requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(createInternalNote));
 
 // GET /api/reports/:reportId/internal-notes - See internal note 
-router.get('/:reportId/internal-notes', requireTechnicalStaff, ApiValidationMiddleware, asyncHandler(getInternalNote));
+router.get('/:reportId/internal-notes', requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(getInternalNote));
 
 export default router;
