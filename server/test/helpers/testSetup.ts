@@ -2,6 +2,7 @@ import { AppDataSource } from '../../src/utils/AppDataSource';
 import { ReportMessage } from '../../src/entities/ReportMessage';
 import { ReportPhoto } from '../../src/entities/ReportPhoto';
 import { Report } from '../../src/entities/Report';
+import { InternalNote } from '../../src/entities/InternalNote';
 import { CitizenPhoto } from '../../src/entities/CitizenPhoto';
 import { Notification } from '../../src/entities/Notification';
 import { User } from '../../src/entities/User';
@@ -19,6 +20,7 @@ export async function cleanDatabase() {
   // Use createQueryBuilder to delete all records (TypeORM doesn't allow empty criteria)
   await AppDataSource.getRepository(ReportMessage).createQueryBuilder().delete().execute();
   await AppDataSource.getRepository(ReportPhoto).createQueryBuilder().delete().execute();
+  await AppDataSource.getRepository(InternalNote).createQueryBuilder().delete().execute();
   await AppDataSource.getRepository(Notification).createQueryBuilder().delete().execute();
   await AppDataSource.getRepository(Report).createQueryBuilder().delete().execute();
   await AppDataSource.getRepository(CitizenPhoto).createQueryBuilder().delete().execute();

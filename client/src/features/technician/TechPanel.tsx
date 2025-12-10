@@ -21,7 +21,7 @@ import {
 import type { Report as AppReport, InternalNote } from "../../types/report.types";
 import ReportCard from "../reports/ReportCard";
 import ReportDetailsModal from "../reports/ReportDetailsModal";
-import { MUNICIPALITY_AND_EXTERNAL_ROLES,  TECHNICIAN_ROLES} from "../../utils/roles";
+import { MUNICIPALITY_AND_EXTERNAL_ROLES,  TECHNICIAN_ROLES, getRoleLabel } from "../../utils/roles";
 import { Role } from "../../../../shared/RoleTypes";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import "../../styles/TechPanelstyle.css";
@@ -563,16 +563,19 @@ export default function TechPanel() {
                         {otherReports.map((report) => (
                     <Col key={report.id} lg={6} xl={4} className="mb-4">
                       <div className="h-100 shadow-sm report-card d-flex flex-column">
-                        <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
-                        <Button 
-                          variant="primary" 
-                          className="w-100 d-flex align-items-center justify-content-center"
-                          onClick={() => openNoteModal(report.id)}
-                          disabled={processingId === report.id}
-                          >
-                          <FileText className="me-2" /> Internal Notes
-                      </Button>
-                      </div>
+                          <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
+
+                          <div style={{ padding: "0.75rem 1rem", borderTop: "1px solid #f3f4f6", marginTop: "auto", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                            <Button 
+                              variant="primary" 
+                              className="w-100 d-flex align-items-center justify-content-center"
+                              onClick={() => openNoteModal(report.id)}
+                              disabled={processingId === report.id}
+                              >
+                              <FileText className="me-2" /> Internal Notes
+                            </Button>
+                          </div>
+                        </div>
                     </Col>
                   ))}
                 </Row>
@@ -817,7 +820,7 @@ export default function TechPanel() {
                 {internalNotes.map((note) => (
                   <div key={note.id} className="mb-3 pb-3 border-bottom last-child-no-border">
                     <div className="d-flex justify-content-between align-items-start mb-1">
-                      <strong>{note.authorName} <span className="text-muted" style={{ fontSize: '0.85em', fontWeight: 'normal' }}>({note.authorRole})</span></strong>
+                      <strong>{note.authorName} <span className="text-muted" style={{ fontSize: '0.85em', fontWeight: 'normal' }}>({getRoleLabel(note.authorRole)})</span></strong>
                       <span className="text-muted small" style={{ fontSize: '0.8em' }}>{formatDate(note.createdAt)}</span>
                     </div>
                     <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{note.content}</p>

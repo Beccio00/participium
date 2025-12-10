@@ -30,12 +30,18 @@ export async function createInternalNote(
   if (!report) {
     throw new NotFoundError("Report not found");
   }
-  
+    
+  const isInternalAssigned = report.assignedOfficerId === authorId;
   const isExternalAssigned = report.externalMaintainerId === authorId;
 
   const author = await userRepository.findById(authorId);
   if (!author) {
     throw new NotFoundError("Author not found");
+  }
+
+  // Only assigned internal officer or assigned external maintainer can create notes
+  if (!isInternalAssigned && !isExternalAssigned) {
+    throw new ForbiddenError("You are not assigned to this report");
   }
 
   const note = await internalNoteRepository.create({
