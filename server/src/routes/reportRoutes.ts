@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {query} from 'express-validator';
 import { asyncHandler } from '../middlewares/errorMiddleware';
-import { requireCitizen, requirePublicRelations, requireTechnicalStaffOnly, requireTechnicalOrExternal, isLoggedIn } from '../middlewares/routeProtection';
+import { requireCitizen, requirePublicRelations, requireTechnicalStaffOnly, requireTechnicalOrExternal, isLoggedIn, requireCitizenAuthorOrTechnicalOrExternal } from '../middlewares/routeProtection';
 import { validateTurinBoundaries } from '../middlewares/validateTurinBoundaries';
 import { 
   createReport, 
@@ -66,7 +66,7 @@ router.post('/:reportId/reject', requirePublicRelations, ApiValidationMiddleware
 router.patch('/:reportId/status', requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(updateReportStatus));
 
 // POST /api/reports/:reportId/messages - Send message to citizen (technical staff and external maintainers)
-router.post('/:reportId/messages', requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(sendMessageToCitizen));
+router.post('/:reportId/messages', requireCitizenAuthorOrTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(sendMessageToCitizen));
 
 // POST /api/reports/:reportId/assign-external - assign to external maintainer or company (municipality staff only)
 router.post("/:reportId/assign-external", requireTechnicalStaffOnly, ApiValidationMiddleware, asyncHandler(assignReportToExternal));

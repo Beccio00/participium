@@ -105,54 +105,21 @@ export function requireTechnicalStaffOnly(
   return next();
 }
 
-export async function requireTechnicalOrExternal(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const authReq = req as Request & {
-    user?: User;
-    isAuthenticated?: () => boolean;
-  };
+export function requireTechnicalOrExternal(req: Request, res: Response, next: NextFunction) {
+  const authReq = req as Request & { user?: User; isAuthenticated?: () => boolean };
 
   if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
-    return next(new UnauthorizedError("Authentication required"));
+    throw new UnauthorizedError("Authentication required");
   }
 
   if (!authReq.user) {
-    return next(new UnauthorizedError("Authentication required"));
+    throw new UnauthorizedError("Authentication required");
   }
 
-  // Permetti ai cittadini di inviare messaggi solo per i report di cui sono autori
-  if (authReq.user.role === Role.CITIZEN) {
-    const reportId = req.params.reportId;
-    const repo = new ReportRepository();
-    try {
-      const report = await repo.findById(Number(reportId));
-      if (report && report.userId === authReq.user.id) {
-        return next();
-      } else {
-        return next(
-          new ForbiddenError(
-            "Citizens can only send messages for their own reports"
-          )
-        );
-      }
-    } catch {
-      return next(
-        new ForbiddenError(
-          "Citizens can only send messages for their own reports"
-        )
-      );
-    }
-  }
   if (!TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
-    return next(
-      new ForbiddenError(
-        "Technical staff or external maintainer privileges required"
-      )
-    );
+    throw new ForbiddenError("Technical staff or external maintainer privileges required");
   }
+  
   return next();
 }
 
@@ -204,5 +171,50 @@ export function requireCitizenOrTechnicalOrExternal(
     );
   }
 
+  return next();
+}
+
+export async function requireCitizenAuthorOrTechnicalOrExternal(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authReq = req as Request & {
+    user?: User;
+    isAuthenticated?: () => boolean;
+  };
+
+  if (!authReq.isAuthenticated || !authReq.isAuthenticated()) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (!authReq.user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  // allows citizens to send messages only for reports they authored
+  if (authReq.user.role === Role.CITIZEN) {
+    const reportId = req.params.reportId;
+    const repo = new ReportRepository();
+    try {
+      const report = await repo.findById(Number(reportId));
+      if (report && report.userId === authReq.user.id) {
+        return next();
+      } else {
+        throw new ForbiddenError(
+            "Citizens can only send messages for their own reports"
+          );
+      }
+    } catch {
+      throw new ForbiddenError(
+        "Citizens can only send messages for their own reports"
+      );
+    }
+  }
+  if (!TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
+    throw new ForbiddenError(
+        "Technical staff or external maintainer privileges required"
+      );
+  }
   return next();
 }
