@@ -315,8 +315,7 @@ export async function assignReportToExternal(
     }
     const updated = await reportRepository.update(reportId, {
       externalMaintainerId: maintainer.id,
-      externalCompanyId: null,
-      assignedOfficerId: null,
+      externalCompanyId: company.id,
       status: ReportStatus.EXTERNAL_ASSIGNED,
     });
     await reportMessageRepository.create({
@@ -335,7 +334,6 @@ export async function assignReportToExternal(
     const updated = await reportRepository.update(reportId, {
       externalCompanyId: company.id,
       externalMaintainerId: null,
-      assignedOfficerId: null,
       status: ReportStatus.EXTERNAL_ASSIGNED,
     });
     await reportMessageRepository.create({

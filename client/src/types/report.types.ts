@@ -25,7 +25,6 @@ export interface Report {
   longitude: number;
   createdAt?: string;
   assignedOfficerId?: number;
-  assignedExternalMaintainerId?: number;
   photos?: ReportPhoto[];
   isAnonymous?: boolean;
   user?: {
@@ -34,6 +33,19 @@ export interface Report {
     lastName: string;
     email: string;
     role: string;
+  };
+  externalHandler?: {
+    user:{
+      company:{
+        id: number;
+        name: string;
+      }
+      id: number;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: string;
+    }
   };
 }
 
