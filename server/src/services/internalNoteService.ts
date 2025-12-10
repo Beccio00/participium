@@ -18,6 +18,10 @@ export async function createInternalNote(
   authorRole: Role
 ): Promise<InternalNoteDTO> {
 
+  if (!content || content.trim().length === 0) {
+    throw new BadRequestError("Content is required");
+  }
+
   if (content.length > 2000) {
     throw new BadRequestError("Content cannot exceed 2000 characters");
   }
@@ -27,20 +31,7 @@ export async function createInternalNote(
     throw new NotFoundError("Report not found");
   }
   
-  const isInternalAssigned = report.assignedOfficerId === authorId;
   const isExternalAssigned = report.externalMaintainerId === authorId;
-
-  if (!isInternalAssigned && !isExternalAssigned) {
-    throw new ForbiddenError("You are not assigned to this report");
-  }
-
-  if (!report.externalCompanyId) {
-    throw new BadRequestError("Internal notes are only available for reports assigned to external companies");
-  }
-
-  if (report.externalCompanyId && !report.externalMaintainerId) {
-    throw new BadRequestError("Internal notes are not available for reports assigned to external companies without platform access");
-  }
 
   const author = await userRepository.findById(authorId);
   if (!author) {
@@ -55,7 +46,7 @@ export async function createInternalNote(
   });
 
   // Notifica l'altro utente assegnato al report (internal o external)
-  const recipientId = isInternalAssigned 
+  const recipientId = isExternalAssigned 
     ? report.externalMaintainerId 
     : report.assignedOfficerId;
 
@@ -77,14 +68,6 @@ export async function getInternalNotes(reportId: number, userId: number): Promis
  
   if (!report) {
     throw new NotFoundError("Report not found");
-  }
-
-  if (!report.externalCompanyId) {
-    throw new BadRequestError("Internal notes are only available for reports assigned to external companies");
-  }
-
-  if (report.externalCompanyId && !report.externalMaintainerId) {
-    throw new BadRequestError("Internal notes are not available for reports assigned to external companies without platform access");
   }
 
   const isInternalAssigned = report.assignedOfficerId === userId;
