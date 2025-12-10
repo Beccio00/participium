@@ -5,10 +5,8 @@ module.exports = {
   testEnvironment: "node",
   roots: ["<rootDir>/test"],
   testMatch: ["**/*.test.ts"],
-  // Load test environment variables
+  maxWorkers: 1, // Run tests sequentially to avoid database conflicts
   setupFiles: ["<rootDir>/test/helpers/setupEnv.ts"],
-  // Run tests serially to avoid database conflicts
-  maxWorkers: 1,
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",

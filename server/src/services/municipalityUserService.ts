@@ -32,7 +32,12 @@ export async function createMunicipalityUser(data: {
     telegram_username: null,
     email_notifications_enabled: true,
   });
-  return created;
+  
+  const verified = await userRepository.update(created.id, {
+    isVerified: true
+  });
+  
+  return verified || created;
 }
 
 export async function getAllMunicipalityUsers(): Promise<User[]> {

@@ -51,6 +51,7 @@ export type UserDTO = {
   lastName: string;
   email: string;
   role: Role;
+  isVerified: boolean;
   telegramUsername: string | null;
   emailNotificationsEnabled: boolean;
 };
@@ -64,6 +65,7 @@ export function toUserDTO(u: User): UserDTO {
     role: Object.values(Role).includes(String(u.role) as Role)
       ? (u.role as unknown as Role)
       : (String(u.role) as Role),
+    isVerified: !!u.isVerified,
     telegramUsername: u.telegram_username ?? null,
     emailNotificationsEnabled: u.email_notifications_enabled ?? true,
   };

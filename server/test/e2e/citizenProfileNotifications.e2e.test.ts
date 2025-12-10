@@ -1,6 +1,12 @@
+// Mock email service for Story 27 compatibility (email verification)
+jest.mock('../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { cleanDatabase, disconnectDatabase } from '../helpers/testSetup';
+import { cleanDatabase, disconnectDatabase, AppDataSource } from '../helpers/testSetup';
+import { User } from '../../src/entities/User';
 
 const app = createApp();
 
@@ -23,6 +29,8 @@ describe('Citizen Profile & Notifications', () => {
         password: citizenPassword,
       })
       .expect(201);
+    // Mark as verified for Story 27 compatibility
+    await AppDataSource.getRepository(User).update({ email: citizenEmail }, { isVerified: true });
     // Login
     await agent
       .post('/api/session')

@@ -9,6 +9,7 @@ import { BadRequestError, UnauthorizedError } from "../../../src/utils";
 import type { UserDTO } from "../../../src/interfaces/UserDTO";
 import { Role } from "../../../../shared/RoleTypes";
 
+
 jest.mock("../../../src/services/authService");
 const mockAuthenticate = authenticate as jest.MockedFunction<
   typeof authenticate
@@ -50,7 +51,8 @@ describe("authController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: require("../../../shared/RoleTypes").Role.CITIZEN,
+        role: Role.CITIZEN,
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
@@ -91,9 +93,10 @@ describe("authController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: require("../../../shared/RoleTypes").Role.CITIZEN,
-        telegramUsername: "testuser",
-        emailNotificationsEnabled: false,
+        role: Role.CITIZEN,
+        isVerified: true,
+        telegramUsername: null,
+        emailNotificationsEnabled: true,
       };
       mockReq.isAuthenticated.mockReturnValue(false);
       mockAuthenticate.mockResolvedValue(mockUser);
@@ -119,10 +122,11 @@ describe("authController", () => {
     it("should proceed with login if isAuthenticated is undefined", async () => {
       const mockUser: UserDTO = {
         id: 1,
-        firstName: "Test",
-        lastName: "User",
-        email: "test@example.com",
-        role: require("../../../shared/RoleTypes").Role.CITIZEN,
+        firstName: "Test", 
+        lastName: "User", 
+        email: "test@example.com", 
+        role: Role.CITIZEN,
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };
@@ -231,7 +235,8 @@ describe("authController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: require("../../../shared/RoleTypes").Role.CITIZEN,
+        role: Role.CITIZEN,
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: true,
       };

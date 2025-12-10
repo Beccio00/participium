@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { authenticate, getSession } from "../services/authService";
-import { BadRequestError, UnauthorizedError, InternalServerError } from "../utils";
+import { BadRequestError, InternalServerError } from "../utils";
+
 
 export async function login(req: Request, res: Response): Promise<void> {
   if (req.isAuthenticated && req.isAuthenticated()) {

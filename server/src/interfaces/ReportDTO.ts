@@ -51,6 +51,7 @@ export function toReportDTO(r: any): ReportDTO {
             lastName: r.user.last_name,
             email: r.user.email,
             role: r.user.role as Role,
+            isVerified: !!r.user.isVerified,
             telegramUsername: r.user.telegram_username ?? null,
             emailNotificationsEnabled: r.user.email_notifications_enabled ?? true,
         } : undefined,

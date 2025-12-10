@@ -1,15 +1,51 @@
-// Mock UserRepository
-const mockUserRepository = {
-  countByRole: jest.fn(),
-};
+import { Role } from "../../../../shared/RoleTypes";
+import { BadRequestError } from "../../../src/utils";
 
-jest.mock("../../../src/repositories/UserRepository", () => ({
-  UserRepository: jest.fn().mockImplementation(() => mockUserRepository),
-}));
+// Create mock functions for UserRepository
+const mockCountByRole = jest.fn();
+const mockUpdate = jest.fn();
+
+// Mock UserRepository BEFORE imports
+jest.mock("../../../src/repositories/UserRepository", () => {
+  return {
+    UserRepository: jest.fn().mockImplementation(() => ({
+      countByRole: mockCountByRole,
+      update: mockUpdate,
+    })),
+  };
+});
 
 // Mock userService
-jest.mock("../../../src/services/userService");
+const mockCreateUser = jest.fn();
+const mockFindById = jest.fn();
+const mockFindByEmail = jest.fn();
+const mockUpdateUser = jest.fn();
+const mockDeleteUser = jest.fn();
+const mockFindUsersByRoles = jest.fn();
 
+jest.mock("../../../src/services/userService", () => ({
+  createUser: (...args: any[]) => mockCreateUser(...args),
+  findById: (...args: any[]) => mockFindById(...args),
+  findByEmail: (...args: any[]) => mockFindByEmail(...args),
+  updateUser: (...args: any[]) => mockUpdateUser(...args),
+  deleteUser: (...args: any[]) => mockDeleteUser(...args),
+  findUsersByRoles: (...args: any[]) => mockFindUsersByRoles(...args),
+}));
+
+// Mock UserDTO to ensure ADMINISTRATOR is considered a municipality role
+jest.mock("../../../src/interfaces/UserDTO", () => {
+  const original = jest.requireActual("../../../src/interfaces/UserDTO");
+  return {
+    ...original,
+    MUNICIPALITY_ROLES: [
+      "ADMINISTRATOR",
+      "PUBLIC_RELATIONS",
+      "MUNICIPAL_BUILDING_MAINTENANCE",
+    ],
+  };
+});
+
+// Import services after mocks
 import {
   createMunicipalityUser,
   getAllMunicipalityUsers,
@@ -18,11 +54,6 @@ import {
   deleteMunicipalityUser,
   findMunicipalityUserByEmail,
 } from "../../../src/services/municipalityUserService";
-import { Roles } from "../../../src/interfaces/UserDTO";
-import { BadRequestError } from "../../../src/utils";
-import * as userService from "../../../src/services/userService";
-
-const mockUserService = userService as jest.Mocked<typeof userService>;
 
 describe("municipalityUserService", () => {
   beforeEach(() => {
@@ -40,6 +71,7 @@ describe("municipalityUserService", () => {
         role: Role.PUBLIC_RELATIONS,
       };
       mockCreateUser.mockResolvedValue({ id: 1 } as any);
+      mockUpdate.mockResolvedValue({ id: 1, isVerified: true } as any);
       await createMunicipalityUser(data);
       expect(mockCreateUser).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -48,6 +80,7 @@ describe("municipalityUserService", () => {
           email_notifications_enabled: true,
         })
       );
+      expect(mockUpdate).toHaveBeenCalledWith(1, { isVerified: true });
     });
   });
 
@@ -118,7 +151,7 @@ describe("municipalityUserService", () => {
         id: 1,
         role: Role.ADMINISTRATOR,
       } as any);
-      mockUserRepository.countByRole.mockResolvedValue(1);
+      mockCountByRole.mockResolvedValue(1);
 
       await expect(deleteMunicipalityUser(1)).rejects.toThrow(BadRequestError);
     });
@@ -128,8 +161,8 @@ describe("municipalityUserService", () => {
         id: 1,
         role: Role.ADMINISTRATOR,
       } as any);
-      mockUserRepository.countByRole.mockResolvedValue(2);
-      mockUserService.deleteUser.mockResolvedValue(true);
+      mockCountByRole.mockResolvedValue(2);
+      mockDeleteUser.mockResolvedValue(true);
 
       const res = await deleteMunicipalityUser(1);
       expect(res).toBe(true);
@@ -143,8 +176,8 @@ describe("municipalityUserService", () => {
       mockDeleteUser.mockResolvedValue(true);
 
       await deleteMunicipalityUser(1);
-      expect(mockUserRepository.countByRole).not.toHaveBeenCalled();
-      expect(mockUserService.deleteUser).toHaveBeenCalledWith(1);
+      expect(mockCountByRole).not.toHaveBeenCalled();
+      expect(mockDeleteUser).toHaveBeenCalledWith(1);
     });
   });
 

@@ -11,10 +11,14 @@ import type {
   SignupFormData,
   SignupResponse,
 } from "../../../shared/SignupTypes";
+
+// Email verification API
+export { verifyEmailCode, resendVerificationCode } from "./emailVerification";
 import type {
   MunicipalityUserRequest,
   MunicipalityUserResponse,
 } from "../../../shared/MunicipalityUserTypes";
+import type { CreateReportResponse } from "../../../shared/ReportTypes";
 import type {
   AssignReportToExternalResponse,
   CreateExternalMaintainerData,
@@ -30,7 +34,7 @@ import type {
   CreateInternalNoteResponse
 } from "../types/report.types";
 
-const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
+export const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const text = await res.text();

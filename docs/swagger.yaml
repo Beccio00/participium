@@ -123,6 +123,9 @@ paths:
                 error: "InternalServerError"
                 message: "An unexpected error occurred"
 
+
+  
+
   /session/current:
     get:
       tags:
@@ -202,15 +205,17 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Logout failed"
-
+  
+  
   /citizen/signup:
     post:
       tags:
         - Citizens
       summary: Register a new citizen
       description: |
-        Self-service registration for citizens. No authentication required.
-        Email must be unique in the system.
+        Self-service registration for citizens.
+        **Important:** After successful registration, the user receives an email with a verification code. 
+        The account will remain inactive until the code is verified via `POST /citizen/verify`.
       operationId: registerCitizen
       requestBody:
         required: true
@@ -225,7 +230,7 @@ paths:
               password: SecurePass123!
       responses:
         "201":
-          description: Registration successful
+          description: Registration successful. Verification email sent.
           content:
             application/json:
               schema:
@@ -260,6 +265,112 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Unable to create user"
+
+  /citizen/verify:
+    post:
+      tags:
+        - Citizens
+      summary: Verify citizen email with code
+      description: |
+        Verify a citizen's email address using the 6-digit code sent via email after registration (`POST /citizen/signup`).
+        The code is valid for 30 minutes. Upon successful verification, the account becomes active and usable.
+      operationId: verifyCitizenEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyRequest"
+      responses:
+        "200":
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Email verified successfully"
+        "400":
+          description: Invalid code or code expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Invalid or expired verification code"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Verification failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /citizen/resend-verification:
+    post:
+      tags:
+        - Citizens
+      summary: Resend verification code email
+      description: |
+        Resend a new verification code to a citizen's email address. 
+        Use this when the original verification code has expired (after 30 minutes).
+        Only works for unverified citizen accounts.
+      operationId: resendCitizenVerificationEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: mario.rossi@example.com
+      responses:
+        "200":
+          description: Verification email sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Verification email sent successfully"
+        "400":
+          description: Email already verified or not a citizen account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Email already verified"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to send email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /citizen/me:
     get:
@@ -3487,30 +3598,7 @@ components:
           example: SecurePass123!
 
     CitizenRegistrationResponse:
-      type: object
-      properties:
-        firstName:
-          type: string
-          example: Mario
-        lastName:
-          type: string
-          example: Rossi
-        email:
-          type: string
-          example: mario.rossi@example.com
-        role:
-          type: string
-          enum: [CITIZEN]
-          example: CITIZEN
-        telegramUsername:
-          type: string
-          nullable: true
-          description: Telegram username for bot notifications
-          example: null
-        emailNotificationsEnabled:
-          type: boolean
-          description: Whether email notifications are enabled
-          example: true
+      $ref: "#/components/schemas/UserInfo"
 
     LoginRequest:
       type: object
@@ -3537,6 +3625,22 @@ components:
           example: "Login successful"
         user:
           $ref: "#/components/schemas/UserInfo"
+    VerifyRequest:
+      type: object
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+          format: email
+          example: mario.rossi@example.com
+        code:
+          type: string
+          description: The 6-digit verification code sent via email
+          minLength: 6
+          maxLength: 6
+          example: "123456"
 
     SessionResponse:
       type: object
@@ -3579,6 +3683,10 @@ components:
         emailNotificationsEnabled:
           type: boolean
           description: Whether email notifications are enabled
+          example: true
+        isVerified:
+          type: boolean
+          description: Whether the user's email has been verified
           example: true
 
     ErrorResponse:

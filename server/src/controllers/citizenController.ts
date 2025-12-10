@@ -12,6 +12,7 @@ import {
   getCitizenPhoto,
 } from '../services/citizenService';
 import minioClient, { BUCKET_NAME, getMinioObjectUrl } from '../utils/minioClient';
+import { verifyCitizenEmail, sendCitizenVerification } from '../services/citizenService';
 import type { CitizenConfigRequestDTO, PhotoUploadResponseDTO } from '../interfaces/CitizenDTO';
 
 export function signup(role: Role) {
@@ -44,11 +45,36 @@ export function signup(role: Role) {
       last_name: lastName,
       password: hashedPassword,
       salt,
-      role: role
+      role: role,
+      telegram_username: null,
+      email_notifications_enabled: true
     });
+
+    await sendCitizenVerification(email);
 
     res.status(201).json(toUserDTO(created));
   };
+}
+
+export async function verifyEmail(req: Request, res: Response): Promise<void> {
+  const { email, code } = req.body;
+
+  const result = await verifyCitizenEmail(email, code);
+
+  if (result.alreadyVerified) {
+    res.status(200).json({ message: "Email already verified" });
+    return;
+  }
+
+  res.status(200).json({ message: "Email verified successfully" });
+  return;
+}
+
+export async function resendVerificationEmail(req: Request, res: Response): Promise<void> {
+  const { email } = req.body;
+  
+  await sendCitizenVerification(email);
+  res.status(200).json({ message: "Verification email sent successfully" });
 }
 
 export async function getCitizenProfile(req: Request, res: Response): Promise<void> {

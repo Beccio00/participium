@@ -204,6 +204,9 @@ const seedDatabase = async () => {
       role: u.role,
       telegram_username: null,
       email_notifications_enabled: true,
+      isVerified: true,
+      verificationToken: null,
+      verificationCodeExpiresAt: null,
     };
 
     const created = await userRepository.create(userData);

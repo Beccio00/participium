@@ -1,5 +1,4 @@
-import { toReportDTO, ReportDTO } from "../../../src/interfaces/ReportDTO";
-import { Roles } from "../../../src/interfaces/UserDTO";
+import { toReportDTO } from "../../../src/interfaces/ReportDTO";
 
 describe("ReportDTO", () => {
   describe("toReportDTO", () => {
@@ -137,6 +136,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: null,
           email_notifications_enabled: false,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: null,
@@ -153,6 +153,7 @@ describe("ReportDTO", () => {
         lastName: "Smith",
         email: "jane.smith@example.com",
         role: "CITIZEN",
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: false,
       });
@@ -178,6 +179,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: "bobjohnson",
           email_notifications_enabled: null,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: null,
@@ -211,6 +213,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: "alicebrown",
           email_notifications_enabled: true,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: "Insufficient information provided",
@@ -244,6 +247,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: "charliedavis",
           email_notifications_enabled: true,
+          isVerified: true,
         },
         messages: [
           {
@@ -421,6 +425,7 @@ describe("ReportDTO", () => {
           role: "TECHNICAL_OFFICE",
           telegram_username: null,
           email_notifications_enabled: true,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: null,

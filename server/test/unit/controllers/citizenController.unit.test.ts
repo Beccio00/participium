@@ -80,15 +80,18 @@ describe("citizenController", () => {
         role: require("../../../shared/RoleTypes").Role.CITIZEN,
         telegram_username: null,
         email_notifications_enabled: true,
+        // TypeORM 关联字段
         reports: [],
         messages: [],
         assignedReports: [],
         notifications: [],
-        internalNotes: [],
-        photo: undefined,
+        photo: null as any,
+        isVerified: true,
+        verificationToken: null,
+        verificationCodeExpiresAt: null,
         externalCompanyId: null,
         externalCompany: null,
-      } as any;
+      };
       const mockUserDTO = {
         id: 1,
         firstName: "Test",
@@ -97,6 +100,7 @@ describe("citizenController", () => {
         role: require("../../../shared/RoleTypes").Role.CITIZEN,
         telegramUsername: null,
         emailNotificationsEnabled: true,
+        isVerified: true,
       };
 
       mockReq.body = {
@@ -418,4 +422,55 @@ describe("citizenController", () => {
       expect(mockRes.status).toHaveBeenCalledWith(204);
     });
   });
+    describe("email verification endpoints", () => {
+      jest.resetModules();
+      const mockVerifyCitizenEmail = jest.fn();
+      const mockSendCitizenVerification = jest.fn();
+
+      jest.doMock("../../../src/services/citizenService", () => ({
+        verifyCitizenEmail: mockVerifyCitizenEmail,
+        sendCitizenVerification: mockSendCitizenVerification,
+        // keep other named exports unused in this block
+      }));
+
+      const { verifyEmail, resendVerificationEmail } = require("../../../src/controllers/citizenController");
+
+      beforeEach(() => {
+        jest.clearAllMocks();
+      });
+
+      it("verifyEmail returns already verified message", async () => {
+        mockVerifyCitizenEmail.mockResolvedValue({ alreadyVerified: true });
+        const req: any = { body: { email: "c@example.com", code: "123456" } };
+        const json = jest.fn();
+        const res: any = { status: jest.fn(() => ({ json })), json };
+
+        await verifyEmail(req, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(json).toHaveBeenCalledWith({ message: "Email already verified" });
+      });
+
+      it("verifyEmail returns verified message for fresh verification", async () => {
+        mockVerifyCitizenEmail.mockResolvedValue({ alreadyVerified: false });
+        const req: any = { body: { email: "c2@example.com", code: "999999" } };
+        const json = jest.fn();
+        const res: any = { status: jest.fn(() => ({ json })), json };
+
+        await verifyEmail(req, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(json).toHaveBeenCalledWith({ message: "Email verified successfully" });
+      });
+
+      it("resendVerificationEmail triggers send and returns success", async () => {
+        mockSendCitizenVerification.mockResolvedValue(undefined);
+        const req: any = { body: { email: "c@example.com" } };
+        const json = jest.fn();
+        const res: any = { status: jest.fn(() => ({ json })), json };
+
+        await resendVerificationEmail(req, res);
+        expect(mockSendCitizenVerification).toHaveBeenCalledWith("c@example.com");
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(json).toHaveBeenCalledWith({ message: "Verification email sent successfully" });
+      });
+    });
 });

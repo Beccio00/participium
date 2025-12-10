@@ -95,7 +95,14 @@ services:
       DB_RETRY_DELAY: 3000
       # TypeORM settings for Docker
       TYPEORM_SYNCHRONIZE: "true"
-      TYPEORM_LOGGING: "false"
+      RESEND_API_KEY: ${RESENDER_API_KEY:-re_WLzoZpsq_B33rsT3EjxLfa6gWCHhwiQyG}
+      TYPEORM_LOGGING: "true"
+      # SMTP settings for Nodemailer (read from compose .env or host env)
+      SMTP_HOST: ${SMTP_HOST:-mail.gmx.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-participium.turin@gmx.com}
+      SMTP_PASS: ${SMTP_PASS:-participiumpass}
+      SMTP_FROM: ${SMTP_FROM:-"Participium <participium.turin@gmx.com>"}
     ports:
       - "${SERVER_PORT:-4000}:4000"
     depends_on:

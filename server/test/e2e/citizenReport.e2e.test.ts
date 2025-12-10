@@ -1,8 +1,14 @@
+// Mock email service for Story 27 compatibility (email verification)
+jest.mock('../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { cleanDatabase, disconnectDatabase } from '../helpers/testSetup';
+import { cleanDatabase, disconnectDatabase, AppDataSource } from '../helpers/testSetup';
 import { createUserInDatabase } from '../helpers/testUtils';
 import { ReportCategory } from '../../../shared/ReportTypes';
+import { User } from '../../src/entities/User';
 
 const app = createApp();
 
@@ -31,6 +37,8 @@ describe('Citizen Report System', () => {
         .send(citizenData)
         .expect(201);
       expect(signupResponse.body.email).toBe(citizenData.email);
+      // Mark as verified for Story 27 compatibility
+      await AppDataSource.getRepository(User).update({ email: citizenData.email }, { isVerified: true });
       await new Promise(resolve => setTimeout(resolve, 300));
       // Step 2: Citizen Login
       const agent = request.agent(app);
@@ -72,8 +80,8 @@ describe('Citizen Report System', () => {
       const citizenEmail = `multi.report${timestamp}@example.com`;
       await createUserInDatabase({
         email: citizenEmail,
-        first_name: 'Multi',
-        last_name: 'Reporter',
+        firstName: 'Multi',
+        lastName: 'Reporter',
         password: 'Pass123!',
         role: 'CITIZEN',
       });
@@ -115,8 +123,8 @@ describe('Citizen Report System', () => {
       const citizenEmail = `anon${timestamp}@example.com`;
       await createUserInDatabase({
         email: citizenEmail,
-        first_name: 'Anonymous',
-        last_name: 'Citizen',
+        firstName: 'Anonymous',
+        lastName: 'Citizen',
         password: 'Pass123!',
         role: 'CITIZEN',
       });
@@ -154,8 +162,8 @@ describe('Citizen Report System', () => {
       
       await createUserInDatabase({
         email: citizenEmail,
-        first_name: 'Category',
-        last_name: 'Tester',
+        firstName: 'Category',
+        lastName: 'Tester',
         password: 'Pass123!',
         role: 'CITIZEN',
       });
@@ -220,8 +228,8 @@ describe('Citizen Report System', () => {
       
       await createUserInDatabase({
         email: citizenEmail,
-        first_name: 'Location',
-        last_name: 'Tester',
+        firstName: 'Location',
+        lastName: 'Tester',
         password: 'Pass123!',
         role: 'CITIZEN',
       });
@@ -290,8 +298,8 @@ describe('Citizen Report System', () => {
       
       await createUserInDatabase({
         email: citizenEmail,
-        first_name: 'Photo',
-        last_name: 'Tester',
+        firstName: 'Photo',
+        lastName: 'Tester',
         password: 'Pass123!',
         role: 'CITIZEN',
       });
@@ -396,8 +404,8 @@ describe('Citizen Report System', () => {
       
       await createUserInDatabase({
         email: citizenEmail,
-        first_name: 'Validation',
-        last_name: 'Tester',
+        firstName: 'Validation',
+        lastName: 'Tester',
         password: 'Pass123!',
         role: 'CITIZEN',
       });

@@ -47,6 +47,7 @@ import {
   updateReportStatus,
   getAssignedReports,
 } from "../../../src/controllers/reportController";
+import { sendMessageToCitizen, getReportMessages } from "../../../src/controllers/messageController";
 import * as reportService from "../../../src/services/reportService";
 import * as messageService from "../../../src/services/messageService";
 import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";

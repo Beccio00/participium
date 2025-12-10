@@ -754,7 +754,6 @@ export default function TechPanel() {
               !isPublicRelations
                 ? (() => {
                     if (!selectedExternalId) return true;
-                    // If company has maintainers, technician is required? usually optional unless enforced
                     return false;
                   })()
                 : !selectedTechnicalId

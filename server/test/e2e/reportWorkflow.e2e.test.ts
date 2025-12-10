@@ -1,7 +1,12 @@
+// Mock email service for Story 27 compatibility (email verification)
+jest.mock('../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
 
 import request from 'supertest';
 import { createApp } from '../../src/app';
-import { cleanDatabase, disconnectDatabase, prisma } from '../helpers/testSetup';
+import { cleanDatabase, disconnectDatabase, AppDataSource } from '../helpers/testSetup';
+import { User } from '../../src/entities/User';
 
 const app = createApp();
 
@@ -24,6 +29,8 @@ describe('Report Workflow (Tecnico & PR)', () => {
       .post('/api/citizen/signup')
       .send({ firstName: 'Cittadino', lastName: 'Test', email: citizenEmail, password })
       .expect(201);
+    // Mark as verified for Story 27 compatibility
+    await AppDataSource.getRepository(User).update({ email: citizenEmail }, { isVerified: true });
     await citizenAgent
       .post('/api/session')
       .send({ email: citizenEmail, password })
@@ -35,7 +42,7 @@ describe('Report Workflow (Tecnico & PR)', () => {
       .post('/api/citizen/signup')
       .send({ firstName: 'PR', lastName: 'Test', email: prEmail, password })
       .expect(201);
-    await prisma.user.update({ where: { email: prEmail }, data: { role: 'PUBLIC_RELATIONS' } });
+    await AppDataSource.getRepository(User).update({ email: prEmail }, { role: 'PUBLIC_RELATIONS' as any, isVerified: true });
     await prAgent
       .post('/api/session')
       .send({ email: prEmail, password })
@@ -47,7 +54,7 @@ describe('Report Workflow (Tecnico & PR)', () => {
       .post('/api/citizen/signup')
       .send({ firstName: 'Tech', lastName: 'Test', email: techEmail, password })
       .expect(201);
-    await prisma.user.update({ where: { email: techEmail }, data: { role: 'LOCAL_PUBLIC_SERVICES' } });
+    await AppDataSource.getRepository(User).update({ email: techEmail }, { role: 'LOCAL_PUBLIC_SERVICES' as any, isVerified: true });
     await techAgent
       .post('/api/session')
       .send({ email: techEmail, password })
@@ -77,7 +84,7 @@ describe('Report Workflow (Tecnico & PR)', () => {
     const found = pendingRes.body.find((r: any) => r.id === reportId);
     expect(found).toBeDefined();
 
-    const tech = await prisma.user.findUnique({ where: { email: techEmail } });
+    const tech = await AppDataSource.getRepository(User).findOne({ where: { email: techEmail } });
     expect(tech).toBeTruthy();
 
     await prAgent

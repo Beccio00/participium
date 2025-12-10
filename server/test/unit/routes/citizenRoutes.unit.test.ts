@@ -5,6 +5,8 @@ jest.mock("../../../src/interfaces/UserDTO");
 
 jest.mock("../../../src/controllers/citizenController", () => ({
   signup: jest.fn(() => (req: any, res: any) => {}),
+  verifyEmail: jest.fn(() => (req: any, res: any) => {}),
+  resendVerificationEmail: jest.fn(() => (req: any, res: any) => {}),
   getCitizenProfile: jest.fn(),
   updateCitizenProfile: jest.fn(),
   uploadCitizenPhoto: jest.fn(),
@@ -39,6 +41,22 @@ describe("citizenRoutes", () => {
     const route = stack.find(
       (layer: any) =>
         layer.route && layer.route.path === "/signup" && layer.route.methods.post
+    );
+    expect(route).toBeDefined();
+  });
+
+  it("POST /verify - should be configured", () => {
+    const route = stack.find(
+      (layer: any) =>
+        layer.route && layer.route.path === "/verify" && layer.route.methods.post
+    );
+    expect(route).toBeDefined();
+  });
+
+  it("POST /resend-verification - should be configured", () => {
+    const route = stack.find(
+      (layer: any) =>
+        layer.route && layer.route.path === "/resend-verification" && layer.route.methods.post
     );
     expect(route).toBeDefined();
   });

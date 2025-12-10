@@ -1,6 +1,6 @@
-// 设置测试环境变量 - 必须在应用初始化之前设置
-process.env.NODE_ENV = "development"; // Enable TypeORM synchronize
-process.env.DATABASE_URL = "postgresql://participium:participium_password@localhost:5432/participium_test";
+// 设置测试环境变量
+process.env.NODE_ENV = "test";
+process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://participium:participium_password@localhost:5432/participium_test";
 process.env.SESSION_SECRET = "test-secret";
 process.env.MINIO_ENDPOINT = "localhost";
 process.env.MINIO_PORT = "9000";

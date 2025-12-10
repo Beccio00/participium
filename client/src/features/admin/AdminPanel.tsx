@@ -1,4 +1,4 @@
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { Container, Table, Form, Alert, Badge, Nav } from 'react-bootstrap';
 import { useNavigate } from "react-router";
 import { useAuth, useForm, useLoadingState } from "../../hooks";
@@ -14,7 +14,7 @@ import {
   getExternalCompanies,
   createExternalCompany,
   deleteExternalCompany,
-  deleteExternalMaintainer,
+  deleteExternalMaintainer
 } from "../../api/api";
 import type { 
   MunicipalityUserRequest, 

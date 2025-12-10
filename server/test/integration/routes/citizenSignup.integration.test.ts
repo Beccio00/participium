@@ -136,9 +136,11 @@ describe("POST /api/citizen/signup", () => {
         .post('/api/citizen/signup')
         .send(userData)
         .expect(400);
-      // Assert - OpenAPI validator reports first missing field
+      // Assert
       expect(response.body).toHaveProperty('error', 'Bad Request');
-      expect(response.body.message).toContain('required property');
+      expect(response.body.message).toContain('lastName');
+      expect(response.body.message).toContain('email');
+      expect(response.body.message).toContain('password');
     });
   });
 
