@@ -45,8 +45,6 @@ import {
   getPendingReports,
   getReportById,
   updateReportStatus,
-  sendMessageToCitizen,
-  getReportMessages,
   getAssignedReports,
 } from "../../../src/controllers/reportController";
 import * as reportService from "../../../src/services/reportService";
@@ -86,14 +84,6 @@ const mockGetReportByIdService =
 const mockUpdateReportStatusService =
   reportService.updateReportStatus as jest.MockedFunction<
     typeof reportService.updateReportStatus
-  >;
-const mockSendMessageToCitizenService =
-  reportService.sendMessageToCitizen as jest.MockedFunction<
-    typeof reportService.sendMessageToCitizen
-  >;
-const mockGetReportMessagesService =
-  reportService.getReportMessages as jest.MockedFunction<
-    typeof reportService.getReportMessages
   >;
 const mockGetAssignedReportsService =
   reportService.getAssignedReportsService as jest.MockedFunction<
@@ -384,52 +374,6 @@ describe("reportController", () => {
       mockReq.body = { status: "INVALID_STATUS" };
       await expect(updateReportStatus(mockReq as Request, mockRes as Response))
         .rejects.toThrow("Invalid status");
-    });
-  });
-
-  describe("sendMessageToCitizen", () => {
-    const validUser = { id: 50 };
-
-    it("should send message successfully", async () => {
-      mockReq.params = { reportId: "10" };
-      mockReq.user = validUser;
-      mockReq.body = { content: "We are fixing it." };
-      mockSendMessageToCitizenService.mockResolvedValue({ id: 1 } as any);
-      await sendMessageToCitizen(mockReq as Request, mockRes as Response);
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-    });
-
-    it("should throw BadRequestError for invalid reportId", async () => {
-      mockReq.params = { reportId: "abc" };
-      mockReq.user = validUser;
-      mockReq.body = { content: "Msg" };
-      await expect(sendMessageToCitizen(mockReq as Request, mockRes as Response))
-        .rejects.toThrow(BadRequestError);
-    });
-
-    it("should throw BadRequestError if content is empty", async () => {
-      mockReq.params = { reportId: "10" };
-      mockReq.user = validUser;
-      mockReq.body = { content: "   " };
-      await expect(sendMessageToCitizen(mockReq as Request, mockRes as Response))
-        .rejects.toThrow("Message content is required");
-    });
-  });
-
-  describe("getReportMessages", () => {
-    it("should return messages for a report", async () => {
-      mockReq.params = { reportId: "10" };
-      mockReq.user = { id: 1 };
-      mockGetReportMessagesService.mockResolvedValue([] as any);
-      await getReportMessages(mockReq as Request, mockRes as Response);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-    });
-
-    it("should throw BadRequestError for invalid reportId", async () => {
-      mockReq.params = { reportId: "invalid" };
-      mockReq.user = { id: 1 };
-      await expect(getReportMessages(mockReq as Request, mockRes as Response))
-        .rejects.toThrow(BadRequestError);
     });
   });
 

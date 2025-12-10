@@ -60,12 +60,12 @@
     "db:migration:generate": "typeorm migration:generate -d src/utils/AppDataSource.ts",
     "db:migration:run": "typeorm migration:run -d src/utils/AppDataSource.ts",
     "generate:api": "openapi-generator-cli generate -i ../docs/swagger.yaml -g typescript-fetch -o ./src/generated",
-    "test": "cross-env NODE_ENV=test jest",
-    "test:watch": "cross-env NODE_ENV=test jest --watch",
-    "test:coverage": "cross-env NODE_ENV=test jest --coverage",
-    "test:verbose": "cross-env NODE_ENV=test jest --verbose",
-    "test:unit": "cross-env NODE_ENV=test jest --testPathPattern=unit",
-    "test:integration": "cross-env NODE_ENV=test jest --testPathPattern=integration",
-    "test:e2e": "cross-env NODE_ENV=test jest --testPathPattern=e2e"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:e2e": "jest --testPathPattern=e2e"
   }
 }

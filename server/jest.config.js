@@ -1,14 +1,14 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 
-// Set NODE_ENV to development for tests (enables TypeORM synchronize)
-process.env.NODE_ENV = "development";
-
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
   roots: ["<rootDir>/test"],
   testMatch: ["**/*.test.ts"],
-  setupFiles: ["dotenv/config"],
+  // Load test environment variables
+  setupFiles: ["<rootDir>/test/helpers/setupEnv.ts"],
+  // Run tests serially to avoid database conflicts
+  maxWorkers: 1,
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
@@ -30,6 +30,4 @@ module.exports = {
   },
   // 设置测试超时时间
   testTimeout: 30000,
-  // 设置环境变量
-  setupFiles: ["<rootDir>/test/helpers/setupEnv.ts"],
 };

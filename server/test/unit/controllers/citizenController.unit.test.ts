@@ -60,12 +60,15 @@ describe("citizenController", () => {
         role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
         email_notifications_enabled: true,
+        externalCompanyId: null,
+        externalCompany: null,
         // TypeORM 关联字段
         reports: [],
         messages: [],
         assignedReports: [],
         notifications: [],
         photo: null as any,
+        internalNotes: [],
       };
       const mockUserDTO = {
         id: 1,

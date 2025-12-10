@@ -6,7 +6,8 @@ import {
   toUserDTO,
   UserDTO,
 } from "../../../src/interfaces/UserDTO";
-import { Role, User } from "../../../src/entities/User";
+import { User } from "../../../src/entities/User";
+import { Role } from "../../../../shared/RoleTypes";
 
 // 辅助函数：创建完整的 mock User 对象
 function createMockUser(overrides: Partial<User> = {}): User {
@@ -20,11 +21,14 @@ function createMockUser(overrides: Partial<User> = {}): User {
     role: Role.CITIZEN,
     telegram_username: null,
     email_notifications_enabled: true,
+    externalCompanyId: null,
+    externalCompany: null,
     reports: [],
     messages: [],
     assignedReports: [],
     notifications: [],
     photo: null as any,
+    internalNotes: [],
     ...overrides,
   } as User;
 }

@@ -4,7 +4,7 @@ import { Report } from '../../src/entities/Report';
 import { UserDTO, MunicipalityUserDTO } from '../../src/interfaces/UserDTO';
 import { Role } from '../../../shared/RoleTypes';
 import { ReportCategory, ReportStatus } from '../../../shared/ReportTypes';
-import { TestDataSource } from './testSetup';
+import { AppDataSource } from '../../src/utils/AppDataSource';
 
 /**
  * 创建一个完整的 mock User 对象（包含所有 TypeORM 关联字段）
@@ -20,9 +20,6 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     role: Role.CITIZEN,
     telegram_username: null,
     email_notifications_enabled: true,
-    isVerified: true,
-    verificationToken: null,
-    verificationCodeExpiresAt: null,
     externalCompanyId: null,
     externalCompany: null,
     // TypeORM 关联字段
@@ -31,8 +28,9 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     assignedReports: [],
     notifications: [],
     photo: null as any,
+    internalNotes: [],
     ...overrides,
-  };
+  } as User;
 }
 
 /**
@@ -45,7 +43,6 @@ export function createMockUserDTO(overrides: Partial<UserDTO> = {}): UserDTO {
     firstName: "Test",
     lastName: "User",
     role: Role.CITIZEN,
-    isVerified: true,
     telegramUsername: null,
     emailNotificationsEnabled: true,
     ...overrides,
@@ -96,6 +93,28 @@ export function createMockReport(overrides: Partial<Report> = {}): Report {
 }
 
 /**
+ * Create test user data (for signup tests)
+ */
+export function createTestUserData(overrides: Partial<{
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: Role | string;
+  first_name: string;
+  last_name: string;
+}> = {}) {
+  return {
+    email: overrides.email || `test-${Date.now()}@test.com`,
+    password: overrides.password || 'TestPassword123!',
+    firstName: overrides.firstName || overrides.first_name || 'Test',
+    lastName: overrides.lastName || overrides.last_name || 'User',
+    role: overrides.role || Role.CITIZEN,
+    ...overrides,
+  };
+}
+
+/**
  * Create a user directly in the database for testing
  */
 export async function createUserInDatabase(userData: Partial<{
@@ -103,12 +122,9 @@ export async function createUserInDatabase(userData: Partial<{
   password: string;
   firstName: string;
   lastName: string;
-  role: Role;
+  role: Role | string;
   first_name: string;
   last_name: string;
-  isVerified?: boolean;
-  verificationToken?: string | null;
-  verificationCodeExpiresAt?: Date | null;
 }> = {}): Promise<User> {
   const defaultData = {
     email: `test-${Date.now()}@test.com`,
@@ -126,7 +142,7 @@ export async function createUserInDatabase(userData: Partial<{
   
   const { hashedPassword, salt } = await hashPassword(data.password);
 
-  const userRepository = TestDataSource.getRepository(User);
+  const userRepository = AppDataSource.getRepository(User);
   const user = userRepository.create({
     email: data.email,
     first_name: firstName,
@@ -134,9 +150,6 @@ export async function createUserInDatabase(userData: Partial<{
     password: hashedPassword,
     salt: salt,
     role: data.role as any,
-    isVerified: userData.isVerified ?? false,
-    verificationToken: userData.verificationToken ?? null,
-    verificationCodeExpiresAt: userData.verificationCodeExpiresAt ?? null,
   });
 
   return await userRepository.save(user);
@@ -146,7 +159,7 @@ export async function createUserInDatabase(userData: Partial<{
  * Verify that a user's password is properly hashed
  */
 export async function verifyPasswordIsHashed(email: string, plainPassword: string) {
-  const userRepository = TestDataSource.getRepository(User);
+  const userRepository = AppDataSource.getRepository(User);
   const user = await userRepository.findOne({ where: { email } });
   if (!user) return false;
   

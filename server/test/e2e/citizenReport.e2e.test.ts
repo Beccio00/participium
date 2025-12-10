@@ -54,8 +54,8 @@ describe('Citizen Report System', () => {
         .attach('photos', Buffer.from('fake-image-2'), 'pothole2.jpg')
         .expect(201);
       expect(createResponse.body).toHaveProperty('message', 'Report created successfully');
-      expect(createResponse.body).toHaveProperty('id');
-      const reportId = createResponse.body.id;
+      expect(createResponse.body.report).toHaveProperty('id');
+      const reportId = createResponse.body.report.id;
       // Step 4: Verify Report is Pending Approval (not visible in public list)
       const reportsResponse = await agent
         .get('/api/reports')
@@ -102,8 +102,8 @@ describe('Citizen Report System', () => {
           .field('isAnonymous', 'false')
           .attach('photos', Buffer.from('fake-image'), `${category}.jpg`)
           .expect(201);
-        expect(response.body).toHaveProperty('id');
-        reportIds.push(response.body.id);
+        expect(response.body.report).toHaveProperty('id');
+        reportIds.push(response.body.report.id);
       }
       expect(reportIds.length).toBe(3);
     });
@@ -138,7 +138,7 @@ describe('Citizen Report System', () => {
         .field('isAnonymous', 'true')
         .attach('photos', Buffer.from('fake-image'), 'anonymous.jpg')
         .expect(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
   });
 
@@ -191,7 +191,7 @@ describe('Citizen Report System', () => {
             .field('isAnonymous', 'false')
             .attach('photos', Buffer.from('fake-image'), `${category}.jpg`)
             .expect(201);
-          expect(response.body).toHaveProperty('id');
+          expect(response.body.report).toHaveProperty('id');
         });
         await Promise.all(promises);
       }, 60000);
@@ -253,7 +253,7 @@ describe('Citizen Report System', () => {
           .field('isAnonymous', 'false')
           .attach('photos', Buffer.from('fake-image'), 'location.jpg')
           .expect(201);
-        expect(response.body).toHaveProperty('id');
+        expect(response.body.report).toHaveProperty('id');
       }
     });
 
@@ -314,7 +314,7 @@ describe('Citizen Report System', () => {
         .field('isAnonymous', 'false')
         .attach('photos', Buffer.from('fake-image'), 'single.jpg')
         .expect(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should accept report with multiple photos', async () => {
@@ -330,7 +330,7 @@ describe('Citizen Report System', () => {
         .attach('photos', Buffer.from('fake-image-2'), 'photo2.jpg')
         .attach('photos', Buffer.from('fake-image-3'), 'photo3.jpg')
         .expect(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should reject report without photos', async () => {

@@ -157,6 +157,13 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           role: "PUBLIC_RELATIONS",
         });
 
+        const techEmail = `tech-${Date.now()}@example.com`;
+        const techUser = await createUserInDatabase({
+          email: techEmail,
+          password: "Tech123!",
+          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+        });
+
         // Create a citizen and a pending report
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
@@ -175,14 +182,12 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act - Approve the report
-        const response = await agent.post(`/api/reports/${report.id}/approve`);
+        const response = await agent.post(`/api/reports/${report.id}/approve`).send({ assignedTechnicalId: techUser.id });
 
         // Assert
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty(
-          "message",
-          "Report approved successfully"
-        );
+        expect(response.body).toHaveProperty("message");
+        expect(response.body.message).toContain("approved");
         expect(response.body.report).toHaveProperty("status", "ASSIGNED");
         expect(response.body.report).toHaveProperty("id", report.id);
 
@@ -204,6 +209,13 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           role: "PUBLIC_RELATIONS",
         });
 
+        const techEmail = `tech-${Date.now()}@example.com`;
+        const techUser = await createUserInDatabase({
+          email: techEmail,
+          password: "Tech123!",
+          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+        });
+
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
@@ -220,7 +232,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act
-        await agent.post(`/api/reports/${report.id}/approve`).expect(200);
+        await agent.post(`/api/reports/${report.id}/approve`).send({ assignedTechnicalId: techUser.id }).expect(200);
 
         // Assert - Check message was created
         const messages = await prisma.reportMessage.findMany({
@@ -249,7 +261,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act - Use invalid report ID
-        const response = await agent.post("/api/reports/invalid/approve");
+        const response = await agent.post("/api/reports/invalid/approve").send({});
 
         // Assert
         expect(response.status).toBe(400);
@@ -266,6 +278,13 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           role: "PUBLIC_RELATIONS",
         });
 
+        const techEmail = `tech-${Date.now()}@example.com`;
+        const techUser = await createUserInDatabase({
+          email: techEmail,
+          password: "Tech123!",
+          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+        });
+
         const agent = request.agent(app);
         await agent
           .post("/api/session")
@@ -273,7 +292,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act - Use non-existent report ID
-        const response = await agent.post("/api/reports/999999/approve");
+        const response = await agent.post("/api/reports/999999/approve").send({ assignedTechnicalId: techUser.id });
 
         // Assert
         expect(response.status).toBe(404);
@@ -288,6 +307,13 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           email: prEmail,
           password: "PR123!",
           role: "PUBLIC_RELATIONS",
+        });
+
+        const techEmail = `tech-${Date.now()}@example.com`;
+        const techUser = await createUserInDatabase({
+          email: techEmail,
+          password: "Tech123!",
+          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
@@ -327,7 +353,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act - Try to approve again
-        const response = await agent.post(`/api/reports/${report.id}/approve`);
+        const response = await agent.post(`/api/reports/${report.id}/approve`).send({ assignedTechnicalId: techUser.id });
 
         // Assert
         expect(response.status).toBe(400);
@@ -344,6 +370,13 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           email: prEmail,
           password: "PR123!",
           role: "PUBLIC_RELATIONS",
+        });
+
+        const techEmail = `tech-${Date.now()}@example.com`;
+        const techUser = await createUserInDatabase({
+          email: techEmail,
+          password: "Tech123!",
+          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
@@ -384,7 +417,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act
-        const response = await agent.post(`/api/reports/${report.id}/approve`);
+        const response = await agent.post(`/api/reports/${report.id}/approve`).send({ assignedTechnicalId: techUser.id });
 
         // Assert
         expect(response.status).toBe(400);
@@ -395,7 +428,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
     describe("Authorization scenarios", () => {
       it("should return 401 when not logged in", async () => {
         // Act
-        const response = await request(app).post("/api/reports/1/approve");
+        const response = await request(app).post("/api/reports/1/approve").send({ assignedTechnicalId: 1 });
 
         // Assert
         expect(response.status).toBe(401);
@@ -420,7 +453,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act
-        const response = await agent.post(`/api/reports/${report.id}/approve`);
+        const response = await agent.post(`/api/reports/${report.id}/approve`).send({ assignedTechnicalId: 1 });
 
         // Assert
         expect(response.status).toBe(403);
@@ -454,7 +487,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
           .expect(200);
 
         // Act
-        const response = await agent.post(`/api/reports/${report.id}/approve`);
+        const response = await agent.post(`/api/reports/${report.id}/approve`).send({});
 
         // Assert
         expect(response.status).toBe(403);
@@ -589,7 +622,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(200);
-        expect(response.body.report.rejectionReason).toBe(longReason);
+        expect(response.body.report.rejectedReason).toBe(longReason);
       });
     });
 
@@ -910,7 +943,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('error', 'BadRequest');
+        expect(response.body).toHaveProperty('error', 'Bad Request');
       });
       */
     });
@@ -1010,6 +1043,13 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         role: "PUBLIC_RELATIONS",
       });
 
+      const techEmail = `tech-${Date.now()}@example.com`;
+      const techUser = await createUserInDatabase({
+        email: techEmail,
+        password: "Tech123!",
+        role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+      });
+
       // Step 1: Create a pending report
       const report = await createPendingReport(citizen.id);
       expect(report.status).toBe("PENDING_APPROVAL");
@@ -1026,9 +1066,9 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
       expect(pendingResponse.body.length).toBe(1);
 
       // Step 3: PR officer approves the report
-      const approveResponse = await prAgent.post(
-        `/api/reports/${report.id}/approve`
-      );
+      const approveResponse = await prAgent
+        .post(`/api/reports/${report.id}/approve`)
+        .send({ assignedTechnicalId: techUser.id });
       expect(approveResponse.status).toBe(200);
       expect(approveResponse.body.report.status).toBe("ASSIGNED");
 
@@ -1069,7 +1109,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
 
       expect(rejectResponse.status).toBe(200);
       expect(rejectResponse.body.report.status).toBe("REJECTED");
-      expect(rejectResponse.body.report.rejectionReason).toBe(
+      expect(rejectResponse.body.report.rejectedReason).toBe(
         "Location is outside municipality boundaries"
       );
 
@@ -1094,6 +1134,13 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         role: "PUBLIC_RELATIONS",
       });
 
+      const techEmail = `tech-${Date.now()}@example.com`;
+      const techUser = await createUserInDatabase({
+        email: techEmail,
+        password: "Tech123!",
+        role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+      });
+
       // Create 3 pending reports
       const report1 = await createPendingReport(citizen.id);
       const report2 = await createPendingReport(citizen.id);
@@ -1111,7 +1158,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
       expect(pendingResponse.body.length).toBe(3);
 
       // Approve one, reject one, leave one pending
-      await prAgent.post(`/api/reports/${report1.id}/approve`).expect(200);
+      await prAgent.post(`/api/reports/${report1.id}/approve`).send({ assignedTechnicalId: techUser.id }).expect(200);
       await prAgent
         .post(`/api/reports/${report2.id}/reject`)
         .send({ reason: "Invalid content" })

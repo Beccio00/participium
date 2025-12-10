@@ -358,69 +358,7 @@ describe("reportService", () => {
     });
   });
 
-  // --- 7. Send Message ---
-  describe("sendMessageToCitizen", () => {
-    it("should throw NotFoundError if report missing", async () => {
-      mockReportRepo.findByIdWithRelations.mockResolvedValue(null);
-      await expect(reportService.sendMessageToCitizen(1, 99, "Msg")).rejects.toThrow(NotFoundError);
-    });
-
-    it("should throw ForbiddenError if technical not assigned", async () => {
-        mockReportRepo.findByIdWithRelations.mockResolvedValue(createMockReportEntity({ assignedOfficerId: 50 }));
-        await expect(reportService.sendMessageToCitizen(1, 99, "Msg")).rejects.toThrow(ForbiddenError);
-    });
-
-    it("should create message and return DTO", async () => {
-        const report = createMockReportEntity({ 
-            assignedOfficerId: 99, 
-            assignedOfficer: { first_name: "T", last_name: "S" } 
-        });
-        mockReportRepo.findByIdWithRelations.mockResolvedValue(report);
-        
-        mockReportMessageRepo.create.mockResolvedValue({
-            id: 100,
-            content: "Msg",
-            createdAt: mockDate,
-            senderId: 99,
-            user: { role: "TECHNICAL_STAFF" }
-        });
-
-        const res = await reportService.sendMessageToCitizen(1, 99, "Msg");
-        expect(res.content).toBe("Msg");
-        expect(mockReportMessageRepo.create).toHaveBeenCalled();
-    });
-  });
-
-  // --- 8. Get Messages ---
-  describe("getReportMessages", () => {
-    it("should throw NotFoundError if report missing", async () => {
-      mockReportRepo.findByIdWithRelations.mockResolvedValue(null);
-      await expect(reportService.getReportMessages(1, 1)).rejects.toThrow(NotFoundError);
-    });
-
-    it("should throw ForbiddenError if user is neither owner nor assigned technical", async () => {
-        mockReportRepo.findByIdWithRelations.mockResolvedValue(createMockReportEntity({ userId: 1, assignedOfficerId: 99 }));
-        await expect(reportService.getReportMessages(1, 50)).rejects.toThrow(ForbiddenError);
-    });
-
-    it("should return messages for owner", async () => {
-        mockReportRepo.findByIdWithRelations.mockResolvedValue(createMockReportEntity({ userId: 1 }));
-        mockReportMessageRepo.findByReportId.mockResolvedValue([
-            { id: 1, content: "Hi", createdAt: mockDate, senderId: 1, user: { role: "CITIZEN" } }
-        ]);
-        const res = await reportService.getReportMessages(1, 1);
-        expect(res).toHaveLength(1);
-    });
-
-    it("should return messages for assigned technical", async () => {
-        mockReportRepo.findByIdWithRelations.mockResolvedValue(createMockReportEntity({ userId: 1, assignedOfficerId: 99 }));
-        mockReportMessageRepo.findByReportId.mockResolvedValue([]);
-        const res = await reportService.getReportMessages(1, 99);
-        expect(res).toEqual([]);
-    });
-  });
-
-  // --- 9. Get Report By ID ---
+  // --- 7. Get Report By ID ---
   describe("getReportById", () => {
     it("should throw NotFoundError if report missing", async () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue(null);

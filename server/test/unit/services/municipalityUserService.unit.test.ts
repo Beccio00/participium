@@ -1,4 +1,4 @@
-import { Role } from "../../../src/entities/User";
+import { Role } from "../../../../shared/RoleTypes";
 import { BadRequestError } from "../../../src/utils";
 
 // Create mock functions for UserRepository

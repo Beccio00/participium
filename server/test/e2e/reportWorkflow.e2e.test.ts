@@ -70,8 +70,8 @@ describe('Report Workflow (Tecnico & PR)', () => {
       .attach('photos', Buffer.from('fake-image'), 'lampione.jpg')
       .expect(201);
 
-    expect(createRes.body).toHaveProperty('id');
-    reportId = createRes.body.id;
+    expect(createRes.body.report).toHaveProperty('id');
+    reportId = createRes.body.report.id;
 
     const pendingRes = await prAgent.get('/api/reports/pending').expect(200);
     const found = pendingRes.body.find((r: any) => r.id === reportId);
@@ -116,7 +116,7 @@ describe('Report Workflow (Tecnico & PR)', () => {
       .attach('photos', Buffer.from('fake-image'), 'rifiuto.jpg')
       .expect(201);
 
-    const reportId2 = createRes.body.id;
+    const reportId2 = createRes.body.report.id;
 
     await prAgent
       .post(`/api/reports/${reportId2}/reject`)
