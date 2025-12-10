@@ -1,47 +1,58 @@
-import { AppDataSource } from '../../src/utils/AppDataSource';
-import { ReportMessage } from '../../src/entities/ReportMessage';
-import { ReportPhoto } from '../../src/entities/ReportPhoto';
-import { Report } from '../../src/entities/Report';
-import { CitizenPhoto } from '../../src/entities/CitizenPhoto';
-import { Notification } from '../../src/entities/Notification';
-import { User } from '../../src/entities/User';
-import { ExternalCompany } from '../../src/entities/ExternalCompany';
+import "reflect-metadata";
+import { DataSource } from "typeorm";
+import { User } from "../../src/entities/User";
+import { CitizenPhoto } from "../../src/entities/CitizenPhoto";
+import { Report } from "../../src/entities/Report";
+import { ReportPhoto } from "../../src/entities/ReportPhoto";
+import { ReportMessage } from "../../src/entities/ReportMessage";
+import { Notification } from "../../src/entities/Notification";
+import { ExternalCompany } from "../../src/entities/ExternalCompany";
+
+// Test DataSource configuration
+export const TestDataSource = new DataSource({
+  type: "postgres",
+  url: process.env.DATABASE_URL || "postgresql://participium:participium_password@localhost:5432/participium_test",
+  entities: [User, CitizenPhoto, Report, ReportPhoto, ReportMessage, Notification, ExternalCompany],
+  synchronize: true,
+  dropSchema: true, // Clean database on each test run
+  logging: false,
+});
+
+/**
+ * Initialize test database connection
+ */
+export async function setupTestDatabase() {
+  if (!TestDataSource.isInitialized) {
+    await TestDataSource.initialize();
+  }
+}
 
 /**
  * Clean test database - runs before each test
  */
 export async function cleanDatabase() {
-  if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
+  if (!TestDataSource.isInitialized) {
+    await setupTestDatabase();
   }
   
   // Delete in order to respect foreign key constraints
-  // Use createQueryBuilder to delete all records (TypeORM doesn't allow empty criteria)
-  await AppDataSource.getRepository(ReportMessage).createQueryBuilder().delete().execute();
-  await AppDataSource.getRepository(ReportPhoto).createQueryBuilder().delete().execute();
-  await AppDataSource.getRepository(Notification).createQueryBuilder().delete().execute();
-  await AppDataSource.getRepository(Report).createQueryBuilder().delete().execute();
-  await AppDataSource.getRepository(CitizenPhoto).createQueryBuilder().delete().execute();
-  await AppDataSource.getRepository(User).createQueryBuilder().delete().execute();
-  await AppDataSource.getRepository(ExternalCompany).createQueryBuilder().delete().execute();
+  // Use createQueryBuilder to delete all records (TypeORM doesn't allow empty criteria with delete({}))
+  await TestDataSource.getRepository(ReportMessage).createQueryBuilder().delete().execute();
+  await TestDataSource.getRepository(ReportPhoto).createQueryBuilder().delete().execute();
+  await TestDataSource.getRepository(Notification).createQueryBuilder().delete().execute();
+  await TestDataSource.getRepository(Report).createQueryBuilder().delete().execute();
+  await TestDataSource.getRepository(CitizenPhoto).createQueryBuilder().delete().execute();
+  await TestDataSource.getRepository(ExternalCompany).createQueryBuilder().delete().execute();
+  await TestDataSource.getRepository(User).createQueryBuilder().delete().execute();
 }
 
 /**
  * Disconnect database connection - runs after all tests complete
  */
 export async function disconnectDatabase() {
-  if (AppDataSource.isInitialized) {
-    await AppDataSource.destroy();
+  if (TestDataSource.isInitialized) {
+    await TestDataSource.destroy();
   }
 }
 
-/**
- * Initialize test database - runs before tests start
- */
-export async function setupTestDatabase() {
-  if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
-  }
-  await cleanDatabase();
-}
-
+export { TestDataSource };
