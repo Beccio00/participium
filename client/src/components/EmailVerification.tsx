@@ -119,7 +119,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Codice di verifica"
+              placeholder="Verification Code"
               required
               style={{
                 width: "100%",
@@ -130,6 +130,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
                 fontSize: "1.1rem",
                 textAlign: "center",
                 background: "#f8f9fa",
+                color: "#000",
               }}
             />
             <button
