@@ -249,25 +249,6 @@ const seedDatabase = async () => {
     );
   }
 
-  // Create reports with different statuses and categories
-  const statuses = [
-    ReportStatus.PENDING_APPROVAL,  // Report 1: Fountain leak
-    ReportStatus.ASSIGNED,           // Report 2: Stairs no ramp  
-    ReportStatus.IN_PROGRESS,        // Report 3: Blocked sewer
-    ReportStatus.ASSIGNED,           // Report 4: Streetlight (PT24/25/26)
-    ReportStatus.REJECTED,           // Report 5: Waste overflow (3 photos: report5, report5.2, report7)
-    ReportStatus.RESOLVED,           // Report 6: Traffic light off (RESOLVED - report10)
-  ];
-
-  const categories = [
-    ReportCategory.WATER_SUPPLY_DRINKING_WATER,     // report1.jpg - Fountain
-    ReportCategory.ARCHITECTURAL_BARRIERS,           // report2.jpg - Stairs
-    ReportCategory.SEWER_SYSTEM,                     // report3.jpg - Puddle
-    ReportCategory.PUBLIC_LIGHTING,                  // report4.jpg - Streetlight (PT24/25/26)
-    ReportCategory.WASTE,                            // report5 + report5.2 + report7 - Waste bins (3 photos)
-    ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS,        // report10.jpg - Traffic light off (RESOLVED)
-  ];
-
   // Helper to find users
   const citizen = createdUsers.find(
     (x) => x.email === "citizen@participium.com"
@@ -276,60 +257,106 @@ const seedDatabase = async () => {
     createdUsers.find((x) => x.email === "tech@participium.com") ||
     createdUsers[0];
 
-  // Realistic samples per category based on actual photos
-  const categorySamples: Record<
-    string,
-    { title: string; description: string; preferredRole: Role }
-  > = {
-    [ReportCategory.WATER_SUPPLY_DRINKING_WATER]: {
+  // Report templates with photos - centralized configuration for easy editing
+  const reportTemplates = [
+    {
+      // Report 1: Fountain leak
       title: "Public fountain with continuous water leak",
-      description:
-        "Historic fountain with decorative head continuously leaking water into drain grate. Flow never stops, possible valve malfunction.",
+      description: "Historic fountain with decorative head continuously leaking water into drain grate. Flow never stops, possible valve malfunction.",
+      category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
       preferredRole: Role.LOCAL_PUBLIC_SERVICES,
+      status: ReportStatus.PENDING_APPROVAL,
+      photos: ["report1.jpg"]
     },
-    [ReportCategory.ARCHITECTURAL_BARRIERS]: {
+    {
+      // Report 2: Stairs without ramp
       title: "Public staircase with vegetation and no accessible ramp",
-      description:
-        "Long outdoor staircase with steps overgrown by weeds. No alternative ramp for wheelchairs and strollers. Neglected maintenance.",
+      description: "Long outdoor staircase with steps overgrown by weeds. No alternative ramp for wheelchairs and strollers. Neglected maintenance.",
+      category: ReportCategory.ARCHITECTURAL_BARRIERS,
       preferredRole: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report2.jpg"]
     },
-    [ReportCategory.SEWER_SYSTEM]: {
+    {
+      // Report 3: Blocked sewer grate
       title: "Large puddle covering blocked sewer grate",
-      description:
-        "Water accumulation on roadway with submerged grate. Floating leaves indicate poor drainage. Grate cleaning needed.",
+      description: "Water accumulation on roadway with submerged grate. Floating leaves indicate poor drainage. Grate cleaning needed.",
+      category: ReportCategory.SEWER_SYSTEM,
       preferredRole: Role.INFRASTRUCTURES,
+      status: ReportStatus.IN_PROGRESS,
+      photos: ["report3.jpg"]
     },
-    [ReportCategory.PUBLIC_LIGHTING]: {
+    {
+      // Report 4: Streetlight off
       title: "Non-functioning streetlight - dark area at night",
-      description:
-        "Pole-mounted streetlight completely off. Fixture appears intact but creates dangerous dark spots at night.",
+      description: "Pole-mounted streetlight completely off. Fixture appears intact but creates dangerous dark spots at night.",
+      category: ReportCategory.PUBLIC_LIGHTING,
       preferredRole: Role.LOCAL_PUBLIC_SERVICES,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report4.jpg"]
     },
-    [ReportCategory.WASTE]: {
+    {
+      // Report 5: Waste overflow (2 photos)
       title: "Overflowing waste containers with bags on ground",
-      description:
-        "Multiple green bins completely full with numerous bags piled on the ground in different areas. Missed collection or insufficient capacity. Health and environmental hazard.",
+      description: "Multiple green bins completely full with numerous bags piled on the ground in different areas. Missed collection or insufficient capacity. Health and environmental hazard.",
+      category: ReportCategory.WASTE,
       preferredRole: Role.WASTE_MANAGEMENT,
+      status: ReportStatus.REJECTED,
+      photos: ["report5.jpg", "report5.2.jpg"]
     },
-    [ReportCategory.ROADS_URBAN_FURNISHINGS]: {
+    {
+      // Report 6: Road potholes (2 photos)
       title: "Severe road and sidewalk deterioration",
-      description:
-        "Asphalt with deep cracks, potholes and eroded sections. Sidewalk equally damaged with wide cracks and overturned barrier. Danger for pedestrians, wheelchairs and strollers.",
+      description: "Asphalt with deep cracks, potholes and eroded sections. Sidewalk equally damaged with wide cracks and overturned barrier. Danger for pedestrians, wheelchairs and strollers.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
       preferredRole: Role.ROAD_MAINTENANCE,
+      status: ReportStatus.PENDING_APPROVAL,
+      photos: ["report9.jpg", "report8.jpg"]
     },
-  };
+    {
+      // Report 8: Broken barrier
+      title: "Broken safety barrier on roadside",
+      description: "Metal safety barrier damaged and bent. Creates hazard for vehicles and pedestrians. Immediate replacement required.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.ROAD_MAINTENANCE,
+      status: ReportStatus.IN_PROGRESS,
+      photos: ["report7.jpg"]
+    },
+    {
+      // Report 9: Traffic light off
+      title: "Traffic light completely off - no power",
+      description: "Traffic signal at major intersection completely turned off. No lights active, creating dangerous situation for vehicles and pedestrians. Electrical failure suspected.",
+      category: ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS,
+      preferredRole: Role.ROAD_MAINTENANCE,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report10.jpg"]
+    },
+    {
+      // Report 10: Faded crosswalk
+      title: "Faded crosswalk markings with potholes",
+      description: "Pedestrian crossing almost invisible due to faded paint. Multiple potholes in the area. Safety hazard for pedestrians and drivers.",
+      category: ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS,
+      preferredRole: Role.ROAD_MAINTENANCE,
+      status: ReportStatus.RESOLVED,
+      photos: ["report11.jpg"]
+    }
+  ];
 
   console.log("📝 Creating reports...");
 
   // Different coordinates for each report across Turin with real street addresses
   // Well distributed across different neighborhoods for better map visibility
   const turinCoordinates = [
-    { lat: 45.0703, lng: 7.6869, address: "Piazza Castello, 10121 Torino" },                    // Report 1: Centro storico (iconic location)
-    { lat: 45.0612, lng: 7.6858, address: "Via Nizza 230, 10126 Torino" },                      // Report 2: Crocetta (south-central)
-    { lat: 45.0837, lng: 7.6744, address: "Corso Giulio Cesare 45, 10152 Torino" },             // Report 3: Madonna di Campagna (north-west)
-    { lat: 45.0542, lng: 7.6628, address: "Via Nizza 350, 10127 Torino" },                      // Report 4: Lingotto (far south - PT24)
-    { lat: 45.0892, lng: 7.6982, address: "Corso Vercelli 112, 10155 Torino" },                 // Report 5: Barriera di Milano (north-east)
-    { lat: 45.0668, lng: 7.7012, address: "Piazza Massaua 9, 10141 Torino" },                   // Report 6: Cit Turin (east)
+    { lat: 45.0703, lng: 7.6869, address: "Piazza Castello, 10121 Torino" },                    // Report 1: Centro storico - Fountain
+    { lat: 45.0612, lng: 7.6858, address: "Via Nizza 230, 10126 Torino" },                      // Report 2: Crocetta - Stairs
+    { lat: 45.0837, lng: 7.6744, address: "Corso Giulio Cesare 45, 10152 Torino" },             // Report 3: Madonna di Campagna - Sewer
+    { lat: 45.0542, lng: 7.6628, address: "Via Nizza 350, 10127 Torino" },                      // Report 4: Lingotto - Streetlight
+    { lat: 45.0892, lng: 7.6982, address: "Corso Vercelli 112, 10155 Torino" },                 // Report 5: Barriera di Milano - Waste
+    { lat: 45.0668, lng: 7.7012, address: "Via Roma 156, 10141 Torino" },                       // Report 6: Cit Turin - Road potholes
+    { lat: 45.0755, lng: 7.6585, address: "Corso Francia 88, 10143 Torino" },                   // Report 7: Pozzo Strada - Damaged sidewalk
+    { lat: 45.0925, lng: 7.7125, address: "Via Cigna 45, 10155 Torino" },                       // Report 8: Regio Parco - Broken barrier
+    { lat: 45.0645, lng: 7.6925, address: "Corso Vittorio Emanuele II 75, 10128 Torino" },      // Report 9: San Salvario - Traffic light
+    { lat: 45.0815, lng: 7.6655, address: "Corso Lecce 33, 10149 Torino" },                     // Report 10: Vallette - Faded crosswalk
   ];
 
   // Create reports with staggered creation dates (from 7 days ago to today)
@@ -341,45 +368,31 @@ const seedDatabase = async () => {
   };
 
   const creationDates = [
-    daysAgo(7),  // Report 1: 7 days ago
-    daysAgo(6),  // Report 2: 6 days ago
-    daysAgo(5),  // Report 3: 5 days ago
-    daysAgo(4),  // Report 4: 4 days ago (PT24/25/26)
-    daysAgo(3),  // Report 5: 3 days ago
-    daysAgo(2),  // Report 6: 2 days ago
+    daysAgo(9),  // Report 1: 9 days ago - Fountain
+    daysAgo(8),  // Report 2: 8 days ago - Stairs
+    daysAgo(7),  // Report 3: 7 days ago - Sewer
+    daysAgo(6),  // Report 4: 6 days ago - Streetlight
+    daysAgo(5),  // Report 5: 5 days ago - Waste
+    daysAgo(4),  // Report 6: 4 days ago - Road potholes
+    daysAgo(3),  // Report 7: 3 days ago - Damaged sidewalk
+    daysAgo(2),  // Report 8: 2 days ago - Broken barrier
+    daysAgo(1),  // Report 9: 1 day ago - Traffic light
+    daysAgo(0),  // Report 10: Today - Faded crosswalk
   ];
 
-  for (let i = 0; i < statuses.length; i++) {
-    const status = statuses[i];
-    const category = categories[i % categories.length];
+  for (let i = 0; i < reportTemplates.length; i++) {
+    const template = reportTemplates[i];
     const coords = turinCoordinates[i];
     
-    // Get sample based on category, with special handling for ROAD_SIGNS_TRAFFIC_LIGHTS
-    let sample;
-    if (category === ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS) {
-      // Report 6: Traffic light completely off (RESOLVED) - report10.jpg shows turned off traffic light
-      sample = {
-        title: "Traffic light completely off - no power",
-        description: "Traffic signal at major intersection completely turned off. No lights active, creating dangerous situation for vehicles and pedestrians. Electrical failure suspected. Already repaired and now functioning correctly.",
-        preferredRole: Role.ROAD_MAINTENANCE,
-      };
-    } else {
-      sample = categorySamples[category] || {
-        title: `Segnalazione ${category}`,
-        description: "Segnalazione generica",
-        preferredRole: Role.INFRASTRUCTURES,
-      };
-    }
-
     const reportData: any = {
-      title: sample.title,
-      description: sample.description,
-      category: category,
+      title: template.title,
+      description: template.description,
+      category: template.category,
       latitude: coords.lat,
       longitude: coords.lng,
       address: coords.address,
       isAnonymous: false,
-      status: status,
+      status: template.status,
       userId: citizen.id,
       assignedOfficerId: null,
       rejectedReason: null,
@@ -387,10 +400,10 @@ const seedDatabase = async () => {
 
     // Assign technical users for appropriate statuses
     if (
-      status === ReportStatus.ASSIGNED ||
-      status === ReportStatus.IN_PROGRESS
+      template.status === ReportStatus.ASSIGNED ||
+      template.status === ReportStatus.IN_PROGRESS
     ) {
-      const preferredRole = sample.preferredRole;
+      const preferredRole = template.preferredRole;
       const assignedUser =
         createdUsers.find((u) => u.role === preferredRole) || tech;
       if (assignedUser) reportData.assignedOfficerId = assignedUser.id;
@@ -398,13 +411,13 @@ const seedDatabase = async () => {
 
     // Force assignment to tech@participium.com for ARCHITECTURAL_BARRIERS with ASSIGNED status
     if (
-      status === ReportStatus.ASSIGNED &&
-      category === ReportCategory.ARCHITECTURAL_BARRIERS
+      template.status === ReportStatus.ASSIGNED &&
+      template.category === ReportCategory.ARCHITECTURAL_BARRIERS
     ) {
       reportData.assignedOfficerId = tech.id;
     }
 
-    if (status === ReportStatus.REJECTED) {
+    if (template.status === ReportStatus.REJECTED) {
       reportData.rejectedReason =
         "Segnalazione non pertinente al patrimonio comunale.";
     }
@@ -413,12 +426,12 @@ const seedDatabase = async () => {
     
     // Update createdAt to staggered date for better distribution
     await AppDataSource.query(
-      'UPDATE report SET "createdAt" = $1 WHERE id = $2',
+      'UPDATE "Report" SET "createdAt" = $1 WHERE id = $2',
       [creationDates[i], createdReport.id]
     );
     
     console.log(
-      `📝 Created report id=${createdReport.id} status=${status} category=${category} date=${creationDates[i].toLocaleDateString()}`
+      `📝 Created report id=${createdReport.id} status=${template.status} category=${template.category} date=${creationDates[i].toLocaleDateString()}`
     );
 
     // Log assignment info if applicable
@@ -433,14 +446,11 @@ const seedDatabase = async () => {
       }
     }
 
-    // Add photos for each report
-    for (let p = 1; p <= 6; p++) {
-      const photoUrl = `http://localhost:9000/reports-photos/report${
-        i + 1
-      }.jpg`;
+    // Add photos from template configuration
+    for (let photoIndex = 0; photoIndex < template.photos.length; photoIndex++) {
       await reportPhotoRepository.create({
-        url: photoUrl,
-        filename: `seed-${createdReport.id}-${p}.jpg`,
+        url: `http://localhost:9000/reports-photos/${template.photos[photoIndex]}`,
+        filename: `seed-${createdReport.id}-${photoIndex + 1}.jpg`,
         reportId: createdReport.id,
       });
     }
@@ -450,15 +460,15 @@ const seedDatabase = async () => {
 
     // Initial citizen message
     await reportMessageRepository.create({
-      content: `Report submitted: ${sample.description}`,
+      content: `Report submitted: ${template.description}`,
       reportId: createdReport.id,
       senderId: citizen.id,
     });
 
     // Technical follow-up for assigned/in-progress reports
     if (
-      status === ReportStatus.ASSIGNED ||
-      status === ReportStatus.IN_PROGRESS
+      template.status === ReportStatus.ASSIGNED ||
+      template.status === ReportStatus.IN_PROGRESS
     ) {
       const assignedUser = createdUsers.find(
         (u) => u.id === reportData.assignedOfficerId
@@ -473,7 +483,7 @@ const seedDatabase = async () => {
     }
 
     // Rejection message for rejected reports
-    if (status === ReportStatus.REJECTED) {
+    if (template.status === ReportStatus.REJECTED) {
       const prUser =
         createdUsers.find((u) => u.role === Role.PUBLIC_RELATIONS) ||
         createdUsers[2];
@@ -487,251 +497,129 @@ const seedDatabase = async () => {
   }
 
   // ============================================================================
-  // PT24, PT25, PT26 - Complete test scenarios for external maintainer stories
+  // PT24, PT25, PT26 - Adapt existing reports for external maintainer demo
   // ============================================================================
   
-  console.log("\n🎯 Creating PT24/PT25/PT26 test scenarios...");
+  console.log("\n🎯 Adapting existing reports for PT24/PT25/PT26 demo...");
 
-  // SCENARIO 1: PT24 - Reports ASSIGNED to tech, ready to be assigned to external (Enel X)
-  console.log("📝 [PT24] Creating ASSIGNED reports ready for external assignment...");
+  // Get the created reports from the database (sorted by ID to match creation order)
+  const allReports = await AppDataSource.query('SELECT * FROM "Report" ORDER BY id ASC');
   
-  const pt24Reports = [
-    {
-      title: "Multiple streetlights not working on Via Po",
-      description: "Five streetlights on Via Po are completely out. Urgent intervention needed for public safety.",
-      address: "Via Po 45, Torino",
-    },
-    {
-      title: "Damaged streetlight after storm on Via Garibaldi",
-      description: "Streetlight pole knocked down by falling tree branch during storm. Needs emergency replacement.",
-      address: "Via Garibaldi 120, Torino",
-    },
-    {
-      title: "Streetlight flickering on Corso Vittorio Emanuele",
-      description: "Streetlight intermittently flickering, possible electrical issue. Safety concern for pedestrians.",
-      address: "Corso Vittorio Emanuele 75, Torino",
-    },
-  ];
+  // PT24 DEMO: Report 4 (Streetlight) - ASSIGNED, ready to assign to Enel X
+  const pt24Report = allReports[3]; // Report 4: Streetlight off
+  if (pt24Report) {
+    await AppDataSource.query(
+      'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2 WHERE id = $3',
+      [ReportStatus.ASSIGNED, tech.id, pt24Report.id]
+    );
+    console.log(`   ✅ [PT24] Report ${pt24Report.id} (Streetlight): ASSIGNED to tech@participium.com - ready for external assignment to Enel X`);
+  }
 
-  for (let i = 0; i < pt24Reports.length; i++) {
-    const pt24Data = pt24Reports[i];
-    const reportData: any = {
-      title: pt24Data.title,
-      description: pt24Data.description,
-      category: ReportCategory.PUBLIC_LIGHTING,
-      latitude: 45.0703 + (30 + i) * 0.001,
-      longitude: 7.6869 + (30 + i) * 0.001,
-      address: pt24Data.address,
-      isAnonymous: false,
-      status: ReportStatus.ASSIGNED,
-      userId: citizen.id,
-      assignedOfficerId: tech.id,
-      rejectedReason: null,
-    };
-
-    const createdReport = await reportRepository.create(reportData);
-    console.log(`   ✅ Report ${createdReport.id}: ASSIGNED to tech@participium.com (ready for external assignment)`);
-
-    for (let p = 1; p <= 3; p++) {
-      await reportPhotoRepository.create({
-        url: `http://localhost:9000/reports-photos/report4.jpg`,
-        filename: `pt24-${createdReport.id}-${p}.jpg`,
-        reportId: createdReport.id,
-      });
-    }
-
+  // PT25 DEMO: Report 9 (Traffic light) - EXTERNAL_ASSIGNED, ready for status updates
+  const pt25Report = allReports[8]; // Report 9: Traffic light off
+  if (pt25Report) {
+    await AppDataSource.query(
+      'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2, "externalMaintainerId" = $3, "externalCompanyId" = $4 WHERE id = $5',
+      [ReportStatus.EXTERNAL_ASSIGNED, tech.id, externalMaintainer.id, enelXId, pt25Report.id]
+    );
+    
+    // Add message about external assignment
     await reportMessageRepository.create({
-      content: `Report submitted: ${pt24Data.description}`,
-      reportId: createdReport.id,
-      senderId: citizen.id,
-    });
-
-    await reportMessageRepository.create({
-      content: "Report received and under evaluation by technical office. Will assign to appropriate maintainer.",
-      reportId: createdReport.id,
+      content: "Report assigned to Enel X for maintenance intervention. External team will handle this case.",
+      reportId: pt25Report.id,
       senderId: tech.id,
     });
+    
+    console.log(`   ✅ [PT25] Report ${pt25Report.id} (Traffic light): EXTERNAL_ASSIGNED to external@enelx.com - can update status`);
   }
 
-  // SCENARIO 2: PT25 - Report EXTERNAL_ASSIGNED to external, ready for status updates
-  console.log("📝 [PT25] Creating EXTERNAL_ASSIGNED report for status update testing...");
-  
-  const pt25ReportData: any = {
-    title: "Broken streetlight on Corso Regina Margherita",
-    description: "Streetlight pole damaged in traffic accident, needs complete replacement. Already assigned to Enel X for intervention.",
-    category: ReportCategory.PUBLIC_LIGHTING,
-    latitude: 45.0703 + 40 * 0.001,
-    longitude: 7.6869 + 40 * 0.001,
-    address: "Corso Regina Margherita 150, Torino",
-    isAnonymous: false,
-    status: ReportStatus.EXTERNAL_ASSIGNED,
-    userId: citizen.id,
-    assignedOfficerId: tech.id,
-    externalMaintainerId: externalMaintainer.id,
-    externalCompanyId: enelXId,
-    rejectedReason: null,
-  };
-
-  const pt25Report = await reportRepository.create(pt25ReportData);
-  console.log(`   ✅ Report ${pt25Report.id}: EXTERNAL_ASSIGNED to external@enelx.com (can update status)`);
-
-  for (let p = 1; p <= 3; p++) {
-    await reportPhotoRepository.create({
-      url: `http://localhost:9000/reports-photos/report3.jpg`,
-      filename: `pt25-${pt25Report.id}-${p}.jpg`,
-      reportId: pt25Report.id,
-    });
-  }
-
-  await reportMessageRepository.create({
-    content: `Report submitted: ${pt25ReportData.description}`,
-    reportId: pt25Report.id,
-    senderId: citizen.id,
-  });
-
-  await reportMessageRepository.create({
-    content: "Report assigned to Enel X for maintenance. External team will handle this case.",
-    reportId: pt25Report.id,
-    senderId: tech.id,
-  });
-
-  // SCENARIO 3: PT26 - Report IN_PROGRESS with internal notes already exchanged
-  console.log("📝 [PT26] Creating IN_PROGRESS report with internal notes...");
-  
-  const pt26ReportData: any = {
-    title: "Complex traffic light system malfunction - Piazza Castello",
-    description: "Traffic light system showing inconsistent signals. Requires electrical inspection and possibly new control unit.",
-    category: ReportCategory.PUBLIC_LIGHTING,
-    latitude: 45.0703 + 41 * 0.001,
-    longitude: 7.6869 + 41 * 0.001,
-    address: "Piazza Castello, Torino",
-    isAnonymous: false,
-    status: ReportStatus.IN_PROGRESS,
-    userId: citizen.id,
-    assignedOfficerId: tech.id,
-    externalMaintainerId: externalMaintainer.id,
-    externalCompanyId: enelXId,
-    rejectedReason: null,
-  };
-
-  const pt26Report = await reportRepository.create(pt26ReportData);
-  console.log(`   ✅ Report ${pt26Report.id}: IN_PROGRESS with external@enelx.com (has internal notes)`);
-
-  for (let p = 1; p <= 4; p++) {
-    await reportPhotoRepository.create({
-      url: `http://localhost:9000/reports-photos/report5.jpg`,
-      filename: `pt26-${pt26Report.id}-${p}.jpg`,
+  // PT26 DEMO: Report 2 (Stairs) - IN_PROGRESS with internal notes
+  const pt26Report = allReports[1]; // Report 2: Stairs without ramp
+  if (pt26Report) {
+    await AppDataSource.query(
+      'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2, "externalMaintainerId" = $3, "externalCompanyId" = $4, category = $5 WHERE id = $6',
+      [ReportStatus.IN_PROGRESS, tech.id, externalMaintainer.id, enelXId, ReportCategory.PUBLIC_LIGHTING, pt26Report.id]
+    );
+    
+    // Add messages about external assignment
+    await reportMessageRepository.create({
+      content: "Report assigned to Enel X technical team. Inspection and intervention scheduled.",
       reportId: pt26Report.id,
+      senderId: tech.id,
     });
+    
+    await reportMessageRepository.create({
+      content: "Our team has started the inspection. Will provide updates on progress.",
+      reportId: pt26Report.id,
+      senderId: externalMaintainer.id,
+    });
+    
+    // Add internal notes (coordination between tech and external)
+    await AppDataSource.query(
+      'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
+      [
+        "Initial inspection completed. The work requires specialized equipment. Estimated cost: €3,200. Waiting for municipality approval before proceeding.",
+        pt26Report.id,
+        externalMaintainer.id,
+        new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+      ]
+    );
+
+    await AppDataSource.query(
+      'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
+      [
+        "Approved. Please proceed with the intervention. Budget allocated. Expected completion by end of week.",
+        pt26Report.id,
+        tech.id,
+        new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+      ]
+    );
+
+    await AppDataSource.query(
+      'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
+      [
+        "Equipment delivered. Intervention scheduled for tomorrow at 8 AM. Expected completion: 5 PM. Will update status when finished.",
+        pt26Report.id,
+        externalMaintainer.id,
+        new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
+      ]
+    );
+    
+    console.log(`   ✅ [PT26] Report ${pt26Report.id} (Stairs): IN_PROGRESS with 3 internal notes - demonstrates internal communication`);
   }
 
-  await reportMessageRepository.create({
-    content: `Report submitted: ${pt26ReportData.description}`,
-    reportId: pt26Report.id,
-    senderId: citizen.id,
-  });
-
-  await reportMessageRepository.create({
-    content: "Report assigned to Enel X technical team. Intervention scheduled.",
-    reportId: pt26Report.id,
-    senderId: tech.id,
-  });
-
-  await reportMessageRepository.create({
-    content: "Our team has started the inspection. Will provide updates soon.",
-    reportId: pt26Report.id,
-    senderId: externalMaintainer.id,
-  });
-
-  // Add internal notes to PT26 report (coordination between tech and external)
-  console.log("   📝 Adding internal notes to PT26 report...");
-  
-  await AppDataSource.query(
-    'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
-    [
-      "Initial inspection completed. The control unit needs replacement. Estimated cost: €2,500. Waiting for municipality approval before ordering parts.",
-      pt26Report.id,
-      externalMaintainer.id,
-      new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
-    ]
-  );
-
-  await AppDataSource.query(
-    'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
-    [
-      "Approved. Please proceed with the replacement. Budget allocated. Parts delivery expected by Friday.",
-      pt26Report.id,
-      tech.id,
-      new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
-    ]
-  );
-
-  await AppDataSource.query(
-    'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
-    [
-      "Parts received. Installation scheduled for tomorrow morning 9 AM. Expected completion: 12 PM. Will update status when finished.",
-      pt26Report.id,
-      externalMaintainer.id,
-      new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
-    ]
-  );
-
-  console.log("   ✅ Added 3 internal notes (external→tech→external conversation)");
-
-  // SCENARIO 4: Additional report for IREN (company without platform access)
-  console.log("📝 [PT24] Creating WASTE report for IREN (no platform access)...");
-  
-  const wasteReportData: any = {
-    title: "Large illegal waste dump near park entrance",
-    description: "Significant accumulation of construction waste and furniture illegally dumped. Requires specialized removal team.",
-    category: ReportCategory.WASTE,
-    latitude: 45.0703 + 50 * 0.001,
-    longitude: 7.6869 + 50 * 0.001,
-    address: "Parco del Valentino, Torino",
-    isAnonymous: false,
-    status: ReportStatus.ASSIGNED,
-    userId: citizen.id,
-    assignedOfficerId: createdUsers.find((u) => u.role === Role.WASTE_MANAGEMENT)?.id || tech.id,
-    rejectedReason: null,
-  };
-
-  const wasteReport = await reportRepository.create(wasteReportData);
-  console.log(`   ✅ Report ${wasteReport.id}: ASSIGNED to WASTE_MANAGEMENT (can assign to IREN - no platform)`);
-
-  for (let p = 1; p <= 2; p++) {
-    await reportPhotoRepository.create({
-      url: `http://localhost:9000/reports-photos/report6.jpg`,
-      filename: `waste-${wasteReport.id}-${p}.jpg`,
-      reportId: wasteReport.id,
-    });
+  // PT24 BONUS: Report 5 (Waste) - ASSIGNED to WASTE_MANAGEMENT, ready to assign to IREN (no platform)
+  const wasteReport = allReports[4]; // Report 5: Waste overflow
+  const wasteManager = createdUsers.find((u) => u.role === Role.WASTE_MANAGEMENT);
+  if (wasteReport && wasteManager) {
+    await AppDataSource.query(
+      'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2 WHERE id = $3',
+      [ReportStatus.ASSIGNED, wasteManager.id, wasteReport.id]
+    );
+    console.log(`   ✅ [PT24-IREN] Report ${wasteReport.id} (Waste): ASSIGNED to waste@participium.com - can assign to IREN (no platform access)`);
   }
 
-  await reportMessageRepository.create({
-    content: `Report submitted: ${wasteReportData.description}`,
-    reportId: wasteReport.id,
-    senderId: citizen.id,
-  });
-
-  console.log("\n✅ PT24/PT25/PT26 test scenarios created successfully!");
+  console.log("\n✅ Reports adapted for PT24/PT25/PT26 demo!");
   console.log("=" .repeat(80));
-  console.log("\n📋 Test Plan:");
+  console.log("\n📋 Demo Test Plan:");
   console.log(`   PT24 - Assign to External:`);
   console.log(`      → Login as tech@participium.com / techpass`);
   console.log(`      → Navigate to "My Reports"`);
-  console.log(`      → Find reports #${pt24Reports.length > 0 ? '7-9' : 'N/A'} (ASSIGNED, PUBLIC_LIGHTING)`);
+  console.log(`      → Find Report #${pt24Report?.id || 'N/A'} (Streetlight - ASSIGNED)`);
   console.log(`      → Click "Assign to external" → Select "Enel X"`);
   console.log(`      → Report status changes to EXTERNAL_ASSIGNED`);
+  console.log(`      → BONUS: Report #${wasteReport?.id || 'N/A'} (Waste) can be assigned to IREN (no platform)`);
   console.log(`   PT25 - Update Status:`);
   console.log(`      → Login as external@enelx.com / externalpass`);
   console.log(`      → Navigate to "My Reports"`);
-  console.log(`      → Find report ${pt25Report.id} (EXTERNAL_ASSIGNED)`);
+  console.log(`      → Find Report #${pt25Report?.id || 'N/A'} (Traffic light - EXTERNAL_ASSIGNED)`);
   console.log(`      → Click "Update Status" → Change to IN_PROGRESS/SUSPENDED/RESOLVED`);
-  console.log(`      → Citizens see updated status`);
+  console.log(`      → Citizens see updated status in real-time`);
   console.log(`   PT26 - Internal Notes:`);
   console.log(`      → Login as tech@participium.com or external@enelx.com`);
   console.log(`      → Navigate to "My Reports"`);
-  console.log(`      → Find report ${pt26Report.id} (already has 3 internal notes)`);
-  console.log(`      → Click "Internal Notes" → View existing notes`);
+  console.log(`      → Find Report #${pt26Report?.id || 'N/A'} (Stairs - IN_PROGRESS, already has 3 notes)`);
+  console.log(`      → Click "Internal Notes" → View existing conversation`);
   console.log(`      → Add new note → Other user receives notification (badge on button)`);
   console.log(`      → Switch users to verify notification badge appears`);
   console.log("=" .repeat(80));
@@ -747,7 +635,7 @@ const seedDatabase = async () => {
       `  ${u.first_name} ${u.last_name} (${u.role}): ${u.email} / ${u.password}`
     );
   });
-};
+}; // Chiusura della funzione seedDatabase
 
 const main = async () => {
   try {
