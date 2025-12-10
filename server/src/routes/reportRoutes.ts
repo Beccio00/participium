@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import {query} from 'express-validator';
 import { asyncHandler } from '../middlewares/errorMiddleware';
 import { requireCitizen, requirePublicRelations, requireTechnicalStaffOnly, requireTechnicalOrExternal, isLoggedIn } from '../middlewares/routeProtection';
 import { validateTurinBoundaries } from '../middlewares/validateTurinBoundaries';
@@ -75,9 +74,9 @@ router.post("/:reportId/assign-external", requireTechnicalStaffOnly, ApiValidati
 //FIXME: add the logic with the external users
 
 // POST /api/reports/:reportId/internal-notes - Create internal note
-router.post('/:reportId/internal-notes', requireTechnicalStaff, ApiValidationMiddleware, asyncHandler(createInternalNote));
+router.post('/:reportId/internal-notes', requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(createInternalNote));
 
 // GET /api/reports/:reportId/internal-notes - See internal note 
-router.get('/:reportId/internal-notes', requireTechnicalStaff, ApiValidationMiddleware, asyncHandler(getInternalNote));
+router.get('/:reportId/internal-notes', requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(getInternalNote));
 
 export default router;

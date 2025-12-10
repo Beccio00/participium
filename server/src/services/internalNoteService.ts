@@ -1,8 +1,8 @@
 import { InternalNoteRepository } from "../repositories/InternalNoteRepository";
 import { ReportRepository } from "../repositories/ReportRepository";
 import { UserRepository } from "../repositories/UserRepository";
-import { NotFoundError, ForbiddenError, BadRequestError } from "../utils/errors";
-import { Role } from "../entities/User";
+import { NotFoundError, BadRequestError } from "../utils/errors";
+import { Role } from "../../../shared/RoleTypes";
 import { InternalNoteDTO, toInternalNoteDTO } from "../interfaces/InternalNoteDTO";
 
 const internalNoteRepository = new InternalNoteRepository();
