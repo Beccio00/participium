@@ -84,8 +84,6 @@ export default function TechPanel() {
     fetchReports();
   }, [isAuthenticated, user, navigate]);
 
-  console.log("user auth", user)
-
   const fetchReports = async () => {
     try {
       setLoading(true);
@@ -135,16 +133,20 @@ export default function TechPanel() {
           .filter(
             (r: any) =>
               r.status === ReportStatus.ASSIGNED.toString() ||
-              TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status)
+              TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status) &&
+              !r.externalHandler 
           )
           .map((r: any) => ({
             ...r,
             latitude: Number(r.latitude),
             longitude: Number(r.longitude),
           }));
+          console.log("normalized pending", pendingNormalized);
 
         const otherNormalized = (assignedData || [])
-          .filter((r: any) => r.status === ReportStatus.EXTERNAL_ASSIGNED.toString())
+          .filter((r: any) => r.status === ReportStatus.EXTERNAL_ASSIGNED.toString() ||
+            r.externalHandler 
+        )
           .map((r: any) => ({
             ...r,
             latitude: Number(r.latitude),
