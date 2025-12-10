@@ -28,12 +28,12 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
     setSuccess("");
     try {
       await verifyEmailCode(email, code);
-      setSuccess("Email verificata con successo! Ora puoi accedere.");
+      setSuccess("Email successfully verified! Redirecting to login...");
       setTimeout(() => {
         navigate("/login");
       }, 1500);
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Codice non valido o scaduto.");
+      setError(err?.response?.data?.message || "Invalid or expired code.");
     } finally {
       setLoading(false);
     }
@@ -46,9 +46,9 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
     try {
       await resendVerificationCode(email);
       setResent(true);
-      setSuccess("Nuovo codice inviato!");
+      setSuccess("New code sent!");
     } catch (err: any) {
-      setError("Errore nell’invio del codice.");
+      setError("Error sending code.");
     } finally {
       setLoading(false);
     }
@@ -75,9 +75,9 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
             className="mb-3"
             style={{ color: "var(--text)", fontWeight: 700 }}
           >
-            Email non trovata
+            Email not found
           </h2>
-          <p style={{ color: "var(--muted)" }}>Torna alla registrazione.</p>
+          <p style={{ color: "var(--muted)" }}>Return to sign up.</p>
         </div>
       </Container>
     );
@@ -104,14 +104,13 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
             className="mb-3"
             style={{ color: "var(--text)", fontWeight: 700 }}
           >
-            Verifica Email
+            Verify your email
           </h2>
           <p className="mb-4" style={{ color: "var(--muted)" }}>
-            Inserisci il codice che hai ricevuto via email per confermare la
-            registrazione.
+            Enter the code you received via email to confirm your registration.
             <br />
             <span style={{ fontSize: "0.95em", color: "var(--primary)" }}>
-              Il codice è valido per 30 minuti.
+              The code is valid for 30 minutes.
             </span>
           </p>
           <form onSubmit={handleSubmit} className="mb-3">
