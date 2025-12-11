@@ -1,0 +1,43 @@
+/* Custom scrollbar for reports sidebar */
+.reports-sidebar-scroll {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.reports-sidebar-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reports-sidebar-scroll::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+.reports-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.reports-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.reports-sidebar-scroll::-webkit-scrollbar-corner {
+  background: #f9fafb;
+}
+
+/* Make scrollbar appear only on hover for cleaner look */
+.reports-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.reports-sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}
+
+.reports-sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

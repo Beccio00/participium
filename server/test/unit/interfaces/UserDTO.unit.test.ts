@@ -3,170 +3,155 @@ import {
   Roles,
   isValidRole,
   MUNICIPALITY_ROLES,
+  toUserDTO,
+  UserDTO,
 } from "../../../src/interfaces/UserDTO";
+import { User } from "../../../src/entities/User";
+import { Role } from "../../../../shared/RoleTypes";
+
+// 辅助函数：创建完整的 mock User 对象
+function createMockUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 1,
+    email: "test@example.com",
+    first_name: "Test",
+    last_name: "User",
+    password: "hashed",
+    salt: "salt",
+    role: Role.CITIZEN,
+    telegram_username: null,
+    email_notifications_enabled: true,
+    reports: [],
+    messages: [],
+    assignedReports: [],
+    notifications: [],
+    photo: null as any,
+    ...overrides,
+  } as User;
+}
 
 describe("UserDTO", () => {
   describe("toMunicipalityUserDTO", () => {
     it("maps user to municipality DTO correctly", () => {
-      const user = {
+      const user = createMockUser({
         id: 5,
         first_name: "John",
         last_name: "Doe",
         email: "j@d.com",
-        role: Roles.PUBLIC_RELATIONS,
-      } as any;
+        role: Role.PUBLIC_RELATIONS,
+      });
       const dto = toMunicipalityUserDTO(user);
       expect(dto).toMatchObject({
         id: 5,
         firstName: "John",
         lastName: "Doe",
         email: "j@d.com",
-        role: Roles.PUBLIC_RELATIONS,
+        role: Role.PUBLIC_RELATIONS,
       });
     });
 
     it("handles missing optional fields gracefully", () => {
-      const user = {
+      const user = createMockUser({
         id: 6,
         email: "x@y.com",
-        role: Roles.MUNICIPAL_BUILDING_MAINTENANCE,
-      } as any;
+        role: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+      });
       const dto = toMunicipalityUserDTO(user);
       expect(dto.id).toBe(6);
       expect(dto.email).toBe("x@y.com");
-      expect(dto.role).toBe(Roles.MUNICIPAL_BUILDING_MAINTENANCE);
+      expect(dto.role).toBe(Role.MUNICIPAL_BUILDING_MAINTENANCE);
     });
 
     it("handles invalid role in municipality DTO", () => {
-      const user = {
+      const user = createMockUser({
         id: 7,
         first_name: "Jane",
         last_name: "Doe",
         email: "jane@example.com",
-        role: "INVALID_ROLE",
-      } as any;
+        role: "INVALID_ROLE" as any,
+      });
       const dto = toMunicipalityUserDTO(user);
       expect(dto.role).toBe("INVALID_ROLE");
     });
   });
-});
-import { toUserDTO, UserDTO } from "../../../src/interfaces/UserDTO";
-import { InvalidCredentialsError } from "../../../src/interfaces/errors/InvalidCredentialsError";
 
-describe("UserDTO", () => {
   describe("toUserDTO", () => {
-    it("should convert PrismaUser to UserDTO with all fields", () => {
-      const prismaUser = {
+    it("should convert User to UserDTO with all fields", () => {
+      const user = createMockUser({
         id: 1,
         email: "test@example.com",
         first_name: "Test",
         last_name: "User",
-        password: "hashed",
-        salt: "salt",
-        role: "CITIZEN" as any,
+        role: Role.CITIZEN,
         telegram_username: "telegram",
         email_notifications_enabled: false,
-      };
+      });
 
-      const result = toUserDTO(prismaUser);
+      const result = toUserDTO(user);
 
       expect(result).toEqual({
         id: 1,
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: "CITIZEN",
+        role: Role.CITIZEN,
+        isVerified: false,
         telegramUsername: "telegram",
         emailNotificationsEnabled: false,
       });
     });
 
     it("should handle null telegram_username", () => {
-      const prismaUser = {
-        id: 1,
-        email: "test@example.com",
-        first_name: "Test",
-        last_name: "User",
-        password: "hashed",
-        salt: "salt",
-        role: "CITIZEN" as any,
+      const user = createMockUser({
         telegram_username: null,
-        email_notifications_enabled: true,
-      };
+      });
 
-      const result = toUserDTO(prismaUser);
+      const result = toUserDTO(user);
 
       expect(result.telegramUsername).toBeNull();
     });
 
     it("should handle null email_notifications_enabled (default to true)", () => {
-      const prismaUser = {
-        id: 1,
-        email: "test@example.com",
-        first_name: "Test",
-        last_name: "User",
-        password: "hashed",
-        salt: "salt",
-        role: "CITIZEN" as any,
-        telegram_username: "telegram",
+      const user = createMockUser({
         email_notifications_enabled: null as any,
-      };
+      });
 
-      const result = toUserDTO(prismaUser);
+      const result = toUserDTO(user);
 
       expect(result.emailNotificationsEnabled).toBe(true);
     });
 
-    it("should convert role to string", () => {
-      const prismaUser = {
-        id: 1,
-        email: "test@example.com",
-        first_name: "Test",
-        last_name: "User",
-        password: "hashed",
-        salt: "salt",
-        role: "ADMIN" as any,
-        telegram_username: null,
-        email_notifications_enabled: true,
-      };
+    it("should convert role correctly", () => {
+      const user = createMockUser({
+        role: Role.ADMINISTRATOR,
+      });
 
-      const result = toUserDTO(prismaUser);
+      const result = toUserDTO(user);
 
-      expect(result.role).toBe("ADMIN");
+      expect(result.role).toBe(Role.ADMINISTRATOR);
     });
 
     it("should handle invalid role in UserDTO", () => {
-      const prismaUser = {
-        id: 1,
-        email: "test@example.com",
-        first_name: "Test",
-        last_name: "User",
-        password: "hashed",
-        salt: "salt",
+      const user = createMockUser({
         role: "INVALID_ROLE" as any,
-        telegram_username: null,
-        email_notifications_enabled: true,
-      };
+      });
 
-      const result = toUserDTO(prismaUser);
+      const result = toUserDTO(user);
 
       expect(result.role).toBe("INVALID_ROLE");
     });
 
     it("should handle edge cases with empty strings", () => {
-      const prismaUser = {
+      const user = createMockUser({
         id: 2,
         email: "",
         first_name: "",
         last_name: "",
-        password: "hashed",
-        salt: "salt",
-        role: "CITIZEN" as any,
         telegram_username: "",
         email_notifications_enabled: false,
-      };
+      });
 
-      const result = toUserDTO(prismaUser);
+      const result = toUserDTO(user);
 
       expect(result.firstName).toBe("");
       expect(result.lastName).toBe("");
@@ -176,49 +161,46 @@ describe("UserDTO", () => {
 
     it("should handle all valid roles", () => {
       const roles = [
-        "CITIZEN",
-        "ADMINISTRATOR",
-        "PUBLIC_RELATIONS",
-        "TECHNICAL_OFFICE",
+        Role.CITIZEN,
+        Role.ADMINISTRATOR,
+        Role.PUBLIC_RELATIONS,
       ];
 
       roles.forEach((role, index) => {
-        const prismaUser = {
+        const user = createMockUser({
           id: index + 10,
           email: `test${index}@example.com`,
-          first_name: "Test",
-          last_name: "User",
-          password: "hashed",
-          salt: "salt",
-          role: role as any,
-          telegram_username: null,
-          email_notifications_enabled: true,
-        };
+          role: role,
+        });
 
-        const result = toUserDTO(prismaUser);
+        const result = toUserDTO(user);
         expect(result.role).toBe(role);
       });
     });
   });
 
-  // COMMENTED: TECHNICAL_OFFICE role doesn't exist
-  /*
-  describe("Roles constants", () => {
-    it("should have all expected roles defined", () => {
-      expect(Roles.CITIZEN).toBe("CITIZEN");
-      expect(Roles.ADMINISTRATOR).toBe("ADMINISTRATOR");
-      expect(Roles.PUBLIC_RELATIONS).toBe("PUBLIC_RELATIONS");
-      expect(Roles.TECHNICAL_OFFICE).toBe("TECHNICAL_OFFICE");
+  describe("isValidRole", () => {
+    it("should return true for valid roles", () => {
+      expect(isValidRole(Role.CITIZEN)).toBe(true);
+      expect(isValidRole(Role.ADMINISTRATOR)).toBe(true);
+      expect(isValidRole(Role.PUBLIC_RELATIONS)).toBe(true);
     });
 
-    it("should be immutable", () => {
-      // L'oggetto Roles non è congelato, quindi non genera errore
-      // Verifichiamo che abbia le proprietà corrette
-      expect(Roles).toHaveProperty('CITIZEN');
-      expect(Roles).toHaveProperty('ADMINISTRATOR');
-      expect(Roles).toHaveProperty('PUBLIC_RELATIONS');
-      expect(Roles).toHaveProperty('TECHNICAL_OFFICE');
+    it("should return false for invalid roles", () => {
+      expect(isValidRole("INVALID")).toBe(false);
+      expect(isValidRole(null)).toBe(false);
+      expect(isValidRole(undefined)).toBe(false);
     });
   });
-  */
+
+  describe("MUNICIPALITY_ROLES", () => {
+    it("should contain expected municipality roles", () => {
+      expect(MUNICIPALITY_ROLES).toContain(Role.PUBLIC_RELATIONS);
+      expect(MUNICIPALITY_ROLES).toContain(Role.MUNICIPAL_BUILDING_MAINTENANCE);
+    });
+
+    it("should not contain CITIZEN role", () => {
+      expect(MUNICIPALITY_ROLES).not.toContain(Role.CITIZEN);
+    });
+  });
 });

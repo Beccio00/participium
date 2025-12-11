@@ -1,8 +1,11 @@
 import { UserRepository } from "../repositories/UserRepository";
 import { CitizenPhotoRepository } from "../repositories/CitizenPhotoRepository";
 import { CitizenPhoto } from "../entities/CitizenPhoto";
-import { NotFoundError } from "../utils/errors";
+import { NotFoundError, BadRequestError } from "../utils";
 import { toCitizenProfileDTO, type CitizenProfileDTO } from "../interfaces/CitizenDTO";
+import { Role } from "../interfaces/UserDTO";
+import { randomInt } from "crypto";
+import { sendVerificationEmail } from "./emailService";
 
 const userRepository = new UserRepository();
 const citizenPhotoRepository = new CitizenPhotoRepository();
@@ -15,6 +18,50 @@ export async function getCitizenById(userId: number): Promise<CitizenProfileDTO>
   }
 
   return toCitizenProfileDTO(user);
+}
+
+export async function verifyCitizenEmail(email: string, code: string): Promise<{ alreadyVerified: boolean }> {
+  const user = await userRepository.findByEmail(email);
+
+  if (!user) throw new NotFoundError(`User with email ${email} not found`);
+  if (user.role !== Role.CITIZEN) throw new BadRequestError("Only citizens require email verification");
+  if (user.isVerified) return { alreadyVerified: true };
+  if (user.verificationToken !== code) throw new BadRequestError("Invalid verification code");
+  if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) throw new BadRequestError("Verification code has expired");
+
+  await userRepository.update(user.id, {
+    isVerified: true,
+    verificationToken: null,
+    verificationCodeExpiresAt: null,
+  });
+
+  return { alreadyVerified: false };
+}
+
+export async function sendCitizenVerification(email: string): Promise<void> {
+  const user = await userRepository.findByEmail(email);
+
+  if (!user) throw new NotFoundError(`User with email ${email} not found`);
+  if (user.role !== Role.CITIZEN) throw new BadRequestError("Only citizens require email verification");
+  if (user.isVerified) throw new BadRequestError("Email already verified");
+
+  // Generate new verification code and expiry
+  const code = randomInt(100000, 999999).toString();
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+
+  // Update user with new verification token
+  await userRepository.update(user.id, {
+    verificationToken: code,
+    verificationCodeExpiresAt: expiresAt,
+  });
+
+  // Send verification email
+  try {
+    await sendVerificationEmail(email, code);
+  } catch (error) {
+    console.error("Failed to send verification email to:", email, error);
+    throw new BadRequestError("Failed to send verification email");
+  }
 }
 
 export async function updateCitizenProfile(

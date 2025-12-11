@@ -1,7 +1,13 @@
+// Mock email service for Story 27 compatibility (email verification)
+jest.mock('../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
 import request from "supertest";
 import { createApp } from "../../src/app";
-import { cleanDatabase, disconnectDatabase } from "../helpers/testSetup";
+import { cleanDatabase, disconnectDatabase, AppDataSource } from "../helpers/testSetup";
 import { createUserInDatabase } from "../helpers/testUtils";
+import { User } from "../../src/entities/User";
 
 const app = createApp();
 
@@ -31,11 +37,10 @@ describe("Municipality User Roles Management", () => {
         })
         .expect(201);
       // Promote to ADMINISTRATOR directly in DB
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       // Crea un nuovo agent e fai login per ottenere la sessione aggiornata
       const agent = request.agent(app);
       await agent
@@ -125,11 +130,10 @@ describe("Municipality User Roles Management", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       await agent
         .post("/api/session")
         .send({ email: adminEmail, password: adminPassword })
@@ -188,11 +192,10 @@ describe("Municipality User Roles Management", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       await adminAgent
         .post("/api/session")
         .send({ email: adminEmail, password: adminPassword })
@@ -236,6 +239,8 @@ describe("Municipality User Roles Management", () => {
           password: userPassword,
         })
         .expect(201);
+      // Mark as verified for Story 27 compatibility
+      await AppDataSource.getRepository(User).update({ email: citizenEmail }, { isVerified: true });
 
       // Test ADMINISTRATOR access
       console.log("Testing ADMINISTRATOR access...");
@@ -294,11 +299,10 @@ describe("Municipality User Roles Management", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       await adminAgent
         .post("/api/session")
         .send({ email: adminEmail, password: adminPassword })
@@ -381,11 +385,10 @@ describe("Municipality User Roles Management", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       await agent
         .post("/api/session")
         .send({ email: adminEmail, password: adminPassword })
@@ -455,11 +458,10 @@ describe("Municipality User Roles Management", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       await agent
         .post("/api/session")
         .send({ email: adminEmail, password: adminPassword })

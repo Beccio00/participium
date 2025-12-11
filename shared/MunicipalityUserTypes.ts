@@ -17,7 +17,8 @@ export interface MunicipalityUserRequest {
     | "GREENSPACES_AND_ANIMAL_PROTECTION"
     | "WASTE_MANAGEMENT"
     | "ROAD_MAINTENANCE"
-    | "CIVIL_PROTECTION";
+    | "CIVIL_PROTECTION"
+    | "EXTERNAL_MAINTAINER";
 }
 
 export interface MunicipalityUserResponse {
@@ -39,5 +40,6 @@ export interface MunicipalityUserResponse {
     | "GREENSPACES_AND_ANIMAL_PROTECTION"
     | "WASTE_MANAGEMENT"
     | "ROAD_MAINTENANCE"
-    | "CIVIL_PROTECTION";
+    | "CIVIL_PROTECTION"
+    | "EXTERNAL_MAINTAINER";
 }

@@ -9,7 +9,7 @@ export const formCardStyle: CSSProperties = {
 };
 
 export const headerStyle: CSSProperties = {
-  background: "var(--primary)",
+  background: "var(--navbar-accent)",
   color: "white",
   padding: "2rem",
   textAlign: "center" as const,
@@ -96,7 +96,6 @@ export const h2Style: CSSProperties = {
   margin: 0,
   fontSize: "2.5rem",
   fontWeight: 700,
-  textShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
 };
 
 export const pStyle: CSSProperties = {
@@ -153,7 +152,6 @@ export const mapDivStyle: CSSProperties = {
   fontSize: "1rem",
   fontWeight: 600,
   fontFamily: '"Courier New", monospace',
-  textShadow: "0 1px 2px rgba(0, 0, 0, 0.2)",
 };
 
 export const submitButtonStyle: CSSProperties = {

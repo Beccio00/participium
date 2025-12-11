@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { getReports } from "../api/api";
 import L from "leaflet";
 import "leaflet.markercluster/dist/leaflet.markercluster.js";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import type { Report } from "../types/report.types";
 import "../styles/MapView.css";
+import InfoModal from "./InfoModal";
 
 // Torino coordinates fallback
 const TURIN: [number, number] = [45.0703, 7.6869];
@@ -18,6 +20,8 @@ const getStatusColor = (status: string): string => {
       return "#ffc107";
     case "assigned":
       return "#007bff";
+    case "external_assigned":
+      return "#8b5cf6"; // purple for external
     default:
       return "#6c757d";
   }
@@ -25,18 +29,25 @@ const getStatusColor = (status: string): string => {
 
 // Helper function to create colored marker icon
 const createColoredIcon = (color: string) => {
+  // marker svg
+  const svg = `
+    <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g filter="url(#shadow)">
+        <path d="M19 2C9.6 2 2 9.6 2 19.1c0 10.2 15.1 32.7 16.1 34.2.5.7 1.3.7 1.8 0C20.9 51.8 36 29.3 36 19.1 36 9.6 28.4 2 19 2z" fill="${color}" stroke="white" stroke-width="3"/>
+        <circle cx="19" cy="19" r="7" fill="white"/>
+      </g>
+      <defs>
+        <filter id="shadow" x="0" y="0" width="38" height="54" filterUnits="userSpaceOnUse">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.3)"/>
+        </filter>
+      </defs>
+    </svg>
+  `;
   return L.divIcon({
     className: "custom-marker",
-    html: `<div style="
-      background-color: ${color};
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    html: svg,
+    iconSize: [38, 54],
+    iconAnchor: [19, 54], //marker edge
   });
 };
 
@@ -74,13 +85,19 @@ interface MapViewProps {
   selectedLocation?: [number, number] | null;
   reports?: Report[];
   selectedReportId?: number | null;
+  customSelectedIcon?: L.DivIcon | null;
+  onReportDetailsClick?: (reportId: number) => void;
+  hideInfoButton?: boolean;
 }
 
 export default function MapView({
   onLocationSelect,
   selectedLocation,
-  reports = [],
+  reports: initialReports = [],
   selectedReportId,
+  customSelectedIcon,
+  onReportDetailsClick,
+  hideInfoButton = false,
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -90,6 +107,29 @@ export default function MapView({
   const [hasTileError, setHasTileError] = useState(false);
   const [turinData, setTurinData] = useState<any | null>(null);
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [reports, setReports] = useState<Report[]>(initialReports);
+  // Polling per aggiornare i report ogni 10 secondi
+  useEffect(() => {
+    let polling = true;
+    const fetchReports = async () => {
+      try {
+        const data = await getReports();
+        // Filtra solo i report non risolti
+        setReports(data.filter((r) => r.status.toLowerCase() !== "resolved"));
+      } catch (err) {
+        // Puoi gestire errori qui se vuoi
+      }
+    };
+    fetchReports();
+    const interval = setInterval(() => {
+      if (polling) fetchReports();
+    }, 10000);
+    return () => {
+      polling = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     fetch("/turin-boundary3.geojson")
@@ -186,7 +226,7 @@ export default function MapView({
           map.removeLayer(markerRef.current);
         }
         markerRef.current = L.marker([lat, lng], {
-          icon: createSelectedLocationIcon(),
+          icon: customSelectedIcon || createSelectedLocationIcon(),
         }).addTo(map);
         onLocationSelect(lat, lng);
       });
@@ -196,12 +236,12 @@ export default function MapView({
     // Add initial marker if selectedLocation is provided
     if (selectedLocation) {
       markerRef.current = L.marker(selectedLocation, {
-        icon: createSelectedLocationIcon(),
+        icon: customSelectedIcon || createSelectedLocationIcon(),
       }).addTo(map);
     }
 
     // Add markers for reports using MarkerClusterGroup
-    const markerCluster = (L as any).markerClusterGroup({
+    /* const markerCluster = (L as any).markerClusterGroup({
       showCoverageOnHover: false,
       maxClusterRadius: 60, // distanza in pixel per raggruppare
       spiderfyOnMaxZoom: true,
@@ -219,37 +259,53 @@ export default function MapView({
     reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).bindPopup(`
-        <div class="report-popup">
-          <div class="report-popup-header">${report.title}</div>
-          <div class="report-popup-body">
-            <div class="report-popup-location">${report.latitude.toFixed(
-              6
-            )}, ${report.longitude.toFixed(6)}</div>
-            <div class="report-popup-description">${report.description}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+      });
+      // Popup HTML con pulsante View Details
+      const popupContent = document.createElement("div");
+      popupContent.className = "report-popup";
+      popupContent.innerHTML = `
+        <div class="report-popup-header">${report.title}</div>
+        <div class="report-popup-body">
+          <div class="report-popup-location">${report.address}</div>
+          <div class="report-popup-description">${report.description}</div>
+          <div style="margin-top: 0.5rem;">
+            <div>
+              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; display: inline-block; max-width: 100%;">${
                 report.category
               }</span>
-              <span style="color: ${getStatusColor(
-                report.status
-              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
             </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
-              report.isAnonymous
-                ? "anonymous"
-                : report.user
-                ? `${report.user.firstName} ${report.user.lastName}`
-                : "user"
-            }</b></div>
+            <div style="margin-top: 6px;">
+              <span class="report-status-pill" style="background:${getStatusColor(
+                report.status
+              )};">${report.status}</span>
+            </div>
+          </div>
+          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+            report.isAnonymous
+              ? "anonymous"
+              : report.user
+              ? `${report.user.firstName} ${report.user.lastName}`
+              : "user"
+          }</b></div>
+          <div style="margin-top:0.75rem;">
+            <button class="btn btn-sm btn-primary mt-2 view-details-btn" style="width:100%;">View Details</button>
           </div>
         </div>
-      `);
+      `;
+      // Attach handler to the embedded button
+      const detailsBtn = popupContent.querySelector('.view-details-btn') as HTMLButtonElement | null;
+      if (detailsBtn) {
+        detailsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (onReportDetailsClick) onReportDetailsClick(report.id);
+        });
+      }
+      marker.bindPopup(popupContent);
       reportMarkersRef.current.push(marker);
       markerCluster.addLayer(marker);
     });
 
-    map.addLayer(markerCluster);
+    map.addLayer(markerCluster); */
 
     mapInstanceRef.current = map;
 
@@ -296,32 +352,50 @@ export default function MapView({
     reports.forEach((report: Report) => {
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
-      }).bindPopup(`
-        <div class="report-popup">
-          <div class="report-popup-header">${report.title}</div>
-          <div class="report-popup-body">
-            <div class="report-popup-location">${report.latitude.toFixed(
-              6
-            )}, ${report.longitude.toFixed(6)}</div>
-            <div class="report-popup-description">${report.description}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${
+      });
+      // Popup HTML con pulsante View Details
+      const popupContent = document.createElement("div");
+      popupContent.className = "report-popup";
+      popupContent.innerHTML = `
+        <div class="report-popup-header">${report.title}</div>
+        <div class="report-popup-body">
+          <div class="report-popup-location">${report.address}</div>
+          <div class="report-popup-description">${report.description}</div>
+          <div style="margin-top: 0.5rem;">
+            <div>
+              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; display: inline-block; max-width: 100%;">${
                 report.category
               }</span>
-              <span style="color: ${getStatusColor(
-                report.status
-              )}; font-weight: bold; font-size: 12px;">${report.status}</span>
             </div>
-            <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
-              report.isAnonymous
-                ? "anonymous"
-                : report.user
-                ? `${report.user.firstName} ${report.user.lastName}`
-                : "user"
-            }</b></div>
+            <div style="margin-top: 6px;">
+              <span class="report-status-pill" style="background:${getStatusColor(
+                report.status
+              )};">${report.status}</span>
+            </div>
+          </div>
+          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+            report.isAnonymous
+              ? "anonymous"
+              : report.user
+              ? `${report.user.firstName} ${report.user.lastName}`
+              : "user"
+          }</b></div>
+          <div style="margin-top:0.75rem;">
+            <button class="btn btn-sm btn-primary mt-2 view-details-btn" style="width:100%;">View Details</button>
           </div>
         </div>
-      `);
+      `;
+      // Attach handler to embedded button
+      const detailsBtn = popupContent.querySelector(
+        ".view-details-btn"
+      ) as HTMLButtonElement | null;
+      if (detailsBtn) {
+        detailsBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (onReportDetailsClick) onReportDetailsClick(report.id);
+        });
+      }
+      marker.bindPopup(popupContent);
       reportMarkersRef.current.push(marker);
       markerCluster.addLayer(marker);
     });
@@ -343,7 +417,7 @@ export default function MapView({
     }
     if (selectedLocation) {
       markerRef.current = L.marker(selectedLocation, {
-        icon: createSelectedLocationIcon(),
+        icon: customSelectedIcon || createSelectedLocationIcon(),
       }).addTo(mapInstanceRef.current);
     }
   }, [selectedLocation]);
@@ -383,6 +457,19 @@ export default function MapView({
 
   return (
     <div style={{ position: "relative", height: "100%", width: "100%" }}>
+      {/* Info button in the top-right corner of the map */}
+      {!hideInfoButton && (
+        <button
+          className="map-info-button"
+          aria-label="Map information"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowInfoModal(true);
+          }}
+        >
+          i
+        </button>
+      )}
       {/*alert bootstrap cudtom*/}
       {showBoundaryAlert && (
         <div
@@ -416,6 +503,8 @@ export default function MapView({
         </div>
       )}
       <div ref={mapRef} className="leaflet-map" />
+
+      <InfoModal open={showInfoModal} onClose={() => setShowInfoModal(false)} />
     </div>
   );
 }

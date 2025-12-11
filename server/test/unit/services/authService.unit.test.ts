@@ -16,7 +16,7 @@ describe("authService", () => {
 
   describe("authenticate", () => {
     it("should resolve with user on success", async () => {
-      const user = { id: 1, email: "test" };
+      const user = { id: 1, email: "test", isVerified: true };
       mockPassport.authenticate = jest.fn((authType, cb) => {
         return (req: any) => {
           cb(null, user);
@@ -45,6 +45,17 @@ describe("authService", () => {
       }) as any;
 
       await expect(authenticate(mockReq as Request)).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('should reject if user exists but email not verified', async () => {
+      const user = { id: 1, email: 'test', isVerified: false };
+      mockPassport.authenticate = jest.fn((authType, cb) => {
+        return (req: any) => {
+          cb(null, user as any);
+        };
+      }) as any;
+
+      await expect(authenticate(mockReq as Request)).rejects.toThrow('Email not verified');
     });
   });
 

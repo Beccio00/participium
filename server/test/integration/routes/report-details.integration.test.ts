@@ -65,8 +65,8 @@ describe('Story 5 - Report Details Integration Tests', () => {
       // Assert
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('message', 'Report created successfully');
-      expect(response.body).toHaveProperty('id');
-      expect(typeof response.body.id).toBe('number');
+      expect(response.body.report).toHaveProperty('id');
+      expect(typeof response.body.report.id).toBe('number');
     });
 
     it('should return 400 when no photos are provided (minimum violation)', async () => {
@@ -128,7 +128,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
       // Assert
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('message', 'Report created successfully');
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     }, 10000); // Increased timeout for multiple photo uploads
 
     it('should return 400 when more than 3 photos are provided (maximum violation)', async () => {
@@ -174,7 +174,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
   });
 
@@ -228,7 +228,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
           .attach('photos', imageBuffer, `photo-${category}.jpg`);
 
         expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty('id');
+        expect(response.body.report).toHaveProperty('id');
       }
     }, 30000); // Increased timeout for testing all 9 categories
 
@@ -271,7 +271,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should accept report with minimum valid description length', async () => {
@@ -291,7 +291,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should accept report with long title', async () => {
@@ -312,7 +312,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should accept report with long description', async () => {
@@ -333,7 +333,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should accept report with special characters in title and description', async () => {
@@ -353,7 +353,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should reject report with empty title', async () => {
@@ -435,7 +435,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
+      expect(response.body.report).toHaveProperty('id');
     });
 
     it('should reject report with invalid latitude (> 90) - general validation', async () => {
@@ -579,9 +579,9 @@ describe('Story 5 - Report Details Integration Tests', () => {
       // Assert
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('message', 'Report created successfully');
-      expect(response.body).toHaveProperty('id');
-      expect(typeof response.body.id).toBe('number');
-      expect(response.body.id).toBeGreaterThan(0);
+      expect(response.body.report).toHaveProperty('id');
+      expect(typeof response.body.report.id).toBe('number');
+      expect(response.body.report.id).toBeGreaterThan(0);
     });
 
     it('should classify report correctly based on category', async () => {
@@ -608,7 +608,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
           .attach('photos', imageBuffer, `photo-${item.category}.jpg`);
 
         expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty('id');
+        expect(response.body.report).toHaveProperty('id');
       }
     }, 15000); // Increased timeout for testing multiple categories
   });

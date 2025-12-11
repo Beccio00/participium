@@ -27,3 +27,5 @@ lerna-debug.log*
 *.sw?
 Thumbs.db
 mydoc/
+client/test-results/
+client/playwright-report/

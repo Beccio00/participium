@@ -1,4 +1,4 @@
-import { Container } from 'react-bootstrap';
+import { Container } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import { useAuth, useForm, useLoadingState } from "../../hooks";
 import Button from "../../components/ui/Button.tsx";
@@ -19,14 +19,24 @@ export default function LoginPage() {
         navigate("/admin", { replace: true });
       } else if (response && response.role === "TECHNICAL_OFFICE") {
         navigate("/technician", { replace: true });
-      } 
-      else {
+      } else {
         navigate("/", { replace: true });
       }
-    } catch (err) {
+    } catch (err: any) {
       setError();
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during login";
-      form.setFieldError("email", errorMessage);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "An unknown error occurred during login";
+      // Se l'errore riguarda la mancata verifica dell'email, reindirizza alla pagina di verifica
+      if (
+        errorMessage.toLowerCase().includes("verify your email") ||
+        errorMessage.toLowerCase().includes("not verified")
+      ) {
+        navigate("/verify-email", { state: { email: values.email } });
+      } else {
+        form.setFieldError("email", errorMessage);
+      }
     } finally {
       setIdle();
     }
@@ -47,21 +57,33 @@ export default function LoginPage() {
     onSubmit: handleLogin,
   });
 
-  const isFormDisabled = loadingState === "loading" || !form.values.email || !form.values.password;
+  const isFormDisabled =
+    loadingState === "loading" || !form.values.email || !form.values.password;
 
   return (
     <div className="login-container">
-      <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: 'calc(100vh - 80px)' }}>
-        <div className="login-card" style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          padding: '3rem',
-          borderRadius: '24px',
-          boxShadow: '0 8px 32px rgba(34, 49, 63, 0.12)',
-          width: '100%',
-          maxWidth: '450px'
-        }}>
-          <h2 className="text-center mb-4" style={{ color: 'var(--text)', fontWeight: 700 }}>Login</h2>
+      <Container
+        className="d-flex justify-content-center align-items-center"
+        style={{ minHeight: "calc(100vh - 80px)" }}
+      >
+        <div
+          className="login-card"
+          style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+            padding: "3rem",
+            borderRadius: "24px",
+            boxShadow: "0 8px 32px rgba(34, 49, 63, 0.12)",
+            width: "100%",
+            maxWidth: "450px",
+          }}
+        >
+          <h2
+            className="text-center mb-4"
+            style={{ color: "var(--text)", fontWeight: 700 }}
+          >
+            Login
+          </h2>
 
           <form onSubmit={form.handleSubmit}>
             <Input
@@ -104,13 +126,17 @@ export default function LoginPage() {
           </form>
 
           <div className="text-center mt-4">
-            <p style={{ color: 'var(--muted)', marginBottom: '0.5rem' }}>
+            <p style={{ color: "var(--muted)", marginBottom: "0.5rem" }}>
               Don't have an account?
             </p>
             <button
               onClick={() => navigate("/signup")}
               className="btn btn-link p-0"
-              style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}
+              style={{
+                color: "var(--primary)",
+                textDecoration: "none",
+                fontWeight: 500,
+              }}
               disabled={loadingState === "loading"}
             >
               Sign up here

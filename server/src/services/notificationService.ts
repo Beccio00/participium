@@ -1,5 +1,6 @@
 import { NotificationRepository } from "../repositories/NotificationRepository";
-import { Notification, NotificationType } from "../entities/Notification";
+import { Notification } from "../entities/Notification";
+import { NotificationType } from "../../../shared/ReportTypes";
 import { NotFoundError } from "../utils/errors";
 import { NotificationDTO, toNotificationDTO } from "../interfaces/NotificationDTO";
 
@@ -86,6 +87,24 @@ export async function notifyNewMessage(
     NotificationType.MESSAGE_RECEIVED,
     "New Message Received",
     `${senderName} has sent you a message regarding your report`,
+    reportId
+  );
+}
+
+/**
+ * Helper per notificare la creazione di una Internal Note tra tecnico ed esterno
+ */
+export async function notifyInternalNoteAdded(
+  reportId: number,
+  recipientUserId: number,
+  authorFirstName: string,
+  authorLastName: string
+): Promise<void> {
+  await createNotification(
+    recipientUserId,
+    NotificationType.INTERNAL_NOTE_RECEIVED,
+    "New Internal Note",
+    `${authorFirstName} ${authorLastName} added a note to report #${reportId}`,
     reportId
   );
 }

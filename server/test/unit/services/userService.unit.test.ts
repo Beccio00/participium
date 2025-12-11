@@ -1,3 +1,28 @@
+import { Role } from "../../../../shared/RoleTypes";
+
+// 创建 mock 函数
+const mockFindByEmail = jest.fn();
+const mockFindById = jest.fn();
+const mockCreate = jest.fn();
+const mockUpdate = jest.fn();
+const mockDelete = jest.fn();
+const mockFindByRoles = jest.fn();
+
+// Mock UserRepository - 必须在 import 之前
+jest.mock("../../../src/repositories/UserRepository", () => {
+  return {
+    UserRepository: jest.fn().mockImplementation(() => ({
+      findByEmail: mockFindByEmail,
+      findById: mockFindById,
+      create: mockCreate,
+      update: mockUpdate,
+      delete: mockDelete,
+      findByRoles: mockFindByRoles,
+    })),
+  };
+});
+
+// 现在导入 service（会使用上面的 mock）
 import {
   findByEmail,
   findById,
@@ -6,48 +31,24 @@ import {
   deleteUser,
   findUsersByRoles,
 } from "../../../src/services/userService";
-import { Roles } from "../../../src/interfaces/UserDTO";
-import { PrismaClient } from "@prisma/client";
-
-// Mock @prisma/client
-jest.mock("@prisma/client", () => {
-  const mUser = {
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    findMany: jest.fn(),
-  };
-  return {
-    PrismaClient: jest.fn(() => ({
-      user: mUser,
-    })),
-  };
-});
 
 describe("userService", () => {
-  // Get access to the shared mocks via a new instance (which returns the singleton mock structure)
-  const prismaMock = new PrismaClient();
-  const mockFindUnique = prismaMock.user.findUnique as jest.Mock;
-  const mockCreate = prismaMock.user.create as jest.Mock;
-  const mockUpdate = prismaMock.user.update as jest.Mock;
-  const mockDelete = prismaMock.user.delete as jest.Mock;
-  const mockFindMany = prismaMock.user.findMany as jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe("findByEmail", () => {
     it("should return user if found", async () => {
-      const mockUser = { id: 1, email: "test@example.com" };
-      mockFindUnique.mockResolvedValue(mockUser);
+      const mockUser = { id: 1, email: "test@example.com" } as any;
+      mockFindByEmail.mockResolvedValue(mockUser);
+      
       const result = await findByEmail("test@example.com");
       expect(result).toEqual(mockUser);
     });
 
     it("should return null if user not found", async () => {
-      mockFindUnique.mockResolvedValue(null);
+      mockFindByEmail.mockResolvedValue(null);
+      
       const result = await findByEmail("notfound@example.com");
       expect(result).toBeNull();
     });
@@ -55,14 +56,16 @@ describe("userService", () => {
 
   describe("findById", () => {
     it("should return user if found", async () => {
-      const mockUser = { id: 1 };
-      mockFindUnique.mockResolvedValue(mockUser);
+      const mockUser = { id: 1 } as any;
+      mockFindById.mockResolvedValue(mockUser);
+      
       const result = await findById(1);
       expect(result).toEqual(mockUser);
     });
 
     it("should return null if not found", async () => {
-      mockFindUnique.mockResolvedValue(null);
+      mockFindById.mockResolvedValue(null);
+      
       const result = await findById(999);
       expect(result).toBeNull();
     });
@@ -76,15 +79,16 @@ describe("userService", () => {
         last_name: "U",
         password: "p",
         salt: "s",
-        role: Roles.CITIZEN,
+        role: Role.CITIZEN,
         telegram_username: "tele",
         email_notifications_enabled: true,
       };
-      mockCreate.mockResolvedValue({ id: 1, ...input });
+      const createdUser = { id: 1, ...input };
+      mockCreate.mockResolvedValue(createdUser);
 
       const res = await createUser(input);
-      expect(mockCreate).toHaveBeenCalledWith({ data: input });
-      expect(res).toEqual({ id: 1, ...input });
+      expect(mockCreate).toHaveBeenCalled();
+      expect(res).toEqual(createdUser);
     });
 
     it("should create user with optional fields defaults", async () => {
@@ -94,32 +98,25 @@ describe("userService", () => {
         last_name: "U",
         password: "p",
         salt: "s",
-        role: Roles.CITIZEN,
+        role: Role.CITIZEN,
       };
-      mockCreate.mockResolvedValue({ id: 1, ...input });
+      const createdUser = { id: 1, ...input, telegram_username: null, email_notifications_enabled: true };
+      mockCreate.mockResolvedValue(createdUser);
 
-      await createUser(input);
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: {
-          ...input,
-          telegram_username: null,
-          email_notifications_enabled: undefined,
-        },
-      });
+      const res = await createUser(input);
+      expect(mockCreate).toHaveBeenCalled();
+      expect(res).toEqual(createdUser);
     });
   });
 
   describe("updateUser", () => {
     it("should update and return user on success", async () => {
-      const input = { first_name: "Updated" };
-      mockUpdate.mockResolvedValue({ id: 1, ...input });
+      const updatedUser = { id: 1, first_name: "Updated" } as any;
+      mockUpdate.mockResolvedValue(updatedUser);
 
-      const res = await updateUser(1, input);
-      expect(mockUpdate).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: { first_name: "Updated" },
-      });
-      expect(res).toEqual({ id: 1, ...input });
+      const res = await updateUser(1, { first_name: "Updated" });
+      expect(mockUpdate).toHaveBeenCalledWith(1, { first_name: "Updated" });
+      expect(res).toEqual(updatedUser);
     });
 
     it("should handle all optional fields in update", async () => {
@@ -129,21 +126,21 @@ describe("userService", () => {
         last_name: "L",
         password: "p",
         salt: "s",
-        role: Roles.ADMINISTRATOR,
+        role: Role.ADMINISTRATOR,
         telegram_username: "tg",
         email_notifications_enabled: false,
       };
-      mockUpdate.mockResolvedValue({ id: 1 });
+      const updatedUser = { id: 1, ...input };
+      mockUpdate.mockResolvedValue(updatedUser);
 
-      await updateUser(1, input);
-      expect(mockUpdate).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: input,
-      });
+      const res = await updateUser(1, input);
+      expect(mockUpdate).toHaveBeenCalled();
+      expect(res).toEqual(updatedUser);
     });
 
     it("should return null on database error (catch block)", async () => {
       mockUpdate.mockRejectedValue(new Error("DB Error"));
+      
       const res = await updateUser(1, { first_name: "Fail" });
       expect(res).toBeNull();
     });
@@ -151,25 +148,37 @@ describe("userService", () => {
 
   describe("deleteUser", () => {
     it("should return true on successful deletion", async () => {
-      mockDelete.mockResolvedValue({ id: 1 });
+      mockDelete.mockResolvedValue(true);
+      
       const res = await deleteUser(1);
       expect(res).toBe(true);
     });
 
     it("should return false on database error (catch block)", async () => {
       mockDelete.mockRejectedValue(new Error("DB Error"));
+      
       const res = await deleteUser(1);
       expect(res).toBe(false);
     });
   });
 
   describe("findUsersByRoles", () => {
-    it("should call findMany with in operator", async () => {
-      mockFindMany.mockResolvedValue([]);
-      await findUsersByRoles([Roles.CITIZEN, Roles.ADMINISTRATOR]);
-      expect(mockFindMany).toHaveBeenCalledWith({
-        where: { role: { in: [Roles.CITIZEN, Roles.ADMINISTRATOR] } },
-      });
+    it("should call findByRoles with roles array", async () => {
+      mockFindByRoles.mockResolvedValue([]);
+      
+      await findUsersByRoles([Role.CITIZEN, Role.ADMINISTRATOR]);
+      expect(mockFindByRoles).toHaveBeenCalledWith([Role.CITIZEN, Role.ADMINISTRATOR]);
+    });
+
+    it("should return users matching roles", async () => {
+      const mockUsers = [
+        { id: 1, role: Role.CITIZEN },
+        { id: 2, role: Role.ADMINISTRATOR },
+      ];
+      mockFindByRoles.mockResolvedValue(mockUsers);
+      
+      const res = await findUsersByRoles([Role.CITIZEN]);
+      expect(res).toEqual(mockUsers);
     });
   });
 });

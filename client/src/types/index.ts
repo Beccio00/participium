@@ -28,6 +28,14 @@ export type {
   CreateReportResponse,
 } from "../../../shared/ReportTypes";
 
+export type{
+  CreateExternalCompanyData,
+  ExternalCompanyResponse,
+  CreateExternalMaintainerData,
+  ExternalMaintainerResponse,
+  AssignReportToExternalResponse,
+} from "../../../shared/ExternalTypes";
+
 // Export client-specific types
 export * from "./ui.types";
 export * from "./report.types";

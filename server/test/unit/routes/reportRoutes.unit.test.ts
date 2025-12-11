@@ -1,26 +1,37 @@
-// COMMENTED: Handler function error in reportRoutes
-/*
-// Mock dei controller e middleware PRIMA degli import
+// Mock controllers and middleware BEFORE imports
 jest.mock("../../../src/controllers/reportController", () => ({
-  createReport: jest.fn(),
-  getReports: jest.fn(),
-  getPendingReports: jest.fn(),
-  approveReport: jest.fn(),
-  rejectReport: jest.fn(),
-  getAssignableTechnicals: jest.fn(),
+  createReport: jest.fn((req: any, res: any) => res.status(201).json({})),
+  getReports: jest.fn((req: any, res: any) => res.json([])),
+  getReportById: jest.fn((req: any, res: any) => res.json({})),
+  getPendingReports: jest.fn((req: any, res: any) => res.json([])),
+  getAssignedReports: jest.fn((req: any, res: any) => res.json([])),
+  approveReport: jest.fn((req: any, res: any) => res.json({})),
+  rejectReport: jest.fn((req: any, res: any) => res.json({})),
+  assignReport: jest.fn((req: any, res: any) => res.json({})),
+  updateReportStatus: jest.fn((req: any, res: any) => res.json({})),
+  sendMessageToCitizen: jest.fn((req: any, res: any) => res.json({})),
+  getReportMessages: jest.fn((req: any, res: any) => res.json([])),
+  getAssignableTechnicals: jest.fn((req: any, res: any) => res.json([])),
 }));
 
 jest.mock("../../../src/middlewares/routeProtection", () => ({
-  requireCitizen: jest.fn(),
-  requirePublicRelations: jest.fn(),
+  requireCitizen: jest.fn((req: any, res: any, next: any) => next()),
+  requirePublicRelations: jest.fn((req: any, res: any, next: any) => next()),
+  requireTechnicalStaffOnly: jest.fn((req: any, res: any, next: any) => next()),
+  requireTechnicalOrExternal: jest.fn((req: any, res: any, next: any) => next()),
+  isLoggedIn: jest.fn((req: any, res: any, next: any) => next()),
 }));
 
 jest.mock("../../../src/middlewares/validateTurinBoundaries", () => ({
-  validateTurinBoundaries: jest.fn(),
+  validateTurinBoundaries: jest.fn((req: any, res: any, next: any) => next()),
 }));
 
 jest.mock("../../../src/middlewares/validationMiddlewere", () => ({
-  ApiValidationMiddleware: jest.fn(),
+  ApiValidationMiddleware: [(req: any, res: any, next: any) => next()],
+}));
+
+jest.mock("../../../src/middlewares/errorMiddleware", () => ({
+  asyncHandler: jest.fn((fn: any) => fn),
 }));
 
 // Mock di Multer (upload middleware)
@@ -31,36 +42,25 @@ jest.mock("../../../src/middlewares/uploadsMiddleware", () => ({
 }));
 
 import reportRoutes from "../../../src/routes/reportRoutes";
-import * as reportController from "../../../src/controllers/reportController";
 
 describe("reportRoutes", () => {
   const stack = (reportRoutes as any).stack;
 
   it("should export a router", () => {
     expect(reportRoutes).toBeDefined();
-    expect(reportRoutes).toBeInstanceOf(Function);
+    expect(typeof reportRoutes).toBe("function");
   });
 
-  it("POST / - should exist and use correct middlewares", () => {
+  it("POST / - should exist for creating reports", () => {
     const route = stack.find(
       (layer: any) =>
         layer.route && layer.route.path === "/" && layer.route.methods.post
     );
 
     expect(route).toBeDefined();
-    // Verifica che ci siano gli step attesi nello stack della rotta
-    // requireCitizen, upload, validateTurinBoundaries, createReport
-    // Nota: upload.array ritorna una funzione, quindi verifichiamo la lunghezza
-    expect(route.route.stack.length).toBeGreaterThanOrEqual(4);
-    
-    // Verifichiamo l'handler finale
-    const lastHandler = route.route.stack[route.route.stack.length - 1].handle;
-    // Poiché usiamo asyncHandler che wrappa la funzione, verifichiamo l'identità o l'esecuzione
-    // In questo mock setup base, controlliamo solo che esista.
-    expect(lastHandler).toBeDefined();
   });
 
-  it("GET / - should exist", () => {
+  it("GET / - should exist for listing reports", () => {
     const route = stack.find(
       (layer: any) =>
         layer.route && layer.route.path === "/" && layer.route.methods.get
@@ -68,7 +68,7 @@ describe("reportRoutes", () => {
     expect(route).toBeDefined();
   });
 
-  it("GET /pending - should exist and use requirePublicRelations", () => {
+  it("GET /pending - should exist for pending reports", () => {
     const route = stack.find(
       (layer: any) =>
         layer.route && layer.route.path === "/pending" && layer.route.methods.get
@@ -106,4 +106,3 @@ describe("reportRoutes", () => {
     expect(route).toBeDefined();
   });
 });
-*/

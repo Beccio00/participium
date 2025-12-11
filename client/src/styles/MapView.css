@@ -20,7 +20,9 @@
 
 .report-popup {
   padding: 0;
-  min-width: 200px;
+  min-width: 320px;
+  max-width: 460px;
+  box-sizing: border-box;
 }
 
 .report-popup-header {
@@ -57,3 +59,69 @@
   color: #333;
   line-height: 1.4;
 }
+
+/* Ensure popup content wraps normally */
+.leaflet-popup-content {
+  white-space: normal !important;
+}
+
+/* Status pill shown in popups */
+.report-status-pill {
+  display: inline-block;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Force Leaflet popup close button to sit neatly in the top-right corner */
+.leaflet-popup-close-button {
+  position: absolute !important;
+  top: 3px !important;
+  right: -15px !important;
+  width: auto !important;
+  height: auto !important;
+  line-height: normal !important;
+  padding: 0 6px !important;
+  text-align: center !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  border: none !important;
+  font-size: 20px !important;
+  transform: none !important;
+  z-index: 12000 !important;
+}
+
+/* Ensure popup wrapper doesn't clip the close button */
+.leaflet-popup-content-wrapper {
+  overflow: visible;
+}
+
+/* Info button (white circle with 'i') positioned at top-right of the map container */
+.map-info-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--primary, #C86E62);
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+}
+.map-info-button:focus {
+  outline: 2px solid rgba(200,110,98,0.25);
+}
+

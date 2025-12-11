@@ -1,4 +1,16 @@
 {
+  "name": "participium",
+  "version": "1.0.0",
+  "description": "Participium - Citizen Report Management System",
+  "scripts": {
+    "setup": "npm install && cd client && npm install && npm run install:browsers",
+    "test:e2e": "cd server && npm test -- --testPathPattern=e2e",
+    "test:e2e-ui": "cd client && npm run test:e2e-ui",
+    "test:e2e-ui:headed": "cd client && npm run test:e2e-ui:headed",
+    "test:e2e-ui:debug": "cd client && npm run test:e2e-ui:debug",
+    "test:e2e-ui:ui": "cd client && npm run test:e2e-ui:ui",
+    "test:e2e-ui:report": "cd client && npm run test:e2e-ui:report"
+  },
   "devDependencies": {
     "@types/leaflet.markercluster": "^1.5.6"
   }

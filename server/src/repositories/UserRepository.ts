@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../utils/AppDataSource";
-import { User, Role } from "../entities/User";
+import { User } from "../entities/User";
+import { Role } from "../../../shared/RoleTypes";
 
 export class UserRepository {
   private repository: Repository<User>;
@@ -50,6 +51,20 @@ export class UserRepository {
     return await this.repository.findOne({
       where: { id },
       relations: ["photo"]
+    });
+  }
+
+  async findExternalMaintainersWithCompany(): Promise<User[]> {
+    return await this.repository.find({
+      where: { role: Role.EXTERNAL_MAINTAINER },
+      relations: ["externalCompany"]
+    });
+  }
+
+  async findExternalMaintainerByIdWithCompany(id: number): Promise<User | null> {
+    return await this.repository.findOne({
+      where: { id, role: Role.EXTERNAL_MAINTAINER },
+      relations: ["externalCompany"]
     });
   }
 }

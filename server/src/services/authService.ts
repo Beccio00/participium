@@ -8,6 +8,10 @@ export async function authenticate(req: Request): Promise<UserDTO> {
     passport.authenticate("local", (err: Error | null, user?: UserDTO | false) => {
       if (err) return reject(err);
       if (!user) return reject(new UnauthorizedError("Invalid username or password"));
+      const userEntiuty = user as any;
+      if(!userEntiuty.isVerified){
+        return reject(new UnauthorizedError("Email not verified"));
+      }
       resolve(user as UserDTO);
     })(req);
   });

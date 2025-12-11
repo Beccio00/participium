@@ -356,62 +356,60 @@ describe("Error scenarios coverage tests", () => {
     await disconnectDatabase();
   });
 
-  // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-  // it("should return 400 when creating user with missing password", async () => {
-  //   // Arrange - create admin
-  //   const adminEmail = `admin-${Date.now()}@example.com`;
-  //   await createUserInDatabase({
-  //     email: adminEmail,
-  //     password: "Admin1234!",
-  //     role: "ADMINISTRATOR",
-  //   });
+  it("should return 400 when creating user with missing password", async () => {
+    // Arrange - create admin
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
 
-  //   const agent = request.agent(app);
-  //   await agent
-  //     .post("/api/session")
-  //     .send({ email: adminEmail, password: "Admin1234!" })
-  //     .expect(200);
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
 
-  //   // Act
-  //   const response = await agent
-  //     .post("/api/admin/municipality-users")
-  //     .send({
-  //       firstName: "Test",
-  //       lastName: "User",
-  //       email: "test@comune.torino.it",
-  //       role: "PUBLIC_RELATIONS",
-  //     })
-  //     .expect(400);
+    // Act
+    const response = await agent
+      .post("/api/admin/municipality-users")
+      .send({
+        firstName: "Test",
+        lastName: "User",
+        email: "test@comune.torino.it",
+        role: "PUBLIC_RELATIONS",
+      })
+      .expect(400);
 
-  //   // Assert
-  //   expect(response.body).toHaveProperty("error", "BadRequest");
-  //   expect(response.body.message).toContain("password");
-  // });
+    // Assert
+    expect(response.body).toHaveProperty("error", "Bad Request");
+    expect(response.body.message).toContain("password");
+  });
 
-  // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-  // it("should return 400 when getting user with invalid ID format", async () => {
-  //   // Arrange - create admin
-  //   const adminEmail = `admin-${Date.now()}@example.com`;
-  //   await createUserInDatabase({
-  //     email: adminEmail,
-  //     password: "Admin1234!",
-  //     role: "ADMINISTRATOR",
-  //   });
+  it("should return 400 when getting user with invalid ID format", async () => {
+    // Arrange - create admin
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
 
-  //   const agent = request.agent(app);
-  //   await agent
-  //     .post("/api/session")
-  //     .send({ email: adminEmail, password: "Admin1234!" })
-  //     .expect(200);
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
 
-  //   // Act
-  //   const response = await agent
-  //     .get("/api/admin/municipality-users/invalid-id")
-  //     .expect(400);
+    // Act
+    const response = await agent
+      .get("/api/admin/municipality-users/invalid-id")
+      .expect(400);
 
-  //   // Assert
-  //   expect(response.body).toHaveProperty("error", "BadRequest");
-  // });
+    // Assert
+    expect(response.body).toHaveProperty("error", "Bad Request");
+  });
 });
 
 describe("Service coverage integration tests", () => {

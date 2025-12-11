@@ -1,0 +1,56 @@
+/* Styles for the report chat bubbles and container */
+.report-chat-scroll {
+  padding: 4px;
+}
+
+.chat-bubble {
+  background: white; /* default for other users */
+  border: 2px solid var(--primary, #f59e0b); /* outline uses --primary */
+  color: var(--text, #111827);
+  border-radius: 18px;
+  padding: 10px 14px 8px 14px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  word-break: break-word;
+}
+
+.chat-bubble.other {
+  align-self: flex-start;
+}
+
+.chat-bubble.me {
+  background: var(--primary, #f59e0b); /* my bubble uses --primary */
+  color: #fff; /* white text for my messages */
+  border-color: var(--primary, #f59e0b);
+  align-self: flex-end;
+}
+
+.chat-bubble .sender-label {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.chat-bubble .msg-meta.time {
+  color: rgba(0,0,0,0.45);
+  font-size: 0.78rem;
+}
+
+.report-chat-header {
+  margin: 0;
+}
+
+.report-chat-input #message-input {
+  background: white;
+}
+
+/* Scrollbar tweaks */
+.report-chat-scroll {
+  scrollbar-width: thin;
+}
+.report-chat-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.report-chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.08);
+  border-radius: 8px;
+}

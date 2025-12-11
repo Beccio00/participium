@@ -101,35 +101,34 @@ describe("POST /api/admin/municipality-users", () => {
       .expect(403);
   });
 
-  // COMMENTED: errorMiddleware returns 'Bad Request' not 'BadRequest'
-  // it("should return 400 when required fields are missing", async () => {
-  //   const adminEmail = `admin2-${Date.now()}@example.com`;
-  //   const adminPassword = "Admin1234!";
-  //   await createUserInDatabase({
-  //     email: adminEmail,
-  //     password: adminPassword,
-  //     role: "ADMINISTRATOR",
-  //   });
+  it("should return 400 when required fields are missing", async () => {
+    const adminEmail = `admin2-${Date.now()}@example.com`;
+    const adminPassword = "Admin1234!";
+    await createUserInDatabase({
+      email: adminEmail,
+      password: adminPassword,
+      role: "ADMINISTRATOR",
+    });
 
-  //   const agent = request.agent(app);
-  //   await agent
-  //     .post("/api/session")
-  //     .send({ email: adminEmail, password: adminPassword })
-  //     .expect(200);
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: adminPassword })
+      .expect(200);
 
-  //   // Act - missing role
-  //   const response = await agent
-  //     .post("/api/admin/municipality-users")
-  //     .send({
-  //       firstName: "NoRole",
-  //       lastName: "User",
-  //       email: `norole-${Date.now()}@example.com`,
-  //       password: "Municipal123!",
-  //     })
-  //     .expect(400);
+    // Act - missing role
+    const response = await agent
+      .post("/api/admin/municipality-users")
+      .send({
+        firstName: "NoRole",
+        lastName: "User",
+        email: `norole-${Date.now()}@example.com`,
+        password: "Municipal123!",
+      })
+      .expect(400);
 
-  //   expect(response.body).toHaveProperty("error", "BadRequest");
-  // });
+    expect(response.body).toHaveProperty("error", "Bad Request");
+  });
 
   it("should return 409 when email already exists", async () => {
     // Arrange - create existing user

@@ -1,5 +1,4 @@
-import { toReportDTO, ReportDTO } from "../../../src/interfaces/ReportDTO";
-import { Roles } from "../../../src/interfaces/UserDTO";
+import { toReportDTO } from "../../../src/interfaces/ReportDTO";
 
 describe("ReportDTO", () => {
   describe("toReportDTO", () => {
@@ -137,6 +136,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: null,
           email_notifications_enabled: false,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: null,
@@ -153,6 +153,7 @@ describe("ReportDTO", () => {
         lastName: "Smith",
         email: "jane.smith@example.com",
         role: "CITIZEN",
+        isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: false,
       });
@@ -178,6 +179,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: "bobjohnson",
           email_notifications_enabled: null,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: null,
@@ -211,6 +213,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: "alicebrown",
           email_notifications_enabled: true,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: "Insufficient information provided",
@@ -244,6 +247,7 @@ describe("ReportDTO", () => {
           role: "CITIZEN",
           telegram_username: "charliedavis",
           email_notifications_enabled: true,
+          isVerified: true,
         },
         messages: [
           {
@@ -251,18 +255,21 @@ describe("ReportDTO", () => {
             content: "Report submitted",
             createdAt: "2023-01-06T10:00:00Z",
             senderId: 6,
+            user: { role: "CITIZEN" },
           },
           {
             id: 2,
             content: "Report approved",
             createdAt: "2023-01-06T11:00:00Z",
             senderId: 1,
+            user: { role: "PUBLIC_RELATIONS" },
           },
           {
             id: 3,
             content: "Work started",
             createdAt: "2023-01-06T12:00:00Z",
             senderId: 2,
+            user: { role: "MUNICIPAL_BUILDING_MAINTENANCE" },
           },
         ],
         rejectionReason: null,
@@ -279,12 +286,14 @@ describe("ReportDTO", () => {
         content: "Report submitted",
         createdAt: "2023-01-06T10:00:00Z",
         senderId: 6,
+        senderRole: "CITIZEN",
       });
       expect(result.messages[2]).toEqual({
         id: 3,
         content: "Work started",
         createdAt: "2023-01-06T12:00:00Z",
         senderId: 2,
+        senderRole: "MUNICIPAL_BUILDING_MAINTENANCE",
       });
     });
 
@@ -416,6 +425,7 @@ describe("ReportDTO", () => {
           role: "TECHNICAL_OFFICE",
           telegram_username: null,
           email_notifications_enabled: true,
+          isVerified: true,
         },
         messages: [],
         rejectionReason: null,

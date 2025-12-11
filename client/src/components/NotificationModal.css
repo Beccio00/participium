@@ -1,0 +1,26 @@
+/* Scrollable notifications list and custom scrollbar */
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh; /* limit height so modal stays usable */
+  overflow-y: auto;
+  padding-right: 6px; /* room for scrollbar */
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 10px;
+}
+.notification-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.notification-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.08);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.notification-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.08) transparent;
+}

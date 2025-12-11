@@ -1,6 +1,7 @@
 //Here we have to implement the interface useful whether client or server
 
 export interface User {
+  id: number;
   firstName: string;
   lastName: string;
   email: string;

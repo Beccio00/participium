@@ -132,20 +132,6 @@ describe("errorMiddleware", () => {
         process.env.NODE_ENV = originalEnv;
       });
 
-      // COMMENTED: errorMiddleware always logs regardless of NODE_ENV
-      // it("should not log errors in production environment", () => {
-      //   const originalEnv = process.env.NODE_ENV;
-      //   process.env.NODE_ENV = "production";
-
-      //   const consoleSpy = jest.spyOn(console, 'error');
-      //   const error = new BadRequestError("Test error");
-
-      //   errorHandler(error, mockReq as Request, mockRes as Response, mockNext);
-
-      //   expect(consoleSpy).not.toHaveBeenCalled();
-
-      //   process.env.NODE_ENV = originalEnv;
-      // });
 
       it("should handle errors without stack trace", () => {
         const error = new BadRequestError("Error without stack");

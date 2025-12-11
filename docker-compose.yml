@@ -87,7 +87,22 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-reports-photos}
       SESSION_SECRET: ${SESSION_SECRET:-your-secret-key-change-in-production}
-      AUTO_SEED: ${AUTO_SEED:-false}
+      AUTO_SEED: ${AUTO_SEED:-true}
+      # Database connection settings
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_RETRY_ATTEMPTS: 5
+      DB_RETRY_DELAY: 3000
+      # TypeORM settings for Docker
+      TYPEORM_SYNCHRONIZE: "true"
+      RESEND_API_KEY: ${RESENDER_API_KEY:-re_WLzoZpsq_B33rsT3EjxLfa6gWCHhwiQyG}
+      TYPEORM_LOGGING: "true"
+      # SMTP settings for Nodemailer (read from compose .env or host env)
+      SMTP_HOST: ${SMTP_HOST:-mail.gmx.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-participium.turin@gmx.com}
+      SMTP_PASS: ${SMTP_PASS:-participiumpass}
+      SMTP_FROM: ${SMTP_FROM:-"Participium <participium.turin@gmx.com>"}
     ports:
       - "${SERVER_PORT:-4000}:4000"
     depends_on:
@@ -102,27 +117,17 @@ services:
       - participium-network
     volumes:
       - ./server/uploads:/app/uploads
-    command: >
-      sh -c "
-      echo 'Starting server with TypeORM...' &&
-      if [ "${AUTO_SEED}" = "true" ]; then
-        echo '🌱 AUTO_SEED=true — running seed script';
-        npm run seed;
-      else
-        echo 'Skipping automatic seed (AUTO_SEED not true)';
-      fi &&
-      node dist/app/src/index.js
-      "
+      - server_logs:/app/logs
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1",
+          "wget --no-verbose --tries=1 --spider http://localhost:4000/health || curl -f http://localhost:4000/health || exit 1",
         ]
-      interval: 30s
+      interval: 20s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 60s
 
   # Frontend Client
   client:
@@ -133,25 +138,30 @@ services:
     ports:
       - "${CLIENT_PORT:-3000}:80"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - participium-network
+    environment:
+      NGINX_ENVSUBST_TEMPLATE_SUFFIX: .template
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1",
+          "curl -f http://localhost:80/ || wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
 volumes:
   postgres_data:
     driver: local
   minio_data:
+    driver: local
+  server_logs:
     driver: local
 
 networks:

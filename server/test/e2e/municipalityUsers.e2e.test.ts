@@ -1,7 +1,13 @@
+// Mock email service for Story 27 compatibility (email verification)
+jest.mock('../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
 import request from "supertest";
 import { createApp } from "../../src/app";
-import { cleanDatabase, disconnectDatabase } from "../helpers/testSetup";
+import { cleanDatabase, disconnectDatabase, AppDataSource } from "../helpers/testSetup";
 import { createUserInDatabase } from "../helpers/testUtils";
+import { User } from "../../src/entities/User";
 
 const app = createApp();
 
@@ -31,11 +37,10 @@ describe("Administrator Managing Municipality Users", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       // Crea un nuovo agent e fai login per ottenere la sessione aggiornata
       const agent = request.agent(app);
       const loginResponse = await agent
@@ -100,11 +105,10 @@ describe("Administrator Managing Municipality Users", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       const agent = request.agent(app);
       await agent
         .post("/api/session")
@@ -158,8 +162,8 @@ describe("Administrator Managing Municipality Users", () => {
 
       await createUserInDatabase({
         email: citizenEmail,
-        first_name: "Regular",
-        last_name: "Citizen",
+        firstName: "Regular",
+        lastName: "Citizen",
         password: citizenPassword,
         role: "CITIZEN",
       });
@@ -221,11 +225,10 @@ describe("Administrator Managing Municipality Users", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       adminAgent = request.agent(app);
       await adminAgent
         .post("/api/session")
@@ -316,11 +319,10 @@ describe("Administrator Managing Municipality Users", () => {
           password: adminPassword,
         })
         .expect(201);
-      const { prisma } = require("../helpers/testSetup");
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: "ADMINISTRATOR" },
-      });
+      await AppDataSource.getRepository(User).update(
+        { email: adminEmail },
+        { role: "ADMINISTRATOR" as any, isVerified: true }
+      );
       adminAgent = request.agent(app);
       await adminAgent
         .post("/api/session")

@@ -34,24 +34,16 @@ describe("Report Integration Tests", () => {
           .send({ email: citizenEmail, password: "Citizen123!" })
           .expect(200);
 
-        const reportData = {
-          title: "Broken street light",
-          description: "The street light on Main St is not working",
-          category: "PUBLIC_LIGHTING" as ReportCategory,
-          latitude: 45.0703,
-          longitude: 7.6869,
-          isAnonymous: false,
-          photos: [
-            {
-              id: 1,
-              url: "https://example.com/photo1.jpg",
-              filename: "photo1.jpg",
-            },
-          ],
-        };
-
         // Act
-        const response = await agent.post("/api/reports").send(reportData);
+        const response = await agent
+          .post("/api/reports")
+          .field("title", "Broken street light")
+          .field("description", "The street light on Main St is not working")
+          .field("category", "PUBLIC_LIGHTING")
+          .field("latitude", "45.0703")
+          .field("longitude", "7.6869")
+          .field("isAnonymous", "false")
+          .attach("photos", Buffer.from("fake-image"), "photo1.jpg");
 
         // Assert
         expect(response.status).toBe(201);
@@ -59,8 +51,8 @@ describe("Report Integration Tests", () => {
           "message",
           "Report created successfully"
         );
-        expect(response.body).toHaveProperty("id");
-        expect(typeof response.body.id).toBe("number");
+        expect(response.body.report).toHaveProperty("id");
+        expect(typeof response.body.report.id).toBe("number");
       });
 
       it("should create an anonymous report", async () => {
@@ -78,28 +70,20 @@ describe("Report Integration Tests", () => {
           .send({ email: citizenEmail, password: "Citizen123!" })
           .expect(200);
 
-        const reportData = {
-          title: "Pothole on road",
-          description: "Large pothole needs fixing",
-          category: "ROADS_URBAN_FURNISHINGS" as ReportCategory,
-          latitude: 45.0704,
-          longitude: 7.687,
-          isAnonymous: true, // Anonymous report
-          photos: [
-            {
-              id: 1,
-              url: "https://example.com/pothole.jpg",
-              filename: "pothole.jpg",
-            },
-          ],
-        };
-
         // Act
-        const response = await agent.post("/api/reports").send(reportData);
+        const response = await agent
+          .post("/api/reports")
+          .field("title", "Pothole on road")
+          .field("description", "Large pothole needs fixing")
+          .field("category", "ROADS_URBAN_FURNISHINGS")
+          .field("latitude", "45.0704")
+          .field("longitude", "7.687")
+          .field("isAnonymous", "true")
+          .attach("photos", Buffer.from("fake-image"), "pothole.jpg");
 
         // Assert
         expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty("id");
+        expect(response.body.report).toHaveProperty("id");
       });
 
       it("should create report with multiple photos", async () => {
@@ -117,38 +101,22 @@ describe("Report Integration Tests", () => {
           .send({ email: citizenEmail, password: "Citizen123!" })
           .expect(200);
 
-        const reportData = {
-          title: "Damaged playground",
-          description: "Playground equipment is damaged and unsafe",
-          category: "PUBLIC_GREEN_AREAS_PLAYGROUNDS" as ReportCategory,
-          latitude: 45.0705,
-          longitude: 7.6871,
-          isAnonymous: false,
-          photos: [
-            {
-              id: 1,
-              url: "https://example.com/photo1.jpg",
-              filename: "photo1.jpg",
-            },
-            {
-              id: 2,
-              url: "https://example.com/photo2.jpg",
-              filename: "photo2.jpg",
-            },
-            {
-              id: 3,
-              url: "https://example.com/photo3.jpg",
-              filename: "photo3.jpg",
-            },
-          ],
-        };
-
         // Act
-        const response = await agent.post("/api/reports").send(reportData);
+        const response = await agent
+          .post("/api/reports")
+          .field("title", "Damaged playground")
+          .field("description", "Playground equipment is damaged and unsafe")
+          .field("category", "PUBLIC_GREEN_AREAS_PLAYGROUNDS")
+          .field("latitude", "45.0705")
+          .field("longitude", "7.6871")
+          .field("isAnonymous", "false")
+          .attach("photos", Buffer.from("fake-image-1"), "photo1.jpg")
+          .attach("photos", Buffer.from("fake-image-2"), "photo2.jpg")
+          .attach("photos", Buffer.from("fake-image-3"), "photo3.jpg");
 
         // Assert
         expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty("id");
+        expect(response.body.report).toHaveProperty("id");
       });
 
       it("should create report with all valid categories", async () => {
@@ -180,25 +148,17 @@ describe("Report Integration Tests", () => {
 
         // Act & Assert - Test each category
         for (const category of categories) {
-          const reportData = {
-            title: `Test report for ${category}`,
-            description: `Testing category: ${category}`,
-            category: category,
-            latitude: 45.0703,
-            longitude: 7.6869,
-            isAnonymous: false,
-            photos: [
-              {
-                id: 1,
-                url: "https://example.com/test.jpg",
-                filename: "test.jpg",
-              },
-            ],
-          };
-
-          const response = await agent.post("/api/reports").send(reportData);
+          const response = await agent
+            .post("/api/reports")
+            .field("title", `Test report for ${category}`)
+            .field("description", `Testing category: ${category}`)
+            .field("category", category)
+            .field("latitude", "45.0703")
+            .field("longitude", "7.6869")
+            .field("isAnonymous", "false")
+            .attach("photos", Buffer.from("fake-image"), "test.jpg");
           expect(response.status).toBe(201);
-          expect(response.body).toHaveProperty("id");
+          expect(response.body.report).toHaveProperty("id");
         }
       });
     });
@@ -240,11 +200,8 @@ describe("Report Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Bad Request");
-        expect(response.body).toHaveProperty(
-          "message",
-          "Missing required fields"
-        );
+        expect(response.body).toHaveProperty("error", "BadRequest");
+        expect(response.body.message).toContain("Missing required fields");
       });
 
       it("should return 400 when description is missing", async () => {
@@ -283,7 +240,7 @@ describe("Report Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Bad Request");
+        expect(response.body).toHaveProperty("error", "BadRequest");
       });
 
       it("should return 400 when category is missing", async () => {
@@ -322,7 +279,7 @@ describe("Report Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Bad Request");
+        expect(response.body).toHaveProperty("error", "BadRequest");
       });
 
       it("should return 400 when latitude is missing", async () => {
@@ -361,7 +318,7 @@ describe("Report Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Bad Request");
+        expect(response.body).toHaveProperty("error", "BadRequest");
       });
 
       it("should return 400 when longitude is missing", async () => {
@@ -400,7 +357,7 @@ describe("Report Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Bad Request");
+        expect(response.body).toHaveProperty("error", "BadRequest");
       });
 
       it("should return 400 when photos are missing", async () => {
@@ -433,7 +390,7 @@ describe("Report Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Bad Request");
+        expect(response.body).toHaveProperty("error", "BadRequest");
       });
 
       it("should return 400 when multiple fields are missing", async () => {
@@ -466,7 +423,7 @@ describe("Report Integration Tests", () => {
 
         // Assert
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Bad Request");
+        expect(response.body).toHaveProperty("error", "BadRequest");
       });
     });
 
@@ -516,28 +473,20 @@ describe("Report Integration Tests", () => {
           .send({ email: citizenEmail, password: "Citizen123!" })
           .expect(200);
 
-        const reportData = {
-          title: "Test report at 0,0",
-          description: "Testing edge case",
-          category: "OTHER" as ReportCategory,
-          latitude: 0, // Edge case: 0 is valid
-          longitude: 0, // Edge case: 0 is valid
-          isAnonymous: false,
-          photos: [
-            {
-              id: 1,
-              url: "https://example.com/photo.jpg",
-              filename: "photo.jpg",
-            },
-          ],
-        };
-
         // Act
-        const response = await agent.post("/api/reports").send(reportData);
+        const response = await agent
+          .post("/api/reports")
+          .field("title", "Test report at 0,0")
+          .field("description", "Testing edge case")
+          .field("category", "OTHER")
+          .field("latitude", "0")
+          .field("longitude", "0")
+          .field("isAnonymous", "false")
+          .attach("photos", Buffer.from("fake-image"), "photo.jpg");
 
-        // Assert
-        expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty("id");
+        // Assert - (0,0) is not in Turin boundaries
+        expect(response.status).toBe(422);
+        expect(response.body.message).toContain("boundaries");
       });
 
       it("should handle negative latitude and longitude", async () => {
@@ -555,28 +504,20 @@ describe("Report Integration Tests", () => {
           .send({ email: citizenEmail, password: "Citizen123!" })
           .expect(200);
 
-        const reportData = {
-          title: "Test report",
-          description: "Testing negative coordinates",
-          category: "OTHER" as ReportCategory,
-          latitude: -45.0703,
-          longitude: -7.6869,
-          isAnonymous: false,
-          photos: [
-            {
-              id: 1,
-              url: "https://example.com/photo.jpg",
-              filename: "photo.jpg",
-            },
-          ],
-        };
-
         // Act
-        const response = await agent.post("/api/reports").send(reportData);
+        const response = await agent
+          .post("/api/reports")
+          .field("title", "Test report")
+          .field("description", "Testing negative coordinates")
+          .field("category", "OTHER")
+          .field("latitude", "-45.0703")
+          .field("longitude", "-7.6869")
+          .field("isAnonymous", "false")
+          .attach("photos", Buffer.from("fake-image"), "photo.jpg");
 
-        // Assert
-        expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty("id");
+        // Assert - Negative coords not in Turin
+        expect(response.status).toBe(422);
+        expect(response.body.message).toContain("boundaries");
       });
     });
   });
@@ -622,23 +563,16 @@ describe("Report Integration Tests", () => {
           .send({ email: citizenEmail, password: "Citizen123!" })
           .expect(200);
 
-        const reportData = {
-          title: "Pending report",
-          description: "This should not be visible",
-          category: "PUBLIC_LIGHTING" as ReportCategory,
-          latitude: 45.0703,
-          longitude: 7.6869,
-          isAnonymous: false,
-          photos: [
-            {
-              id: 1,
-              url: "https://example.com/photo.jpg",
-              filename: "photo.jpg",
-            },
-          ],
-        };
-
-        await agent.post("/api/reports").send(reportData).expect(201);
+        await agent
+          .post("/api/reports")
+          .field("title", "Pending report")
+          .field("description", "This should not be visible")
+          .field("category", "PUBLIC_LIGHTING")
+          .field("latitude", "45.0703")
+          .field("longitude", "7.6869")
+          .field("isAnonymous", "false")
+          .attach("photos", Buffer.from("fake-image"), "photo.jpg")
+          .expect(201);
 
         // Act - Get reports
         const response = await agent.get("/api/reports");
@@ -651,13 +585,13 @@ describe("Report Integration Tests", () => {
     });
 
     describe("Authentication scenarios", () => {
-      it("should return 401 when not logged in", async () => {
+      it("should allow unauthenticated access to public reports", async () => {
         // Act - No login, direct request
         const response = await request(app).get("/api/reports");
 
-        // Assert
-        expect(response.status).toBe(401);
-        expect(response.body).toHaveProperty("error", "Unauthorized");
+        // Assert - Public endpoint should return 200
+        expect(response.status).toBe(200);
+        expect(Array.isArray(response.body)).toBe(true);
       });
     });
   });
