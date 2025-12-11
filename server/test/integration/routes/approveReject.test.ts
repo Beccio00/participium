@@ -1,4 +1,4 @@
-// story 6 
+// story 6  typyORM
 import request from "supertest";
 import { createApp } from "../../../src/app";
 import {

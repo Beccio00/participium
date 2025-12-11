@@ -2,6 +2,12 @@ import request from "supertest";
 import { createApp } from "../../../src/app";
 import { cleanDatabase, disconnectDatabase } from "../../helpers/testSetup";
 import { createUserInDatabase } from "../../helpers/testUtils";
+import { 
+  createCitizenAgent, 
+  createReportViaForm,
+  assertReportCreated,
+  assertErrorResponse 
+} from "../../helpers/testHelpers";
 import { ReportCategory } from "../../../../shared/ReportTypes";
 
 const app = createApp();
@@ -19,87 +25,42 @@ describe("Report Integration Tests", () => {
   describe("POST /api/reports - Create Report", () => {
     describe("Success scenarios", () => {
       it("should successfully create a report with valid data", async () => {
-        // Arrange - Create a citizen user
-        const citizenEmail = `citizen-${Date.now()}@example.com`;
-        await createUserInDatabase({
-          email: citizenEmail,
-          password: "Citizen123!",
-          role: "CITIZEN",
-        });
-
-        // Login to get session
-        const agent = request.agent(app);
-        await agent
-          .post("/api/session")
-          .send({ email: citizenEmail, password: "Citizen123!" })
-          .expect(200);
+        // Arrange
+        const { agent } = await createCitizenAgent(app);
 
         // Act
-        const response = await agent
-          .post("/api/reports")
-          .field("title", "Broken street light")
-          .field("description", "The street light on Main St is not working")
-          .field("category", "PUBLIC_LIGHTING")
-          .field("latitude", "45.0703")
-          .field("longitude", "7.6869")
-          .field("isAnonymous", "false")
-          .attach("photos", Buffer.from("fake-image"), "photo1.jpg");
+        const response = await createReportViaForm(agent, {
+          title: "Broken street light",
+          description: "The street light on Main St is not working",
+          category: "PUBLIC_LIGHTING",
+        }).expect(201);
 
         // Assert
-        expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty(
-          "message",
-          "Report created successfully"
-        );
-        expect(response.body.report).toHaveProperty("id");
-        expect(typeof response.body.report.id).toBe("number");
+        assertReportCreated(response, {
+          title: "Broken street light",
+          category: "PUBLIC_LIGHTING",
+        });
       });
 
       it("should create an anonymous report", async () => {
         // Arrange
-        const citizenEmail = `citizen-${Date.now()}@example.com`;
-        await createUserInDatabase({
-          email: citizenEmail,
-          password: "Citizen123!",
-          role: "CITIZEN",
-        });
-
-        const agent = request.agent(app);
-        await agent
-          .post("/api/session")
-          .send({ email: citizenEmail, password: "Citizen123!" })
-          .expect(200);
+        const { agent } = await createCitizenAgent(app);
 
         // Act
-        const response = await agent
-          .post("/api/reports")
-          .field("title", "Pothole on road")
-          .field("description", "Large pothole needs fixing")
-          .field("category", "ROADS_URBAN_FURNISHINGS")
-          .field("latitude", "45.0704")
-          .field("longitude", "7.687")
-          .field("isAnonymous", "true")
-          .attach("photos", Buffer.from("fake-image"), "pothole.jpg");
+        const response = await createReportViaForm(agent, {
+          title: "Pothole on road",
+          description: "Large pothole needs fixing",
+          category: "ROADS_URBAN_FURNISHINGS",
+          isAnonymous: "true",
+        }).expect(201);
 
         // Assert
-        expect(response.status).toBe(201);
-        expect(response.body.report).toHaveProperty("id");
+        assertReportCreated(response);
       });
 
       it("should create report with multiple photos", async () => {
         // Arrange
-        const citizenEmail = `citizen-${Date.now()}@example.com`;
-        await createUserInDatabase({
-          email: citizenEmail,
-          password: "Citizen123!",
-          role: "CITIZEN",
-        });
-
-        const agent = request.agent(app);
-        await agent
-          .post("/api/session")
-          .send({ email: citizenEmail, password: "Citizen123!" })
-          .expect(200);
+        const { agent } = await createCitizenAgent(app);
 
         // Act
         const response = await agent

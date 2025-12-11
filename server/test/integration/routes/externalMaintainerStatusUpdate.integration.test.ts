@@ -45,8 +45,8 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       email,
       password: "External123!",
       role: "EXTERNAL_MAINTAINER",
-      first_name: "External",
-      last_name: "Maintainer",
+      firstName: "External",
+      lastName: "Maintainer",
     });
     
     // Link user to external company

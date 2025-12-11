@@ -40,7 +40,10 @@ describe("internalNoteService", () => {
 
   describe("createInternalNote", () => {
     it("should add an internal note for technical staff", async () => {
-      mockReportRepo.findByIdWithRelations.mockResolvedValue({ id: 1 });
+      mockReportRepo.findByIdWithRelations.mockResolvedValue({ 
+        id: 1,
+        assignedOfficerId: 2, // Assigned to user 2
+      });
       mockUserRepo.findById.mockResolvedValue({
         id: 2,
         first_name: "Mario",

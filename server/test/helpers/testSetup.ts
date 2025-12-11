@@ -7,6 +7,7 @@ import { ReportPhoto } from "../../src/entities/ReportPhoto";
 import { ReportMessage } from "../../src/entities/ReportMessage";
 import { Notification } from "../../src/entities/Notification";
 import { ExternalCompany } from "../../src/entities/ExternalCompany";
+import { InternalNote } from "../../src/entities/InternalNote";
 
 // Use the application's AppDataSource directly
 export { AppDataSource };
@@ -28,7 +29,20 @@ export const prisma: any = {
     },
     findUnique: async (args: any) => {
       const repo = AppDataSource.getRepository(Report);
-      return await repo.findOne({ where: args?.where });
+      const options: any = { where: args?.where };
+      
+      // Handle include option for loading relations
+      if (args?.include) {
+        options.relations = [];
+        if (args.include.messages) options.relations.push('messages');
+        if (args.include.user) options.relations.push('user');
+        if (args.include.photos) options.relations.push('photos');
+        if (args.include.assignedOfficer) options.relations.push('assignedOfficer');
+        if (args.include.externalCompany) options.relations.push('externalCompany');
+        if (args.include.externalMaintainer) options.relations.push('externalMaintainer');
+      }
+      
+      return await repo.findOne(options);
     },
     update: async (args: any) => {
       const repo = AppDataSource.getRepository(Report);
@@ -56,6 +70,21 @@ export const prisma: any = {
       return await repo.findOne({ where: args?.where });
     },
   },
+  reportMessage: {
+    create: async (args: any) => {
+      const repo = AppDataSource.getRepository(ReportMessage);
+      const message = repo.create(args?.data);
+      return await repo.save(message);
+    },
+    findMany: async (args?: any) => {
+      const repo = AppDataSource.getRepository(ReportMessage);
+      return await repo.find(args?.where ? { where: args.where } : {});
+    },
+    findUnique: async (args: any) => {
+      const repo = AppDataSource.getRepository(ReportMessage);
+      return await repo.findOne({ where: args?.where });
+    },
+  },
   $disconnect: async () => {},
 };
 
@@ -80,6 +109,7 @@ export async function cleanDatabase() {
   // Use createQueryBuilder to delete all records (delete({}) is not allowed in TypeORM)
   // Order: child tables first, then parent tables
   await AppDataSource.createQueryBuilder().delete().from(Notification).execute(); // references Report and User
+  await AppDataSource.createQueryBuilder().delete().from(InternalNote).execute(); // references Report and User
   await AppDataSource.createQueryBuilder().delete().from(ReportMessage).execute(); // references Report and User
   await AppDataSource.createQueryBuilder().delete().from(ReportPhoto).execute(); // references Report
   await AppDataSource.createQueryBuilder().delete().from(Report).execute(); // references User

@@ -1,5 +1,6 @@
 /**
- * E2E Test for Stories 24, 25, 26 - External Maintainer Workflow
+ * Author：Luan
+ * E2E Test for Stories 24, 25, 26 - External Maintainer Workflow 
  * 
  * Story 24 (PT24): Technical staff assigns reports to external maintainers
  * Story 25 (PT25): External maintainer updates report status

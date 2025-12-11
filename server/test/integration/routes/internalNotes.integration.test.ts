@@ -35,8 +35,8 @@ describe("Internal Notes Integration Tests", () => {
       email: `ext-${Date.now()}@example.com`,
       password: "External123!",
       role: "EXTERNAL_MAINTAINER",
-      first_name: "Ext",
-      last_name: "Maint",
+      firstName: "Ext",
+      lastName: "Maint",
     });
 
     // attach maintainer to company
@@ -52,8 +52,8 @@ describe("Internal Notes Integration Tests", () => {
       email: `tech-${Date.now()}@example.com`,
       password: "Tech123!",
       role: "WASTE_MANAGEMENT",
-      first_name: "Tech",
-      last_name: "One",
+      firstName: "Tech",
+      lastName: "One",
     });
 
     // create a citizen (report owner)
