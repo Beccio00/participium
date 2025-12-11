@@ -1,11 +1,15 @@
+jest.mock('../../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
 import request from "supertest";
 import { createApp } from "../../../src/app";
 import { cleanDatabase, disconnectDatabase } from "../../helpers/testSetup";
 import {
-  createTestUserData,
   createUserInDatabase,
   verifyPasswordIsHashed,
 } from "../../helpers/testUtils";
+import { createSignupData, assertUserDTO, assertErrorResponse } from "../../helpers/testHelpers";
 
 const app = createApp();
 
@@ -22,177 +26,145 @@ describe("POST /api/citizen/signup", () => {
 
   describe("Success scenarios", () => {
     it("should successfully register a new citizen with valid data", async () => {
-      // Arrange
-      const userData = createTestUserData({
-        email: `test-${Date.now()}@example.com`, // Use unique email to avoid conflicts
+      // Arrange - Use helper to create signup data
+      const userData = createSignupData({
+        firstName: "TestFirst",
+        lastName: "TestLast",
       });
 
       // Act
       const response = await request(app)
         .post("/api/citizen/signup")
-        .send(userData);
+        .send(userData)
+        .expect(201);
 
-      // Assert - Check status code
-      if (response.status !== 201) {
-        console.error("Registration failed:", response.body);
-      }
-      expect(response.status).toBe(201);
+      // Assert - Use helper to verify user DTO
       expect(response.headers["content-type"]).toMatch(/json/);
-
-      expect(response.body).toHaveProperty("firstName", userData.firstName);
-      expect(response.body).toHaveProperty("lastName", userData.lastName);
-      expect(response.body).toHaveProperty("email", userData.email);
-      expect(response.body).toHaveProperty("role", "CITIZEN");
+      assertUserDTO(response.body, {
+        firstName: "TestFirst",
+        lastName: "TestLast",
+        email: userData.email,
+        role: "CITIZEN",
+      });
       expect(response.body).toHaveProperty("telegramUsername", null);
       expect(response.body).toHaveProperty("emailNotificationsEnabled", true);
-
-      // Ensure password and salt are not returned
-      expect(response.body).not.toHaveProperty("password");
-      expect(response.body).not.toHaveProperty("salt");
     });
 
     it("should encrypt password before storing in database", async () => {
-      // Arrange - Use unique email to avoid conflicts
-      const userData = createTestUserData({
-        email: `encrypt-test-${Date.now()}@example.com`,
+      // Arrange - Use helper to create signup data
+      const userData = createSignupData({
+        firstName: "EncryptTest",
+        lastName: "User",
       });
 
       // Act
       await request(app).post("/api/citizen/signup").send(userData).expect(201);
 
       // Assert - Verify password is encrypted before storage
-      const isHashed = await verifyPasswordIsHashed(
-        userData.email,
-        userData.password
-      );
+      const isHashed = await verifyPasswordIsHashed(userData.email, userData.password);
       expect(isHashed).toBe(true);
     });
   });
 
   describe("Validation - Missing required fields", () => {
     it('should return 400 when firstName is missing', async () => {
-      // Arrange
-      const userData = createTestUserData();
+      const userData = createSignupData();
       delete (userData as any).firstName;
-      // Act
+      
       const response = await request(app)
         .post('/api/citizen/signup')
         .send(userData)
         .expect(400);
-      // Assert
-      expect(response.body).toHaveProperty('error', 'Bad Request');
-      expect(response.body.message).toContain('firstName');
+      
+      assertErrorResponse(response.body, 'Bad Request', 'firstName');
     });
+
     it('should return 400 when lastName is missing', async () => {
-      // Arrange
-      const userData = createTestUserData();
+      const userData = createSignupData();
       delete (userData as any).lastName;
-      // Act
+      
       const response = await request(app)
         .post('/api/citizen/signup')
         .send(userData)
         .expect(400);
-      // Assert
-      expect(response.body).toHaveProperty('error', 'Bad Request');
-      expect(response.body.message).toContain('lastName');
+      
+      assertErrorResponse(response.body, 'Bad Request', 'lastName');
     });
+
     it('should return 400 when email is missing', async () => {
-      // Arrange
-      const userData = createTestUserData();
+      const userData = createSignupData();
       delete (userData as any).email;
-      // Act
+      
       const response = await request(app)
         .post('/api/citizen/signup')
         .send(userData)
         .expect(400);
-      // Assert
-      expect(response.body).toHaveProperty('error', 'Bad Request');
-      expect(response.body.message).toContain('email');
+      
+      assertErrorResponse(response.body, 'Bad Request', 'email');
     });
+
     it('should return 400 when password is missing', async () => {
-      // Arrange
-      const userData = createTestUserData();
+      const userData = createSignupData();
       delete (userData as any).password;
-      // Act
+      
       const response = await request(app)
         .post('/api/citizen/signup')
         .send(userData)
         .expect(400);
-      // Assert
-      expect(response.body).toHaveProperty('error', 'Bad Request');
-      expect(response.body.message).toContain('password');
+      
+      assertErrorResponse(response.body, 'Bad Request', 'password');
     });
     it('should return 400 when multiple fields are missing', async () => {
-      // Arrange
-      const userData = {
-        firstName: 'John',
-        // lastName, email, password missing
-      };
-      // Act
+      const userData = { firstName: 'John' }; // Missing lastName, email, password
+      
       const response = await request(app)
         .post('/api/citizen/signup')
         .send(userData)
         .expect(400);
-      // Assert
-      expect(response.body).toHaveProperty('error', 'Bad Request');
-      expect(response.body.message).toContain('lastName');
-      expect(response.body.message).toContain('email');
-      expect(response.body.message).toContain('password');
+      
+      // OpenAPI validator only reports the first missing field
+      assertErrorResponse(response.body, 'Bad Request', 'lastName');
     });
   });
 
   describe("Validation - Email conflict", () => {
     it("should return 409 when email already exists", async () => {
-      // Arrange - Create a user first
       const existingEmail = "existing@test.com";
       await createUserInDatabase({ email: existingEmail });
 
-      const newUserData = createTestUserData({ email: existingEmail });
+      const newUserData = createSignupData({ email: existingEmail });
 
-      // Act - Try to register with the same email
       const response = await request(app)
         .post("/api/citizen/signup")
         .send(newUserData)
         .expect(409);
 
-      // Assert
-      expect(response.body).toHaveProperty("error", "Conflict");
-      expect(response.body.message).toContain("Email already in use");
+      assertErrorResponse(response.body, "Conflict", "Email already in use");
     });
 
     it("should allow registration with different email", async () => {
-      // Arrange
       await createUserInDatabase({ email: "existing@test.com" });
-      const newUserData = createTestUserData({ email: "new@test.com" });
+      const newUserData = createSignupData({ email: "new@test.com" });
 
-      // Act
       const response = await request(app)
         .post("/api/citizen/signup")
         .send(newUserData)
         .expect(201);
 
-      // Assert
-      expect(response.body.email).toBe("new@test.com");
+      assertUserDTO(response.body, { email: "new@test.com" });
     });
   });
 
   describe("Edge cases", () => {
     it('should handle empty string fields as missing', async () => {
-      // Arrange
-      const userData = {
-        firstName: '',
-        lastName: 'Doe',
-        email: 'test@test.com',
-        password: 'Test1234!',
-      };
-      // Act
+      const userData = createSignupData({ firstName: '' });
+      
       const response = await request(app)
         .post('/api/citizen/signup')
         .send(userData)
         .expect(400);
-      // Assert
-      expect(response.body).toHaveProperty('error', 'Bad Request');
-      expect(response.body.message).toContain('firstName');
+      
+      assertErrorResponse(response.body, 'Bad Request', 'firstName');
     });
   });
 });

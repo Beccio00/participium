@@ -29,3 +29,7 @@ Thumbs.db
 mydoc/
 client/test-results/
 client/playwright-report/
+sonar-project.properties
+sonar-project copy.properties
+.scannerwork
+.scannerwork

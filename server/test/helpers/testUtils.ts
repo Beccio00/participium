@@ -30,6 +30,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     messages: [],
     assignedReports: [],
     notifications: [],
+    internalNotes: [],
     photo: null as any,
     ...overrides,
   };
@@ -100,30 +101,63 @@ export function createMockReport(overrides: Partial<Report> = {}): Report {
  */
 export async function createUserInDatabase(data: {
   email: string;
-  firstName: string;
-  lastName: string;
-  password: string;
-  role: Role | string;
+  firstName?: string;
+  lastName?: string;
+  password?: string;
+  role?: Role | string;
   isVerified?: boolean;
   externalCompanyId?: number | null;
 }): Promise<User> {
-  const { hashedPassword, salt } = await hashPassword(data.password);
+  const password = data.password || 'Test1234!';
+  const { hashedPassword, salt } = await hashPassword(password);
   
   const userRepo = AppDataSource.getRepository(User);
   const user = userRepo.create({
     email: data.email,
-    first_name: data.firstName,
-    last_name: data.lastName,
+    first_name: data.firstName || 'Test',
+    last_name: data.lastName || 'User',
     password: hashedPassword,
     salt: salt,
-    role: data.role as Role,
+    role: (data.role as Role) || Role.CITIZEN,
     isVerified: data.isVerified ?? true, // Default to verified for E2E tests
     telegram_username: null,
     email_notifications_enabled: true,
     externalCompanyId: data.externalCompanyId ?? null,
   });
-  
+
   return await userRepo.save(user);
+}
+
+// Legacy helper functions for backward compatibility
+export function createTestUserData(overrides: any = {}) {
+  // Remove role from overrides as it's not accepted in signup API
+  const { role, ...restOverrides } = overrides;
+  
+  // Build the data object with defaults, using restOverrides (without role)
+  return {
+    firstName: restOverrides.firstName || 'Test',
+    lastName: restOverrides.lastName || 'User',
+    email: restOverrides.email || 'test@example.com',
+    password: restOverrides.password || 'Test1234!',
+  };
+}
+
+export async function verifyPasswordIsHashed(email: string, plainPassword: string): Promise<boolean> {
+  // Fetch user from database
+  const userRepo = AppDataSource.getRepository(User);
+  const user = await userRepo.findOne({ where: { email } });
+  
+  if (!user) {
+    return false;
+  }
+  
+  // Check if stored password is hashed (starts with $2b$ or $2a$ for bcrypt)
+  const isHashed = user.password.startsWith('$2b$') || user.password.startsWith('$2a$');
+  
+  // Also verify the password is not stored in plain text
+  const isNotPlainText = user.password !== plainPassword;
+  
+  return isHashed && isNotPlainText;
 }
 
 // 重新导出 Role 枚举，方便测试文件使用

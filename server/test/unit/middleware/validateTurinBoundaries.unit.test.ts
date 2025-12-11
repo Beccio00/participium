@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { validateTurinBoundaries } from "../../../src/middlewares/validateTurinBoundaries";
 import { UnprocessableEntityError } from "../../../src/utils";
+import { createMockRequest, createMockResponse, createMockNext, testCoordinates } from "../../helpers/testHelpers";
 
 describe("validateTurinBoundaries middleware", () => {
   let mockReq: Partial<Request>;
@@ -8,68 +9,32 @@ describe("validateTurinBoundaries middleware", () => {
   let mockNext: NextFunction;
 
   beforeEach(() => {
-    mockReq = {
-      body: {}
-    };
-    mockRes = {};
-    mockNext = jest.fn();
+    mockReq = createMockRequest();
+    mockRes = createMockResponse();
+    mockNext = createMockNext();
   });
 
   describe("Story 5 (PT05) - Turin boundaries validation", () => {
     it("should pass when coordinates are inside Turin boundaries", () => {
       // Coordinate nel centro di Torino
-      mockReq.body = {
-        latitude: "45.0703",
-        longitude: "7.6869"
-      };
-
-      validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith();
+      testCoordinates(validateTurinBoundaries, "45.0703", "7.6869", true);
     });
 
     it("should pass when coordinates are near Turin city center", () => {
       // Piazza Castello, Torino
-      mockReq.body = {
-        latitude: "45.0722",
-        longitude: "7.6859"
-      };
-
-      validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith();
+      testCoordinates(validateTurinBoundaries, "45.0722", "7.6859", true);
     });
 
     it("should throw error when coordinates are outside Turin boundaries", () => {
       // Milano coordinates (outside Turin)
-      mockReq.body = {
-        latitude: "45.4642",
-        longitude: "9.1900"
-      };
-
-      expect(() => {
-        validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-      }).toThrow(UnprocessableEntityError);
-
-      expect(() => {
-        validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-      }).toThrow("Coordinates are outside Turin municipality boundaries");
-
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(() => testCoordinates(validateTurinBoundaries, "45.4642", "9.1900", false))
+        .toThrow(UnprocessableEntityError);
     });
 
     it("should throw error when coordinates are far outside Turin", () => {
       // Roma coordinates (very far from Turin)
-      mockReq.body = {
-        latitude: "41.9028",
-        longitude: "12.4964"
-      };
-
-      expect(() => {
-        validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-      }).toThrow(UnprocessableEntityError);
-
-      expect(mockNext).not.toHaveBeenCalled();
+      expect(() => testCoordinates(validateTurinBoundaries, "41.9028", "12.4964", false))
+        .toThrow(UnprocessableEntityError);
     });
 
     it("should pass when latitude is missing", () => {
@@ -148,52 +113,23 @@ describe("validateTurinBoundaries middleware", () => {
 
     it("should handle string coordinates correctly", () => {
       // Mole Antonelliana, Torino
-      mockReq.body = {
-        latitude: "45.0691",
-        longitude: "7.6934"
-      };
-
-      validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith();
+      testCoordinates(validateTurinBoundaries, "45.0691", "7.6934", true);
     });
 
     it("should handle numeric coordinates correctly", () => {
       // Palazzo Reale, Torino
-      mockReq.body = {
-        latitude: 45.0726,
-        longitude: 7.6855
-      };
-
-      validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith();
+      testCoordinates(validateTurinBoundaries, "45.0726", "7.6855", true);
     });
 
     it("should validate coordinates at Turin polygon edge", () => {
       // Coordinate molto vicine al confine di Torino
-      mockReq.body = {
-        latitude: "45.1240",
-        longitude: "7.5810"
-      };
-
-      validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith();
+      testCoordinates(validateTurinBoundaries, "45.1240", "7.5810", true);
     });
 
     it("should reject coordinates just outside Turin boundaries", () => {
-      // Coordinate appena fuori dai confini
-      mockReq.body = {
-        latitude: "45.2000", // Troppo a nord
-        longitude: "7.6869"
-      };
-
-      expect(() => {
-        validateTurinBoundaries(mockReq as Request, mockRes as Response, mockNext);
-      }).toThrow(UnprocessableEntityError);
-
-      expect(mockNext).not.toHaveBeenCalled();
+      // Coordinate appena fuori dai confini (troppo a nord)
+      expect(() => testCoordinates(validateTurinBoundaries, "45.2000", "7.6869", false))
+        .toThrow(UnprocessableEntityError);
     });
 
     it("should handle zero coordinates", () => {

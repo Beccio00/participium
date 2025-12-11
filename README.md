@@ -146,8 +146,22 @@ The documentation is generated from `docs/swagger.yaml` and allows you to:
 cd client
 npm test              # Run once
 npm run test:watch    # Watch mode
+
 ```
 
+# E2E UI Tests
+
+```bash
+cd client
+npm install
+npm run install:browsers
+```
+
+### run all test ui
+
+```bash
+npm run test:e2e-ui
+```
 Frontend tests use **Vitest** + **Testing Library** for fast, user-centric testing.
 
 #### Backend Tests (Jest)
