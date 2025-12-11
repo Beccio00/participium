@@ -40,8 +40,24 @@ sections:
 
 > place technical tasks corresponding to story `#0` and leave out story points (not applicable in this case)
 
-- Hours per task (average, standard deviation)
-- Total task estimation error ratio: sum of total hours estimation / sum of total hours spent -1
+- Hours per task average, standard deviation (estimate and actual)
+
+|            | Mean | StDev |
+|------------|------|-------|
+| Estimation | 1h41m | 39m | 
+| Actual     | 1h41m30s | 41m |
+
+- Total estimation error ratio: sum of total hours spent / sum of total hours effort - 1
+
+    $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1$$
+  
+  **Total Error Ratio = 0.0049**
+    
+- Absolute relative task estimation error: sum( abs( spent-task-i / estimation-task-i - 1))/n
+
+    $$\frac{1}{n}\sum_i^n \left| \frac{spent_{task_i}}{estimation_{task_i}}-1 \right| $$
+
+  **Absolute Relative Error = 0,0588**
 
   
 ## QUALITY MEASURES 
