@@ -12,9 +12,9 @@ sections:
 
 ### Macro statistics
 
-- Number of stories committed vs done :
-- Total points committed vs done :
-- Nr of hours planned vs spent (as a team) :
+- Number of stories committed vs done : 4 committed vs 4 done
+- Total points committed vs done : 21 committed vs 21 done
+- Nr of hours planned vs spent (as a team) : 96h planned vs 96h28m spent
 
 **Remember**  a story is done ONLY if it fits the Definition of Done:
  
@@ -31,20 +31,33 @@ sections:
 | Story | # Tasks | Points | Hours est. | Hours actual |
 |-------|--------:|-------:|-----------:|-------------:|
 | _Uncategorized_ | 16 | - | 33h20m | 34h25m |
-| Assign  | 12 | 5 | 13h05m | 13h50m |
-| Report approval and rejection | 8 | 1 | 8h35m | 8h45m |
-| Report display on the map | 6 | 5 | 5h25m | 5h16m |
-| Report assign overview | 8 | 2 | 10h05m | 10h05m |
-| User account customization | 9 | 3 | 9h35m | 9h50m |
-| Update report | 10 | 8 | 13h35m | 12h10m | 
-we did not manage to finish the implementation of this story 
-| **Total** | 67 | 24 | **96h** | **95h06m** |
+| PT24  | 9       | 3 | 9h40m | 10h55m |
+| PT25 | 11 | 8 | 20h10m | 18h45m |
+| PT26 | 10 | 5 | 16h10m | 15h43m |
+| PT27 | 11 | 5 | 16h40m | 16h40m |
+| **Total** | 57 | 21 | **96** | **96h28m** |
    
 
 > place technical tasks corresponding to story `#0` and leave out story points (not applicable in this case)
 
-- Hours per task (average, standard deviation)
-- Total task estimation error ratio: sum of total hours estimation / sum of total hours spent -1
+- Hours per task average, standard deviation (estimate and actual)
+
+|            | Mean | StDev |
+|------------|------|-------|
+| Estimation | 1h41m | 39m | 
+| Actual     | 1h41m30s | 41m |
+
+- Total estimation error ratio: sum of total hours spent / sum of total hours effort - 1
+
+    $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1$$
+  
+  **Total Error Ratio = 0.0049**
+    
+- Absolute relative task estimation error: sum( abs( spent-task-i / estimation-task-i - 1))/n
+
+    $$\frac{1}{n}\sum_i^n \left| \frac{spent_{task_i}}{estimation_{task_i}}-1 \right| $$
+
+  **Absolute Relative Error = 0,0588**
 
   
 ## QUALITY MEASURES 
@@ -77,15 +90,21 @@ we did not manage to finish the implementation of this story
 ## ASSESSMENT
 
 - What caused your errors in estimation (if any)?
+    There are no big errors in estimation, the only one with a big gap between estimated and spent time is a task related to the update of the db of story#25, which took less time than expected.
 
 - What lessons did you learn (both positive and negative) in this sprint?
+    **Positive**: We confirmed that our overall time estimation for the sprint was very precise, almost perfect.
+    **Negative**: We learned that we need to improve our task management on youtrack.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
-  
+    We where able to achieve both improvement goals set in the previous retrospective without issues.
 - Which ones you were not able to achieve? Why?
+    None.
 
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
 > Propose one or two
-
+  Improve task management on youtrack.
+  
 - One thing you are proud of as a Team!!
+  We are really proud of the team excellent coordination and communication, which allowed us to regulary provide feedback and help to anyone who was in need of it.
