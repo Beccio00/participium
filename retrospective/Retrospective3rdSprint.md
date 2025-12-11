@@ -1,4 +1,4 @@
-TEMPLATE FOR RETROSPECTIVE (Team ##)
+TEMPLATE FOR RETROSPECTIVE (Team 13)
 =====================================
 
 The retrospective should include _at least_ the following
@@ -12,9 +12,9 @@ sections:
 
 ### Macro statistics
 
-- Number of stories committed vs done : 4 committed vs 4 done
-- Total points committed vs done : 21 committed vs 21 done
-- Nr of hours planned vs spent (as a team) : 96h planned vs 96h28m spent
+- Number of stories committed vs done : 4 stories committed --- 4 stories done
+- Total points committed vs done : 21 points committed --- 21 points done
+- Nr of hours planned vs spent (as a team) : 96h planned --- 96h28m spent
 
 **Remember**  a story is done ONLY if it fits the Definition of Done:
  
@@ -23,7 +23,7 @@ sections:
 - Code review completed
 - Code present on VCS
 - End-to-End tests performed
-- All tasks are in "Done" state
+- All tasks are in "Done" state on YouTrack
 
 
 ### Detailed statistics
@@ -81,7 +81,7 @@ sections:
   - Total hours estimated: 15h
   - Total hours spent: 13h25m
 - Technical Debt management
-  - Strategy adopted: We aimed to bring our codebase closer to the established quality standards. We successfully maintained this approach up to Sprint 2. For Sprint 3, however, the code quality ended up slightly above the expected technical debt threshold.
+  - Strategy adopted: We aimed to bring our codebase closer to the established quality standards. We successfully maintained this approach up to Sprint 2. For Sprint 3, however, the code quality ended up slightly above the expected technical debt threshold. We plan to pay off this debt in the next sprint.
   - Total hours estimated at sprint planning: 3h
   - Total hours spent: 3h
   
@@ -90,21 +90,25 @@ sections:
 ## ASSESSMENT
 
 - What caused your errors in estimation (if any)?
-    There are no big errors in estimation, the only one with a big gap between estimated and spent time is a task related to the update of the db of story#25, which took less time than expected.
+
+    There were no major errors in estimation, the only task with a significant gap between estimated and spent time is the one related to the update of the database of story#25, which took less time than expected.
 
 - What lessons did you learn (both positive and negative) in this sprint?
+    
     **Positive**: We confirmed that our overall time estimation for the sprint was very precise, almost perfect.
-    **Negative**: We learned that we need to improve our task management on youtrack.
+    **Negative**: We learned that we need to improve our task management on YouTrack.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
-    We where able to achieve both improvement goals set in the previous retrospective without issues.
+    
+    We were able to achieve both improvement goals set in the previous retrospective without issues.
 - Which ones you were not able to achieve? Why?
+
     None.
 
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
-
-> Propose one or two
-  Improve task management on youtrack.
+  - Improve task management on YouTrack: we need to be quicker on assigning spent time to tasks and on moving them to the "To Verify" state, in order to let our colleagues know immediately when they can start working.
+  - Improve Technical Debt Management: we need to improve our techniques to pay off Technical Debt, since we had some problems when merging different branches
   
 - One thing you are proud of as a Team!!
-  We are really proud of the team excellent coordination and communication, which allowed us to regulary provide feedback and help to anyone who was in need of it.
+
+  We are really proud of the improvements we have made since the first sprint, especially we were able to spread the amount of work evenly through all the sprint, without having to rush in the last days.
