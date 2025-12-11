@@ -86,15 +86,21 @@ sections:
 ## ASSESSMENT
 
 - What caused your errors in estimation (if any)?
+    There are no big errors in estimation, the only one with a big gap between estimated and spent time is a task related to the update of the db of story#25, which took less time than expected.
 
 - What lessons did you learn (both positive and negative) in this sprint?
+    **Positive**: We confirmed that our overall time estimation for the sprint was very precise, almost perfect.
+    **Negative**: We learned that we need to improve our task management on youtrack.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
-  
+    We where able to achieve both improvement goals set in the previous retrospective without issues.
 - Which ones you were not able to achieve? Why?
+    None.
 
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
 > Propose one or two
-
+  Improve task management on youtrack.
+  
 - One thing you are proud of as a Team!!
+  We are really proud of the team excellent coordination and communication, which allowed us to regulary provide feedback and help to anyone who was in need of it.
