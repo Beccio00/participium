@@ -1,7 +1,0 @@
-organization=echosuccess
-projectKey=echosuccess_spint3
-serverUrl=https://sonarcloud.io
-serverVersion=8.0.0.77288
-dashboardUrl=https://sonarcloud.io/dashboard?id=echosuccess_spint3
-ceTaskId=AZsLKyDLsLXjrq6J4H2V
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZsLKyDLsLXjrq6J4H2V
