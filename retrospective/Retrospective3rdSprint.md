@@ -31,14 +31,11 @@ sections:
 | Story | # Tasks | Points | Hours est. | Hours actual |
 |-------|--------:|-------:|-----------:|-------------:|
 | _Uncategorized_ | 16 | - | 33h20m | 34h25m |
-| Assign  | 12 | 5 | 13h05m | 13h50m |
-| Report approval and rejection | 8 | 1 | 8h35m | 8h45m |
-| Report display on the map | 6 | 5 | 5h25m | 5h16m |
-| Report assign overview | 8 | 2 | 10h05m | 10h05m |
-| User account customization | 9 | 3 | 9h35m | 9h50m |
-| Update report | 10 | 8 | 13h35m | 12h10m | 
-we did not manage to finish the implementation of this story 
-| **Total** | 67 | 24 | **96h** | **95h06m** |
+| PT24  | 9       | 3 | 9h40m | 10h55m |
+| PT25 | 11 | 8 | 20h10m | 18h45m |
+| PT26 | 10 | 5 | 16h10m | 15h43m |
+| PT27 | 11 | 5 | 16h40m | 16h40m |
+| **Total** | 57 | 21 | **96** | **96h28m** |
    
 
 > place technical tasks corresponding to story `#0` and leave out story points (not applicable in this case)
