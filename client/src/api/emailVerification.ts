@@ -17,6 +17,7 @@ export async function verifyEmailCode(
 }
 
 export async function resendVerificationCode(email: string): Promise<void> {
+  console.log("Resending verification code to:", email);
   const res = await fetch(`${API_PREFIX}/citizen/resend-verification`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

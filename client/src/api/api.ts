@@ -18,7 +18,6 @@ import type {
   MunicipalityUserRequest,
   MunicipalityUserResponse,
 } from "../../../shared/MunicipalityUserTypes";
-import type { CreateReportResponse } from "../../../shared/ReportTypes";
 import type {
   AssignReportToExternalResponse,
   CreateExternalMaintainerData,
