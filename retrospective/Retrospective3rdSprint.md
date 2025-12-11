@@ -50,23 +50,27 @@ we did not manage to finish the implementation of this story
 ## QUALITY MEASURES 
 
 - Unit Testing:
-  - Total hours estimated
-  - Total hours spent
-  - Nr of automated unit test cases 
-  - Coverage (if available)
+  - Total hours estimated: 7h55m
+  - Total hours spent: 7h55m
+  - Nr of automated unit test cases: 599
+  - Coverage (if available): 
+    - Statements: 84.25 %
+    - Branches: 72.33 %
+    - Functions: 71.09 %
+    - Lines: 83.85 %
 - Integration testing:
-  - Total hours estimated
-  - Total hours spent
+  - Total hours estimated: 7h55m
+  - Total hours spent: 8h5m
 - E2E testing:
-  - Total hours estimated
-  - Total hours spent
+  - Total hours estimated: 4h
+  - Total hours spent: 4h25m
 - Code review: 
-  - Total hours estimated 
-  - Total hours spent
-- Technical Debt management:
-  - Strategy adopted
-  - Total hours estimated estimated at sprint planning
-  - Total hours spent
+  - Total hours estimated: 15h
+  - Total hours spent: 13h25m
+- Technical Debt management
+  - Strategy adopted: We aimed to bring our codebase closer to the established quality standards. We successfully maintained this approach up to Sprint 2. For Sprint 3, however, the code quality ended up slightly above the expected technical debt threshold.
+  - Total hours estimated at sprint planning: 3h
+  - Total hours spent: 3h
   
 
 
