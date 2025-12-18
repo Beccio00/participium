@@ -224,11 +224,11 @@ export default function HomePage() {
               padding: "2rem",
             }}
           >
-            Caricamento report...
+            Loading report...
           </div>
         ) : reportsError ? (
           <div style={{ color: "var(--danger)", padding: "1rem" }}>
-            Errore nel caricamento: {reportsError}
+            Error loading report: {reportsError}
           </div>
         ) : reports.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -546,12 +546,21 @@ export default function HomePage() {
                   fullWidth
                 >
                   <Pencil className="me-2" />
-                  Assegna technical
+                  Assign technical
                 </Button>
               ) : !isAuthenticated || user?.role === "CITIZEN" ? (
                 <Button onClick={handleAddReport} variant="primary" fullWidth>
                   <Pencil className="me-2" />
                   Select a location
+                </Button>
+              ) : isTechnicalOfficer ? (
+                <Button
+                  onClick={() => navigate("/assign-reports")}
+                  variant="primary"
+                  fullWidth
+                >
+                  <Pencil className="me-2" />
+                  My Reports
                 </Button>
               ) : null}
 
