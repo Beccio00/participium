@@ -272,10 +272,101 @@ export async function getAssignableExternals(reportId: number, technicalUserId: 
   }));
 }
 
+// Helper functions for assignReportToExternal
+function validateReportForExternalAssignment(report: any, technicalUserId: number): void {
+  if (report.status !== ReportStatus.ASSIGNED) {
+    throw new BadRequestError("Report must be in ASSIGNED status to assign to external maintainer");
+  }
+  
+  if (report.assignedOfficerId !== technicalUserId) {
+    throw new ForbiddenError("Only the assigned technical officer can assign to external maintainers");
+  }
+  
+  if (report.externalMaintainerId || report.externalCompanyId) {
+    throw new BadRequestError("Report is already assigned to an external entity");
+  }
+}
+
+async function validateAndGetMaintainer(
+  externalMaintainerId: number,
+  companyId: number
+): Promise<any> {
+  const maintainer = await userRepository.findById(externalMaintainerId);
+  if (!maintainer) throw new NotFoundError("User not found");
+  
+  if (maintainer.role !== "EXTERNAL_MAINTAINER") {
+    throw new BadRequestError("User is not an external maintainer");
+  }
+  
+  if (maintainer.externalCompanyId !== companyId) {
+    throw new BadRequestError("External maintainer does not belong to the specified company");
+  }
+  
+  return maintainer;
+}
+
+async function assignToCompanyWithPlatformAccess(
+  reportId: number,
+  technicalUserId: number,
+  report: any,
+  company: any,
+  externalMaintainerId: number | null
+) {
+  if (!externalMaintainerId) {
+    throw new BadRequestError("externalMaintainerId is required when company has platform access");
+  }
+
+  const maintainer = await validateAndGetMaintainer(externalMaintainerId, company.id);
+
+  const updated = await reportRepository.update(reportId, {
+    externalMaintainerId: maintainer.id,
+    externalCompanyId: company.id,
+    status: ReportStatus.EXTERNAL_ASSIGNED,
+  });
+
+  await reportMessageRepository.create({
+    content: `Assigned to external maintainer: ${maintainer.first_name} ${maintainer.last_name} of company ${company.name}`,
+    senderId: technicalUserId,
+    reportId,
+  });
+
+  await notifyReportStatusChange(reportId, report.userId, ReportStatus.ASSIGNED, ReportStatus.EXTERNAL_ASSIGNED);
+  await notifyReportAssigned(reportId, maintainer.id, report.title);
+
+  return toReportDTO(updated!);
+}
+
+async function assignToCompanyWithoutPlatformAccess(
+  reportId: number,
+  technicalUserId: number,
+  report: any,
+  company: any,
+  externalMaintainerId: number | null
+) {
+  if (externalMaintainerId) {
+    throw new BadRequestError("externalMaintainerId must be null when company does not have platform access");
+  }
+
+  const updated = await reportRepository.update(reportId, {
+    externalCompanyId: company.id,
+    externalMaintainerId: null,
+    status: ReportStatus.EXTERNAL_ASSIGNED,
+  });
+
+  await reportMessageRepository.create({
+    content: `Assigned to external company: ${company.name}`,
+    senderId: technicalUserId,
+    reportId,
+  });
+
+  await notifyReportStatusChange(reportId, report.userId, ReportStatus.ASSIGNED, ReportStatus.EXTERNAL_ASSIGNED);
+
+  return toReportDTO(updated!);
+}
+
 /**  
  * * Assign a report to an external maintainer or company
  */
-
 export async function assignReportToExternal(
   reportId: number,
   technicalUserId: number,
@@ -285,64 +376,26 @@ export async function assignReportToExternal(
   const report = await reportRepository.findByIdWithRelations(reportId);
   if (!report) throw new NotFoundError("Report not found");
   
-  // Only reports assigned to tech officers can be reassigned to external
-  if (report.status !== ReportStatus.ASSIGNED) {
-    throw new BadRequestError("Report must be in ASSIGNED status to assign to external maintainer");
-  }
-  
-  // Only the assigned tech officer can assign to external
-  if (report.assignedOfficerId !== technicalUserId) {
-    throw new ForbiddenError("Only the assigned technical officer can assign to external maintainers");
-  }
-  
-  if (report.externalMaintainerId || report.externalCompanyId) {
-    throw new BadRequestError("Report is already assigned to an external entity");
-  }
+  validateReportForExternalAssignment(report, technicalUserId);
 
   const company = await externalCompanyRepository.findById(externalCompanyId);
   if (!company) throw new NotFoundError("External company not found");
 
   if (company.platformAccess) {
-    if (!externalMaintainerId) {
-      throw new BadRequestError("externalMaintainerId is required when company has platform access");
-    }
-    const maintainer = await userRepository.findById(externalMaintainerId);
-    if (!maintainer) throw new NotFoundError("User not found");
-    if (maintainer.role !== "EXTERNAL_MAINTAINER") {
-      throw new BadRequestError("User is not an external maintainer");
-    }
-    if (maintainer.externalCompanyId !== company.id) {
-      throw new BadRequestError("External maintainer does not belong to the specified company");
-    }
-    const updated = await reportRepository.update(reportId, {
-      externalMaintainerId: maintainer.id,
-      externalCompanyId: company.id,
-      status: ReportStatus.EXTERNAL_ASSIGNED,
-    });
-    await reportMessageRepository.create({
-      content: `Assigned to external maintainer: ${maintainer.first_name} ${maintainer.last_name} of company ${company.name}`,
-      senderId: technicalUserId,
+    return await assignToCompanyWithPlatformAccess(
       reportId,
-    });
-    await notifyReportStatusChange(reportId, report.userId, ReportStatus.ASSIGNED, ReportStatus.EXTERNAL_ASSIGNED);
-    await notifyReportAssigned(reportId, maintainer.id, report.title);
-    return toReportDTO(updated!);
+      technicalUserId,
+      report,
+      company,
+      externalMaintainerId
+    );
   } else {
-    // No platform access: must not include maintainer
-    if (externalMaintainerId) {
-      throw new BadRequestError("externalMaintainerId must be null when company does not have platform access");
-    }
-    const updated = await reportRepository.update(reportId, {
-      externalCompanyId: company.id,
-      externalMaintainerId: null,
-      status: ReportStatus.EXTERNAL_ASSIGNED,
-    });
-    await reportMessageRepository.create({
-      content: `Assigned to external company: ${company.name}`,
-      senderId: technicalUserId,
+    return await assignToCompanyWithoutPlatformAccess(
       reportId,
-    });
-    await notifyReportStatusChange(reportId, report.userId, ReportStatus.ASSIGNED, ReportStatus.EXTERNAL_ASSIGNED);
-    return toReportDTO(updated!);
+      technicalUserId,
+      report,
+      company,
+      externalMaintainerId
+    );
   }
 }

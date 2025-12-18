@@ -18,6 +18,113 @@ interface HeaderProps {
   showBackToHome?: boolean;
 }
 
+// Helper: Check if user can see notifications
+function canUserSeeNotifications(user: any, isAuthenticated: boolean): boolean {
+  if (!isAuthenticated || !user) return false;
+  return (
+    user.role === "CITIZEN" ||
+    TECHNICIAN_ROLES.includes(user.role) ||
+    user.role === "EXTERNAL_MAINTAINER"
+  );
+}
+
+// Helper: Normalize Minio URLs
+function normalizeMinioUrl(url?: string | null) {
+  if (!url) return null;
+  try {
+    if (url.includes("://minio"))
+      return url.replace("://minio", "://localhost");
+    if (url.includes("minio:")) return url.replace("minio:", "localhost:");
+  } catch (e) {
+    // ignore
+  }
+  return url;
+}
+
+// Helper: Get user photo
+function getUserPhoto(user: any): string | undefined {
+  const photoRaw = (user?.photoUrl || user?.photo) as string | null | undefined;
+  return normalizeMinioUrl(photoRaw) ?? undefined;
+}
+
+// Component: User Avatar
+function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
+  const photo = getUserPhoto(user);
+  const avatarStyle = {
+    fontSize: `${size / 20}rem`,
+    width: `${size}px`,
+    height: `${size}px`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "transparent",
+    borderRadius: "50%",
+    color: "rgba(255, 255, 255, 0.95)",
+  };
+
+  return (
+    <div style={avatarStyle}>
+      {photo ? (
+        <Image src={photo} roundedCircle width={size} height={size} alt="avatar" />
+      ) : (
+        <PersonCircle />
+      )}
+    </div>
+  );
+}
+
+// Component: Notification Button
+function NotificationButton({
+  onClick,
+  notificationCount,
+  isMobile = false,
+}: {
+  onClick: () => void;
+  notificationCount: number;
+  isMobile?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="border-0 bg-transparent d-flex align-items-center justify-content-center position-relative"
+      style={{
+        color: "white",
+        fontSize: "1.25rem",
+        padding: "0.25rem",
+        marginLeft: isMobile ? "0" : "0.5rem",
+        cursor: "pointer",
+      }}
+      aria-label="Show notifications"
+    >
+      <BellFill />
+      {notificationCount > 0 && (
+        <span
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            background: "#ef4444",
+            color: "white",
+            borderRadius: "50%",
+            fontSize: "0.75rem",
+            minWidth: "18px",
+            height: "18px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "0 5px",
+            fontWeight: 700,
+            zIndex: 2,
+            border: "2px solid white",
+          }}
+        >
+          {notificationCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function Header({ showBackToHome = false }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -42,31 +149,25 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   // Polling per le notifiche
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
+    
     async function pollNotifications() {
-      const canSeeNotifications =
-        isAuthenticated && user &&
-        (user.role === "CITIZEN" ||
-          TECHNICIAN_ROLES.includes(user.role) ||
-          user.role === "EXTERNAL_MAINTAINER");
+      if (!canUserSeeNotifications(user, isAuthenticated)) {
+        setNotifications([]);
+        setNotificationCount(0);
+        return;
+      }
 
-      if (canSeeNotifications) {
-        try {
-          const notifs = await getNotifications();
-          // Filtra le notifiche già lette
-          const unread = notifs.filter(
-            (n) => !readNotificationIds.includes(n.id)
-          );
-          setNotifications(unread);
-          setNotificationCount(unread.length);
-        } catch {
-          setNotifications([]);
-          setNotificationCount(0);
-        }
-      } else {
+      try {
+        const notifs = await getNotifications();
+        const unread = notifs.filter((n) => !readNotificationIds.includes(n.id));
+        setNotifications(unread);
+        setNotificationCount(unread.length);
+      } catch {
         setNotifications([]);
         setNotificationCount(0);
       }
     }
+    
     pollNotifications();
     interval = setInterval(pollNotifications, 10000); // ogni 10s
     return () => {
@@ -90,32 +191,39 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   // Funzione per aprire il modale report dalla notifica
   const handleOpenReportFromNotification = async (reportId: number) => {
     setShowNotifications(false);
-    // Trova la notifica corrispondente
-    const notif = notifications.find((n) => n.reportId === reportId);
-    if (notif) {
-      setReadNotificationIds((prev) => [...prev, notif.id]);
-      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
-      setNotificationCount((prev) => Math.max(0, prev - 1));
-    }
-
-    // Triggera il refresh dei report nella HomePage
+    markNotificationAsRead(reportId);
     window.dispatchEvent(new Event("refreshReports"));
+    await openReportModal(reportId);
+  };
 
+  // Helper: Mark notification as read
+  const markNotificationAsRead = (reportId: number) => {
+    const notif = notifications.find((n) => n.reportId === reportId);
+    if (!notif) return;
+    
+    setReadNotificationIds((prev) => [...prev, notif.id]);
+    setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+    setNotificationCount((prev) => Math.max(0, prev - 1));
+  };
+
+  // Helper: Open report modal
+  const openReportModal = async (reportId: number) => {
     try {
-      // Recupera il report aggiornato dal backend
       const allReports = await getReports();
       const updatedReport = allReports.find((r) => r.id === reportId);
       if (updatedReport) {
         setSelectedReport(updatedReport);
         setShowDetailsModal(true);
+        return;
       }
     } catch {
       // fallback: usa lo stato locale se la fetch fallisce
-      const report = reports.find((r) => r.id === reportId);
-      if (report) {
-        setSelectedReport(report);
-        setShowDetailsModal(true);
-      }
+    }
+    
+    const report = reports.find((r) => r.id === reportId);
+    if (report) {
+      setSelectedReport(report);
+      setShowDetailsModal(true);
     }
   };
   const [loading, setLoading] = useState(false);
@@ -142,11 +250,12 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const handleGoToLogin = () => navigate("/login");
   const handleGoToSignup = () => navigate("/signup");
   const handleBackHome = () => {
-    if (user?.role === "ADMINISTRATOR" || user?.role === "TECHNICAL_OFFICE") {
+    const shouldLogout = user?.role === "ADMINISTRATOR" || user?.role === "TECHNICAL_OFFICE";
+    if (shouldLogout) {
       handleLogout();
-    } else {
-      navigate("/");
+      return;
     }
+    navigate("/");
   };
 
   const navbarStyle = {
@@ -164,30 +273,6 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     fontSize: "0.875rem",
     whiteSpace: "nowrap" as const,
   };
-
-  const userAvatarStyle = {
-    fontSize: "2rem",
-    width: "40px",
-    height: "40px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "transparent",
-    borderRadius: "50%",
-    color: "rgba(255, 255, 255, 0.95)",
-  };
-
-  function normalizeMinioUrl(url?: string | null) {
-    if (!url) return null;
-    try {
-      if (url.includes("://minio"))
-        return url.replace("://minio", "://localhost");
-      if (url.includes("minio:")) return url.replace("minio:", "localhost:");
-    } catch (e) {
-      // ignore
-    }
-    return url;
-  }
 
   const userNameStyle = {
     fontWeight: 600,
@@ -251,31 +336,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
             {isAuthenticated && user && !showBackToHome && (
               <div className="d-flex align-items-center gap-2 d-lg-none">
                 <div className="d-flex align-items-center gap-2">
-                  <div
-                    style={{
-                      ...userAvatarStyle,
-                      fontSize: "1.5rem",
-                      width: "32px",
-                      height: "32px",
-                    }}
-                  >
-                    {(() => {
-                      const photoRaw = ((user as any)?.photoUrl ||
-                        (user as any)?.photo) as string | null | undefined;
-                      const photo = normalizeMinioUrl(photoRaw) ?? undefined;
-                      return photo ? (
-                        <Image
-                          src={photo}
-                          roundedCircle
-                          width={32}
-                          height={32}
-                          alt="avatar"
-                        />
-                      ) : (
-                        <PersonCircle />
-                      );
-                    })()}
-                  </div>
+                  <UserAvatar user={user} size={32} />
                   <div className="d-flex flex-column">
                     <div style={{ ...userNameStyle, fontSize: "0.85rem" }}>
                       {user.firstName}
@@ -300,45 +361,12 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                     <GearFill />
                   </button>
                 )}
-                {/* Campanella notifiche mobile */}
-                {(user && (user.role === "CITIZEN" || TECHNICIAN_ROLES.includes(user.role) || user.role === "EXTERNAL_MAINTAINER")) && (
-                  <button
+                {canUserSeeNotifications(user, isAuthenticated) && (
+                  <NotificationButton
                     onClick={() => setShowNotifications(true)}
-                    className="border-0 bg-transparent d-flex align-items-center justify-content-center position-relative"
-                    style={{
-                      color: "white",
-                      fontSize: "1.25rem",
-                      padding: "0.25rem",
-                      cursor: "pointer",
-                    }}
-                    aria-label="Show notifications"
-                  >
-                    <BellFill />
-                    {notificationCount > 0 && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          right: 0,
-                          background: "#ef4444",
-                          color: "white",
-                          borderRadius: "50%",
-                          fontSize: "0.75rem",
-                          minWidth: "18px",
-                          height: "18px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: "0 5px",
-                          fontWeight: 700,
-                          zIndex: 2,
-                          border: "2px solid white",
-                        }}
-                      >
-                        {notificationCount}
-                      </span>
-                    )}
-                  </button>
+                    notificationCount={notificationCount}
+                    isMobile={true}
+                  />
                 )}
               </div>
             )}
@@ -417,25 +445,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                       </Badge>
                     )}
                     <div className="d-flex align-items-center gap-2">
-                      <div style={userAvatarStyle}>
-                        {(() => {
-                          const photoRaw = ((user as any)?.photoUrl ||
-                            (user as any)?.photo) as string | null | undefined;
-                          const photo =
-                            normalizeMinioUrl(photoRaw) ?? undefined;
-                          return photo ? (
-                            <Image
-                              src={photo}
-                              roundedCircle
-                              width={40}
-                              height={40}
-                              alt="avatar"
-                            />
-                          ) : (
-                            <PersonCircle />
-                          );
-                        })()}
-                      </div>
+                      <UserAvatar user={user} size={40} />
                       <div className="d-flex flex-column">
                         <div style={userNameStyle}>{user.firstName}</div>
                         <div style={userSurnameStyle}>{user.lastName}</div>
@@ -458,45 +468,12 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                       </button>
                     )}
                     {/* Campanella notifiche desktop */}
-                    {(user && (user.role === "CITIZEN" || TECHNICIAN_ROLES.includes(user.role) || user.role === "EXTERNAL_MAINTAINER")) && (
-                      <button
+                    {canUserSeeNotifications(user, isAuthenticated) && (
+                      <NotificationButton
                         onClick={() => setShowNotifications(true)}
-                        className="border-0 bg-transparent d-flex align-items-center justify-content-center position-relative"
-                        style={{
-                          color: "white",
-                          fontSize: "1.25rem",
-                          padding: "0.25rem",
-                          marginLeft: "0.5rem",
-                          cursor: "pointer",
-                        }}
-                        aria-label="Show notifications"
-                      >
-                        <BellFill />
-                        {notificationCount > 0 && (
-                          <span
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              right: 0,
-                              background: "#ef4444",
-                              color: "white",
-                              borderRadius: "50%",
-                              fontSize: "0.75rem",
-                              minWidth: "18px",
-                              height: "18px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              padding: "0 5px",
-                              fontWeight: 700,
-                              zIndex: 2,
-                              border: "2px solid white",
-                            }}
-                          >
-                            {notificationCount}
-                          </span>
-                        )}
-                      </button>
+                        notificationCount={notificationCount}
+                        isMobile={false}
+                      />
                     )}
                   </div>
                   {/* Logout button */}

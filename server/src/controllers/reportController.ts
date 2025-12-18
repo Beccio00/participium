@@ -20,52 +20,36 @@ import { createInternalNote as createInternalNoteService } from "../services/int
 import { Role } from "../../../shared/RoleTypes";
 import { getInternalNotes } from "../services/internalNoteService";
 
-export async function createReport(req: Request, res: Response): Promise<void> {
-  const user = req.user as { id: number };
-  // Destructure fields from req.body and req.files
-  const { title, description, category, latitude, longitude, isAnonymous, address } =
-    req.body;
-  // Multer stores files in req.files (array or object depending on config)
-  let photos: any[] = [];
-  if (Array.isArray(req.files)) {
-    photos = req.files;
-  } else if (req.files && req.files.photos) {
-    photos = req.files.photos;
-  }
-
-  // Validate required fields
-  if (
-    !title ||
-    !description ||
-    !category ||
-    latitude === undefined ||
-    longitude === undefined
-  ) {
+// Helper functions for validation
+function validateRequiredFields(title: any, description: any, category: any, latitude: any, longitude: any): void {
+  if (!title || !description || !category || latitude === undefined || longitude === undefined) {
     throw new BadRequestError(
       "Missing required fields: title, description, category, latitude, longitude"
     );
   }
+}
 
-  // Validate photos
+function validatePhotos(photos: any[]): void {
   if (!photos || photos.length === 0) {
     throw new BadRequestError("At least one photo is required");
   }
   if (photos.length > 3) {
     throw new BadRequestError("Maximum 3 photos allowed");
   }
+}
 
-  // Validate category
+function validateCategory(category: string): void {
   if (!Object.values(ReportCategory).includes(category as ReportCategory)) {
     throw new BadRequestError(
-      `Invalid category. Allowed values: ${Object.values(ReportCategory).join(
-        ", "
-      )}`
+      `Invalid category. Allowed values: ${Object.values(ReportCategory).join(", ")}`
     );
   }
+}
 
-  // Validate coordinates
+function validateAndParseCoordinates(latitude: any, longitude: any): { latitude: number; longitude: number } {
   const parsedLatitude = parseFloat(latitude);
   const parsedLongitude = parseFloat(longitude);
+
   if (isNaN(parsedLatitude) || isNaN(parsedLongitude)) {
     throw new BadRequestError(
       "Invalid coordinates: latitude and longitude must be valid numbers"
@@ -77,70 +61,118 @@ export async function createReport(req: Request, res: Response): Promise<void> {
   }
 
   if (parsedLongitude < -180 || parsedLongitude > 180) {
-    throw new BadRequestError(
-      "Invalid longitude: must be between -180 and 180"
-    );
+    throw new BadRequestError("Invalid longitude: must be between -180 and 180");
   }
 
+  return { latitude: parsedLatitude, longitude: parsedLongitude };
+}
+
+// Helper function to process photos
+async function processPhotos(photos: any[]): Promise<any[]> {
   const photoData = [];
 
-  if (photos && photos.length > 0) {
-    for (const photo of photos) {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const filename = uniqueSuffix + path.extname(photo.originalname);
+  for (const photo of photos) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const filename = uniqueSuffix + path.extname(photo.originalname);
 
-      await minioClient.putObject(
-        BUCKET_NAME,
-        filename,
-        photo.buffer,
-        photo.size,
-        { "Content-Type": photo.mimetype }
-      );
+    await minioClient.putObject(
+      BUCKET_NAME,
+      filename,
+      photo.buffer,
+      photo.size,
+      { "Content-Type": photo.mimetype }
+    );
 
-      const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
-      const host = /*process.env.MINIO_ENDPOINT || */"localhost";
-      const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : "";
-      const url = `${protocol}://${host}${port}/${BUCKET_NAME}/${filename}`;
+    const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
+    const host = "localhost";
+    const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : "";
+    const url = `${protocol}://${host}${port}/${BUCKET_NAME}/${filename}`;
 
-      photoData.push({
-        id: 0,
-        filename: filename,
-        url: url,
-      });
-    }
+    photoData.push({
+      id: 0,
+      filename: filename,
+      url: url,
+    });
   }
-  let newReport;
-  if (!address || address.trim() === "") {
-    const newAddress = await calculateAddress(parsedLatitude, parsedLongitude);
-    const reportData = {
-    title,
-    description,
-    category: category as ReportCategory,
-    latitude: parsedLatitude,
-    longitude: parsedLongitude,
-    address: newAddress,
-    isAnonymous: isAnonymous === "true",
-    photos: photoData,
-    userId: user.id,
-  };
-  newReport = await createReportService(reportData);
 
-  }else{
-    const reportData = {
+  return photoData;
+}
+
+// Helper function to extract photos from request
+function extractPhotos(reqFiles: any): any[] {
+  if (Array.isArray(reqFiles)) {
+    return reqFiles;
+  }
+  if (reqFiles && reqFiles.photos) {
+    return reqFiles.photos;
+  }
+  return [];
+}
+
+// Helper function to resolve address
+async function resolveAddress(address: string | undefined, latitude: number, longitude: number): Promise<string> {
+  if (!address || address.trim() === "") {
+    return await calculateAddress(latitude, longitude);
+  }
+  return address;
+}
+
+// Helper function to create report data object
+function buildReportData(
+  title: string,
+  description: string,
+  category: ReportCategory,
+  latitude: number,
+  longitude: number,
+  address: string,
+  isAnonymous: string,
+  photoData: any[],
+  userId: number
+) {
+  return {
     title,
     description,
-    category: category as ReportCategory,
-    latitude: parsedLatitude,
-    longitude: parsedLongitude,
+    category,
+    latitude,
+    longitude,
     address,
     isAnonymous: isAnonymous === "true",
     photos: photoData,
-    userId: user.id,
+    userId,
   };
+}
 
-  newReport = await createReportService(reportData);
+export async function createReport(req: Request, res: Response): Promise<void> {
+  const user = req.user as { id: number };
+  const { title, description, category, latitude, longitude, isAnonymous, address } = req.body;
 
-  }
+  // Extract and validate photos
+  const photos = extractPhotos(req.files);
+  
+  // Validate all inputs
+  validateRequiredFields(title, description, category, latitude, longitude);
+  validatePhotos(photos);
+  validateCategory(category);
+  const coordinates = validateAndParseCoordinates(latitude, longitude);
+
+  // Process photos and resolve address
+  const photoData = await processPhotos(photos);
+  const resolvedAddress = await resolveAddress(address, coordinates.latitude, coordinates.longitude);
+
+  // Build and create report
+  const reportData = buildReportData(
+    title,
+    description,
+    category as ReportCategory,
+    coordinates.latitude,
+    coordinates.longitude,
+    resolvedAddress,
+    isAnonymous,
+    photoData,
+    user.id
+  );
+
+  const newReport = await createReportService(reportData);
 
   res.status(201).json({
     message: "Report created successfully",
