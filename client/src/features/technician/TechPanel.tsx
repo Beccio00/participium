@@ -94,10 +94,6 @@ function filterExternalAssignedReports(reports: any[]): any[] {
   return reports.filter((r: any) => Boolean(r.externalHandler));
 }
 
-function shouldShowAssignToExternalButton(report: AppReport, isExternalMaintainer: boolean): boolean {
-  return !isExternalMaintainer && report.status === "ASSIGNED";
-}
-
 export default function TechPanel() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
