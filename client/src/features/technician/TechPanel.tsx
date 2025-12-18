@@ -256,7 +256,7 @@ export default function TechPanel() {
             "[TechPanel] Failed to fetch assignable externals",
             err
           );
-          setError("Errore nel recupero delle compagnie esterne assegnabili.");
+          setError("Error during fetching assignable externals.");
           setProcessingId(null);
           return;
         }
@@ -273,8 +273,8 @@ export default function TechPanel() {
       );
       setShowAssignModal(true);
     } catch (err) {
-      setError("Errore inatteso nell’apertura della modale di assegnazione.");
-      console.error("[TechPanel] Errore inatteso openAssignModal", err);
+      setError("Unexpected error opening the assign modal.");
+      console.error("[TechPanel] Unexpected error in openAssignModal", err);
     } finally {
       setProcessingId(null);
     }
@@ -727,7 +727,7 @@ export default function TechPanel() {
                       setSelectedTechnicalId(Number(e.target.value))
                     }
                   >
-                    <option value="">-- Seleziona tecnico --</option>
+                    <option value="">-- Select technical --</option>
                     {selectedCompany.users.map((tech: any) => (
                       <option key={tech.id} value={tech.id}>
                         {tech.firstName} {tech.lastName} ({tech.email})
