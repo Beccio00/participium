@@ -24,6 +24,61 @@ const reportMessageRepository = new ReportMessageRepository();
 // MESSAGE FUNCTIONS
 // =========================
 
+// Helper functions for sendMessageToCitizen
+function validateUserCanSendMessage(
+  report: any,
+  userId: number,
+  isInternalTech: boolean,
+  isExternalTech: boolean
+): void {
+  const isCitizenOwner = report.userId === userId;
+  const senderRole =
+    report.user && report.user.id === userId
+      ? report.user.role
+      : undefined;
+  
+  if (
+    !isInternalTech &&
+    !isExternalTech &&
+    !(isCitizenOwner && senderRole === "CITIZEN")
+  ) {
+    throw new ForbiddenError("You are not assigned to this report");
+  }
+}
+
+function getCitizenSenderName(report: any): string {
+  return `${report.user?.first_name ?? "Citizen"} ${report.user?.last_name ?? ""}`.trim();
+}
+
+function getTechnicalSenderName(report: any, isInternalTech: boolean, isExternalTech: boolean): string {
+  if (isInternalTech && report.assignedOfficer) {
+    return `${report.assignedOfficer.first_name} ${report.assignedOfficer.last_name} (Technical)`;
+  }
+  
+  if (isExternalTech && report.externalMaintainer) {
+    return `${report.externalMaintainer.first_name} ${report.externalMaintainer.last_name} (External Maintainer)`;
+  }
+  
+  return "Technical Staff";
+}
+
+async function notifyCitizenMessage(report: any): Promise<void> {
+  const recipientId = report.externalMaintainerId ?? report.assignedOfficerId;
+  if (recipientId) {
+    const citizenName = getCitizenSenderName(report);
+    await notifyNewMessage(report.id, recipientId, citizenName);
+  }
+}
+
+async function notifyTechnicalMessage(
+  report: any,
+  isInternalTech: boolean,
+  isExternalTech: boolean
+): Promise<void> {
+  const senderName = getTechnicalSenderName(report, isInternalTech, isExternalTech);
+  await notifyNewMessage(report.id, report.userId, senderName);
+}
+
 /**
  * Invia un messaggio al cittadino (solo technical o esterno)
  */
@@ -36,22 +91,12 @@ export async function sendMessageToCitizen(
   if (!report) {
     throw new NotFoundError("Report not found");
   }
+
   const isInternalTech = report.assignedOfficerId === technicalUserId;
   const isExternalTech = report.externalMaintainerId === technicalUserId;
-
-  // Permetti anche al cittadino autore del report di inviare messaggi
   const isCitizenOwner = report.userId === technicalUserId;
-  const senderRole =
-    report.user && report.user.id === technicalUserId
-      ? report.user.role
-      : undefined;
-  if (
-    !isInternalTech &&
-    !isExternalTech &&
-    !(isCitizenOwner && senderRole === "CITIZEN")
-  ) {
-    throw new ForbiddenError("You are not assigned to this report");
-  }
+
+  validateUserCanSendMessage(report, technicalUserId, isInternalTech, isExternalTech);
 
   const savedMessage = await reportMessageRepository.create({
     content,
@@ -61,21 +106,9 @@ export async function sendMessageToCitizen(
 
   // Inoltra la notifica al destinatario corretto in base al mittente
   if (isCitizenOwner) {
-    // Mittente: cittadino -> notifica il tecnico assegnato o l'esterno assegnato
-    const recipientId = report.externalMaintainerId? report.externalMaintainerId : report.assignedOfficerId;
-    if (recipientId) {
-      const citizenName = `${report.user?.first_name ?? "Citizen"} ${report.user?.last_name ?? ""}`.trim();
-      await notifyNewMessage(report.id, recipientId, citizenName);
-    }
+    await notifyCitizenMessage(report);
   } else {
-    // Mittente: tecnico o esterno -> notifica il cittadino
-    let senderName = "Technical Staff";
-    if (isInternalTech && report.assignedOfficer) {
-      senderName = `${report.assignedOfficer.first_name} ${report.assignedOfficer.last_name} (Technical)`;
-    } else if (isExternalTech && report.externalMaintainer) {
-      senderName = `${report.externalMaintainer.first_name} ${report.externalMaintainer.last_name} (External Maintainer)`;
-    }
-    await notifyNewMessage(report.id, report.userId, senderName);
+    await notifyTechnicalMessage(report, isInternalTech, isExternalTech);
   }
 
   return {

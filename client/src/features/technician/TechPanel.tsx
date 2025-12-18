@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Container, Row, Col, Modal, Form, Toast, ToastContainer, Alert } from "react-bootstrap";
 import { CheckCircle, XCircle, Tools, FileText } from "react-bootstrap-icons";
@@ -25,6 +25,74 @@ import { MUNICIPALITY_AND_EXTERNAL_ROLES,  TECHNICIAN_ROLES, getRoleLabel } from
 import { Role } from "../../../../shared/RoleTypes";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import "../../styles/TechPanelstyle.css";
+
+// Helper component for assign to external button
+interface AssignToExternalButtonProps {
+  report: AppReport;
+  processingId: number | null;
+  showAssignModal: boolean;
+  onOpenAssignModal: (id: number) => void;
+}
+
+function AssignToExternalButton({
+  report,
+  processingId,
+  showAssignModal,
+  onOpenAssignModal,
+}: AssignToExternalButtonProps) {
+  const disabledByStatus = report.status !== "ASSIGNED";
+  const assignDisabled = processingId === report.id || disabledByStatus;
+  const tooltip = disabledByStatus
+    ? "A report can be assigned to an external company only when its status is ASSIGNED. Once it moves to IN_PROGRESS it can no longer be assigned externally."
+    : "";
+
+  return (
+    <div
+      title={assignDisabled && tooltip ? tooltip : undefined}
+      style={{ width: "100%" }}
+    >
+      <Button
+        variant="primary"
+        className="w-100 d-flex align-items-center justify-content-center"
+        onClick={() => onOpenAssignModal(report.id)}
+        disabled={assignDisabled}
+        isLoading={processingId === report.id && showAssignModal}
+      >
+        <CheckCircle className="me-2" />
+        Assign to external
+      </Button>
+    </div>
+  );
+}
+
+// Helper functions
+function normalizeReports(reports: any[]): AppReport[] {
+  return (reports || []).map((r: any) => ({
+    ...r,
+    latitude: Number(r.latitude),
+    longitude: Number(r.longitude),
+  }));
+}
+
+function filterExternalMaintainerReports(reports: any[], userId: number): any[] {
+  return reports.filter((r: any) => {
+    const handlerUserId = r.externalHandler?.user?.id;
+    return handlerUserId != null && handlerUserId === userId;
+  });
+}
+
+function filterTechnicalPendingReports(reports: any[], allowedStatuses: string[]): any[] {
+  return reports.filter((r: any) => {
+    const hasAllowedStatus = r.status === ReportStatus.ASSIGNED.toString() ||
+      allowedStatuses.includes(r.status);
+    const hasNoExternalHandler = !Boolean(r.externalHandler);
+    return hasAllowedStatus && hasNoExternalHandler;
+  });
+}
+
+function filterExternalAssignedReports(reports: any[]): any[] {
+  return reports.filter((r: any) => Boolean(r.externalHandler));
+}
 
 export default function TechPanel() {
   const { user, isAuthenticated } = useAuth();
@@ -80,6 +148,29 @@ export default function TechPanel() {
     { value: ReportStatus.SUSPENDED.toString(), label: "Work suspended" },
   ];
 
+  // Computed values with useMemo for performance and correct reactivity
+  const allReports = useMemo(
+    () => [...pendingReports, ...otherReports],
+    [pendingReports, otherReports]
+  );
+
+  const selectedReport = useMemo(
+    () => allReports.find((r) => r.id === selectedReportId) || null,
+    [allReports, selectedReportId]
+  );
+
+  const currentReportStatus = selectedReport?.status;
+
+  const availableStatusOptions = useMemo(
+    () => TECHNICAL_ALLOWED_STATUSES.filter((s) => s.value !== currentReportStatus),
+    [currentReportStatus]
+  );
+
+  const selectedCompany = useMemo(
+    () => assignableExternals.find((ext) => ext.id === selectedExternalId),
+    [assignableExternals, selectedExternalId]
+  );
+
   useEffect(() => {
     if (
       !isAuthenticated ||
@@ -90,76 +181,44 @@ export default function TechPanel() {
     fetchReports();
   }, [isAuthenticated, user, navigate]);
 
+  const fetchReportsForPublicRelations = async () => {
+    const pendingData = (await getPendingReports()) as AppReport[];
+    const otherData = (await getReports()) as AppReport[];
+    setPendingReports(normalizeReports(pendingData));
+    setOtherReports(normalizeReports(otherData));
+  };
+
+  const fetchReportsForExternalMaintainer = async () => {
+    const assignedData = (await getAssignedReports()) as AppReport[];
+    const userId = (user as any)?.id;
+    if (!userId) {
+      setPendingReports([]);
+      setOtherReports([]);
+      return;
+    }
+    const filtered = filterExternalMaintainerReports(assignedData, userId);
+    setPendingReports(normalizeReports(filtered));
+    setOtherReports([]);
+  };
+
+  const fetchReportsForTechnicalOffice = async () => {
+    const assignedData = (await getAssignedReports()) as AppReport[];
+    const allowedStatuses = TECHNICAL_ALLOWED_STATUSES.map((s) => s.value);
+    const pending = filterTechnicalPendingReports(assignedData, allowedStatuses);
+    const external = filterExternalAssignedReports(assignedData);
+    setPendingReports(normalizeReports(pending));
+    setOtherReports(normalizeReports(external));
+  };
+
   const fetchReports = async () => {
     try {
       setLoading(true);
       if (isPublicRelations) {
-        // Public Relations: fetch both pending and other reports
-        const pendingData = (await getPendingReports()) as AppReport[];
-        const otherData = (await getReports()) as AppReport[];
-
-        const pendingNormalized = (pendingData || []).map((r: any) => ({
-          ...r,
-          latitude: Number(r.latitude),
-          longitude: Number(r.longitude),
-        }));
-
-        const otherNormalized = (otherData || []).map((r: any) => ({
-          ...r,
-          latitude: Number(r.latitude),
-          longitude: Number(r.longitude),
-        }));
-
-        setPendingReports(pendingNormalized);
-        setOtherReports(otherNormalized);
+        await fetchReportsForPublicRelations();
       } else if (isExternalMaintainer) {
-        // External maintainer: show reports assigned to this external maintainer
-        const assignedData = (await getAssignedReports()) as AppReport[];
-
-        const pendingNormalized = (assignedData || [])
-          .filter((r: any) => {
-            const handlerUserId =
-              r.externalHandler && r.externalHandler.user && "id" in r.externalHandler.user
-                ? r.externalHandler.user.id
-                : undefined;
-            return Boolean(handlerUserId && user && (user as any).id != null && handlerUserId === (user as any).id);
-          })
-          .map((r: any) => ({
-            ...r,
-            latitude: Number(r.latitude),
-            longitude: Number(r.longitude),
-          }));
-
-        setPendingReports(pendingNormalized);
-        setOtherReports([]);
+        await fetchReportsForExternalMaintainer();
       } else {
-        // Technical office: fetch assigned reports
-        const assignedData = (await getAssignedReports()) as AppReport[];
-
-        // Separate into pending (Assigned to me directly) and assigned to external
-        const pendingNormalized = (assignedData || [])
-          .filter(
-            (r: any) =>
-              (r.status === ReportStatus.ASSIGNED.toString() ||
-                TECHNICAL_ALLOWED_STATUSES.map((s) => s.value).includes(r.status)) &&
-              !Boolean(r.externalHandler)
-          )
-          .map((r: any) => ({
-            ...r,
-            latitude: Number(r.latitude),
-            longitude: Number(r.longitude),
-          }));
-
-        const otherNormalized = (assignedData || [])
-          .filter((r: any) => Boolean(r.externalHandler))
-          .map((r: any) => ({
-            ...r,
-            latitude: Number(r.latitude),
-            longitude: Number(r.longitude),
-          }));
-
-        setPendingReports(pendingNormalized);
-        setOtherReports(otherNormalized);
+        await fetchReportsForTechnicalOffice();
       }
     } catch (err) {
       console.error("Error fetching reports:", err);
@@ -230,44 +289,42 @@ export default function TechPanel() {
     }, 100);
   };
 
+  const assignToPublicRelations = async (reportId: number, technicalId: number) => {
+    const res = await approveReport(reportId, technicalId);
+    return res?.report || null;
+  };
+
+  const assignToExternal = async (reportId: number, externalId: number, technicalId: number | null) => {
+    const res = await assignReportToExternal(reportId, externalId, technicalId);
+    return res?.report || null;
+  };
+
+  const shouldAssignWithTechnician = (company: any, technicalId: number | null): boolean => {
+    return Boolean(
+      company &&
+      company.hasPlatformAccess &&
+      Array.isArray(company.users) &&
+      company.users.length > 0 &&
+      technicalId
+    );
+  };
+
   const handleConfirmAssign = async () => {
     if (!selectedReportId) return;
     try {
       setProcessingId(selectedReportId);
       let updatedReport = null;
 
-      // PUBLIC_RELATIONS: assign to technical user
       if (user && user.role === Role.PUBLIC_RELATIONS.toString() && selectedTechnicalId) {
-        const res = await approveReport(selectedReportId, selectedTechnicalId);
-        updatedReport = res && res.report ? res.report : null;
-      }
-      // Technical office: assign to external company or technician
-      else if (user && selectedExternalId) {
+        updatedReport = await assignToPublicRelations(selectedReportId, selectedTechnicalId);
+      } else if (user && selectedExternalId) {
         const selectedCompany = assignableExternals.find(
           (ext) => ext.id === selectedExternalId
         );
-        // Check if specific technician is selected within company
-        if (
-          selectedCompany &&
-          selectedCompany.hasPlatformAccess &&
-          Array.isArray(selectedCompany.users) &&
-          selectedCompany.users.length > 0 &&
-          selectedTechnicalId
-        ) {
-          const res = await assignReportToExternal(
-            selectedReportId,
-            selectedExternalId,
-            selectedTechnicalId
-          );
-          updatedReport = res && res.report ? res.report : null;
-        } else {
-          const res = await assignReportToExternal(
-            selectedReportId,
-            selectedExternalId,
-            null
-          );
-          updatedReport = res && res.report ? res.report : null;
-        }
+        const techId = shouldAssignWithTechnician(selectedCompany, selectedTechnicalId)
+          ? selectedTechnicalId
+          : null;
+        updatedReport = await assignToExternal(selectedReportId, selectedExternalId, techId);
       }
 
       if (updatedReport) {
@@ -514,41 +571,14 @@ export default function TechPanel() {
                         </Button>
 
                         {/* ASSIGN TO EXTERNAL: Visible ONLY for Technical Office (NOT External Maintainers) */}
-                        {!isExternalMaintainer && (() => {
-                          const disabledByStatus = report.status !== "ASSIGNED";
-                          const assignDisabled = processingId === report.id || disabledByStatus;
-                          const tooltip = disabledByStatus
-                            ? "A report can be assigned to an external company only when its status is ASSIGNED. Once it moves to IN_PROGRESS it can no longer be assigned externally."
-                            : "";
-
-                          // Native tooltips don't show on disabled elements in some browsers,
-                          // so attach the title to a wrapper when disabled by status.
-                          const Wrapper: any = (props: any) => (
-                            <div
-                              title={assignDisabled && tooltip ? tooltip : undefined}
-                              style={{ width: "100%" }}
-                            >
-                              {props.children}
-                            </div>
-                          );
-
-                          return (
-                            <Wrapper>
-                              <Button
-                                variant="primary"
-                                className="w-100 d-flex align-items-center justify-content-center"
-                                onClick={() => openAssignModal(report.id)}
-                                disabled={assignDisabled}
-                                isLoading={
-                                  processingId === report.id && showAssignModal
-                                }
-                              >
-                                <CheckCircle className="me-2" />
-                                Assign to external
-                              </Button>
-                            </Wrapper>
-                          );
-                        })()}
+                        {!isExternalMaintainer && (
+                          <AssignToExternalButton
+                            report={report}
+                            processingId={processingId}
+                            showAssignModal={showAssignModal}
+                            onOpenAssignModal={openAssignModal}
+                          />
+                        )}
                         {/* INTERNAL NOTES BUTTON (not for Public Relations) */}
                         {!isPublicRelations && (
                         <Button 
@@ -685,39 +715,27 @@ export default function TechPanel() {
               )}
 
               {/* Se la compagnia ha dipendenti, select dei tecnici */}
-              {(() => {
-                const selectedCompany = assignableExternals.find(
-                  (ext) => ext.id === selectedExternalId
-                );
-                if (
-                  selectedCompany &&
-                  selectedCompany.hasPlatformAccess &&
-                  Array.isArray(selectedCompany.users) &&
-                  selectedCompany.users.length > 0
-                ) {
-                  return (
-                    <Form.Group className="mb-3">
-                      <Form.Label>
-                        Select a company technician:
-                      </Form.Label>
-                      <Form.Select
-                        value={selectedTechnicalId ?? ""}
-                        onChange={(e) =>
-                          setSelectedTechnicalId(Number(e.target.value))
-                        }
-                      >
-                        <option value="">-- Seleziona tecnico --</option>
-                        {selectedCompany.users.map((tech: any) => (
-                          <option key={tech.id} value={tech.id}>
-                            {tech.firstName} {tech.lastName} ({tech.email})
-                          </option>
-                        ))}
-                      </Form.Select>
-                    </Form.Group>
-                  );
-                }
-                return null;
-              })()}
+              {selectedCompany && selectedCompany.hasPlatformAccess && 
+               Array.isArray(selectedCompany.users) && selectedCompany.users.length > 0 && (
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Select a company technician:
+                  </Form.Label>
+                  <Form.Select
+                    value={selectedTechnicalId ?? ""}
+                    onChange={(e) =>
+                      setSelectedTechnicalId(Number(e.target.value))
+                    }
+                  >
+                    <option value="">-- Seleziona tecnico --</option>
+                    {selectedCompany.users.map((tech: any) => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.firstName} {tech.lastName} ({tech.email})
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              )}
             </>
           )}
 
@@ -752,10 +770,7 @@ export default function TechPanel() {
             onClick={handleConfirmAssign}
             disabled={
               !isPublicRelations
-                ? (() => {
-                    if (!selectedExternalId) return true;
-                    return false;
-                  })()
+                ? !selectedExternalId
                 : !selectedTechnicalId
             }
             isLoading={processingId !== null}
@@ -783,16 +798,11 @@ export default function TechPanel() {
               onChange={(e) => setTargetStatus(e.target.value)}
             >
               <option value="">-- Select Status --</option>
-                {(() => {
-                  const currentStatus = [...pendingReports, ...otherReports].find((r) => r.id === selectedReportId)?.status;
-                  return TECHNICAL_ALLOWED_STATUSES
-                    .filter((s) => s.value !== currentStatus)
-                    .map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ));
-                })()}
+              {availableStatusOptions.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
             </Form.Select>
           </Form.Group>
         </Modal.Body>
@@ -810,18 +820,12 @@ export default function TechPanel() {
           </Button>
         </Modal.Footer>
       </Modal>
-      {selectedReportId !== null && (
-        (() => {
-          const allReports = [...pendingReports, ...otherReports];
-          const reportToShow = allReports.find((r) => r.id === selectedReportId);
-          return reportToShow ? (
-            <ReportDetailsModal
-              show={showDetailsModal}
-              onHide={() => setShowDetailsModal(false)}
-              report={reportToShow}
-            />
-          ) : null;
-        })()
+      {selectedReport && (
+        <ReportDetailsModal
+          show={showDetailsModal}
+          onHide={() => setShowDetailsModal(false)}
+          report={selectedReport}
+        />
       )}
 
 

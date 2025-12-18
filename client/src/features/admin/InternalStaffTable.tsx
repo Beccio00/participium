@@ -1,0 +1,71 @@
+import { Table, Badge } from 'react-bootstrap';
+import { Trash } from 'react-bootstrap-icons';
+import type { MunicipalityUserResponse } from '../../types';
+import { getRoleLabel } from '../../utils/roles';
+
+interface InternalStaffTableProps {
+  users: MunicipalityUserResponse[];
+  onDelete: (userId: number) => void;
+}
+
+export default function InternalStaffTable({ users, onDelete }: InternalStaffTableProps) {
+  if (users.length === 0) {
+    return (
+      <div className="table-responsive">
+        <Table hover className="align-middle">
+          <thead className="bg-light">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th className="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colSpan={4} className="text-center py-4 text-muted">
+                No staff found.
+              </td>
+            </tr>
+          </tbody>
+        </Table>
+      </div>
+    );
+  }
+
+  return (
+    <div className="table-responsive">
+      <Table hover className="align-middle">
+        <thead className="bg-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th className="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.id}>
+              <td className="fw-medium">
+                {user.firstName} {user.lastName}
+              </td>
+              <td>{user.email}</td>
+              <td>
+                <Badge bg="primary">{getRoleLabel(user.role)}</Badge>
+              </td>
+              <td className="text-end">
+                <button
+                  onClick={() => onDelete(user.id)}
+                  className="btn btn-sm btn-outline-danger border-0"
+                >
+                  <Trash />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
+  );
+}

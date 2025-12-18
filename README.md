@@ -20,8 +20,9 @@ Participium is a civic engagement platform that enables citizens to report urban
 ### 1.2 User Roles
 
 - **Citizen**: Registers, submits reports, tracks report status, and configures in-app notification preferences.
-- **Administrator**: Creates municipality user accounts and assigns roles.
-- **Public Relations**: Reviews incoming reports and approves or rejects them with explanations.
+- **Administrator**: Creates municipality user accounts and assigns roles. Can also manage external companies and external maintainers.
+- **Public Relations**: Reviews incoming reports and approves or rejects them with explanations. Can assign reports to external companies.
+- **External Maintainer**: Works for an external company contracted by the municipality. Can view and manage reports assigned to their company.
 
 **Technical Office Roles** (receive assigned reports, update statuses, communicate with citizens, and resolve issues):
 
@@ -56,6 +57,7 @@ Reports progress through the following statuses:
 
 - **Pending Approval**: Initial submission awaiting public relations review.
 - **Assigned**: Approved and routed to the competent technical office.
+- **External Assigned**: Assigned to an external company for handling.
 - **In Progress**: Intervention scheduled or work started.
 - **Suspended**: Temporarily halted, awaiting evaluation or resources.
 - **Resolved**: Work completed, with optional closing comments.
@@ -184,7 +186,7 @@ Backend tests use **Jest** for unit and integration testing of services, control
 **Stack Overview:**
 
 - **Frontend**: React 18 + TypeScript + Vite + Leaflet/React-Leaflet
-- **Backend**: Node.js + Express + TypeScript + Prisma ORM
+- **Backend**: Node.js + Express + TypeScript + TypeORM
 - **Database**: PostgreSQL 14+
 - **Storage**: MinIO (S3-compatible object storage)
 
@@ -204,19 +206,19 @@ participium/
 │   │   └── main.tsx
 │   └──test/                 # Frontend tests
 |
-├── server/                  # Express + Prisma backend
+├── server/                  # Express + TypeORM backend
 │   ├── src/
 │   │   ├── config/
 │   │   ├── controllers/     # Request handling
+│   │   ├── entities/        # TypeORM entity definitions
 │   │   ├── interfaces/      # DTOs, type interfaces
 │   │   ├── middlewares/     # Validation, uploads, error handling
+│   │   ├── repositories/    # Data access layer
 │   │   ├── routes/          # Express route definitions
 │   │   ├── services/        # Business logic
 │   │   └── index.ts         # Server entry point
-│   ├── prisma/
-│   │   ├── schema.prisma    # Database schema
-│   │   ├── seed.ts          # Seed script for test data
-│   │   └── migrations/      # Prisma migrations
+│   ├── seed/
+│   │   └── seed.ts          # Seed script for test data
 │   └── test/                # Backend tests
 │
 ├── shared/                  # Shared TypeScript types
@@ -239,7 +241,7 @@ Participium uses **PostgreSQL** as its main database because it is a powerful, o
 
 #### 3.2.4 Database Management
 
-Participium uses **Prisma** as its database toolkit to ensure data is managed safely, efficiently, and in a way that supports future growth. Prisma makes it easy to define and update the structure of the database, helps prevent common programming errors by checking data types automatically, and provides tools for evolving the database as the platform develops. It also offers a smooth developer experience, making it easier to maintain and extend the application over time. Prisma was chosen over alternatives like TypeORM because it provides stronger type safety and a more modern, reliable approach to working with data.
+Participium uses **TypeORM** as its Object-Relational Mapping (ORM) tool to ensure data is managed safely, efficiently, and in a way that supports future growth. TypeORM provides a powerful and flexible way to work with the database through TypeScript decorators and entities, making it easy to define and update the database structure while maintaining full type safety. It supports advanced features like migrations, repositories, and query builders, providing developers with fine-grained control over database operations. TypeORM's mature ecosystem and extensive documentation make it an excellent choice for enterprise-level applications that require reliability and scalability.
 
 #### 3.2.5 Photo Storage
 
