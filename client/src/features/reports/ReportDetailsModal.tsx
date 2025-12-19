@@ -252,28 +252,46 @@ export default function ReportDetailsModal({
   ]);
 
   // Resolve assignee: prefer full objects (assignedOfficer, externalMaintainer, externalCompany)
-  function resolveAssignee(r: any) {
-    if (r.externalHandler) {
-      const h = r.externalHandler;
-      if (h.type === "user" && h.user) {
-        const u = h.user;
-        if (u.firstName || u.lastName)
-          return `${u.firstName} ${u.lastName}`.trim();
-        if (u.id != null) return `External Maintainer #${u.id}`;
-      }
-      if (h.type === "company" && h.company) {
-        const c = h.company;
-        if (c.name) return c.name;
-        if (c.id != null) return `External Company #${c.id}`;
-      }
+  function resolveExternalUserName(user: any): string | null {
+    if (!user) return null;
+    if (user.firstName || user.lastName) {
+      return `${user.firstName} ${user.lastName}`.trim();
     }
-    if (
-      r.assignedOfficer &&
-      (r.assignedOfficer.firstName || r.assignedOfficer.lastName)
-    ) {
-      return `${r.assignedOfficer.firstName} ${r.assignedOfficer.lastName}`.trim();
+    if (user.id != null) {
+      return `External Maintainer #${user.id}`;
     }
     return null;
+  }
+
+  function resolveExternalCompanyName(company: any): string | null {
+    if (!company) return null;
+    if (company.name) return company.name;
+    if (company.id != null) return `External Company #${company.id}`;
+    return null;
+  }
+
+  function resolveExternalHandler(handler: any): string | null {
+    if (!handler) return null;
+    
+    if (handler.type === "user") {
+      return resolveExternalUserName(handler.user);
+    }
+    
+    if (handler.type === "company") {
+      return resolveExternalCompanyName(handler.company);
+    }
+    
+    return null;
+  }
+
+  function resolveAssignedOfficer(officer: any): string | null {
+    if (!officer) return null;
+    if (!officer.firstName && !officer.lastName) return null;
+    return `${officer.firstName} ${officer.lastName}`.trim();
+  }
+
+  function resolveAssignee(r: any): string | null {
+    return resolveExternalHandler(r.externalHandler) || resolveAssignedOfficer(r.assignedOfficer);
   }
 
   const assigneeLabel = resolveAssignee(display as any);

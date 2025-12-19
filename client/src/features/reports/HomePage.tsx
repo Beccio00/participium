@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Clipboard, Pencil, List } from "react-bootstrap-icons";
 import { Offcanvas } from "react-bootstrap";
@@ -13,6 +13,28 @@ import { getReports as getReportsApi } from "../../api/api";
 import { Role } from "../../../../shared/RoleTypes.ts";
 import { ReportStatus } from "../../../../shared/ReportTypes.ts";
 import "../../styles/HomePage.css";
+
+// Helper functions
+function getRecentReports(reports: Report[]): Report[] {
+  return [...reports]
+    .sort((a, b) => {
+      const ta = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return tb - ta;
+    })
+    .slice(0, 10);
+}
+
+function isUserOwnReport(report: Report, isAuthenticated: boolean, user: any): boolean {
+  return isAuthenticated && user && report.user && user.email === report.user.email;
+}
+
+function saveSidebarScroll(sidebarScrollRef: React.MutableRefObject<number>) {
+  const sidebar = document.querySelector(".reports-sidebar-scroll") as HTMLElement;
+  if (sidebar) {
+    sidebarScrollRef.current = sidebar.scrollTop;
+  }
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -134,6 +156,21 @@ export default function HomePage() {
     }
   };
 
+  // Compute recent reports for the sidebar
+  const recentReports = useMemo(() => getRecentReports(reports), [reports]);
+
+  const handleReportCardClick = (reportId: number) => {
+    saveSidebarScroll(sidebarScrollRef);
+    setSelectedReportId(reportId);
+    setShowReportsSidebar(false);
+  };
+
+  // Find the selected report for details modal
+  const selectedReport = useMemo(
+    () => reports.find((r) => r.id === selectedReportId) || null,
+    [reports, selectedReportId]
+  );
+
   const ReportsSidebarContent = () => (
     <>
       {/* Reports Header */}
@@ -187,67 +224,45 @@ export default function HomePage() {
               padding: "2rem",
             }}
           >
-            Caricamento report...
+            Loading report...
           </div>
         ) : reportsError ? (
           <div style={{ color: "var(--danger)", padding: "1rem" }}>
-            Errore nel caricamento: {reportsError}
+            Error loading report: {reportsError}
           </div>
         ) : reports.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {(() => {
-              // compute the latest 10 reports sorted by createdAt descending
-              const recent = [...reports]
-                .sort((a: any, b: any) => {
-                  const ta = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-                  const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-                  return tb - ta;
-                })
-                .slice(0, 10);
-              return recent.map((report) => {
-                const isOwnReport =
-                  isAuthenticated &&
-                  user &&
-                  report.user &&
-                  user.email === report.user.email;
-                return (
-                  <div key={report.id} style={{ position: "relative" }}>
-                      {isOwnReport && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          background: "#e0f7fa",
-                          color: "#00796b",
-                          fontWeight: 700,
-                          fontSize: "0.85rem",
-                          padding: "2px 8px",
-                          borderRadius: "0 0 0.5rem 0",
-                          zIndex: 2,
-                        }}
-                      >
-                        Your report
-                      </div>
-                    )}
-                    <ReportCard
-                      report={report}
-                      isSelected={selectedReportId === report.id}
-                      onClick={() => {
-                        const sidebar = document.querySelector(
-                          ".reports-sidebar-scroll"
-                        ) as HTMLElement;
-                        if (sidebar)
-                          sidebarScrollRef.current = sidebar.scrollTop;
-                        setSelectedReportId(report.id);
-                        setShowReportsSidebar(false);
+            {recentReports.map((report) => {
+              const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
+              return (
+                <div key={report.id} style={{ position: "relative" }}>
+                  {isOwnReport && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        background: "#e0f7fa",
+                        color: "#00796b",
+                        fontWeight: 700,
+                        fontSize: "0.85rem",
+                        padding: "2px 8px",
+                        borderRadius: "0 0 0.5rem 0",
+                        zIndex: 2,
                       }}
-                      onOpenDetails={handleReportDetailsClick}
-                    />
-                  </div>
-                );
-              });
-            })()}
+                    >
+                      Your report
+                    </div>
+                  )}
+                  <ReportCard
+                    report={report}
+                    isSelected={selectedReportId === report.id}
+                    onClick={() => handleReportCardClick(report.id)}
+                    onOpenDetails={handleReportDetailsClick}
+                  />
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div
@@ -531,12 +546,21 @@ export default function HomePage() {
                   fullWidth
                 >
                   <Pencil className="me-2" />
-                  Assegna technical
+                  Assign technical
                 </Button>
               ) : !isAuthenticated || user?.role === "CITIZEN" ? (
                 <Button onClick={handleAddReport} variant="primary" fullWidth>
                   <Pencil className="me-2" />
                   Select a location
+                </Button>
+              ) : isTechnicalOfficer ? (
+                <Button
+                  onClick={() => navigate("/assign-reports")}
+                  variant="primary"
+                  fullWidth
+                >
+                  <Pencil className="me-2" />
+                  My Reports
                 </Button>
               ) : null}
 
@@ -581,18 +605,14 @@ export default function HomePage() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
-      {selectedReportId !== null &&
-        (() => {
-          const reportToShow = reports.find((r) => r.id === selectedReportId);
-          return reportToShow ? (
-            <ReportDetailsModal
-              show={showDetailsModal}
-              onHide={() => setShowDetailsModal(false)}
-              report={reportToShow}
-              onReportUpdate={handleReportUpdate}
-            />
-          ) : null;
-        })()}
+      {selectedReport && (
+        <ReportDetailsModal
+          show={showDetailsModal}
+          onHide={() => setShowDetailsModal(false)}
+          report={selectedReport}
+          onReportUpdate={handleReportUpdate}
+        />
+      )}
     </>
   );
 }
