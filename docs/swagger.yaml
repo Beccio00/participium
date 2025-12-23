@@ -2,39 +2,32 @@ openapi: 3.0.3
 info:
   title: Participium API - Citizen Registration & Municipality Administration
   description: |
-    API for citizen registration, authentication (PT01), municipality user management (PT02) and municipality users role assignment (PT03).
-    Uses session-based authentication with HTTP-only cookies.
+    The Participium platform enables citizens to report issues in their city and allows municipality staff to manage and respond to these reports.
 
-    ## Municipality User Management
-    System administrators can create, update and delete internal municipality user accounts.
-    The system must have at least one administrator account pre-configured in the database.
+    ### Roles
+    - **ADMINISTRATOR**: System administrator with full privileges
+    - **PUBLIC_RELATIONS**: Public relations officer (only role that can approve/reject reports)
+    - **CULTURE_EVENTS_TOURISM_SPORTS**: Culture, events, tourism and sports
+    - **LOCAL_PUBLIC_SERVICES**: Local public services
+    - **EDUCATION_SERVICES**: Education services
+    - **PUBLIC_RESIDENTIAL_HOUSING**: Public/residential housing services
+    - **INFORMATION_SYSTEMS**: Information systems/IT
+    - **MUNICIPAL_BUILDING_MAINTENANCE**: Municipal building maintenance
+    - **PRIVATE_BUILDINGS**: Private buildings oversight
+    - **INFRASTRUCTURES**: Road, bridges and general infrastructures
+    - **GREENSPACES_AND_ANIMAL_PROTECTION**: Parks, green areas and animal protection
+    - **WASTE_MANAGEMENT**: Waste collection and management
+    - **ROAD_MAINTENANCE**: Road maintenance
+    - **CIVIL_PROTECTION**: Civil protection and emergency coordination
+    - **EXTERNAL_MAINTAINER**: External company maintainer with platform access for specialized interventions
 
-    **Role Categories:**
 
-    **MUNICIPALITY_ROLES** (all internal municipality staff):
-    - ADMINISTRATOR: System administrator with full privileges
-    - PUBLIC_RELATIONS: Public relations officer (only role that can approve/reject reports)
-    - CULTURE_EVENTS_TOURISM_SPORTS: Culture, events, tourism and sports
-    - LOCAL_PUBLIC_SERVICES: Local public services
-    - EDUCATION_SERVICES: Education services
-    - PUBLIC_RESIDENTIAL_HOUSING: Public/residential housing services
-    - INFORMATION_SYSTEMS: Information systems/IT
-    - MUNICIPAL_BUILDING_MAINTENANCE: Municipal building maintenance
-    - PRIVATE_BUILDINGS: Private buildings oversight
-    - INFRASTRUCTURES: Road, bridges and general infrastructures
-    - GREENSPACES_AND_ANIMAL_PROTECTION: Parks, green areas and animal protection
-    - WASTE_MANAGEMENT: Waste collection and management
-    - ROAD_MAINTENANCE: Road maintenance
-    - CIVIL_PROTECTION: Civil protection and emergency coordination
+    ### Roles Categories
 
-    **TECHNICAL_ROLES** (municipality technical staff only, subset of MUNICIPALITY_ROLES):
-    - CULTURE_EVENTS_TOURISM_SPORTS through CIVIL_PROTECTION (excludes ADMINISTRATOR and PUBLIC_RELATIONS)
+    - **MUNICIPALITY_ROLES** (all internal municipality staff): ADMINISTRATOR through CIVIL_PROTECTION (excludes EXTERNAL_MAINTAINER)
+    - **TECHNICAL_ROLES** (municipality technical staff only):CULTURE_EVENTS_TOURISM_SPORTS through CIVIL_PROTECTION (excludes ADMINISTRATOR, PUBLIC_RELATIONS and EXTERNAL_MAINTAINER)
+    - **TECHNICAL_AND_EXTERNAL_ROLES**: All TECHNICAL_ROLES + EXTERNAL_MAINTAINER
 
-    **TECHNICAL_AND_EXTERNAL_ROLES** (technical staff + external maintainers):
-    - All TECHNICAL_ROLES + EXTERNAL_MAINTAINER (for shared operations like viewing assigned reports)
-
-    **External roles:**
-    - EXTERNAL_MAINTAINER: External company maintainer with platform access for specialized interventions
   version: 1.1.0
   contact:
     name: Municipality of Turin
@@ -51,10 +44,14 @@ tags:
     description: Login, logout and session management operations
   - name: Citizens
     description: Citizen registration operations
+  - name: Telegram
+    description: Telegram bot integration and account linking operations
   - name: Administration
     description: Municipality user management operations (create, update, delete)
   - name: Reports
     description: Create and retrieve geolocated reports submitted by citizens
+  - name: Notifications
+    description: User notifications (read, list, mark as read)
 
 paths:
   /session:
@@ -389,25 +386,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/CitizenConfigResponse"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "An unexpected error occurred"
+          $ref: "#/components/responses/InternalServerError"
 
     patch:
       tags:
@@ -443,15 +424,7 @@ paths:
                 error: "BadRequest"
                 message: "At least one field must be provided"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "409":
           description: Email already in use
           content:
@@ -504,7 +477,7 @@ paths:
                   format: binary
             encoding:
               photo:
-                contentType: image/jpeg, image/png
+                contentType: image/*
       responses:
         "201":
           description: Photo uploaded successfully
@@ -593,6 +566,205 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "An unexpected error occurred"
+
+  /telegram/generate-token:
+    post:
+      tags:
+        - Telegram
+      summary: Generate a deep link to connect Telegram account
+      description: |
+        Generate a unique temporary token (valid for 15 minutes) and a Telegram deep link that the user can click to automatically link their account.
+        
+        **Flow:**
+        1. User clicks "Connect Telegram" button on the web app
+        2. API generates token and returns deep link (e.g., `https://t.me/participium_bot?start=link_8F3K9A`)
+        3. User clicks the deep link, which opens Telegram and sends `/start link_8F3K9A` to the bot
+        4. Bot validates the token and calls `/telegram/link` API to complete the linking
+        5. User receives confirmation in both Telegram and web app
+        
+        The token is stored in database with user_id and expiration, marked as used once the bot completes the linking.
+      operationId: generateTelegramLinkToken
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramTokenResponse"
+              example:
+                token: "8F3K9A"
+                expiresAt: "2025-12-23T13:05:00Z"
+                deepLink: "https://t.me/participium_bot?start=link_8F3K9A"
+                message: "Click the link to connect your Telegram account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Telegram account already linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Telegram account already linked to this user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/link:
+    post:
+      tags:
+        - Telegram
+      summary: Link Telegram account using token (called by bot)
+      description: |
+        Link a Telegram account to a Participium user account using a previously generated token.
+        
+        **This endpoint is called internally by the Telegram bot**, not by the web app directly.
+        
+        **Flow:**
+        1. User clicks deep link from web app (e.g., `https://t.me/participium_bot?start=link_8F3K9A`)
+        2. Telegram opens and sends `/start link_8F3K9A` to the bot
+        3. Bot extracts token from the command and calls this API endpoint
+        4. API validates token, links telegram_user_id to user account, and marks token as used
+        5. Bot sends confirmation message to user
+        
+        The token must be valid and not expired (15 minutes validity).
+      operationId: linkTelegramAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramLinkRequest"
+            example:
+              token: "8F3K9A"
+              telegramId: "123456789"
+              telegramUsername: "mario_rossi"
+      responses:
+        "200":
+          description: Telegram account linked successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramLinkResponse"
+              example:
+                success: true
+                message: "Telegram account linked successfully"
+                user:
+                  id: 201
+                  firstName: "Mario"
+                  lastName: "Rossi"
+                  email: "mario.rossi@example.com"
+        "400":
+          description: Invalid or missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingToken:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Token is required"
+                missingTelegramId:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Telegram ID is required"
+                invalidToken:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Invalid or expired token"
+        "409":
+          description: Telegram account already linked to another user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "This Telegram account is already linked to another user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/status:
+    get:
+      tags:
+        - Telegram
+      summary: Get Telegram linking status
+      description: |
+        Check if the authenticated user has a Telegram account linked.
+        Returns the Telegram username if linked, or null if not linked.
+      operationId: getTelegramStatus
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Telegram status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramStatusResponse"
+              examples:
+                linked:
+                  value:
+                    linked: true
+                    telegramUsername: "mario_rossi"
+                    telegramId: "123456789"
+                notLinked:
+                  value:
+                    linked: false
+                    telegramUsername: null
+                    telegramId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/unlink:
+    delete:
+      tags:
+        - Telegram
+      summary: Unlink Telegram account
+      description: |
+        Remove the Telegram account link from the authenticated user's account.
+        After unlinking, the user will need to generate a new token to link again.
+      operationId: unlinkTelegramAccount
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Telegram account unlinked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Telegram account unlinked successfully"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No Telegram account linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No Telegram account linked to this user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/municipality-users:
     post:
@@ -716,35 +888,11 @@ paths:
                   email: "franco.bianchi@comune.torino.it"
                   role: "ROAD_MAINTENANCE"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "500":
-          description: Unable to retrieve users
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve users"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/municipality-users/{userId}:
     get:
@@ -773,55 +921,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/MunicipalityUserResponse"
         "400":
-          description: Invalid user ID parameter
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Invalid user ID format"
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 404
-                error: "NotFound"
-                message: "Municipality user not found"
+          $ref: "#/components/responses/NotFound"
         "500":
-          description: Unable to retrieve user details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve user"
+          $ref: "#/components/responses/InternalServerError"
 
     delete:
       tags:
@@ -845,55 +953,15 @@ paths:
         "204":
           description: Municipality user deleted successfully
         "400":
-          description: Invalid user ID parameter
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Invalid user ID format"
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 404
-                error: "NotFound"
-                message: "Municipality user not found"
+          $ref: "#/components/responses/NotFound"
         "500":
-          description: Unable to delete user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to delete user"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/roles:
     get:
@@ -931,35 +999,11 @@ paths:
                 - CIVIL_PROTECTION
 
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "500":
-          description: Unable to retrieve roles
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve roles"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/external-companies:
     post:
@@ -1667,7 +1711,7 @@ paths:
               $ref: "#/components/schemas/ReportRequest"
             encoding:
               photos:
-                contentType: image/jpeg, image/png
+                contentType: image/*
       responses:
         "201":
           description: Report created successfully
@@ -3570,6 +3614,72 @@ components:
         The session cookie is automatically sent by the browser with each request.
         Frontend must use 'credentials: include' in fetch/axios requests.
 
+  parameters:
+    reportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the report
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the user
+    maintainerId:
+      name: maintainerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the external maintainer
+    notificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the notification
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
   schemas:
     CitizenRegistrationRequest:
       type: object
@@ -4309,3 +4419,110 @@ components:
           format: date-time
           description: When the note was last updated (ISO 8601 format)
           example: "2025-12-03T09:15:00Z"
+
+    TelegramTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 6
+          maxLength: 16
+          description: Unique temporary token to link Telegram account (valid for 15 minutes)
+          example: "8F3K9A"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiration timestamp (ISO 8601 format)
+          example: "2025-12-23T13:05:00Z"
+        deepLink:
+          type: string
+          format: uri
+          description: Telegram deep link that user can click to open bot and auto-link account
+          example: "https://t.me/participium_bot?start=link_8F3K9A"
+        message:
+          type: string
+          description: User-friendly instructions
+          example: "Click the link to connect your Telegram account"
+      required:
+        - token
+        - expiresAt
+        - deepLink
+        - message
+
+    TelegramLinkRequest:
+      type: object
+      required:
+        - token
+        - telegramId
+      properties:
+        token:
+          type: string
+          minLength: 6
+          maxLength: 16
+          description: Token extracted by bot from /start command (originally from POST /telegram/generate-token)
+          example: "8F3K9A"
+        telegramId:
+          type: string
+          description: Telegram user ID (numeric string provided by Telegram API)
+          example: "123456789"
+        telegramUsername:
+          type: string
+          nullable: true
+          minLength: 5
+          maxLength: 32
+          description: Telegram username without @ (optional, may be null if user has no username)
+          example: "mario_rossi"
+
+    TelegramLinkResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Telegram account linked successfully"
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 201
+            firstName:
+              type: string
+              example: "Mario"
+            lastName:
+              type: string
+              example: "Rossi"
+            email:
+              type: string
+              format: email
+              example: "mario.rossi@example.com"
+          description: Basic user information for confirmation
+      required:
+        - success
+        - message
+        - user
+
+    TelegramStatusResponse:
+      type: object
+      properties:
+        linked:
+          type: boolean
+          description: Whether the user has a Telegram account linked
+          example: true
+        telegramUsername:
+          type: string
+          nullable: true
+          description: Telegram username if linked, null otherwise
+          example: "mario_rossi"
+        telegramId:
+          type: string
+          nullable: true
+          description: Telegram user ID if linked, null otherwise
+          example: "123456789"
+      required:
+        - linked
+        - telegramUsername
+        - telegramId
