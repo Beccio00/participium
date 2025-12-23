@@ -44,6 +44,8 @@ tags:
     description: Login, logout and session management operations
   - name: Citizens
     description: Citizen registration operations
+  - name: Telegram
+    description: Telegram bot integration and account linking operations
   - name: Administration
     description: Municipality user management operations (create, update, delete)
   - name: Reports
@@ -564,6 +566,205 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "An unexpected error occurred"
+
+  /telegram/generate-token:
+    post:
+      tags:
+        - Telegram
+      summary: Generate a deep link to connect Telegram account
+      description: |
+        Generate a unique temporary token (valid for 15 minutes) and a Telegram deep link that the user can click to automatically link their account.
+        
+        **Flow:**
+        1. User clicks "Connect Telegram" button on the web app
+        2. API generates token and returns deep link (e.g., `https://t.me/participium_bot?start=link_8F3K9A`)
+        3. User clicks the deep link, which opens Telegram and sends `/start link_8F3K9A` to the bot
+        4. Bot validates the token and calls `/telegram/link` API to complete the linking
+        5. User receives confirmation in both Telegram and web app
+        
+        The token is stored in database with user_id and expiration, marked as used once the bot completes the linking.
+      operationId: generateTelegramLinkToken
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramTokenResponse"
+              example:
+                token: "8F3K9A"
+                expiresAt: "2025-12-23T13:05:00Z"
+                deepLink: "https://t.me/participium_bot?start=link_8F3K9A"
+                message: "Click the link to connect your Telegram account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Telegram account already linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Telegram account already linked to this user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/link:
+    post:
+      tags:
+        - Telegram
+      summary: Link Telegram account using token (called by bot)
+      description: |
+        Link a Telegram account to a Participium user account using a previously generated token.
+        
+        **This endpoint is called internally by the Telegram bot**, not by the web app directly.
+        
+        **Flow:**
+        1. User clicks deep link from web app (e.g., `https://t.me/participium_bot?start=link_8F3K9A`)
+        2. Telegram opens and sends `/start link_8F3K9A` to the bot
+        3. Bot extracts token from the command and calls this API endpoint
+        4. API validates token, links telegram_user_id to user account, and marks token as used
+        5. Bot sends confirmation message to user
+        
+        The token must be valid and not expired (15 minutes validity).
+      operationId: linkTelegramAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramLinkRequest"
+            example:
+              token: "8F3K9A"
+              telegramId: "123456789"
+              telegramUsername: "mario_rossi"
+      responses:
+        "200":
+          description: Telegram account linked successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramLinkResponse"
+              example:
+                success: true
+                message: "Telegram account linked successfully"
+                user:
+                  id: 201
+                  firstName: "Mario"
+                  lastName: "Rossi"
+                  email: "mario.rossi@example.com"
+        "400":
+          description: Invalid or missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingToken:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Token is required"
+                missingTelegramId:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Telegram ID is required"
+                invalidToken:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Invalid or expired token"
+        "409":
+          description: Telegram account already linked to another user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "This Telegram account is already linked to another user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/status:
+    get:
+      tags:
+        - Telegram
+      summary: Get Telegram linking status
+      description: |
+        Check if the authenticated user has a Telegram account linked.
+        Returns the Telegram username if linked, or null if not linked.
+      operationId: getTelegramStatus
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Telegram status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramStatusResponse"
+              examples:
+                linked:
+                  value:
+                    linked: true
+                    telegramUsername: "mario_rossi"
+                    telegramId: "123456789"
+                notLinked:
+                  value:
+                    linked: false
+                    telegramUsername: null
+                    telegramId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/unlink:
+    delete:
+      tags:
+        - Telegram
+      summary: Unlink Telegram account
+      description: |
+        Remove the Telegram account link from the authenticated user's account.
+        After unlinking, the user will need to generate a new token to link again.
+      operationId: unlinkTelegramAccount
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Telegram account unlinked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Telegram account unlinked successfully"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No Telegram account linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No Telegram account linked to this user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/municipality-users:
     post:
@@ -4218,3 +4419,110 @@ components:
           format: date-time
           description: When the note was last updated (ISO 8601 format)
           example: "2025-12-03T09:15:00Z"
+
+    TelegramTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 6
+          maxLength: 16
+          description: Unique temporary token to link Telegram account (valid for 15 minutes)
+          example: "8F3K9A"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiration timestamp (ISO 8601 format)
+          example: "2025-12-23T13:05:00Z"
+        deepLink:
+          type: string
+          format: uri
+          description: Telegram deep link that user can click to open bot and auto-link account
+          example: "https://t.me/participium_bot?start=link_8F3K9A"
+        message:
+          type: string
+          description: User-friendly instructions
+          example: "Click the link to connect your Telegram account"
+      required:
+        - token
+        - expiresAt
+        - deepLink
+        - message
+
+    TelegramLinkRequest:
+      type: object
+      required:
+        - token
+        - telegramId
+      properties:
+        token:
+          type: string
+          minLength: 6
+          maxLength: 16
+          description: Token extracted by bot from /start command (originally from POST /telegram/generate-token)
+          example: "8F3K9A"
+        telegramId:
+          type: string
+          description: Telegram user ID (numeric string provided by Telegram API)
+          example: "123456789"
+        telegramUsername:
+          type: string
+          nullable: true
+          minLength: 5
+          maxLength: 32
+          description: Telegram username without @ (optional, may be null if user has no username)
+          example: "mario_rossi"
+
+    TelegramLinkResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Telegram account linked successfully"
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 201
+            firstName:
+              type: string
+              example: "Mario"
+            lastName:
+              type: string
+              example: "Rossi"
+            email:
+              type: string
+              format: email
+              example: "mario.rossi@example.com"
+          description: Basic user information for confirmation
+      required:
+        - success
+        - message
+        - user
+
+    TelegramStatusResponse:
+      type: object
+      properties:
+        linked:
+          type: boolean
+          description: Whether the user has a Telegram account linked
+          example: true
+        telegramUsername:
+          type: string
+          nullable: true
+          description: Telegram username if linked, null otherwise
+          example: "mario_rossi"
+        telegramId:
+          type: string
+          nullable: true
+          description: Telegram user ID if linked, null otherwise
+          example: "123456789"
+      required:
+        - linked
+        - telegramUsername
+        - telegramId
