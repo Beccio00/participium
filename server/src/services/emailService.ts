@@ -5,7 +5,24 @@ const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
 const smtpPort = Number(process.env.SMTP_PORT || 587);
 const smtpUser = process.env.SMTP_USER;
 const smtpPass = process.env.SMTP_PASS;
-const smtpFrom = process.env.SMTP_FROM || smtpUser || "no-reply@participium.com";
+const smtpFromEnv = process.env.SMTP_FROM;
+const smtpFromName = process.env.SMTP_FROM_NAME;
+const smtpFromAddress = process.env.SMTP_FROM_ADDRESS || smtpUser || "no-reply@participium.com";
+
+function buildFrom() {
+    if (smtpFromEnv) {
+        const m = smtpFromEnv.match(/^(.*)<([^>]+)>\s*$/);
+        if (m) {
+            return { name: m[1].trim().replace(/^"|"$/g, ""), address: m[2].trim() };
+        }
+        if (smtpFromEnv.includes("@")) {
+            return { name: smtpFromName || "Participium", address: smtpFromEnv };
+        }
+        return { name: smtpFromEnv, address: smtpFromAddress };
+    }
+
+    return { name: smtpFromName || "Participium", address: smtpFromAddress };
+}
 
 function getTransport() {
     if (!smtpUser || !smtpPass) {
@@ -23,8 +40,11 @@ function getTransport() {
 export async function sendVerificationEmail(email: string, code: string) {
     try {
         const transporter = getTransport();
+        const from = buildFrom();
+        const fromString = `"${from.name}" <${from.address}>`;
+        
         await transporter.sendMail({
-            from: smtpFrom,
+            from: fromString,
             to: email,
             subject: "Verify your email address",
             html: `<p>Your verification code is: <strong>${code}</strong></p>
