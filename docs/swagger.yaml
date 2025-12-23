@@ -2,39 +2,32 @@ openapi: 3.0.3
 info:
   title: Participium API - Citizen Registration & Municipality Administration
   description: |
-    API for citizen registration, authentication (PT01), municipality user management (PT02) and municipality users role assignment (PT03).
-    Uses session-based authentication with HTTP-only cookies.
+    The Participium platform enables citizens to report issues in their city and allows municipality staff to manage and respond to these reports.
 
-    ## Municipality User Management
-    System administrators can create, update and delete internal municipality user accounts.
-    The system must have at least one administrator account pre-configured in the database.
+    ### Roles
+    - **ADMINISTRATOR**: System administrator with full privileges
+    - **PUBLIC_RELATIONS**: Public relations officer (only role that can approve/reject reports)
+    - **CULTURE_EVENTS_TOURISM_SPORTS**: Culture, events, tourism and sports
+    - **LOCAL_PUBLIC_SERVICES**: Local public services
+    - **EDUCATION_SERVICES**: Education services
+    - **PUBLIC_RESIDENTIAL_HOUSING**: Public/residential housing services
+    - **INFORMATION_SYSTEMS**: Information systems/IT
+    - **MUNICIPAL_BUILDING_MAINTENANCE**: Municipal building maintenance
+    - **PRIVATE_BUILDINGS**: Private buildings oversight
+    - **INFRASTRUCTURES**: Road, bridges and general infrastructures
+    - **GREENSPACES_AND_ANIMAL_PROTECTION**: Parks, green areas and animal protection
+    - **WASTE_MANAGEMENT**: Waste collection and management
+    - **ROAD_MAINTENANCE**: Road maintenance
+    - **CIVIL_PROTECTION**: Civil protection and emergency coordination
+    - **EXTERNAL_MAINTAINER**: External company maintainer with platform access for specialized interventions
 
-    **Role Categories:**
 
-    **MUNICIPALITY_ROLES** (all internal municipality staff):
-    - ADMINISTRATOR: System administrator with full privileges
-    - PUBLIC_RELATIONS: Public relations officer (only role that can approve/reject reports)
-    - CULTURE_EVENTS_TOURISM_SPORTS: Culture, events, tourism and sports
-    - LOCAL_PUBLIC_SERVICES: Local public services
-    - EDUCATION_SERVICES: Education services
-    - PUBLIC_RESIDENTIAL_HOUSING: Public/residential housing services
-    - INFORMATION_SYSTEMS: Information systems/IT
-    - MUNICIPAL_BUILDING_MAINTENANCE: Municipal building maintenance
-    - PRIVATE_BUILDINGS: Private buildings oversight
-    - INFRASTRUCTURES: Road, bridges and general infrastructures
-    - GREENSPACES_AND_ANIMAL_PROTECTION: Parks, green areas and animal protection
-    - WASTE_MANAGEMENT: Waste collection and management
-    - ROAD_MAINTENANCE: Road maintenance
-    - CIVIL_PROTECTION: Civil protection and emergency coordination
+    ### Roles Categories
 
-    **TECHNICAL_ROLES** (municipality technical staff only, subset of MUNICIPALITY_ROLES):
-    - CULTURE_EVENTS_TOURISM_SPORTS through CIVIL_PROTECTION (excludes ADMINISTRATOR and PUBLIC_RELATIONS)
+    - **MUNICIPALITY_ROLES** (all internal municipality staff): ADMINISTRATOR through CIVIL_PROTECTION (excludes EXTERNAL_MAINTAINER)
+    - **TECHNICAL_ROLES** (municipality technical staff only):CULTURE_EVENTS_TOURISM_SPORTS through CIVIL_PROTECTION (excludes ADMINISTRATOR, PUBLIC_RELATIONS and EXTERNAL_MAINTAINER)
+    - **TECHNICAL_AND_EXTERNAL_ROLES**: All TECHNICAL_ROLES + EXTERNAL_MAINTAINER
 
-    **TECHNICAL_AND_EXTERNAL_ROLES** (technical staff + external maintainers):
-    - All TECHNICAL_ROLES + EXTERNAL_MAINTAINER (for shared operations like viewing assigned reports)
-
-    **External roles:**
-    - EXTERNAL_MAINTAINER: External company maintainer with platform access for specialized interventions
   version: 1.1.0
   contact:
     name: Municipality of Turin
@@ -55,6 +48,8 @@ tags:
     description: Municipality user management operations (create, update, delete)
   - name: Reports
     description: Create and retrieve geolocated reports submitted by citizens
+  - name: Notifications
+    description: User notifications (read, list, mark as read)
 
 paths:
   /session:
@@ -389,25 +384,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/CitizenConfigResponse"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "An unexpected error occurred"
+          $ref: "#/components/responses/InternalServerError"
 
     patch:
       tags:
@@ -443,15 +422,7 @@ paths:
                 error: "BadRequest"
                 message: "At least one field must be provided"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "409":
           description: Email already in use
           content:
@@ -504,7 +475,7 @@ paths:
                   format: binary
             encoding:
               photo:
-                contentType: image/jpeg, image/png
+                contentType: image/*
       responses:
         "201":
           description: Photo uploaded successfully
@@ -716,35 +687,11 @@ paths:
                   email: "franco.bianchi@comune.torino.it"
                   role: "ROAD_MAINTENANCE"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "500":
-          description: Unable to retrieve users
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve users"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/municipality-users/{userId}:
     get:
@@ -773,55 +720,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/MunicipalityUserResponse"
         "400":
-          description: Invalid user ID parameter
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Invalid user ID format"
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 404
-                error: "NotFound"
-                message: "Municipality user not found"
+          $ref: "#/components/responses/NotFound"
         "500":
-          description: Unable to retrieve user details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve user"
+          $ref: "#/components/responses/InternalServerError"
 
     delete:
       tags:
@@ -845,55 +752,15 @@ paths:
         "204":
           description: Municipality user deleted successfully
         "400":
-          description: Invalid user ID parameter
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Invalid user ID format"
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 404
-                error: "NotFound"
-                message: "Municipality user not found"
+          $ref: "#/components/responses/NotFound"
         "500":
-          description: Unable to delete user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to delete user"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/roles:
     get:
@@ -931,35 +798,11 @@ paths:
                 - CIVIL_PROTECTION
 
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "500":
-          description: Unable to retrieve roles
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve roles"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/external-companies:
     post:
@@ -1667,7 +1510,7 @@ paths:
               $ref: "#/components/schemas/ReportRequest"
             encoding:
               photos:
-                contentType: image/jpeg, image/png
+                contentType: image/*
       responses:
         "201":
           description: Report created successfully
@@ -3569,6 +3412,72 @@ components:
         Session-based authentication using HTTP-only cookies with Passport.js.
         The session cookie is automatically sent by the browser with each request.
         Frontend must use 'credentials: include' in fetch/axios requests.
+
+  parameters:
+    reportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the report
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the user
+    maintainerId:
+      name: maintainerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the external maintainer
+    notificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the notification
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
     CitizenRegistrationRequest:
