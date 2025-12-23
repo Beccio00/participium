@@ -46,6 +46,7 @@ describe("signupController", () => {
         salt: "salt",
         role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
+        telegram_id: null,
         email_notifications_enabled: true,
         reports: [],
         messages: [],
@@ -180,6 +181,7 @@ describe("signupController", () => {
         salt: "salt",
         role: UserDTO.Roles.CITIZEN as any,
         telegram_username: null,
+        telegram_id: null,
         email_notifications_enabled: true,
         // TypeORM relation fields
         reports: [],

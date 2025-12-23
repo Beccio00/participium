@@ -79,8 +79,8 @@ describe("citizenController", () => {
         salt: "salt",
         role: UserDTO.Roles.CITIZEN,
         telegram_username: null,
+        telegram_id: null,
         email_notifications_enabled: true,
-        // TypeORM 关联字段
         reports: [],
         messages: [],
         assignedReports: [],
