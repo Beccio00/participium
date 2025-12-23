@@ -65,6 +65,7 @@ export default function TelegramModal({ show, onHide }: Props) {
   const handleOpenTelegram = () => {
     if (deepLink) {
       window.open(deepLink, "_blank");
+      onHide();
     }
   };
 

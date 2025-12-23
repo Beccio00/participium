@@ -14,7 +14,6 @@ const bot = new Telegraf(token);
 bot.start(async (ctx) => {
   const startPayload = ctx.startPayload;
   
-  // Check if this is a deep link for account linking
   if (startPayload && startPayload.startsWith("link_")) {
     const linkToken = startPayload.replace("link_", "");
     const telegramId = ctx.from.id.toString();
@@ -56,7 +55,6 @@ bot.start(async (ctx) => {
     return;
   }
   
-  // Normal start message
   await ctx.reply(
     "👋 *Welcome to Participium Bot!*\n\n" +
     "I will send you notifications about your civic reports.\n\n" +
