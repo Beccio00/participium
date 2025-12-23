@@ -5,6 +5,7 @@ export {
   ForbiddenError,
   NotFoundError,
   ConflictError,
+  GoneError,
   UnprocessableEntityError,
   InternalServerError,
   findOrThrowNotFound,

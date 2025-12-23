@@ -46,6 +46,13 @@ export class ConflictError extends AppError {
   }
 }
 
+export class GoneError extends AppError {
+  constructor(message = "Gone") {
+    super(message, 410);
+    Object.setPrototypeOf(this, GoneError.prototype);
+  }
+}
+
 export class UnprocessableEntityError extends AppError {
   constructor(message = "Unprocessable Entity") {
     super(message, 422);

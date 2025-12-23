@@ -600,6 +600,16 @@ paths:
                 message: "Click the link to connect your Telegram account"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only citizens can link Telegram accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can access this resource"
         "409":
           description: Telegram account already linked
           content:
@@ -658,7 +668,7 @@ paths:
                   lastName: "Rossi"
                   email: "mario.rossi@example.com"
         "400":
-          description: Invalid or missing parameters
+          description: Bad request - missing parameters or token expired
           content:
             application/json:
               schema:
@@ -674,21 +684,38 @@ paths:
                     code: 400
                     error: "BadRequest"
                     message: "Telegram ID is required"
-                invalidToken:
+                tokenExpired:
                   value:
                     code: 400
                     error: "BadRequest"
-                    message: "Invalid or expired token"
-        "409":
-          description: Telegram account already linked to another user
+                    message: "Token has expired"
+        "404":
+          description: Invalid token - token does not exist
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: 409
-                error: "Conflict"
-                message: "This Telegram account is already linked to another user"
+                code: 404
+                error: "NotFound"
+                message: "Invalid token"
+        "409":
+          description: Conflict - token already used or Telegram account already linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                tokenUsed:
+                  value:
+                    code: 409
+                    error: "Conflict"
+                    message: "Token has already been used"
+                telegramLinked:
+                  value:
+                    code: 409
+                    error: "Conflict"
+                    message: "This Telegram account is already linked to another user"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -723,6 +750,16 @@ paths:
                     telegramId: null
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only citizens can check Telegram status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can access this resource"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -753,6 +790,16 @@ paths:
                     example: "Telegram account unlinked successfully"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only citizens can unlink Telegram accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can access this resource"
         "404":
           description: No Telegram account linked
           content:

@@ -72,13 +72,19 @@ export async function linkTelegramAccount(
     throw new BadRequestError("Telegram ID is required");
   }
 
-  const linkToken = await telegramLinkTokenRepository.findValidByToken(token);
+  // First find the token (including used ones to give specific error)
+  const linkToken = await telegramLinkTokenRepository.findByToken(token);
+  
   if (!linkToken) {
-    throw new BadRequestError("Invalid or expired token");
+    throw new NotFoundError("Invalid token");
+  }
+
+  if (linkToken.used) {
+    throw new ConflictError("Token has already been used");
   }
 
   if (new Date() > linkToken.expiresAt) {
-    throw new BadRequestError("Invalid or expired token");
+    throw new BadRequestError("Token has expired");
   }
 
   const existingUserWithTelegram = await userRepository.findByTelegramId(telegramId);
