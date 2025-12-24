@@ -27,7 +27,7 @@ const REPORT_CATEGORIES = [
 interface ReportSession {
   step: "title" | "description" | "category" | "photos" | "location" | "anonymous" | "confirm";
   data: Partial<CreateReportData>;
-  photoFileIds: string[]; // Telegram file IDs for photos
+  photoFileIds: string[]; 
   createdAt: number;
 }
 
@@ -295,16 +295,14 @@ bot.action("confirm_no", async (ctx) => {
   );
 });
 
-// Track pending photo confirmations for media groups
 const pendingPhotoConfirmations = new Map<number, NodeJS.Timeout>();
 
-// Handler for photo uploads
 bot.on("photo", async (ctx) => {
   const chatId = ctx.chat.id;
   const session = reportSessions.get(chatId);
 
   if (!session || session.step !== "photos") {
-    return; // Ignore if not in photos step
+    return; 
   }
 
   if (session.photoFileIds.length >= 3) {
@@ -315,21 +313,17 @@ bot.on("photo", async (ctx) => {
     return;
   }
 
-  // Get the highest resolution photo (last in the array)
   const photos = ctx.message.photo;
   const bestPhoto = photos[photos.length - 1];
   
   session.photoFileIds.push(bestPhoto.file_id);
   reportSessions.set(chatId, session);
 
-  // Clear any existing timeout for this chat
   const existingTimeout = pendingPhotoConfirmations.get(chatId);
   if (existingTimeout) {
     clearTimeout(existingTimeout);
   }
 
-  // Set a debounce timeout - wait 500ms before sending confirmation
-  // This allows multiple photos sent as album to be grouped together
   const timeout = setTimeout(async () => {
     pendingPhotoConfirmations.delete(chatId);
     
@@ -361,12 +355,11 @@ bot.on("location", async (ctx) => {
   const session = reportSessions.get(chatId);
 
   if (!session || session.step !== "location") {
-    return; // Ignore if not in location step
+    return; 
   }
 
   const { latitude, longitude } = ctx.message.location;
 
-  // Validate Turin boundaries
   if (!isPointInTurin(latitude, longitude)) {
     await ctx.reply(
       "⚠️ *Location outside Turin*\n\n" +
@@ -404,7 +397,7 @@ bot.on("text", async (ctx) => {
   const session = reportSessions.get(chatId);
 
   if (!session) {
-    return; // No active session, ignore
+    return; 
   }
 
   const text = ctx.message.text.trim();
@@ -443,13 +436,6 @@ bot.on("text", async (ctx) => {
       break;
 
     case "description":
-      if (text.length < 10) {
-        await ctx.reply(
-          "⚠️ Description is too short. Please provide more details (at least 10 characters).",
-          { parse_mode: "Markdown" }
-        );
-        return;
-      }
       if (text.length > 1000) {
         await ctx.reply(
           "⚠️ Description is too long. Please keep it under 1000 characters.",
