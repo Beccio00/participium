@@ -8,7 +8,7 @@ import { createReport } from "./reportService";
 import { ReportCategory } from "../interfaces/ReportDTO";
 import minioClient, { BUCKET_NAME } from "../utils/minioClient";
 import { calculateAddress } from "../utils/addressFinder";
-import { isPointInPolygon, TURIN_POLYGON } from "../../../shared/TurinBoundaries";
+import { isPointInTurin } from "../../../shared/TurinBoundaries";
 import type {
   TelegramTokenResponseDTO,
   TelegramLinkResponseDTO,
@@ -197,7 +197,7 @@ export async function createReportFromTelegram(
     throw new BadRequestError("Invalid longitude: must be between -180 and 180");
   }
 
-  if (!isPointInPolygon(data.latitude, data.longitude, TURIN_POLYGON)) {
+  if (!isPointInTurin(data.latitude, data.longitude)) {
     throw new UnprocessableEntityError("Coordinates are outside Turin municipality boundaries");
   }
 

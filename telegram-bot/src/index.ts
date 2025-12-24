@@ -1,7 +1,7 @@
 import { Telegraf, Markup } from "telegraf";
 import dotenv from "dotenv";
-import { callBackend, linkTelegramAccount, createReport, CreateReportData } from "./apiClient";
-import { isPointInPolygon, TURIN_POLYGON } from "./turinBoundaries";
+import { linkTelegramAccount, createReport, CreateReportData } from "./apiClient";
+import { isPointInTurin } from "./turinBoundaries";
 
 dotenv.config();
 
@@ -104,7 +104,6 @@ bot.command("help", (ctx) => {
     "/start - Start the bot\n" +
     "/newreport - Create a new civic report\n" +
     "/cancel - Cancel current operation\n" +
-    "/health - Check backend connectivity\n" +
     "/help - Show this message",
     { parse_mode: "Markdown" }
   );
@@ -368,7 +367,7 @@ bot.on("location", async (ctx) => {
   const { latitude, longitude } = ctx.message.location;
 
   // Validate Turin boundaries
-  if (!isPointInPolygon(latitude, longitude, TURIN_POLYGON)) {
+  if (!isPointInTurin(latitude, longitude)) {
     await ctx.reply(
       "⚠️ *Location outside Turin*\n\n" +
       "The location you sent is outside the Turin municipality boundaries.\n\n" +
@@ -505,16 +504,6 @@ bot.on("text", async (ctx) => {
         { parse_mode: "Markdown" }
       );
       break;
-  }
-});
-
-bot.command("health", async (ctx) => {
-  try {
-    const result = await callBackend();
-    ctx.reply(`✅ Backend status: ${result}`);
-  } catch (error) {
-    console.error("Health check error:", error);
-    ctx.reply("❌ Failed to connect to backend. Please try again later.");
   }
 });
 

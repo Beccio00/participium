@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UnprocessableEntityError } from "../utils";
-import { TURIN_POLYGON, isPointInPolygon } from "../../../shared/TurinBoundaries";
+import { isPointInTurin } from "../../../shared/TurinBoundaries";
 
 export function validateTurinBoundaries(req: Request, res: Response, next: NextFunction) {
   const { latitude, longitude } = req.body;
@@ -16,7 +16,7 @@ export function validateTurinBoundaries(req: Request, res: Response, next: NextF
     return next();
   }
 
-  if (!isPointInPolygon(lat, lng, TURIN_POLYGON)) {
+  if (!isPointInTurin(lat, lng)) {
     throw new UnprocessableEntityError("Coordinates are outside Turin municipality boundaries");
   }
 
