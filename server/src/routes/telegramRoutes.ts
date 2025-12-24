@@ -7,6 +7,7 @@ import {
   linkAccount,
   getStatus,
   unlink,
+  createReport,
 } from "../controllers/telegramController";
 
 const router = Router();
@@ -37,5 +38,8 @@ router.delete(
   ApiValidationMiddleware,
   asyncHandler(unlink)
 );
+
+// POST /api/telegram/reports - Create a new report (called by bot, authenticated via telegramId)
+router.post("/reports", ApiValidationMiddleware, asyncHandler(createReport));
 
 export default router;

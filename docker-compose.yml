@@ -105,6 +105,7 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Participium}
       SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS:-participium.turin@gmx.com}
       TELEGRAM_BOT_USERNAME: ${BOT_USERNAME}
+      TELEGRAM_BOT_TOKEN: ${BOT_TOKEN}
     ports:
       - "${SERVER_PORT:-4000}:4000"
     depends_on:

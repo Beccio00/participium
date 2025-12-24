@@ -813,6 +813,82 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /telegram/reports:
+    post:
+      tags:
+        - Telegram
+      summary: Create a report via Telegram bot
+      description: |
+        Create a new civic report via the Telegram bot.
+        The user is authenticated via their Telegram ID which must be linked to a Participium account.
+        This endpoint is called by the Telegram bot, not directly by users.
+      operationId: createReportFromTelegram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramCreateReportRequest"
+            example:
+              telegramId: "123456789"
+              title: "Broken streetlight"
+              description: "The streetlight on Via Roma 123 is not working since last week"
+              category: "PUBLIC_LIGHTING"
+              latitude: 45.0703
+              longitude: 7.6869
+              isAnonymous: false
+      responses:
+        "201":
+          description: Report created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Report created successfully"
+                  reportId:
+                    type: integer
+                    example: 42
+        "400":
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingTitle:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Title is required"
+                invalidCategory:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Invalid category: INVALID_CATEGORY"
+                missingLocation:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Valid latitude and longitude are required"
+        "404":
+          description: Telegram account not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No account linked to this Telegram ID. Please link your account first."
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /admin/municipality-users:
     post:
       tags:
@@ -4573,3 +4649,72 @@ components:
         - linked
         - telegramUsername
         - telegramId
+
+    TelegramCreateReportRequest:
+      type: object
+      required:
+        - telegramId
+        - title
+        - description
+        - category
+        - latitude
+        - longitude
+        - photoFileIds
+      properties:
+        telegramId:
+          type: string
+          description: Telegram user ID (numeric string provided by Telegram API)
+          example: "123456789"
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+          description: Brief title for the report
+          example: "Broken streetlight"
+        description:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Detailed description of the issue
+          example: "The streetlight on Via Roma 123 is not working since last week"
+        category:
+          type: string
+          enum:
+            - WATER_SUPPLY_DRINKING_WATER
+            - ARCHITECTURAL_BARRIERS
+            - SEWER_SYSTEM
+            - PUBLIC_LIGHTING
+            - WASTE
+            - ROAD_SIGNS_TRAFFIC_LIGHTS
+            - ROADS_URBAN_FURNISHINGS
+            - PUBLIC_GREEN_AREAS_PLAYGROUNDS
+            - OTHER
+          description: Category of the report
+          example: "PUBLIC_LIGHTING"
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Latitude of the issue location (must be within Turin boundaries)
+          example: 45.0703
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Longitude of the issue location (must be within Turin boundaries)
+          example: 7.6869
+        photoFileIds:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 3
+          description: Telegram file IDs for photos (minimum 1, maximum 3)
+          example: ["AgACAgIAAxkBAAIBZ2abc123", "AgACAgIAAxkBAAIBZ2def456"]
+        isAnonymous:
+          type: boolean
+          default: false
+          description: Whether to submit the report anonymously
+          example: false

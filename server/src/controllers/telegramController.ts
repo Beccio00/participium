@@ -4,8 +4,9 @@ import {
   linkTelegramAccount,
   getTelegramStatus,
   unlinkTelegramAccount,
+  createReportFromTelegram,
 } from "../services/telegramService";
-import type { TelegramLinkRequestDTO } from "../interfaces/TelegramDTO";
+import type { TelegramLinkRequestDTO, TelegramCreateReportRequestDTO } from "../interfaces/TelegramDTO";
 
 export async function generateToken(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
@@ -30,4 +31,10 @@ export async function unlink(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
   const result = await unlinkTelegramAccount(user.id);
   res.status(200).json(result);
+}
+
+export async function createReport(req: Request, res: Response): Promise<void> {
+  const data = req.body as TelegramCreateReportRequestDTO;
+  const result = await createReportFromTelegram(data);
+  res.status(201).json(result);
 }

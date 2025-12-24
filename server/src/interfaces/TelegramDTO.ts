@@ -1,4 +1,3 @@
-
 export interface TelegramTokenResponseDTO {
   token: string;
   expiresAt: string; // ISO 8601 format
@@ -32,4 +31,21 @@ export interface TelegramStatusResponseDTO {
 export interface TelegramUnlinkResponseDTO {
   success: boolean;
   message: string;
+}
+
+export interface TelegramCreateReportRequestDTO {
+  telegramId: string;
+  title: string;
+  description: string;
+  category: string;
+  latitude: number;
+  longitude: number;
+  isAnonymous?: boolean;
+  photoFileIds?: string[];
+}
+
+export interface TelegramCreateReportResponseDTO {
+  success: boolean;
+  message: string;
+  reportId: number;
 }
