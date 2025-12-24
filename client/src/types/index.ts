@@ -39,3 +39,4 @@ export type{
 // Export client-specific types
 export * from "./ui.types";
 export * from "./report.types";
+export * from "./telegram.types";

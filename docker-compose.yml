@@ -104,6 +104,8 @@ services:
       SMTP_PASS: ${SMTP_PASS:-participiumpass}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Participium}
       SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS:-participium.turin@gmx.com}
+      TELEGRAM_BOT_USERNAME: ${BOT_USERNAME}
+      TELEGRAM_BOT_TOKEN: ${BOT_TOKEN}
     ports:
       - "${SERVER_PORT:-4000}:4000"
     depends_on:
@@ -156,6 +158,28 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+
+  # Telegram Bot
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: telegram-bot/Dockerfile
+    container_name: participium-telegram-bot
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - participium-network
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      API_BASE_URL: http://server:4000
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'node dist/index.js' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:

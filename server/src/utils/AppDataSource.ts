@@ -8,11 +8,12 @@ import { ReportMessage } from "../entities/ReportMessage";
 import { Notification } from "../entities/Notification";
 import { ExternalCompany } from "../entities/ExternalCompany";
 import { InternalNote } from "../entities/InternalNote";
+import { TelegramLinkToken } from "../entities/TelegramLinkToken";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
   url: process.env.DATABASE_URL,
-  entities: [User, CitizenPhoto, Report, ReportPhoto, ReportMessage, Notification, ExternalCompany, InternalNote],
+  entities: [User, CitizenPhoto, Report, ReportPhoto, ReportMessage, Notification, ExternalCompany, InternalNote, TelegramLinkToken],
   migrations: ["dist/app/src/migrations/*.js"],
   // Force synchronization in Docker/production for setup
   synchronize: process.env.TYPEORM_SYNCHRONIZE === "true" || process.env.NODE_ENV === "development", 

@@ -19,6 +19,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     salt: "salt",
     role: Role.CITIZEN,
     telegram_username: null,
+    telegram_id: null,
     email_notifications_enabled: true,
     isVerified: true,
     verificationToken: null,
