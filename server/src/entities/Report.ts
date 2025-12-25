@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  Index,
 } from "typeorm";
 import { User } from "./User";
 import { ReportPhoto } from "./ReportPhoto";
@@ -16,6 +17,7 @@ import { ExternalCompany } from "./ExternalCompany";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 
 @Entity("Report")
+@Index("idx_report_status_anonymous", ["status", "isAnonymous"]) // Compound index for public map queries
 export class Report {
   @PrimaryGeneratedColumn()
   id: number;
@@ -41,7 +43,12 @@ export class Report {
   @Column({ type: "varchar", nullable: true })
   address: string | null;
 
+  /**
+   * PT15: Whether this report should be displayed anonymously in public listings
+   * When true, personal user information is hidden from public API responses
+   */
   @Column({ default: false })
+  @Index("idx_report_anonymous") // Index for filtering anonymous reports in public views
   isAnonymous: boolean;
 
   @Column({
