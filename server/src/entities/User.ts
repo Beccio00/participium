@@ -36,9 +36,10 @@ export class User {
   @Column({
     type: "enum",
     enum: Role,
-    default: Role.CITIZEN,
+    array: true,
+    default: [Role.CITIZEN],
   })
-  role: Role;
+  role: Role[];
 
   @Column({ type: "varchar", nullable: true })
   telegram_username: string | null;

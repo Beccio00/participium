@@ -29,10 +29,15 @@ export type ReportMessageDTO = {
   content: string;
   createdAt: string;
   senderId: number;
-  senderRole: Role;
+  senderRoles: Role[];
 };
 
-
+const normalizeRoles = (roleData: any): Role[] => {
+  if (Array.isArray(roleData)) {
+    return roleData as Role[];
+  } 
+  return [roleData as Role];
+}
 
 export function toReportDTO(r: any): ReportDTO {
     return {
@@ -50,7 +55,7 @@ export function toReportDTO(r: any): ReportDTO {
             firstName: r.user.first_name,
             lastName: r.user.last_name,
             email: r.user.email,
-            role: r.user.role as Role,
+            role: normalizeRoles(r.user.role),
             isVerified: !!r.user.isVerified,
             telegramUsername: r.user.telegram_username ?? null,
             emailNotificationsEnabled: r.user.email_notifications_enabled ?? true,
@@ -60,7 +65,7 @@ export function toReportDTO(r: any): ReportDTO {
           firstName: r.assignedOfficer.first_name,
           lastName: r.assignedOfficer.last_name,
           email: r.assignedOfficer.email,
-          role: r.assignedOfficer.role as Role,
+          role: normalizeRoles(r.assignedOfficer.role),
         } : null,
         externalHandler:
           r.externalMaintainer && r.externalMaintainer.externalCompany? ({
@@ -70,7 +75,7 @@ export function toReportDTO(r: any): ReportDTO {
               firstName: r.externalMaintainer.first_name,
               lastName: r.externalMaintainer.last_name,
               email: r.externalMaintainer.email,
-              role: r.externalMaintainer.role as Role,
+              role: normalizeRoles(r.externalMaintainer.role),
               company: {
                 id: r.externalMaintainer.externalCompany.id,
                 name: r.externalMaintainer.externalCompany.name,

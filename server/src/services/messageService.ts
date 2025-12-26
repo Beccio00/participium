@@ -4,6 +4,7 @@
 
 // DTOs and interfaces
 import { ReportMessageDTO } from "../interfaces/ReportDTO";
+import { Role } from "../../../shared/RoleTypes";
 
 // Repositories
 import { ReportRepository } from "../repositories/ReportRepository";
@@ -21,6 +22,16 @@ const reportRepository = new ReportRepository();
 const reportMessageRepository = new ReportMessageRepository();
 
 // =========================
+// HELPER FUNCTIONS
+// =========================
+const getRolesAsArray = (roleData:any): Role[] =>{
+  if(Array.isArray(roleData)){
+    return roleData as Role[];
+  }
+  return [roleData as Role];
+}
+
+// =========================
 // MESSAGE FUNCTIONS
 // =========================
 
@@ -34,13 +45,14 @@ function validateUserCanSendMessage(
   const isCitizenOwner = report.userId === userId;
   const senderRole =
     report.user && report.user.id === userId
-      ? report.user.role
+      ? getRolesAsArray(report.user.role)
       : undefined;
-  
+    
+      const isCitizen = senderRole ? senderRole.includes(Role.CITIZEN) : false;
   if (
     !isInternalTech &&
     !isExternalTech &&
-    !(isCitizenOwner && senderRole === "CITIZEN")
+    !(isCitizenOwner && isCitizen)
   ) {
     throw new ForbiddenError("You are not assigned to this report");
   }
@@ -116,7 +128,7 @@ export async function sendMessageToCitizen(
     content: savedMessage.content,
     createdAt: savedMessage.createdAt.toISOString(),
     senderId: savedMessage.senderId,
-    senderRole: savedMessage.user.role,
+    senderRoles: getRolesAsArray(savedMessage.user.role),
   };
 }
 
@@ -150,6 +162,6 @@ export async function getReportMessages(
     content: m.content,
     createdAt: m.createdAt.toISOString(),
     senderId: m.senderId,
-    senderRole: m.user.role,
+    senderRoles: getRolesAsArray(m.user.role),
   }));
 }
