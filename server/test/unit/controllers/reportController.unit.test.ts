@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 
+// Mocks setup
 jest.mock("multer", () => {
   const mockMulter: any = (opts?: any) => ({
     array: () => (req: any, res: any, cb: any) => {
@@ -36,6 +37,11 @@ jest.mock("../../../src/middlewares/errorMiddleware", () => ({
   asyncHandler: (fn: any) => fn,
 }));
 
+// Mock services
+jest.mock("../../../src/services/reportService");
+jest.mock("../../../src/services/messageService");
+jest.mock("../../../src/services/internalNoteService");
+
 import {
   createReport,
   getReports,
@@ -46,17 +52,18 @@ import {
   getReportById,
   updateReportStatus,
   getAssignedReports,
+  createInternalNote,
+  getInternalNote
 } from "../../../src/controllers/reportController";
 import { sendMessageToCitizen, getReportMessages } from "../../../src/controllers/messageController";
 import * as reportService from "../../../src/services/reportService";
 import * as messageService from "../../../src/services/messageService";
+import * as internalNoteService from "../../../src/services/internalNoteService";
 import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";
 import { BadRequestError, UnauthorizedError } from "../../../src/utils";
 import { calculateAddress } from "../../../src/utils/addressFinder";
 
-jest.mock("../../../src/services/reportService");
-jest.mock("../../../src/services/messageService");
-
+// Mock variables
 const mockCreateReportService =
   reportService.createReport as jest.MockedFunction<
     typeof reportService.createReport
@@ -104,6 +111,16 @@ const mockGetAssignedReportsService =
 const mockGetAssignedReportsExternalService =
   reportService.getAssignedReportsForExternalMaintainer as jest.MockedFunction<
     typeof reportService.getAssignedReportsForExternalMaintainer
+  >;
+
+const mockCreateInternalNoteService =
+  internalNoteService.createInternalNote as jest.MockedFunction<
+    typeof internalNoteService.createInternalNote
+  >;
+
+const mockGetInternalNotesService =
+  internalNoteService.getInternalNotes as jest.MockedFunction<
+    typeof internalNoteService.getInternalNotes
   >;
 
 describe("reportController", () => {
@@ -178,6 +195,17 @@ describe("reportController", () => {
       expect(mockCreateReportService).toHaveBeenCalled();
     });
 
+    // Coverage per linea 109 (extractPhotos fallback)
+    it("should fail validation but cover extractPhotos fallback when req.files is invalid object", async () => {
+      mockReq.body = validReportData;
+      mockReq.user = validUser;
+      mockReq.files = {}; // Not array, no photos prop -> returns []
+      // Then validatePhotos throws
+      await expect(
+        createReport(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow("At least one photo is required");
+    });
+
     it("should use provided address and skip calculation", async () => {
       mockReq.body = { ...validReportData, address: "Via Po 15, Torino" };
       mockReq.user = validUser;
@@ -187,7 +215,7 @@ describe("reportController", () => {
       expect(calculateAddress).not.toHaveBeenCalled();
     });
 
-    it("should throw BadRequestError if no photos are provided (Line 50)", async () => {
+    it("should throw BadRequestError if no photos are provided", async () => {
       mockReq.body = validReportData;
       mockReq.user = validUser;
       mockReq.files = []; // Empty array
@@ -196,7 +224,7 @@ describe("reportController", () => {
       ).rejects.toThrow("At least one photo is required");
     });
 
-    it("should throw BadRequestError if more than 3 photos are provided (Line 53)", async () => {
+    it("should throw BadRequestError if more than 3 photos are provided", async () => {
       mockReq.body = validReportData;
       mockReq.user = validUser;
       // Create 4 mock files
@@ -206,7 +234,7 @@ describe("reportController", () => {
       ).rejects.toThrow("Maximum 3 photos allowed");
     });
 
-    it("should throw BadRequestError if category is invalid (Line 58)", async () => {
+    it("should throw BadRequestError if category is invalid", async () => {
       mockReq.body = { ...validReportData, category: "INVALID_CATEGORY" };
       mockReq.user = validUser;
       mockReq.files = mockFiles;
@@ -215,7 +243,7 @@ describe("reportController", () => {
       ).rejects.toThrow("Invalid category");
     });
 
-    it("should throw BadRequestError if latitude/longitude are NaN (Line 69)", async () => {
+    it("should throw BadRequestError if latitude/longitude are NaN", async () => {
       mockReq.body = { ...validReportData, latitude: "not-a-number" };
       mockReq.user = validUser;
       mockReq.files = mockFiles;
@@ -224,7 +252,7 @@ describe("reportController", () => {
       ).rejects.toThrow("Invalid coordinates");
     });
 
-    it("should throw BadRequestError if latitude is out of bounds (Line 75)", async () => {
+    it("should throw BadRequestError if latitude is out of bounds", async () => {
       mockReq.body = { ...validReportData, latitude: "91" };
       mockReq.user = validUser;
       mockReq.files = mockFiles;
@@ -233,7 +261,7 @@ describe("reportController", () => {
       ).rejects.toThrow("Invalid latitude: must be between -90 and 90");
     });
 
-    it("should throw BadRequestError if longitude is out of bounds (Line 79)", async () => {
+    it("should throw BadRequestError if longitude is out of bounds", async () => {
       mockReq.body = { ...validReportData, longitude: "181" };
       mockReq.user = validUser;
       mockReq.files = mockFiles;
@@ -542,6 +570,37 @@ describe("reportController", () => {
       await expect(
         getAssignableTechnicals(mockReq as Request, mockRes as Response)
       ).rejects.toThrow();
+    });
+  });
+
+  // Coverage per Lines 383-388
+  describe("createInternalNote", () => {
+    it("should create an internal note successfully", async () => {
+        mockReq.params = { reportId: "123" };
+        mockReq.user = { id: 1, role: "TECHNICAL_STAFF" };
+        mockReq.body = { content: "Internal note content" };
+        mockCreateInternalNoteService.mockResolvedValue({ id: 1, content: "Internal note content" } as any);
+
+        await createInternalNote(mockReq as Request, mockRes as Response);
+
+        expect(mockCreateInternalNoteService).toHaveBeenCalledWith(123, "Internal note content", 1, "TECHNICAL_STAFF");
+        expect(mockRes.status).toHaveBeenCalledWith(201);
+        expect(mockRes.json).toHaveBeenCalled();
+    });
+  });
+
+  // Coverage per Lines 392-396
+  describe("getInternalNote", () => {
+    it("should get internal notes successfully", async () => {
+        mockReq.params = { reportId: "123" };
+        mockReq.user = { id: 1, role: "TECHNICAL_STAFF" };
+        mockGetInternalNotesService.mockResolvedValue([] as any);
+
+        await getInternalNote(mockReq as Request, mockRes as Response);
+
+        expect(mockGetInternalNotesService).toHaveBeenCalledWith(123, 1);
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+        expect(mockRes.json).toHaveBeenCalledWith([]);
     });
   });
 });

@@ -1690,6 +1690,7 @@ paths:
                   latitude: 45.070339
                   longitude: 7.686864
                   status: PENDING_APPROVAL
+                  isAnonymous: false
                   user:
                     id: 201
                     firstName: Mario
@@ -1786,6 +1787,10 @@ paths:
 
         Reports with status PENDING_APPROVAL or REJECTED are NOT included in the response.
 
+        **Anonymous Reports**: When `isAnonymous` is true, the user's personal information 
+        (firstName, lastName, email) is replaced with anonymous placeholders in the response.
+        The user ID is always included for internal tracking purposes.
+
         This endpoint is designed for citizen-facing map views where users can see all active and resolved 
         issues in their area, including those assigned to external maintainers (EXTERNAL_ASSIGNED).
         The response includes reporter information (name or "anonymous" flag), location 
@@ -1871,11 +1876,12 @@ paths:
                   latitude: 45.071000
                   longitude: 7.687500
                   status: RESOLVED
+                  isAnonymous: true
                   user:
                     id: 202
-                    firstName: Maria
-                    lastName: Bianchi
-                    email: maria.bianchi@example.com
+                    firstName: "anonymous"
+                    lastName: ""
+                    email: ""
                     role: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
@@ -3959,6 +3965,11 @@ components:
           nullable: true
           description: Optional human-readable address for the location
           example: "Via Roma 1, Torino"
+        isAnonymous:
+          type: boolean
+          default: false
+          description: Whether to make this report anonymous (hides user info in public listings)
+          example: false
         photos:
           type: array
           minItems: 1
@@ -4047,8 +4058,32 @@ components:
           $ref: "#/components/schemas/Longitude"
         status:
           $ref: "#/components/schemas/ReportStatus"
+        isAnonymous:
+          type: boolean
+          description: Whether this report is anonymous
+          example: false
         user:
-          $ref: "#/components/schemas/UserInfo"
+          oneOf:
+            - $ref: "#/components/schemas/UserInfo"
+            - type: object
+              properties:
+                id:
+                  type: integer
+                  description: User ID (always present for internal tracking)
+                firstName:
+                  type: string
+                  enum: ["anonymous"]
+                lastName:
+                  type: string
+                  enum: [""]
+                email:
+                  type: string
+                  enum: [""]
+                role:
+                  type: string
+                  enum: ["CITIZEN"]
+              description: For anonymous reports, personal info is hidden
+          description: User information (personal data hidden if report is anonymous)
         assignedOfficer:
           oneOf:
             - $ref: "#/components/schemas/MunicipalityUserResponse"
