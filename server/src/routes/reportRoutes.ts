@@ -70,7 +70,6 @@ router.post('/:reportId/messages', requireCitizenAuthorOrTechnicalOrExternal, Ap
 // POST /api/reports/:reportId/assign-external - assign to external maintainer or company (municipality staff only)
 router.post("/:reportId/assign-external", requireTechnicalStaffOnly, ApiValidationMiddleware, asyncHandler(assignReportToExternal));
 
-
 // POST /api/reports/:reportId/internal-notes - Create internal note
 router.post('/:reportId/internal-notes', requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(createInternalNote));
 
