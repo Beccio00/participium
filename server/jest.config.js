@@ -23,7 +23,7 @@ module.exports = {
   // TypeORM需要这个
   transform: {
     "^.+\\.tsx?$": ["ts-jest", {
-      tsconfig: "tsconfig.json",
+      tsconfig: "<rootDir>/tsconfig.json",
     }],
   },
   // 设置测试超时时间
