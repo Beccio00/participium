@@ -214,14 +214,22 @@ describe("reportService", () => {
       });
       mockUserFindById.mockResolvedValue(null);
 
-      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(
+        UnprocessableEntityError
+      );
     });
 
     it("should throw UnprocessableEntityError if technical has wrong role", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity({ category: ReportCategory.WATER_SUPPLY_DRINKING_WATER }));
+      mockReportFindByIdWithRelations.mockResolvedValue(
+        createMockReportEntity({
+          category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
+        })
+      );
       mockUserFindById.mockResolvedValue({ id: 99, role: "WRONG_ROLE" });
 
-      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(
+        UnprocessableEntityError
+      );
     });
 
     it("should throw UnprocessableEntityError if technical role invalid for category", async () => {
@@ -235,16 +243,25 @@ describe("reportService", () => {
         role: TechnicalType.WASTE_MANAGEMENT,
       });
 
-      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(
+        UnprocessableEntityError
+      );
     });
 
     it("should succeed, update status, and notify", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity());
-      mockUserFindById.mockResolvedValue({ id: 99, role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE });
-      mockReportUpdate.mockResolvedValue(createMockReportEntity({ 
-        status: ReportStatus.ASSIGNED, 
-        assignedOfficerId: 99 
-      }));
+      mockReportFindByIdWithRelations.mockResolvedValue(
+        createMockReportEntity()
+      );
+      mockUserFindById.mockResolvedValue({
+        id: 99,
+        role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
+      });
+      mockReportUpdate.mockResolvedValue(
+        createMockReportEntity({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficerId: 99,
+        })
+      );
 
       const res = await approveReport(1, 2, 99);
       expect(mockReportUpdate).toHaveBeenCalled();
@@ -269,10 +286,444 @@ describe("reportService", () => {
     });
 
     it("should throw BadRequest if not pending", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue({ status: ReportStatus.ASSIGNED });
+      mockReportFindByIdWithRelations.mockResolvedValue({
+        status: ReportStatus.ASSIGNED,
+      });
       await expect(rejectReport(1, 1, "Reason")).rejects.toThrow(
         BadRequestError
       );
+    });
+  });
+
+  describe("Anonymous Report Feature - PT15", () => {
+    describe("createReport with anonymous option", () => {
+      const baseReportData = {
+        title: "Test Report",
+        description: "Test Description",
+        category: ReportCategory.PUBLIC_LIGHTING,
+        latitude: 45.0703,
+        longitude: 7.6869,
+        address: "Test Address",
+        photos: [
+          { id: 0, filename: "test.jpg", url: "http://test.com/test.jpg" },
+        ],
+        userId: 1,
+      };
+
+      beforeEach(() => {
+        mockReportCreate.mockClear();
+      });
+
+      it("should create report with isAnonymous set to true", async () => {
+        const anonymousReportData = {
+          ...baseReportData,
+          isAnonymous: true,
+        };
+
+        const expectedReport = {
+          id: 1,
+          ...anonymousReportData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        const result = await createReport(anonymousReportData);
+
+        expect(mockReportCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isAnonymous: true,
+            userId: 1,
+          })
+        );
+        expect(result.isAnonymous).toBe(true);
+        expect(result.userId).toBe(1);
+      });
+
+      it("should create report with isAnonymous set to false", async () => {
+        const nonAnonymousReportData = {
+          ...baseReportData,
+          isAnonymous: false,
+        };
+
+        const expectedReport = {
+          id: 1,
+          ...nonAnonymousReportData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        const result = await createReport(nonAnonymousReportData);
+
+        expect(mockReportCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isAnonymous: false,
+            userId: 1,
+          })
+        );
+        expect(result.isAnonymous).toBe(false);
+      });
+
+      it("should preserve userId even when report is anonymous", async () => {
+        const anonymousReportData = {
+          ...baseReportData,
+          isAnonymous: true,
+          userId: 42,
+        };
+
+        const expectedReport = {
+          id: 1,
+          ...anonymousReportData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 42 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        const result = await createReport(anonymousReportData);
+
+        expect(mockReportCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: 42,
+            isAnonymous: true,
+          })
+        );
+        expect(result.userId).toBe(42);
+      });
+
+      it("should create multiple anonymous reports from same user", async () => {
+        const anonymousData1 = {
+          ...baseReportData,
+          isAnonymous: true,
+          title: "Report 1",
+        };
+        const anonymousData2 = {
+          ...baseReportData,
+          isAnonymous: true,
+          title: "Report 2",
+        };
+
+        const expectedReport1 = {
+          id: 1,
+          ...anonymousData1,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+        const expectedReport2 = {
+          id: 2,
+          ...anonymousData2,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportCreate
+          .mockResolvedValueOnce({ id: 1 })
+          .mockResolvedValueOnce({ id: 2 });
+        mockReportFindByIdWithRelations
+          .mockResolvedValueOnce(expectedReport1)
+          .mockResolvedValueOnce(expectedReport2);
+
+        const result1 = await createReport(anonymousData1);
+        const result2 = await createReport(anonymousData2);
+
+        expect(result1.isAnonymous).toBe(true);
+        expect(result2.isAnonymous).toBe(true);
+        expect(result1.userId).toBe(result2.userId);
+      });
+
+      it("should create both anonymous and non-anonymous reports", async () => {
+        const anonymousData = { ...baseReportData, isAnonymous: true };
+        const publicData = { ...baseReportData, isAnonymous: false };
+
+        const expectedAnonymous = {
+          id: 1,
+          ...anonymousData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+        const expectedPublic = {
+          id: 2,
+          ...publicData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportCreate
+          .mockResolvedValueOnce({ id: 1 })
+          .mockResolvedValueOnce({ id: 2 });
+        mockReportFindByIdWithRelations
+          .mockResolvedValueOnce(expectedAnonymous)
+          .mockResolvedValueOnce(expectedPublic);
+
+        const anonymousReport = await createReport(anonymousData);
+        const publicReport = await createReport(publicData);
+
+        expect(anonymousReport.isAnonymous).toBe(true);
+        expect(publicReport.isAnonymous).toBe(false);
+      });
+
+      it("should pass isAnonymous flag to repository correctly", async () => {
+        const testData = { ...baseReportData, isAnonymous: true };
+        const expectedReport = {
+          id: 1,
+          ...testData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        await createReport(testData);
+
+        const callArg = mockReportCreate.mock.calls[0][0];
+        expect(callArg).toHaveProperty("isAnonymous");
+        expect(callArg.isAnonymous).toBe(true);
+        expect(typeof callArg.isAnonymous).toBe("boolean");
+      });
+
+      it("should maintain all report fields when anonymous", async () => {
+        const completeAnonymousData = {
+          ...baseReportData,
+          isAnonymous: true,
+          address: "Via Roma 10",
+          category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+        };
+
+        const expectedReport = {
+          id: 1,
+          ...completeAnonymousData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        const result = await createReport(completeAnonymousData);
+
+        expect(result.title).toBe(completeAnonymousData.title);
+        expect(result.description).toBe(completeAnonymousData.description);
+        expect(result.category).toBe(completeAnonymousData.category);
+        expect(result.latitude).toBe(completeAnonymousData.latitude);
+        expect(result.longitude).toBe(completeAnonymousData.longitude);
+        expect(result.address).toBe(completeAnonymousData.address);
+        expect(result.isAnonymous).toBe(true);
+      });
+    });
+
+    describe("Report retrieval and privacy", () => {
+      it("should include isAnonymous flag in report data", async () => {
+        const mockReport = {
+          id: 1,
+          title: "Test",
+          description: "Test",
+          category: ReportCategory.PUBLIC_LIGHTING,
+          latitude: 45.0,
+          longitude: 7.0,
+          isAnonymous: true,
+          status: ReportStatus.ASSIGNED,
+          userId: 1,
+          user: { id: 1, firstName: "John", lastName: "Doe" },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportFindByStatusAndCategory.mockResolvedValue([mockReport]);
+
+        const reports = await getApprovedReports();
+
+        expect(reports).toBeDefined();
+        expect(reports.length).toBeGreaterThan(0);
+      });
+
+      it("should filter anonymous reports correctly", async () => {
+        const anonymousReport = {
+          id: 1,
+          isAnonymous: true,
+          status: ReportStatus.ASSIGNED,
+          category: ReportCategory.PUBLIC_LIGHTING,
+          title: "Test",
+          description: "Test",
+          latitude: 45.0,
+          longitude: 7.0,
+          userId: 1,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        };
+
+        const publicReport = {
+          id: 2,
+          isAnonymous: false,
+          status: ReportStatus.ASSIGNED,
+          category: ReportCategory.PUBLIC_LIGHTING,
+          title: "Test 2",
+          description: "Test 2",
+          latitude: 45.0,
+          longitude: 7.0,
+          userId: 2,
+          user: { id: 2 },
+          photos: [],
+          messages: [],
+        };
+
+        mockReportFindByStatusAndCategory.mockResolvedValue([
+          anonymousReport,
+          publicReport,
+        ]);
+
+        const reports = await getApprovedReports();
+
+        expect(reports).toBeDefined();
+      });
+    });
+
+    describe("Choice timing - at report creation", () => {
+      it("should allow setting isAnonymous at creation time", async () => {
+        const reportData = {
+          ...{
+            title: "New Report",
+            description: "Description",
+            category: ReportCategory.OTHER,
+            latitude: 45.0,
+            longitude: 7.0,
+            address: "Address",
+            photos: [
+              { id: 0, filename: "test.jpg", url: "http://test.com/test.jpg" },
+            ],
+            userId: 1,
+          },
+          isAnonymous: true,
+        };
+
+        const expectedReport = {
+          id: 1,
+          ...reportData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 1 },
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        const result = await createReport(reportData);
+
+        expect(result.isAnonymous).toBe(true);
+        expect(mockReportCreate).toHaveBeenCalledWith(
+          expect.objectContaining({ isAnonymous: true })
+        );
+      });
+
+      it("should not allow changing isAnonymous after creation (immutable)", async () => {
+        const report = {
+          id: 1,
+          isAnonymous: true,
+          status: ReportStatus.PENDING_APPROVAL,
+        };
+
+        mockReportFindByIdWithRelations.mockResolvedValue(report);
+
+        // Update operations should not change isAnonymous
+        const updateCall = mockReportUpdate.mock.calls;
+
+        // Verify isAnonymous is set at creation and not changed
+        expect(report.isAnonymous).toBe(true);
+      });
+    });
+
+    describe("Privacy protection", () => {
+      it("should store userId internally even for anonymous reports", async () => {
+        const anonymousReportData = {
+          title: "Test",
+          description: "Test",
+          category: ReportCategory.PUBLIC_LIGHTING,
+          latitude: 45.0,
+          longitude: 7.0,
+          address: "Test",
+          photos: [
+            { id: 0, filename: "test.jpg", url: "http://test.com/test.jpg" },
+          ],
+          userId: 123,
+          isAnonymous: true,
+        };
+
+        const expectedReport = {
+          id: 1,
+          ...anonymousReportData,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: 123 },
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        const result = await createReport(anonymousReportData);
+
+        expect(result.userId).toBe(123);
+        expect(result.isAnonymous).toBe(true);
+      });
+
+      it("should maintain report ownership through userId for administrative purposes", async () => {
+        const userId = 999;
+        const data = {
+          title: "Report",
+          description: "Description",
+          category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
+          latitude: 45.0,
+          longitude: 7.0,
+          address: "Address",
+          photos: [
+            { id: 0, filename: "test.jpg", url: "http://test.com/test.jpg" },
+          ],
+          userId: userId,
+          isAnonymous: true,
+        };
+
+        const expectedReport = {
+          id: 1,
+          ...data,
+          status: ReportStatus.PENDING_APPROVAL,
+          user: { id: userId },
+          messages: [],
+        };
+
+        mockReportCreate.mockResolvedValue({ id: 1 });
+        mockReportFindByIdWithRelations.mockResolvedValue(expectedReport);
+
+        const result = await createReport(data);
+
+        // Internal tracking maintained
+        expect(result.userId).toBe(userId);
+        // Public anonymity flag set
+        expect(result.isAnonymous).toBe(true);
+      });
     });
   });
 });

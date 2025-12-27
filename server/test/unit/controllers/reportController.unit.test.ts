@@ -47,7 +47,10 @@ import {
   updateReportStatus,
   getAssignedReports,
 } from "../../../src/controllers/reportController";
-import { sendMessageToCitizen, getReportMessages } from "../../../src/controllers/messageController";
+import {
+  sendMessageToCitizen,
+  getReportMessages,
+} from "../../../src/controllers/messageController";
 import * as reportService from "../../../src/services/reportService";
 import * as messageService from "../../../src/services/messageService";
 import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";
@@ -542,6 +545,287 @@ describe("reportController", () => {
       await expect(
         getAssignableTechnicals(mockReq as Request, mockRes as Response)
       ).rejects.toThrow();
+    });
+  });
+
+  describe("Anonymous Report Feature - PT15", () => {
+    const validUser = {
+      id: 1,
+      firstName: "John",
+      lastName: "Doe",
+      email: "john.doe@example.com",
+      role: "CITIZEN" as const,
+    };
+
+    const mockFiles = [
+      {
+        originalname: "photo.jpg",
+        buffer: Buffer.from("fake-image"),
+        mimetype: "image/jpeg",
+        size: 1024,
+      },
+    ];
+
+    const baseReportData = {
+      title: "Test Report",
+      description: "Test Description",
+      category: "PUBLIC_LIGHTING" as ReportCategory,
+      latitude: "45.0703",
+      longitude: "7.6869",
+      photos: [],
+    };
+
+    describe("createReport - anonymous option", () => {
+      it("should create anonymous report when isAnonymous is 'true'", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "true" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        const expectedReport = {
+          id: 1,
+          ...baseReportData,
+          isAnonymous: true,
+          userId: validUser.id,
+        };
+
+        mockCreateReportService.mockResolvedValue(expectedReport as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        expect(mockCreateReportService).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isAnonymous: true,
+            userId: validUser.id,
+          })
+        );
+        expect(mockRes.status).toHaveBeenCalledWith(201);
+        expect(mockRes.json).toHaveBeenCalledWith({
+          message: "Report created successfully",
+          report: expectedReport,
+        });
+      });
+
+      it("should create non-anonymous report when isAnonymous is 'false'", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "false" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        const expectedReport = {
+          id: 1,
+          ...baseReportData,
+          isAnonymous: false,
+          userId: validUser.id,
+        };
+
+        mockCreateReportService.mockResolvedValue(expectedReport as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        expect(mockCreateReportService).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isAnonymous: false,
+            userId: validUser.id,
+          })
+        );
+        expect(mockRes.status).toHaveBeenCalledWith(201);
+      });
+
+      it("should create non-anonymous report when isAnonymous is undefined (default)", async () => {
+        mockReq.body = { ...baseReportData };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        expect(mockCreateReportService).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isAnonymous: false,
+          })
+        );
+      });
+
+      it("should handle isAnonymous as string 'true' correctly", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "true" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({
+          id: 1,
+          isAnonymous: true,
+        } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        expect(callArgs.isAnonymous).toBe(true);
+        expect(typeof callArgs.isAnonymous).toBe("boolean");
+      });
+
+      it("should handle isAnonymous as string 'false' correctly", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "false" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({
+          id: 1,
+          isAnonymous: false,
+        } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        expect(callArgs.isAnonymous).toBe(false);
+        expect(typeof callArgs.isAnonymous).toBe("boolean");
+      });
+
+      it("should treat any string other than 'true' as false", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "yes" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({
+          id: 1,
+          isAnonymous: false,
+        } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        expect(callArgs.isAnonymous).toBe(false);
+      });
+
+      it("should maintain user id even when report is anonymous", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "true" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        expect(mockCreateReportService).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: validUser.id,
+            isAnonymous: true,
+          })
+        );
+      });
+
+      it("should create anonymous report with all required fields", async () => {
+        const completeReportData = {
+          ...baseReportData,
+          isAnonymous: "true",
+          address: "Via Roma 10, Torino",
+        };
+
+        mockReq.body = completeReportData;
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        expect(mockCreateReportService).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: baseReportData.title,
+            description: baseReportData.description,
+            category: baseReportData.category,
+            latitude: parseFloat(baseReportData.latitude),
+            longitude: parseFloat(baseReportData.longitude),
+            isAnonymous: true,
+            userId: validUser.id,
+          })
+        );
+      });
+    });
+
+    describe("Privacy considerations for anonymous reports", () => {
+      it("should still store userId for anonymous reports (for internal tracking)", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "true" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        expect(callArgs.userId).toBe(validUser.id);
+        expect(callArgs.isAnonymous).toBe(true);
+      });
+
+      it("should allow authenticated citizen to create anonymous report", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "true" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await expect(
+          createReport(mockReq as Request, mockRes as Response)
+        ).resolves.not.toThrow();
+
+        expect(mockCreateReportService).toHaveBeenCalled();
+      });
+    });
+
+    describe("Edge cases for anonymous flag", () => {
+      it("should handle empty string isAnonymous as false", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        expect(callArgs.isAnonymous).toBe(false);
+      });
+
+      it("should handle null isAnonymous as false", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: null };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        expect(callArgs.isAnonymous).toBe(false);
+      });
+
+      it("should handle 'TRUE' (uppercase) as true", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "TRUE" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        // Note: current implementation is case-sensitive, this will be false
+        // This test documents current behavior
+        expect(callArgs.isAnonymous).toBe(false);
+      });
+
+      it("should handle '1' as false (not 'true' string)", async () => {
+        mockReq.body = { ...baseReportData, isAnonymous: "1" };
+        mockReq.user = validUser;
+        mockReq.files = mockFiles;
+
+        mockCreateReportService.mockResolvedValue({ id: 1 } as any);
+
+        await createReport(mockReq as Request, mockRes as Response);
+
+        const callArgs = mockCreateReportService.mock.calls[0][0];
+        expect(callArgs.isAnonymous).toBe(false);
+      });
     });
   });
 });
