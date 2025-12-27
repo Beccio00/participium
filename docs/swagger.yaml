@@ -1086,6 +1086,60 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+    patch:
+      tags:
+        - Administration
+      summary: Update roles for a municipality user (multi-role)
+      description: |
+        Update the list of roles assigned to a municipality user. Only administrators can perform this operation.
+        The request body must provide an array of valid roles (see /admin/roles).
+        This endpoint allows assigning one or more roles to a user.
+      operationId: updateMunicipalityUserRoles
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the municipality user to update
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - roles
+              properties:
+                roles:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/MunicipalityRole"
+                  minItems: 1
+                  description: List of roles to assign to the user
+            example:
+              roles: ["ADMINISTRATOR", "PUBLIC_RELATIONS"]
+      responses:
+        "200":
+          description: Municipality user roles updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MunicipalityUserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /admin/roles:
     get:
       tags:
