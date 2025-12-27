@@ -474,16 +474,17 @@ export default function HomePage() {
                   style={{ display: "flex", flexDirection: "column", gap: 0 }}
                 >
                   {reports.map((report) => (
-                    <ReportCard
-                      key={report.id}
-                      report={report}
-                      isSelected={selectedReportId === report.id}
-                      onClick={() => {
-                        setSelectedReportId(report.id);
-                        setShowReportsSidebar(false);
-                      }}
-                      onOpenDetails={handleReportDetailsClick}
-                    />
+                    <div key={report.id}>
+                      <ReportCard
+                        report={report}
+                        isSelected={selectedReportId === report.id}
+                        onClick={() => {
+                          setSelectedReportId(report.id);
+                          setShowReportsSidebar(false);
+                        }}
+                        onOpenDetails={handleReportDetailsClick}
+                      />
+                    </div>
                   ))}
                 </div>
               ) : (

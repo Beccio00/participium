@@ -373,7 +373,7 @@ export default function MapView({
               )};">${report.status}</span>
             </div>
           </div>
-          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+          <div style="margin-top:0.5rem;font-size:12px;">Created by: <b>${
             report.isAnonymous
               ? "anonymous"
               : report.user

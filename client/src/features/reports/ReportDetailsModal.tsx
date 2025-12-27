@@ -507,11 +507,11 @@ export default function ReportDetailsModal({
                 Created by:
               </strong>
               <span style={{ marginLeft: "0.5rem", color: "var(--text)" }}>
-                {display.user
-                  ? `${display.user.firstName} ${display.user.lastName}`
-                  : display.isAnonymous
-                  ? "Anonymous user"
-                  : "Unknown"}
+                {display.isAnonymous
+                  ? "Anonimo"
+                  : display.user
+                    ? `${display.user.firstName} ${display.user.lastName}`.trim()
+                    : "Unknown"}
               </span>
             </div>
 

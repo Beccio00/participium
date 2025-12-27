@@ -189,8 +189,10 @@ export default function ReportForm() {
       dataToSend.append("category", formData.category);
       dataToSend.append("latitude", formData.latitude.toString());
       dataToSend.append("longitude", formData.longitude.toString());
-      dataToSend.append("isAnonymous", formData.isAnonymous.toString());
-      dataToSend.append("address", address || "");
+      // Invia isAnonymous come booleano puro (true/false)
+      dataToSend.append("isAnonymous", String(formData.isAnonymous));
+      // address rimane invariato (stringa)
+      dataToSend.append("address", typeof address === "string" ? address : "");
       files.forEach((file) => {
         dataToSend.append("photos", file);
       });
@@ -431,24 +433,22 @@ export default function ReportForm() {
                       )}
                     </Form.Group>
 
-                    {/* <Form.Check
-                      type="checkbox"
-                      id="anonymous"
-                      name="isAnonymous"
-                      checked={formData.isAnonymous}
-                      onChange={handleInputChange}
-                      label={
-                        <span>
-                          <Eye /> Submit anonymously
-                        </span>
-                      }
-                      className="p-3"
-                      style={{
-                        background: 'var(--bg)',
-                        borderRadius: '10px',
-                        border: '2px solid #e1e5e9',
-                      }}
-                    />*/}
+                    <Form.Group className="mb-3 mt-3 p-3" style={{ background: 'var(--bg)', borderRadius: '10px', border: '2px solid #e1e5e9' }}>
+                      <Form.Check
+                        type="checkbox"
+                        id="anonymous"
+                        name="isAnonymous"
+                        checked={formData.isAnonymous}
+                        onChange={handleInputChange}
+                        label={
+                            <span>
+                            Make this report anonymous
+                            <br />
+                            <small className="text-muted">If selected, your name will not be publicly visible in the report list.</small>
+                            </span>
+                        }
+                      />
+                    </Form.Group>
                   </div>
                 </Col>
 
