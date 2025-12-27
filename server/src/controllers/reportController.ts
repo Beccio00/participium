@@ -135,8 +135,8 @@ function buildReportData(
     category,
     latitude,
     longitude,
-    address,
     isAnonymous: isAnonymous === "true",
+    address,
     photos: photoData,
     userId,
   };
@@ -166,8 +166,8 @@ export async function createReport(req: Request, res: Response): Promise<void> {
     category as ReportCategory,
     coordinates.latitude,
     coordinates.longitude,
-    resolvedAddress,
     isAnonymous,
+    resolvedAddress,
     photoData,
     user.id
   );
