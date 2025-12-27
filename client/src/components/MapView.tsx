@@ -1,17 +1,23 @@
+// React hooks
 import { useEffect, useRef, useState } from "react";
+// API to fetch approved reports
 import { getReports } from "../api/api";
+// Leaflet and marker cluster plugin
 import L from "leaflet";
 import "leaflet.markercluster/dist/leaflet.markercluster.js";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
+// Types
 import type { Report } from "../types/report.types";
+// Styles
 import "../styles/MapView.css";
+// Info modal
 import InfoModal from "./InfoModal";
 
-// Torino coordinates fallback
+// Default coordinates to center the map on Turin
 const TURIN: [number, number] = [45.0703, 7.6869];
 
-// Helper function to get status color for map markers
+// Returns a color based on the report status (for markers)
 const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
     case "resolved":
@@ -27,9 +33,9 @@ const getStatusColor = (status: string): string => {
   }
 };
 
-// Helper function to create colored marker icon
+// Creates a colored SVG icon for report markers
 const createColoredIcon = (color: string) => {
-  // marker svg
+  // Custom SVG marker
   const svg = `
     <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g filter="url(#shadow)">
@@ -51,7 +57,7 @@ const createColoredIcon = (color: string) => {
   });
 };
 
-// Helper function to create selected location marker icon
+// Creates an icon for the selected location on the map
 const createSelectedLocationIcon = () => {
   return L.divIcon({
     className: "selected-location-marker",
@@ -80,16 +86,25 @@ const createSelectedLocationIcon = () => {
   });
 };
 
+// Props accepted by the MapView component
 interface MapViewProps {
+  // Callback for location selection (optional)
   onLocationSelect?: (lat: number, lng: number) => void;
+  // Selected location (optional)
   selectedLocation?: [number, number] | null;
+  // List of reports to display as markers
   reports?: Report[];
+  // ID of the selected report (optional)
   selectedReportId?: number | null;
+  // Custom icon for the selected location (optional)
   customSelectedIcon?: L.DivIcon | null;
+  // Callback for clicking on report details (optional)
   onReportDetailsClick?: (reportId: number) => void;
+  // Hide the info button (optional)
   hideInfoButton?: boolean;
 }
 
+// Main component for the interactive map
 export default function MapView({
   onLocationSelect,
   selectedLocation,
@@ -99,23 +114,33 @@ export default function MapView({
   onReportDetailsClick,
   hideInfoButton = false,
 }: MapViewProps) {
+  // Ref for the map div
   const mapRef = useRef<HTMLDivElement>(null);
+  // Ref for the Leaflet map instance
   const mapInstanceRef = useRef<L.Map | null>(null);
+  // Ref for the selected marker
   const markerRef = useRef<L.Marker | null>(null);
+  // Ref for report markers
   const reportMarkersRef = useRef<L.Marker[]>([]);
+  // Map center
   const [center, setCenter] = useState<[number, number]>(TURIN);
+  // State for tile loading errors
   const [hasTileError, setHasTileError] = useState(false);
+  // Geojson data for Turin (optional)
   const [turinData, setTurinData] = useState<any | null>(null);
+  // State for boundary alert
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
+  // State for showing the info modal
   const [showInfoModal, setShowInfoModal] = useState(false);
+  // Local state for reports
   const [reports, setReports] = useState<Report[]>(initialReports);
-  // Polling per aggiornare i report ogni 10 secondi
+  // Effect: polling to update reports every 10 seconds
   useEffect(() => {
     let polling = true;
     const fetchReports = async () => {
       try {
         const data = await getReports();
-        // Filtra solo i report non risolti
+        // Filter only unresolved reports (change here if you want to show resolved as well)
         setReports(data.filter((r) => r.status.toLowerCase() !== "resolved"));
       } catch (err) {
         // Puoi gestire errori qui se vuoi
