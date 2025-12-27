@@ -38,7 +38,7 @@ export function toExternalMaintainerDTO(u: any): ExternalMaintainerDTO | null {
     firstName: u.first_name,
     lastName: u.last_name,
     email: u.email,
-    role: u.role as Role,
+    role: [u.role as Role],
     company: {
       id: u.externalCompany.id,
       name: u.externalCompany.name,

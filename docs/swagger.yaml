@@ -889,6 +889,116 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /telegram/users/{telegramId}/reports:
+    get:
+      tags:
+        - Telegram
+      summary: Get list of reports for a Telegram user
+      description: |
+        Retrieve the list of reports submitted by the user associated with the provided Telegram ID.
+        Used by the Telegram bot for the `/myreports` command.
+      operationId: getTelegramUserReports
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+        - name: limit
+          in: query
+          required: false
+          description: Max number of reports to return
+          schema:
+            type: integer
+            default: 5
+            maximum: 20
+      responses:
+        "200":
+          description: List of reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSummary"
+        "404":
+          description: User not found or Telegram account not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/users/{telegramId}/reports/{reportId}:
+    get:
+      tags:
+        - Telegram
+      summary: Get report details for a Telegram user
+      description: |
+        Retrieve detailed status of a specific report for a Telegram user.
+        Used by the Telegram bot for the `/reportstatus {id}` command.
+        The backend verifies that the report belongs to the user linked to the telegramId.
+      operationId: getTelegramReportDetails
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report to retrieve
+          schema:
+            type: integer
+            format: int64
+          example: 1024
+      responses:
+        "200":
+          description: Report details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+        "403":
+          description: Not authorized to view this report (report belongs to another user)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "You do not have permission to view this report"
+        "404":
+          description: Report not found or User not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                reportNotFound:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Report not found"
+                userNotLinked:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /admin/municipality-users:
     post:
       tags:
@@ -3969,7 +4079,9 @@ components:
           type: string
           example: mario.rossi@example.com
         role:
-          $ref: "#/components/schemas/UserRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
         telegramUsername:
           type: string
           nullable: true
@@ -4037,7 +4149,9 @@ components:
           description: Password (minimum 8 characters)
           example: AdminPass123!
         role:
-          $ref: "#/components/schemas/MunicipalityRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
 
     MunicipalityUserResponse:
       type: object
@@ -4057,7 +4171,9 @@ components:
           type: string
           example: giuseppe.verdi@comune.torino.it
         role:
-          $ref: "#/components/schemas/MunicipalityRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
 
     ExternalMaintainerResponse:
       type: object
@@ -4081,9 +4197,11 @@ components:
           description: External maintainer's email address
           example: marco.bianchi@enelx.com
         role:
-          type: string
-          enum:
-            - EXTERNAL_MAINTAINER
+          type: array                
+          items:                     
+            type: string
+            enum:
+              - EXTERNAL_MAINTAINER
           description: Role is always EXTERNAL_MAINTAINER
           example: EXTERNAL_MAINTAINER
         company:
@@ -4309,7 +4427,9 @@ components:
           format: int64
           example: 201
         senderRole:
-          $ref: "#/components/schemas/UserRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
           description: Role of the user who sent the message
           example: CITIZEN
 
@@ -4583,7 +4703,9 @@ components:
           description: Full name of the author (first name + last name)
           example: "Marco Bianchi"
         authorRole:
-          type: string
+          type: array
+          items:
+            type: string
           description: Role of the technical staff member who wrote the note
           example: "INFRASTRUCTURES"
         createdAt:
