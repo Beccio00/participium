@@ -147,7 +147,7 @@ export default function ReportCard({
         <div style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
           <span style={{ fontStyle: "italic" }}>
             Created by: {report.isAnonymous
-              ? "Anonimo"
+              ? "Anonymous"
               : report.user && report.user.firstName
                 ? `${report.user.firstName} ${report.user.lastName || ""}`.trim()
                 : ""}

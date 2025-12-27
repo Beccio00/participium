@@ -508,7 +508,7 @@ export default function ReportDetailsModal({
               </strong>
               <span style={{ marginLeft: "0.5rem", color: "var(--text)" }}>
                 {display.isAnonymous
-                  ? "Anonimo"
+                  ? "Anonymous"
                   : display.user
                     ? `${display.user.firstName} ${display.user.lastName}`.trim()
                     : "Unknown"}

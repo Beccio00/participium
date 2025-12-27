@@ -375,7 +375,7 @@ export default function MapView({
           </div>
           <div style="margin-top:0.5rem;font-size:12px;">Created by: <b>${
             report.isAnonymous
-              ? "anonymous"
+              ? "Anonymous"
               : report.user
               ? `${report.user.firstName} ${report.user.lastName}`
               : "user"
