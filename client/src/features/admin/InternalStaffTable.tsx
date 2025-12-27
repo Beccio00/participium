@@ -54,11 +54,15 @@ export default function InternalStaffTable({ users, onDelete, onEdit }: Internal
               </td>
               <td>{user.email}</td>
               <td>
+<<<<<<< HEAD
                 {Array.isArray(user.role)
                   ? user.role.map((r) => (
                       <Badge key={r} bg="primary" className="me-1">{getRoleLabel(r)}</Badge>
                     ))
                   : <Badge bg="primary">{getRoleLabel(user.role)}</Badge>}
+=======
+                <Badge bg="primary">{getRoleLabel(user.role[0])}</Badge>
+>>>>>>> story#10/dev
               </td>
               <td className="text-end">
                 <button

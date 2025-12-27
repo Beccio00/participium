@@ -889,6 +889,116 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /telegram/users/{telegramId}/reports:
+    get:
+      tags:
+        - Telegram
+      summary: Get list of reports for a Telegram user
+      description: |
+        Retrieve the list of reports submitted by the user associated with the provided Telegram ID.
+        Used by the Telegram bot for the `/myreports` command.
+      operationId: getTelegramUserReports
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+        - name: limit
+          in: query
+          required: false
+          description: Max number of reports to return
+          schema:
+            type: integer
+            default: 5
+            maximum: 20
+      responses:
+        "200":
+          description: List of reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSummary"
+        "404":
+          description: User not found or Telegram account not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/users/{telegramId}/reports/{reportId}:
+    get:
+      tags:
+        - Telegram
+      summary: Get report details for a Telegram user
+      description: |
+        Retrieve detailed status of a specific report for a Telegram user.
+        Used by the Telegram bot for the `/reportstatus {id}` command.
+        The backend verifies that the report belongs to the user linked to the telegramId.
+      operationId: getTelegramReportDetails
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report to retrieve
+          schema:
+            type: integer
+            format: int64
+          example: 1024
+      responses:
+        "200":
+          description: Report details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+        "403":
+          description: Not authorized to view this report (report belongs to another user)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "You do not have permission to view this report"
+        "404":
+          description: Report not found or User not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                reportNotFound:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Report not found"
+                userNotLinked:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /admin/municipality-users:
     post:
       tags:
@@ -3976,6 +4086,7 @@ components:
         email:
           type: string
           example: mario.rossi@example.com
+<<<<<<< HEAD
         roles:
           type: array
           items:
@@ -3983,6 +4094,12 @@ components:
           description: |
             List of roles assigned to the user.
             Municipality users may have multiple roles simultaneously."
+=======
+        role:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
+>>>>>>> story#10/dev
         telegramUsername:
           type: string
           nullable: true
@@ -4049,12 +4166,19 @@ components:
           format: password
           description: Password (minimum 8 characters)
           example: AdminPass123!
+<<<<<<< HEAD
         roles:
           type: array
           minItems: 1
           items:
             $ref: "#/components/schemas/MunicipalityRole"
           description: Initial roles assigned to the user
+=======
+        role:
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
+>>>>>>> story#10/dev
 
     MunicipalityUserResponse:
       type: object
@@ -4073,7 +4197,11 @@ components:
         email:
           type: string
           example: giuseppe.verdi@comune.torino.it
+<<<<<<< HEAD
         roles:
+=======
+        role:
+>>>>>>> story#10/dev
           type: array
           items:
             $ref: "#/components/schemas/MunicipalityRole"
@@ -4100,9 +4228,11 @@ components:
           description: External maintainer's email address
           example: marco.bianchi@enelx.com
         role:
-          type: string
-          enum:
-            - EXTERNAL_MAINTAINER
+          type: array                
+          items:                     
+            type: string
+            enum:
+              - EXTERNAL_MAINTAINER
           description: Role is always EXTERNAL_MAINTAINER
           example: EXTERNAL_MAINTAINER
         company:
@@ -4328,7 +4458,9 @@ components:
           format: int64
           example: 201
         senderRole:
-          $ref: "#/components/schemas/UserRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
           description: Role of the user who sent the message
           example: CITIZEN
 
@@ -4602,7 +4734,9 @@ components:
           description: Full name of the author (first name + last name)
           example: "Marco Bianchi"
         authorRole:
-          type: string
+          type: array
+          items:
+            type: string
           description: Role of the technical staff member who wrote the note
           example: "INFRASTRUCTURES"
         createdAt:

@@ -40,3 +40,15 @@ export async function createReport(data: CreateReportData): Promise<CreateReport
   const res = await axios.post(`${API_BASE_URL}/api/telegram/reports`, data);
   return res.data;
 }
+
+export async function getMyReports(telegramId: string): Promise<any> {
+  const res = await axios.get(`${API_BASE_URL}/api/telegram/users/${telegramId}/reports`, {
+    params: { telegramId },
+  });
+  return res.data;
+}
+
+export async function getReportStatus(telegramId: string, reportId: number): Promise<any> {
+  const res = await axios.get(`${API_BASE_URL}/api/telegram/users/${telegramId}/reports/${reportId}`);
+  return res.data;
+}
