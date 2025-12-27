@@ -4025,7 +4025,9 @@ components:
           type: string
           example: mario.rossi@example.com
         role:
-          $ref: "#/components/schemas/UserRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
         telegramUsername:
           type: string
           nullable: true
@@ -4093,7 +4095,9 @@ components:
           description: Password (minimum 8 characters)
           example: AdminPass123!
         role:
-          $ref: "#/components/schemas/MunicipalityRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
 
     MunicipalityUserResponse:
       type: object
@@ -4113,7 +4117,9 @@ components:
           type: string
           example: giuseppe.verdi@comune.torino.it
         role:
-          $ref: "#/components/schemas/MunicipalityRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
 
     ExternalMaintainerResponse:
       type: object
@@ -4137,9 +4143,11 @@ components:
           description: External maintainer's email address
           example: marco.bianchi@enelx.com
         role:
-          type: string
-          enum:
-            - EXTERNAL_MAINTAINER
+          type: array                
+          items:                     
+            type: string
+            enum:
+              - EXTERNAL_MAINTAINER
           description: Role is always EXTERNAL_MAINTAINER
           example: EXTERNAL_MAINTAINER
         company:
@@ -4365,7 +4373,9 @@ components:
           format: int64
           example: 201
         senderRole:
-          $ref: "#/components/schemas/UserRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
           description: Role of the user who sent the message
           example: CITIZEN
 
@@ -4639,7 +4649,9 @@ components:
           description: Full name of the author (first name + last name)
           example: "Marco Bianchi"
         authorRole:
-          type: string
+          type: array
+          items:
+            type: string
           description: Role of the technical staff member who wrote the note
           example: "INFRASTRUCTURES"
         createdAt:

@@ -45,7 +45,7 @@ export function signup(role: Role) {
       last_name: lastName,
       password: hashedPassword,
       salt,
-      role: role,
+      role: [role],
       telegram_username: null,
       email_notifications_enabled: true
     });

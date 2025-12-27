@@ -39,7 +39,7 @@ export async function createMunicipalityUserController(req: Request, res: Respon
     last_name: lastName,
     password: hashedPassword,
     salt,
-    role: role as Role
+    role: [role as Role],
   });
 
   const responseUser = toMunicipalityUserDTO(newUser);

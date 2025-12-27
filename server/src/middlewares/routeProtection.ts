@@ -214,7 +214,8 @@ export async function requireCitizenAuthorOrTechnicalOrExternal(
       );
     }
   }
-  if (!TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
+  const role = authReq.user.role;
+  if (!TECHNICAL_AND_EXTERNAL_ROLES.some(r => role.includes(r))) {
     throw new ForbiddenError(
         "Technical staff or external maintainer privileges required"
       );
