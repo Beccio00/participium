@@ -204,9 +204,9 @@ export default function ReportForm() {
       dataToSend.append("category", formData.category);
       dataToSend.append("latitude", formData.latitude.toString());
       dataToSend.append("longitude", formData.longitude.toString());
-      // Invia isAnonymous come booleano puro (true/false)
+      // send isAnonymous as boolean (true/false)
       dataToSend.append("isAnonymous", String(formData.isAnonymous));
-      // address rimane invariato (stringa)
+      // address remains unchanged (string)
       dataToSend.append("address", typeof address === "string" ? address : "");
       files.forEach((file) => {
         dataToSend.append("photos", file);
