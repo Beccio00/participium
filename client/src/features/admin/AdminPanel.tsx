@@ -13,6 +13,7 @@ import {
   createMunicipalityUser, 
   listMunicipalityUsers, 
   deleteMunicipalityUser,
+  updateMunicipalityUser,
   createExternalMaintainer,
   getExternalMaintainers,
   getExternalCompanies,
@@ -24,6 +25,7 @@ import type {
   MunicipalityUserRequest, 
   MunicipalityUserResponse 
 } from "../../types";
+import type { MunicipalityUserRoles } from "../../../../shared/MunicipalityUserTypes";
 import type {
   ExternalMaintainerResponse,
   ExternalCompanyResponse,
@@ -40,7 +42,7 @@ interface UnifiedFormState {
   lastName: string;
   email: string;
   password: string;
-  role: string; 
+  role: MunicipalityUserRoles[];
   externalCompanyId: string;
 
   //for external companies
@@ -54,7 +56,7 @@ const INITIAL_FORM_STATE: UnifiedFormState = {
   lastName: "",
   email: "",
   password: "",
-  role: "",
+  role: [],
   externalCompanyId: "",
 
   companyName: "",
@@ -120,6 +122,7 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<UserTab>('internal');
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<MunicipalityUserResponse | null>(null);
   const { loadingState, setLoading, setIdle } = useLoadingState();
 
   const isAdmin = isAuthenticated && user?.role === Role.ADMINISTRATOR.toString();
@@ -160,7 +163,7 @@ export default function AdminPanel() {
       lastName: values.lastName,
       email: values.email,
       password: values.password,
-      role: values.role as any,
+      role: values.role,
     };
     await createMunicipalityUser(payload);
   };
@@ -185,30 +188,42 @@ export default function AdminPanel() {
     await createExternalCompany(payload);
   };
 
-  const handleCreate = async (values: UnifiedFormState) => {
+  const handleCreateOrUpdate = async (values: UnifiedFormState) => {
     try {
       if (activeTab === 'internal') {
-        await createInternalUser(values);
+        if (editingUser) {
+          // UPDATE
+          await updateMunicipalityUser(editingUser.id, {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            email: values.email,
+            role: values.role,
+          });
+        } else {
+          // CREATE
+          await createInternalUser(values);
+        }
       } else if (activeTab === 'external') {
         await createExternalUser(values);
       } else {
         await createCompany(values);
       }
 
+      setEditingUser(null);
       form.resetForm();
       form.setFieldValue('categories', []);
       form.setFieldValue('platformAccess', false);
       setShowForm(false);
       await loadData(); 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user");
+      setError(err instanceof Error ? err.message : "Failed to save user");
       throw err;
     }
   };
 
   const form = useForm<UnifiedFormState>({
     initialValues: INITIAL_FORM_STATE,
-    onSubmit: handleCreate,
+    onSubmit: handleCreateOrUpdate,
   });
 
   const handleCategoryToggle = (category: ReportCategory) => {
@@ -247,9 +262,26 @@ export default function AdminPanel() {
   const toggleForm = () => {
     setShowForm(!showForm);
     if (!showForm) {
+      setEditingUser(null);
       form.resetForm();
       setError("");
     }
+  };
+
+  const handleEdit = (user: MunicipalityUserResponse) => {
+    setEditingUser(user);
+    setShowForm(true);
+    form.setValues({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      password: "", // Vuoto per sicurezza
+      role: Array.isArray(user.role) ? user.role : user.role ? [user.role] : [],
+      externalCompanyId: "",
+      companyName: "",
+      platformAccess: false,
+      categories: [],
+    });
   };
 
   const handleTabChange = (tab: UserTab) => {
@@ -336,7 +368,7 @@ export default function AdminPanel() {
             {/* Creation form */}
             {showForm && (
               <div className="mb-5 p-4 rounded bg-light border">
-                <h5 className="mb-3 pb-2 border-bottom">Create New {addButtonLabel}</h5>
+                <h5 className="mb-3 pb-2 border-bottom">{editingUser ? "Edit Staff" : `Create New ${addButtonLabel}`}</h5>
                 {activeTab === 'companies' ? (
                   <CompanyForm
                     values={form.values}
@@ -349,7 +381,14 @@ export default function AdminPanel() {
                   />
                 ) : (
                   <UserForm
-                    values={form.values}
+                    values={{
+                      firstName: form.values.firstName,
+                      lastName: form.values.lastName,
+                      email: form.values.email,
+                      password: form.values.password,
+                      role: form.values.role,
+                      externalCompanyId: form.values.externalCompanyId,
+                    }}
                     isSubmitting={form.isSubmitting}
                     isInternal={activeTab === 'internal'}
                     companies={companies}
@@ -362,7 +401,7 @@ export default function AdminPanel() {
             )}
 
             {activeTab === 'internal' && (
-              <InternalStaffTable users={internalUsers} onDelete={handleDelete} />
+              <InternalStaffTable users={internalUsers} onDelete={handleDelete} onEdit={handleEdit} />
             )}
             
             {activeTab === 'external' && (

@@ -3,12 +3,14 @@ import { Trash } from 'react-bootstrap-icons';
 import type { MunicipalityUserResponse } from '../../types';
 import { getRoleLabel } from '../../utils/roles';
 
+
 interface InternalStaffTableProps {
   users: MunicipalityUserResponse[];
   onDelete: (userId: number) => void;
+  onEdit: (user: MunicipalityUserResponse) => void;
 }
 
-export default function InternalStaffTable({ users, onDelete }: InternalStaffTableProps) {
+export default function InternalStaffTable({ users, onDelete, onEdit }: InternalStaffTableProps) {
   if (users.length === 0) {
     return (
       <div className="table-responsive">
@@ -52,9 +54,19 @@ export default function InternalStaffTable({ users, onDelete }: InternalStaffTab
               </td>
               <td>{user.email}</td>
               <td>
-                <Badge bg="primary">{getRoleLabel(user.role)}</Badge>
+                {Array.isArray(user.role)
+                  ? user.role.map((r) => (
+                      <Badge key={r} bg="primary" className="me-1">{getRoleLabel(r)}</Badge>
+                    ))
+                  : <Badge bg="primary">{getRoleLabel(user.role)}</Badge>}
               </td>
               <td className="text-end">
+                <button
+                  className="btn btn-sm btn-outline-primary me-2"
+                  onClick={() => onEdit(user)}
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => onDelete(user.id)}
                   className="btn btn-sm btn-outline-danger border-0"

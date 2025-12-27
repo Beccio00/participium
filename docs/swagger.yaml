@@ -1089,11 +1089,16 @@ paths:
     patch:
       tags:
         - Administration
-      summary: Update roles for a municipality user (multi-role)
+      summary: Replace roles for a municipality user (multi-role, includes cancellation)
       description: |
-        Update the list of roles assigned to a municipality user. Only administrators can perform this operation.
-        The request body must provide an array of valid roles (see /admin/roles).
-        This endpoint allows assigning one or more roles to a user.
+        Replace the entire list of roles assigned to a municipality user.
+
+        **Important (story requirement):**
+        - A municipality user can have multiple roles at the same time.
+        - This operation **includes cancellation**: roles NOT included in the request will be removed.
+
+        Only users with the ADMINISTRATOR role can perform this operation.
+        The request body must provide an array of valid roles (see GET /admin/roles).
       operationId: updateMunicipalityUserRoles
       security:
         - SessionAuth: []
@@ -1116,10 +1121,13 @@ paths:
               properties:
                 roles:
                   type: array
+                  minItems: 1
                   items:
                     $ref: "#/components/schemas/MunicipalityRole"
-                  minItems: 1
-                  description: List of roles to assign to the user
+                  description: |
+                    Full list of roles the user must have after the update.
+                    This list replaces the previous one; omitted roles are removed (cancellation).
+              additionalProperties: false
             example:
               roles: ["ADMINISTRATOR", "PUBLIC_RELATIONS"]
       responses:
@@ -3968,8 +3976,13 @@ components:
         email:
           type: string
           example: mario.rossi@example.com
-        role:
-          $ref: "#/components/schemas/UserRole"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
+          description: |
+            List of roles assigned to the user.
+            Municipality users may have multiple roles simultaneously."
         telegramUsername:
           type: string
           nullable: true
@@ -4036,8 +4049,12 @@ components:
           format: password
           description: Password (minimum 8 characters)
           example: AdminPass123!
-        role:
-          $ref: "#/components/schemas/MunicipalityRole"
+        roles:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
+          description: Initial roles assigned to the user
 
     MunicipalityUserResponse:
       type: object
@@ -4056,8 +4073,10 @@ components:
         email:
           type: string
           example: giuseppe.verdi@comune.torino.it
-        role:
-          $ref: "#/components/schemas/MunicipalityRole"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
 
     ExternalMaintainerResponse:
       type: object
