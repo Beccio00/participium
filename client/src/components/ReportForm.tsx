@@ -9,11 +9,11 @@ import {
   Form,
   Card,
 } from "react-bootstrap";
-import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon} from "react-bootstrap-icons";
+import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon } from "react-bootstrap-icons";
 import MapView from "./MapView";
-// Marker stile Google Maps puntatore, usato per la location selezionata
-import L from "leaflet";
+import L from "leaflet"; // Used for custom marker icon
 
+// Create a custom colored marker icon for the selected location
 const createColoredIcon = () => {
   const svg = `
     <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -65,6 +65,7 @@ import { fetchAddressFromCoordinates } from "../utils/address";
 
 export default function ReportForm() {
   const navigate = useNavigate();
+  // State for all form fields
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -74,24 +75,31 @@ export default function ReportForm() {
     isAnonymous: false,
     photos: [] as ReportPhoto[],
   });
-  const [selectedLocation, setSelectedLocation] = useState<
-    [number, number] | null
-  >(null);
+  // State for selected location on the map
+  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+  // State for error messages
   const [error, setError] = useState<string | null>(null);
+  // State for uploaded files (photos)
   const [files, setFiles] = useState<File[]>([]);
+  // Ref for file input element
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // State for drag-and-drop UI
   const [isDragging, setIsDragging] = useState(false);
+  // State for which input is focused (for styling)
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  // State for which photo is hovered (for preview effect)
   const [hoverPreview, setHoverPreview] = useState<number | null>(null);
-  const [address, setAddress] = useState<string | null>(null); 
-  const [loadingAddress, setLoadingAddress] = useState(false); 
+  // State for resolved address from coordinates
+  const [address, setAddress] = useState<string | null>(null);
+  // State for address loading indicator
+  const [loadingAddress, setLoadingAddress] = useState(false);
+  // Ref to scroll to top on error
   const topRef = useRef<HTMLDivElement>(null);
 
+  // Handle and validate new files (drag-and-drop or file input)
   const processFiles = (newFiles: File[]) => {
-    //validation on dnd
-    const validateImages = newFiles.filter((file) =>
-      file.type.startsWith("image/")
-    );
+    // Only allow image files
+    const validateImages = newFiles.filter((file) => file.type.startsWith("image/"));
     if (validateImages.length < newFiles.length) {
       setError("Only image files are allowed.");
     }
@@ -104,19 +112,20 @@ export default function ReportForm() {
       setFiles(totalFiles.slice(0, 3));
     } else {
       setFiles(totalFiles);
-
       if (validateImages.length === newFiles.length) {
         setError(null);
       }
     }
   };
 
+  // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       processFiles(Array.from(e.target.files));
     }
   };
 
+  // Drag-and-drop handlers for photo upload
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
@@ -135,10 +144,12 @@ export default function ReportForm() {
     }
   };
 
+  // Remove a photo from the list
   const removeFile = (index: number) => {
     setFiles(files.filter((_, i) => i !== index));
   };
 
+  // Handle changes for all form fields (text, textarea, select, checkbox)
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -153,6 +164,7 @@ export default function ReportForm() {
     }
   };
 
+  // Handle location selection from the map
   const handleLocationSelect = async (lat: number, lng: number) => {
     setSelectedLocation([lat, lng]);
     setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
@@ -162,9 +174,11 @@ export default function ReportForm() {
     setLoadingAddress(false);
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate required fields
     const missingFields = [];
     if (!formData.title.trim()) missingFields.push("Title");
     if (!formData.description.trim()) missingFields.push("Description");
@@ -183,6 +197,7 @@ export default function ReportForm() {
     setError(null);
 
     try {
+      // Prepare form data for API
       const dataToSend = new FormData();
       dataToSend.append("title", formData.title);
       dataToSend.append("description", formData.description);
@@ -207,6 +222,7 @@ export default function ReportForm() {
     }
   };
 
+  // Automatically clear error after 3 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
