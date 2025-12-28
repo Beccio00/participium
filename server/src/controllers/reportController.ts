@@ -228,7 +228,35 @@ export async function getReports(req: Request, res: Response): Promise<void> {
   }
 
   const reports = await getApprovedReportsService(category as ReportCategory);
-  res.status(200).json(reports);
+  
+  // Story #15: Hide user information for anonymous reports in public listings
+  // This is a public API, so we mask personal information for anonymous reports
+  const publicReports = reports.map((report: any) => {
+    if (report.isAnonymous && report.user) {
+      // Clone the report and replace user with masked version
+      // Must return full UserInfo structure to satisfy Swagger validation
+      const maskedReport: any = {};
+      Object.keys(report).forEach(key => {
+        if (key !== 'user') {
+          maskedReport[key] = report[key];
+        }
+      });
+      maskedReport.user = {
+        id: report.user.id,
+        firstName: "anonymous",
+        lastName: "",
+        email: "",
+        role: "CITIZEN",
+        isVerified: false,
+        telegramUsername: null,
+        emailNotificationsEnabled: false
+      };
+      return maskedReport;
+    }
+    return report;
+  });
+  
+  res.status(200).json(publicReports);
 }
 
 export async function getReportById(
