@@ -183,6 +183,14 @@ export async function createReportFromTelegram(
   if (!data.description || data.description.trim().length === 0) {
     throw new BadRequestError("Description is required");
   }
+  // Validate description length
+  const descLen = data.description.trim().length;
+  if (descLen < 10) {
+    throw new BadRequestError("Description is too short. Please provide at least 10 characters");
+  }
+  if (descLen > 1000) {
+    throw new BadRequestError("Description is too long. Please keep it under 1000 characters");
+  }
 
   if (typeof data.latitude !== "number" || typeof data.longitude !== "number") {
     throw new BadRequestError("Valid latitude and longitude are required");

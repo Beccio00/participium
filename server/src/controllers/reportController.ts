@@ -46,6 +46,19 @@ function validateCategory(category: string): void {
   }
 }
 
+function validateDescription(description: any): void {
+  if (typeof description !== 'string') {
+    throw new BadRequestError('Description must be a string');
+  }
+  const len = description.trim().length;
+  if (len < 10) {
+    throw new BadRequestError('Description is too short. Please provide at least 10 characters');
+  }
+  if (len > 1000) {
+    throw new BadRequestError('Description is too long. Please keep it under 1000 characters');
+  }
+}
+
 function validateAndParseCoordinates(latitude: any, longitude: any): { latitude: number; longitude: number } {
   const parsedLatitude = parseFloat(latitude);
   const parsedLongitude = parseFloat(longitude);
@@ -151,6 +164,7 @@ export async function createReport(req: Request, res: Response): Promise<void> {
   
   // Validate all inputs
   validateRequiredFields(title, description, category, latitude, longitude);
+  validateDescription(description);
   validatePhotos(photos);
   validateCategory(category);
   const coordinates = validateAndParseCoordinates(latitude, longitude);
