@@ -14,16 +14,20 @@ import {
 import { findByEmail } from "../services/userService";
 import { hashPassword } from "../services/passwordService";
 import { BadRequestError, ConflictError, NotFoundError } from "../utils";
+import { updateMunicipalityUser } from "../services/municipalityUserService";
 
 export async function createMunicipalityUserController(req: Request, res: Response): Promise<void> {
   const { firstName, lastName, email, password, role } = req.body;
 
-  if (!firstName || !lastName || !email || !password || !role) {
-    throw new BadRequestError("Missing required fields: firstName, lastName, email, password, role");
+  if (!firstName || !lastName || !email || !password || !role || !Array.isArray(role) || role.length === 0) {
+    throw new BadRequestError("Missing required fields: firstName, lastName, email, password, role (must be a non-empty array)");
   }
 
-  if (!isValidRole(role) || !MUNICIPALITY_ROLES.includes(role as Role)) {
-    throw new BadRequestError("Invalid role. Must be one of the municipality roles");
+  // Verifica che tutti i ruoli siano validi
+  for (const r of role) {
+    if (!isValidRole(r) || !MUNICIPALITY_ROLES.includes(r as Role)) {
+      throw new BadRequestError("Invalid role. Must be one of the municipality roles");
+    }
   }
 
   const existingUser = await findByEmail(email);
@@ -39,7 +43,7 @@ export async function createMunicipalityUserController(req: Request, res: Respon
     last_name: lastName,
     password: hashedPassword,
     salt,
-    role: [role as Role],
+    role: role.map((r: string) => r as Role),
   });
 
   const responseUser = toMunicipalityUserDTO(newUser);
@@ -87,4 +91,26 @@ export async function deleteMunicipalityUserController(req: Request, res: Respon
 
 export async function listRolesController(req: Request, res: Response): Promise<void> {
   res.status(200).json(MUNICIPALITY_ROLES);
+}
+
+export async function updateMunicipalityUserRolesController(req: Request, res: Response): Promise<void> {
+  const userId = parseInt(req.params.userId);
+  const { role } = req.body;
+
+  if (isNaN(userId)) throw new BadRequestError("Invalid user ID format");
+
+  if (!role || !Array.isArray(role) || role.length === 0) {
+    throw new BadRequestError("Request body must have required property 'role' (non-empty array)");
+  }
+
+  for (const r of role) {
+    if (!isValidRole(r) || !MUNICIPALITY_ROLES.includes(r as Role)) {
+      throw new BadRequestError("Invalid role. Must be one of the municipality roles");
+    }
+  }
+
+  const updated = await updateMunicipalityUser(userId, { role: role.map((r: string) => r as Role) });
+  if (!updated) throw new NotFoundError("Municipality user not found");
+
+  res.status(200).json(toMunicipalityUserDTO(updated));
 }

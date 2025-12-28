@@ -14,6 +14,7 @@ import {
   listMunicipalityUsers, 
   deleteMunicipalityUser,
   updateMunicipalityUser,
+  updateMunicipalityUserRoles,
   createExternalMaintainer,
   getExternalMaintainers,
   getExternalCompanies,
@@ -125,7 +126,10 @@ export default function AdminPanel() {
   const [editingUser, setEditingUser] = useState<MunicipalityUserResponse | null>(null);
   const { loadingState, setLoading, setIdle } = useLoadingState();
 
-  const isAdmin = isAuthenticated && user?.role === Role.ADMINISTRATOR.toString();
+  const isAdmin =
+    isAuthenticated &&
+    (user?.role === Role.ADMINISTRATOR.toString() ||
+      (Array.isArray(user?.role) && user.role.includes(Role.ADMINISTRATOR.toString())));
 
   useEffect(() => {
     if (!isAdmin) {
@@ -134,6 +138,16 @@ export default function AdminPanel() {
     }
     loadData();
   }, [isAdmin, navigate]);
+
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      (user?.role === "ADMINISTRATOR" ||
+        (Array.isArray(user?.role) && user.role.includes("ADMINISTRATOR")))
+    ) {
+      navigate("/admin", { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const loadData = async () => {
     try {
@@ -192,13 +206,14 @@ export default function AdminPanel() {
     try {
       if (activeTab === 'internal') {
         if (editingUser) {
-          // UPDATE
+          // UPDATE: aggiorna i dati base e i ruoli separatamente
           await updateMunicipalityUser(editingUser.id, {
             firstName: values.firstName,
             lastName: values.lastName,
             email: values.email,
             role: values.role,
           });
+          await updateMunicipalityUserRoles(editingUser.id, values.role);
         } else {
           // CREATE
           await createInternalUser(values);
@@ -392,7 +407,6 @@ export default function AdminPanel() {
                     isSubmitting={form.isSubmitting}
                     isInternal={activeTab === 'internal'}
                     companies={companies}
-                    addButtonLabel={addButtonLabel}
                     onChange={form.handleChange}
                     onSubmit={form.handleSubmit}
                   />

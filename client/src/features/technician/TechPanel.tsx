@@ -133,8 +133,8 @@ export default function TechPanel() {
 
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  const isPublicRelations = user?.role === Role.PUBLIC_RELATIONS.toString();
-  const isExternalMaintainer = user?.role === Role.EXTERNAL_MAINTAINER.toString();
+  const isPublicRelations = Array.isArray(user?.role) && user.role.includes(Role.PUBLIC_RELATIONS.toString());
+  const isExternalMaintainer = Array.isArray(user?.role) && user.role.includes(Role.EXTERNAL_MAINTAINER.toString());
 
   const [noteModalError, setNoteModalError] = useState<string | null>(null);
   const [toast, setToast] = useState({show: false, message: "", variant: "success" });
@@ -174,7 +174,7 @@ export default function TechPanel() {
   useEffect(() => {
     if (
       !isAuthenticated ||
-      (user?.role && !MUNICIPALITY_AND_EXTERNAL_ROLES.includes(user.role))
+      (Array.isArray(user?.role) && !user.role.some((r: string) => MUNICIPALITY_AND_EXTERNAL_ROLES.includes(r)))
     ) {
       navigate("/");
     }
@@ -236,7 +236,7 @@ export default function TechPanel() {
       let technicals = [];
       let externals = [];
 
-      if (user && user.role === Role.PUBLIC_RELATIONS.toString()) {
+      if (user && Array.isArray(user.role) && user.role.includes(Role.PUBLIC_RELATIONS.toString())) {
         try {
           technicals = await getAssignableTechnicals(id);
         } catch (err) {
@@ -248,7 +248,7 @@ export default function TechPanel() {
           setProcessingId(null);
           return;
         }
-      } else if (user && TECHNICIAN_ROLES.includes(user.role)) {
+      } else if (user && Array.isArray(user.role) && user.role.some((r: string) => TECHNICIAN_ROLES.includes(r))) {
         try {
           externals = await getAssignableExternals(id);
         } catch (err) {

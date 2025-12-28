@@ -205,7 +205,7 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === display.user.id &&
-          user.role === "CITIZEN"
+          Array.isArray(user.role) && user.role.includes("CITIZEN")
         ) {
           setCanSeeChat(true);
           return;
@@ -220,7 +220,7 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === extId &&
-          user.role === "EXTERNAL_MAINTAINER"
+          Array.isArray(user.role) && user.role.includes("EXTERNAL_MAINTAINER")
         ) {
           setCanSeeChat(true);
           return;
@@ -231,8 +231,7 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === display.assignedOfficer.id &&
-          user.role &&
-          user.role.startsWith("MUNICIPAL")
+          Array.isArray(user.role) && user.role.some((r: string) => r.startsWith("MUNICIPAL"))
         ) {
           setCanSeeChat(true);
           return;

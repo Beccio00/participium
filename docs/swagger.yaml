@@ -147,7 +147,7 @@ paths:
                   firstName: Mario
                   lastName: Rossi
                   email: mario.rossi@example.com
-                  role: CITIZEN
+                  roles: CITIZEN
                   telegramUsername: null
                   emailNotificationsEnabled: true
         "401":
@@ -1021,7 +1021,7 @@ paths:
               lastName: Verdi
               email: giuseppe.verdi@comune.torino.it
               password: AdminPass123!
-              role: LOCAL_PUBLIC_SERVICES
+              roles: LOCAL_PUBLIC_SERVICES
       responses:
         "201":
           description: Municipality user created successfully
@@ -1109,17 +1109,17 @@ paths:
                   firstName: "Giuseppe"
                   lastName: "Verdi"
                   email: "giuseppe.verdi@comune.torino.it"
-                  role: "LOCAL_PUBLIC_SERVICES"
+                  roles: "LOCAL_PUBLIC_SERVICES"
                 - id: 456
                   firstName: "Maria"
                   lastName: "Rossi"
                   email: "maria.rossi@comune.torino.it"
-                  role: "ADMINISTRATOR"
+                  roles: "ADMINISTRATOR"
                 - id: 789
                   firstName: "Franco"
                   lastName: "Bianchi"
                   email: "franco.bianchi@comune.torino.it"
-                  role: "ROAD_MAINTENANCE"
+                  roles: "ROAD_MAINTENANCE"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1441,7 +1441,7 @@ paths:
                             type: string
                           email:
                             type: string
-                          role:
+                          roles:
                             type: string
               example:
                 - id: 1
@@ -1453,7 +1453,7 @@ paths:
                       firstName: "Mario"
                       lastName: "Rossi"
                       email: "mario.rossi@greentech.com"
-                      role: "EXTERNAL_MAINTAINER"
+                      roles: "EXTERNAL_MAINTAINER"
         "401":
           description: Not authenticated
           content:
@@ -1595,7 +1595,7 @@ paths:
                             type: string
                           email:
                             type: string
-                          role:
+                          roles:
                             type: string
                             enum: ["EXTERNAL_MAINTAINER"]
               example:
@@ -1608,7 +1608,7 @@ paths:
                       firstName: "Giuseppe"
                       lastName: "Bianchi"
                       email: "giuseppe.bianchi@greentech.com"
-                      role: "EXTERNAL_MAINTAINER"
+                      roles: "EXTERNAL_MAINTAINER"
                 - id: 2
                   name: "Tech Services Inc"
                   categories: ["INFRASTRUCTURE"]
@@ -1677,7 +1677,7 @@ paths:
                     type: string
                   email:
                     type: string
-                  role:
+                  roles:
                     type: string
                   company:
                     type: object
@@ -1697,7 +1697,7 @@ paths:
                 firstName: "Mario"
                 lastName: "Rossi"
                 email: "mario.rossi@greentech.com"
-                role: "EXTERNAL_MAINTAINER"
+                roles: "EXTERNAL_MAINTAINER"
                 company:
                   id: 1
                   name: "Green Tech Solutions"
@@ -1768,7 +1768,7 @@ paths:
                       type: string
                     email:
                       type: string
-                    role:
+                    roles:
                       type: string
                     company:
                       type: object
@@ -1788,7 +1788,7 @@ paths:
                   firstName: "Mario"
                   lastName: "Rossi"
                   email: "mario.rossi@greentech.com"
-                  role: "EXTERNAL_MAINTAINER"
+                  roles: "EXTERNAL_MAINTAINER"
                   company:
                     id: 1
                     name: "Green Tech Solutions"
@@ -1798,7 +1798,7 @@ paths:
                   firstName: "Laura"
                   lastName: "Bianchi"
                   email: "laura.bianchi@aquafix.com"
-                  role: "EXTERNAL_MAINTAINER"
+                  roles: "EXTERNAL_MAINTAINER"
                   company:
                     id: 2
                     name: "Aqua Fix Srl"
@@ -1860,7 +1860,7 @@ paths:
                     type: string
                   email:
                     type: string
-                  role:
+                  roles:
                     type: string
                   company:
                     type: object
@@ -1880,7 +1880,7 @@ paths:
                 firstName: "Mario"
                 lastName: "Rossi"
                 email: "mario.rossi@greentech.com"
-                role: "EXTERNAL_MAINTAINER"
+                roles: "EXTERNAL_MAINTAINER"
                 company:
                   id: 1
                   name: "Green Tech Solutions"
@@ -2034,7 +2034,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -2175,7 +2175,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2183,7 +2183,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -2215,7 +2215,7 @@ paths:
                     firstName: Maria
                     lastName: Bianchi
                     email: maria.bianchi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2223,7 +2223,7 @@ paths:
                     firstName: Paolo
                     lastName: Neri
                     email: paolo.neri@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages: []
                   rejectedReason: null
                   photos: []
@@ -2286,7 +2286,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -2369,12 +2369,12 @@ paths:
                   firstName: Luca
                   lastName: Verdi
                   email: luca.verdi@municipality.com
-                  role: MUNICIPAL_BUILDING_MAINTENANCE
+                  roles: MUNICIPAL_BUILDING_MAINTENANCE
                 - id: 306
                   firstName: Paolo
                   lastName: Neri
                   email: paolo.neri@municipality.com
-                  role: ROAD_MAINTENANCE
+                  roles: ROAD_MAINTENANCE
         "401":
           description: Not authenticated
           content:
@@ -2462,12 +2462,12 @@ paths:
                       firstName: Marco
                       lastName: Bianchi
                       email: marco.bianchi@enelx.com
-                      role: EXTERNAL_MAINTAINER
+                      roles: EXTERNAL_MAINTAINER
                     - id: 502
                       firstName: Giulia
                       lastName: Ferrari
                       email: giulia.ferrari@enelx.com
-                      role: EXTERNAL_MAINTAINER
+                      roles: EXTERNAL_MAINTAINER
                 - id: 11
                   name: AMIAT Torino
                   categories:
@@ -2609,7 +2609,7 @@ paths:
                         firstName: Mario
                         lastName: Rossi
                         email: mario.rossi@example.com
-                        role: CITIZEN
+                        roles: CITIZEN
                         telegramUsername: null
                         emailNotificationsEnabled: true
                       assignedOfficer:
@@ -2617,7 +2617,7 @@ paths:
                         firstName: Luca
                         lastName: Verdi
                         email: luca.verdi@municipality.com
-                        role: MUNICIPAL_BUILDING_MAINTENANCE
+                        roles: MUNICIPAL_BUILDING_MAINTENANCE
                       externalHandler:
                         type: user
                         user:
@@ -2625,7 +2625,7 @@ paths:
                           firstName: Marco
                           lastName: Bianchi
                           email: marco.bianchi@enelx.com
-                          role: EXTERNAL_MAINTAINER
+                          roles: EXTERNAL_MAINTAINER
                           company:
                             id: 10
                             name: Enel X
@@ -2650,7 +2650,7 @@ paths:
                         firstName: Maria
                         lastName: Bianchi
                         email: maria.bianchi@example.com
-                        role: CITIZEN
+                        roles: CITIZEN
                         telegramUsername: null
                         emailNotificationsEnabled: true
                       assignedOfficer:
@@ -2658,7 +2658,7 @@ paths:
                         firstName: Paolo
                         lastName: Neri
                         email: paolo.neri@municipality.com
-                        role: MUNICIPAL_BUILDING_MAINTENANCE
+                        roles: MUNICIPAL_BUILDING_MAINTENANCE
                       externalHandler:
                         type: company
                         company:
@@ -2830,7 +2830,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2838,7 +2838,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: MUNICIPAL_BUILDING_MAINTENANCE
+                    roles: MUNICIPAL_BUILDING_MAINTENANCE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -2974,7 +2974,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -3139,7 +3139,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -3147,7 +3147,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -3177,7 +3177,7 @@ paths:
                     firstName: Maria
                     lastName: Bianchi
                     email: maria.bianchi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -3185,7 +3185,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 3
                       content: "Initial report created by user"
@@ -4086,7 +4086,6 @@ components:
         email:
           type: string
           example: mario.rossi@example.com
-<<<<<<< HEAD
         roles:
           type: array
           items:
@@ -4094,12 +4093,6 @@ components:
           description: |
             List of roles assigned to the user.
             Municipality users may have multiple roles simultaneously."
-=======
-        role:
-          type: array
-          items:
-            $ref: "#/components/schemas/UserRole"
->>>>>>> story#10/dev
         telegramUsername:
           type: string
           nullable: true
@@ -4166,19 +4159,12 @@ components:
           format: password
           description: Password (minimum 8 characters)
           example: AdminPass123!
-<<<<<<< HEAD
         roles:
           type: array
           minItems: 1
           items:
             $ref: "#/components/schemas/MunicipalityRole"
           description: Initial roles assigned to the user
-=======
-        role:
-          type: array
-          items:
-            $ref: "#/components/schemas/MunicipalityRole"
->>>>>>> story#10/dev
 
     MunicipalityUserResponse:
       type: object
@@ -4197,11 +4183,7 @@ components:
         email:
           type: string
           example: giuseppe.verdi@comune.torino.it
-<<<<<<< HEAD
         roles:
-=======
-        role:
->>>>>>> story#10/dev
           type: array
           items:
             $ref: "#/components/schemas/MunicipalityRole"
@@ -4227,7 +4209,7 @@ components:
           format: email
           description: External maintainer's email address
           example: marco.bianchi@enelx.com
-        role:
+        roles:
           type: array                
           items:                     
             type: string
