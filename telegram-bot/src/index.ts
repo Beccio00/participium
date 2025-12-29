@@ -1,6 +1,6 @@
 import { Telegraf, Markup } from "telegraf";
 import dotenv from "dotenv";
-import { linkTelegramAccount, createReport, CreateReportData } from "./apiClient";
+import { linkTelegramAccount, createReport, checkLinked, CreateReportData } from "./apiClient";
 import { isPointInTurin } from "./turinBoundaries";
 
 dotenv.config();
@@ -122,6 +122,21 @@ bot.command("cancel", async (ctx) => {
 bot.command("newreport", async (ctx) => {
   const chatId = ctx.chat.id;
   const telegramId = ctx.from.id.toString();
+  try {
+    const status = await checkLinked(telegramId);
+    if (!status.linked) {
+      await ctx.reply(
+        "⚠️ Your Telegram account is not linked to any Participium user.\n\n" +
+        "Please link your account on the Participium website by clicking the Telegram icon in the navigation bar, then try /newreport again.",
+        { parse_mode: "Markdown" }
+      );
+      return;
+    }
+  } catch (error: any) {
+    console.error("checkLinked error:", error.response?.data || error.message);
+    await ctx.reply("An error occurred while checking your account link. Please try again later.");
+    return;
+  }
 
   reportSessions.set(chatId, {
     step: "title",
@@ -436,6 +451,13 @@ bot.on("text", async (ctx) => {
       break;
 
     case "description":
+      if (text.length < 10) {
+        await ctx.reply(
+          "⚠️ Description is too short. Please provide more details (at least 10 characters).",
+          { parse_mode: "Markdown" }
+        );
+        return;
+      }
       if (text.length > 1000) {
         await ctx.reply(
           "⚠️ Description is too long. Please keep it under 1000 characters.",

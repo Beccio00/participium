@@ -40,3 +40,8 @@ export async function createReport(data: CreateReportData): Promise<CreateReport
   const res = await axios.post(`${API_BASE_URL}/api/telegram/reports`, data);
   return res.data;
 }
+
+export async function checkLinked(telegramId: string): Promise<{ linked: boolean }> {
+  const res = await axios.post(`${API_BASE_URL}/api/telegram/check-linked`, { telegramId });
+  return res.data;
+}

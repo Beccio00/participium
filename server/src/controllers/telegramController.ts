@@ -7,6 +7,7 @@ import {
   createReportFromTelegram,
 } from "../services/telegramService";
 import type { TelegramLinkRequestDTO, TelegramCreateReportRequestDTO } from "../interfaces/TelegramDTO";
+import { UserRepository } from "../repositories/UserRepository";
 
 export async function generateToken(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
@@ -37,4 +38,15 @@ export async function createReport(req: Request, res: Response): Promise<void> {
   const data = req.body as TelegramCreateReportRequestDTO;
   const result = await createReportFromTelegram(data);
   res.status(201).json(result);
+}
+
+export async function checkLinked(req: Request, res: Response): Promise<void> {
+  const { telegramId } = req.body as { telegramId?: string };
+  if (!telegramId) {
+    res.status(400).json({ linked: false, message: "telegramId is required" });
+    return;
+  }
+  const userRepo = new UserRepository();
+  const user = await userRepo.findByTelegramId(telegramId);
+  res.status(200).json({ linked: !!user });
 }
