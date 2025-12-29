@@ -104,7 +104,51 @@ bot.command("help", (ctx) => {
     "/start - Start the bot\n" +
     "/newreport - Create a new civic report\n" +
     "/cancel - Cancel current operation\n" +
+    "/contact - Municipality support contacts\n" +
+    "/faq - Frequently asked questions\n" +
     "/help - Show this message",
+    { parse_mode: "Markdown" }
+  );
+});
+
+bot.command("contact", (ctx) => {
+  ctx.reply(
+    "📞 *Municipality Support Contacts*\n\n" +
+    "🏛️ *Comune di Torino*\n" +
+    "━━━━━━━━━━━━━━━━━━━━━\n\n" +
+    "📍 *Address:*\n" +
+    "Piazza Palazzo di Città, 1\n" +
+    "10122 Torino (TO)\n\n" +
+    "📞 *Phone:*\n" +
+    "011 011 23010\n\n" +
+    "📧 *Email:*\n" +
+    "urp@comune.torino.it\n\n" +
+    "🌐 *Website:*\n" +
+    "www.comune.torino.it\n\n" +
+    "━━━━━━━━━━━━━━━━━━━━━\n" +
+    "For urgent issues (broken pipes, gas leaks, dangerous situations), call *112* or *800 011 911*",
+    { parse_mode: "Markdown" }
+  );
+});
+
+bot.command("faq", (ctx) => {
+  ctx.reply(
+    "❓ *Frequently Asked Questions*\n\n" +
+    "━━━━━━━━━━━━━━━━━━━━━\n\n" +
+    "*Q: How do I create a report?*\n" +
+    "A: Use /newreport and follow the step-by-step guide. You'll need to provide a title, description, category, photos, and location.\n\n" +
+    "*Q: How many photos can I upload?*\n" +
+    "A: You can upload between 1 and 3 photos per report.\n\n" +
+    "*Q: Can I report anonymously?*\n" +
+    "A: Yes! At the end of the report creation, you can choose to submit anonymously. Your identity won't be shown publicly.\n\n" +
+    "*Q: What areas can I report issues for?*\n" +
+    "A: Currently, reports are limited to the Turin municipality area.\n\n" +
+    "*Q: How do I link my account?*\n" +
+    "A: Go to the Participium website and click on the Telegram icon in the navigation bar. Follow the instructions to link your account.\n\n" +
+    "*Q: Can I cancel a report after submitting?*\n" +
+    "A: Contact the municipality support for assistance with submitted reports.\n\n" +
+    "━━━━━━━━━━━━━━━━━━━━━\n" +
+    "Need more help? Use /contact for support info.",
     { parse_mode: "Markdown" }
   );
 });
