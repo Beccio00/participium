@@ -4063,27 +4063,7 @@ components:
           description: Whether this report is anonymous
           example: false
         user:
-          oneOf:
-            - $ref: "#/components/schemas/UserInfo"
-            - type: object
-              properties:
-                id:
-                  type: integer
-                  description: User ID (always present for internal tracking)
-                firstName:
-                  type: string
-                  enum: ["anonymous"]
-                lastName:
-                  type: string
-                  enum: [""]
-                email:
-                  type: string
-                  enum: [""]
-                role:
-                  type: string
-                  enum: ["CITIZEN"]
-              description: For anonymous reports, personal info is hidden
-          description: User information (personal data hidden if report is anonymous)
+          $ref: "#/components/schemas/UserInfo"
         assignedOfficer:
           oneOf:
             - $ref: "#/components/schemas/MunicipalityUserResponse"
