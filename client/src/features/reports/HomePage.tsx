@@ -12,6 +12,7 @@ import type { Report } from "../../types";
 import { getReports as getReportsApi } from "../../api/api";
 import { Role } from "../../../../shared/RoleTypes.ts";
 import { ReportStatus } from "../../../../shared/ReportTypes.ts";
+import { userHasRole, userHasAnyRole, TECHNICIAN_ROLES } from "../../utils/roles";
 import "../../styles/HomePage.css";
 
 // Helper functions
@@ -78,14 +79,9 @@ export default function HomePage() {
   const [loadingReports, setLoadingReports] = useState(false);
   const [reportsError, setReportsError] = useState<string | null>(null);
 
-  const isTechnicalOfficer =
-    isAuthenticated &&
-    user?.role &&
-    ![
-      Role.CITIZEN.toString(),
-      Role.ADMINISTRATOR.toString(),
-      Role.PUBLIC_RELATIONS.toString(),
-    ].includes(user.role);
+  const isCitizen = isAuthenticated && userHasRole(user, Role.CITIZEN);
+  const isPublicRelations = isAuthenticated && userHasRole(user, Role.PUBLIC_RELATIONS);
+  const isTechnicalOfficer = isAuthenticated && (userHasAnyRole(user, TECHNICIAN_ROLES) || userHasRole(user, Role.EXTERNAL_MAINTAINER));
 
   // load reports from backend and filter statuses: appending, in progress, complete
   useEffect(() => {
@@ -133,7 +129,7 @@ export default function HomePage() {
   }, [isAuthenticated, user?.email, refreshTrigger]);
 
   useEffect(() => {
-    if (isAuthenticated && user?.role === Role.ADMINISTRATOR.toString()) {
+    if (userHasRole(user, "ADMINISTRATOR")) {
       navigate("/admin", { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
@@ -308,7 +304,7 @@ export default function HomePage() {
           background: "#fdfdfd",
         }}
       >
-        {isAuthenticated && user?.role === "PUBLIC_RELATIONS" ? (
+        {isPublicRelations ? (
           <Button
             onClick={() => navigate("/assign-reports")}
             variant="primary"
@@ -316,11 +312,6 @@ export default function HomePage() {
           >
             <Pencil className="me-2" />
             Manage reports
-          </Button>
-        ) : !isAuthenticated || user?.role === "CITIZEN" ? (
-          <Button onClick={handleAddReport} variant="primary" fullWidth>
-            <Pencil className="me-2" />
-            Select a location
           </Button>
         ) : isTechnicalOfficer ? (
           <Button
@@ -331,7 +322,12 @@ export default function HomePage() {
             <Pencil className="me-2" />
             My Reports
           </Button>
-        ) : null}
+        ) : isCitizen && (
+          <Button onClick={handleAddReport} variant="primary" fullWidth>
+            <Pencil className="me-2" />
+            Select a location
+          </Button>
+        )}
 
         {!isAuthenticated && (
           <p
@@ -531,7 +527,7 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Add Report Button */}
+            {/* Add Report Button in Offcanvas */}
             <div
               style={{
                 padding: "1.5rem",
@@ -539,7 +535,7 @@ export default function HomePage() {
                 background: "#fdfdfd",
               }}
             >
-              {isAuthenticated && user?.role === "PUBLIC_RELATIONS" ? (
+              {isPublicRelations ? (
                 <Button
                   onClick={() => navigate("/assign-reports")}
                   variant="primary"
@@ -547,11 +543,6 @@ export default function HomePage() {
                 >
                   <Pencil className="me-2" />
                   Assign technical
-                </Button>
-              ) : !isAuthenticated || user?.role === "CITIZEN" ? (
-                <Button onClick={handleAddReport} variant="primary" fullWidth>
-                  <Pencil className="me-2" />
-                  Select a location
                 </Button>
               ) : isTechnicalOfficer ? (
                 <Button
@@ -562,7 +553,12 @@ export default function HomePage() {
                   <Pencil className="me-2" />
                   My Reports
                 </Button>
-              ) : null}
+              ) : (
+                <Button onClick={handleAddReport} variant="primary" fullWidth>
+                  <Pencil className="me-2" />
+                  Select a location
+                </Button>
+              )}
 
               {!isAuthenticated && (
                 <p
