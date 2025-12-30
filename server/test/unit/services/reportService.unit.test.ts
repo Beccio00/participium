@@ -67,8 +67,10 @@ import {
   approveReport,
   rejectReport,
   getAssignableTechnicalsForReport,
+  updateReportStatus,
   TechnicalType,
 } from "../../../src/services/reportService";
+import * as notificationService from "../../../src/services/notificationService";
 
 describe("reportService", () => {
   let reportService: any;
@@ -214,14 +216,22 @@ describe("reportService", () => {
       });
       mockUserFindById.mockResolvedValue(null);
 
-      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(
+        UnprocessableEntityError
+      );
     });
 
     it("should throw UnprocessableEntityError if technical has wrong role", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity({ category: ReportCategory.WATER_SUPPLY_DRINKING_WATER }));
+      mockReportFindByIdWithRelations.mockResolvedValue(
+        createMockReportEntity({
+          category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
+        })
+      );
       mockUserFindById.mockResolvedValue({ id: 99, role: "WRONG_ROLE" });
 
-      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(
+        UnprocessableEntityError
+      );
     });
 
     it("should throw UnprocessableEntityError if technical role invalid for category", async () => {
@@ -235,16 +245,25 @@ describe("reportService", () => {
         role: TechnicalType.WASTE_MANAGEMENT,
       });
 
-      await expect(approveReport(1, 2, 99)).rejects.toThrow(UnprocessableEntityError);
+      await expect(approveReport(1, 2, 99)).rejects.toThrow(
+        UnprocessableEntityError
+      );
     });
 
     it("should succeed, update status, and notify", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity());
-      mockUserFindById.mockResolvedValue({ id: 99, role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE });
-      mockReportUpdate.mockResolvedValue(createMockReportEntity({ 
-        status: ReportStatus.ASSIGNED, 
-        assignedOfficerId: 99 
-      }));
+      mockReportFindByIdWithRelations.mockResolvedValue(
+        createMockReportEntity()
+      );
+      mockUserFindById.mockResolvedValue({
+        id: 99,
+        role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
+      });
+      mockReportUpdate.mockResolvedValue(
+        createMockReportEntity({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficerId: 99,
+        })
+      );
 
       const res = await approveReport(1, 2, 99);
       expect(mockReportUpdate).toHaveBeenCalled();
@@ -269,9 +288,177 @@ describe("reportService", () => {
     });
 
     it("should throw BadRequest if not pending", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue({ status: ReportStatus.ASSIGNED });
+      mockReportFindByIdWithRelations.mockResolvedValue({
+        status: ReportStatus.ASSIGNED,
+      });
       await expect(rejectReport(1, 1, "Reason")).rejects.toThrow(
         BadRequestError
+      );
+    });
+  });
+
+  // --- 6. Update Report Status (Technical/External Staff) ---
+  describe("updateReportStatus", () => {
+    const mockNotifyStatusChange =
+      notificationService.notifyReportStatusChange as jest.MockedFunction<
+        typeof notificationService.notifyReportStatusChange
+      >;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should throw NotFoundError if report not found", async () => {
+      mockReportFindByIdWithRelations.mockResolvedValue(null);
+      await expect(
+        updateReportStatus(1, 50, ReportStatus.IN_PROGRESS)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should throw ForbiddenError if user is not assigned to report", async () => {
+      const report = createMockReportEntity({
+        assignedOfficerId: 100,
+        externalMaintainerId: null,
+      });
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+
+      await expect(
+        updateReportStatus(1, 50, ReportStatus.IN_PROGRESS)
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    it("should successfully update status when user is assigned internal technical", async () => {
+      const oldStatus = ReportStatus.ASSIGNED;
+      const newStatus = ReportStatus.IN_PROGRESS;
+      const report = createMockReportEntity({
+        id: 10,
+        status: oldStatus,
+        assignedOfficerId: 50,
+        userId: 100,
+      });
+
+      const updatedReport = { ...report, status: newStatus };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      const result = await updateReportStatus(10, 50, newStatus);
+
+      expect(mockReportUpdate).toHaveBeenCalledWith(10, { status: newStatus });
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        10,
+        100,
+        oldStatus,
+        newStatus
+      );
+      expect(result.status).toBe(newStatus);
+    });
+
+    it("should successfully update status when user is assigned external maintainer", async () => {
+      const oldStatus = ReportStatus.EXTERNAL_ASSIGNED;
+      const newStatus = ReportStatus.IN_PROGRESS;
+      const report = createMockReportEntity({
+        id: 15,
+        status: oldStatus,
+        assignedOfficerId: null,
+        externalMaintainerId: 60,
+        userId: 105,
+      });
+
+      const updatedReport = { ...report, status: newStatus };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      const result = await updateReportStatus(15, 60, newStatus);
+
+      expect(mockReportUpdate).toHaveBeenCalledWith(15, { status: newStatus });
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        15,
+        105,
+        oldStatus,
+        newStatus
+      );
+      expect(result.status).toBe(newStatus);
+    });
+
+    it("should update status to SUSPENDED and notify citizen", async () => {
+      const report = createMockReportEntity({
+        id: 20,
+        status: ReportStatus.IN_PROGRESS,
+        assignedOfficerId: 50,
+        userId: 110,
+      });
+
+      const updatedReport = { ...report, status: ReportStatus.SUSPENDED };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      await updateReportStatus(20, 50, ReportStatus.SUSPENDED);
+
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        20,
+        110,
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.SUSPENDED
+      );
+    });
+
+    it("should update status to RESOLVED and notify citizen", async () => {
+      const report = createMockReportEntity({
+        id: 25,
+        status: ReportStatus.IN_PROGRESS,
+        assignedOfficerId: 50,
+        userId: 115,
+      });
+
+      const updatedReport = { ...report, status: ReportStatus.RESOLVED };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      await updateReportStatus(25, 50, ReportStatus.RESOLVED);
+
+      expect(mockReportUpdate).toHaveBeenCalledWith(25, {
+        status: ReportStatus.RESOLVED,
+      });
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        25,
+        115,
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.RESOLVED
+      );
+    });
+
+    it("should throw NotFoundError if report not found after update", async () => {
+      const report = createMockReportEntity({
+        assignedOfficerId: 50,
+      });
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(null);
+
+      await expect(
+        updateReportStatus(1, 50, ReportStatus.IN_PROGRESS)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should track old status correctly for notification", async () => {
+      const report = createMockReportEntity({
+        id: 30,
+        status: ReportStatus.SUSPENDED,
+        assignedOfficerId: 50,
+        userId: 120,
+      });
+
+      const updatedReport = { ...report, status: ReportStatus.IN_PROGRESS };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      await updateReportStatus(30, 50, ReportStatus.IN_PROGRESS);
+
+      // Verify the old status is passed correctly
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        30,
+        120,
+        ReportStatus.SUSPENDED, // old status
+        ReportStatus.IN_PROGRESS // new status
       );
     });
   });

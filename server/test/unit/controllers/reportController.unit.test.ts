@@ -47,7 +47,10 @@ import {
   updateReportStatus,
   getAssignedReports,
 } from "../../../src/controllers/reportController";
-import { sendMessageToCitizen, getReportMessages } from "../../../src/controllers/messageController";
+import {
+  sendMessageToCitizen,
+  getReportMessages,
+} from "../../../src/controllers/messageController";
 import * as reportService from "../../../src/services/reportService";
 import * as messageService from "../../../src/services/messageService";
 import { ReportCategory, ReportStatus } from "../../../../shared/ReportTypes";
@@ -383,6 +386,73 @@ describe("reportController", () => {
       expect(mockRes.status).toHaveBeenCalledWith(200);
     });
 
+    it("should update report status to IN_PROGRESS and return success message", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = { id: 25 };
+      mockReq.body = { status: ReportStatus.IN_PROGRESS };
+      const updatedReport = {
+        id: 10,
+        status: ReportStatus.IN_PROGRESS,
+        title: "Test Report",
+      };
+      mockUpdateReportStatusService.mockResolvedValue(updatedReport as any);
+
+      await updateReportStatus(mockReq as Request, mockRes as Response);
+
+      expect(mockUpdateReportStatusService).toHaveBeenCalledWith(
+        10,
+        25,
+        ReportStatus.IN_PROGRESS
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Report status updated successfully",
+        report: updatedReport,
+      });
+    });
+
+    it("should update report status to SUSPENDED", async () => {
+      mockReq.params = { reportId: "15" };
+      mockReq.user = { id: 30 };
+      mockReq.body = { status: ReportStatus.SUSPENDED };
+      const updatedReport = { id: 15, status: ReportStatus.SUSPENDED };
+      mockUpdateReportStatusService.mockResolvedValue(updatedReport as any);
+
+      await updateReportStatus(mockReq as Request, mockRes as Response);
+
+      expect(mockUpdateReportStatusService).toHaveBeenCalledWith(
+        15,
+        30,
+        ReportStatus.SUSPENDED
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Report status updated successfully",
+        report: updatedReport,
+      });
+    });
+
+    it("should update report status to RESOLVED", async () => {
+      mockReq.params = { reportId: "20" };
+      mockReq.user = { id: 35 };
+      mockReq.body = { status: ReportStatus.RESOLVED };
+      const updatedReport = { id: 20, status: ReportStatus.RESOLVED };
+      mockUpdateReportStatusService.mockResolvedValue(updatedReport as any);
+
+      await updateReportStatus(mockReq as Request, mockRes as Response);
+
+      expect(mockUpdateReportStatusService).toHaveBeenCalledWith(
+        20,
+        35,
+        ReportStatus.RESOLVED
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Report status updated successfully",
+        report: updatedReport,
+      });
+    });
+
     it("should throw BadRequestError for invalid reportId", async () => {
       mockReq.params = { reportId: "invalid" };
       mockReq.user = validUser;
@@ -401,10 +471,46 @@ describe("reportController", () => {
       ).rejects.toThrow("Status is required");
     });
 
+    it("should throw BadRequestError if status is not a string", async () => {
+      mockReq.params = { reportId: "5" };
+      mockReq.user = validUser;
+      mockReq.body = { status: 123 };
+      await expect(
+        updateReportStatus(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow("Status is required");
+    });
+
     it("should throw BadRequestError if status is invalid", async () => {
       mockReq.params = { reportId: "5" };
       mockReq.user = validUser;
       mockReq.body = { status: "INVALID_STATUS" };
+      await expect(
+        updateReportStatus(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow("Invalid status");
+    });
+
+    it("should throw BadRequestError if status is PENDING_APPROVAL (not allowed for technicals)", async () => {
+      mockReq.params = { reportId: "5" };
+      mockReq.user = validUser;
+      mockReq.body = { status: ReportStatus.PENDING_APPROVAL };
+      await expect(
+        updateReportStatus(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow("Invalid status");
+    });
+
+    it("should throw BadRequestError if status is ASSIGNED (only allowed through approval)", async () => {
+      mockReq.params = { reportId: "5" };
+      mockReq.user = validUser;
+      mockReq.body = { status: ReportStatus.ASSIGNED };
+      await expect(
+        updateReportStatus(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow("Invalid status");
+    });
+
+    it("should throw BadRequestError if status is REJECTED (not allowed for technicals)", async () => {
+      mockReq.params = { reportId: "5" };
+      mockReq.user = validUser;
+      mockReq.body = { status: ReportStatus.REJECTED };
       await expect(
         updateReportStatus(mockReq as Request, mockRes as Response)
       ).rejects.toThrow("Invalid status");
@@ -414,12 +520,92 @@ describe("reportController", () => {
   describe("sendMessageToCitizen", () => {
     const validUser = { id: 50 };
 
-    it("should send message successfully", async () => {
+    it("should send message successfully from technical staff to citizen", async () => {
       mockReq.params = { reportId: "10" };
       mockReq.user = validUser;
       mockReq.body = { content: "We are fixing it." };
-      mockSendMessageToCitizenService.mockResolvedValue({ id: 1 } as any);
+      const message = {
+        id: 1,
+        content: "We are fixing it.",
+        createdAt: "2025-12-30T10:00:00Z",
+        senderId: 50,
+        senderRole: "TECHNICAL_STAFF",
+      };
+      mockSendMessageToCitizenService.mockResolvedValue(message as any);
+
       await sendMessageToCitizen(mockReq as Request, mockRes as Response);
+
+      expect(mockSendMessageToCitizenService).toHaveBeenCalledWith(
+        10,
+        50,
+        "We are fixing it."
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Message sent successfully",
+        data: message,
+      });
+    });
+
+    it("should send message successfully from external maintainer to citizen", async () => {
+      mockReq.params = { reportId: "15" };
+      mockReq.user = { id: 60 };
+      mockReq.body = { content: "The repair is scheduled for tomorrow." };
+      const message = {
+        id: 2,
+        content: "The repair is scheduled for tomorrow.",
+        senderId: 60,
+        senderRole: "EXTERNAL_MAINTAINER",
+      };
+      mockSendMessageToCitizenService.mockResolvedValue(message as any);
+
+      await sendMessageToCitizen(mockReq as Request, mockRes as Response);
+
+      expect(mockSendMessageToCitizenService).toHaveBeenCalledWith(
+        15,
+        60,
+        "The repair is scheduled for tomorrow."
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+    });
+
+    it("should allow citizen to reply to technical staff message", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = { id: 100 }; // Citizen user ID
+      mockReq.body = { content: "Thank you for the update!" };
+      const message = {
+        id: 3,
+        content: "Thank you for the update!",
+        senderId: 100,
+        senderRole: "CITIZEN",
+      };
+      mockSendMessageToCitizenService.mockResolvedValue(message as any);
+
+      await sendMessageToCitizen(mockReq as Request, mockRes as Response);
+
+      expect(mockSendMessageToCitizenService).toHaveBeenCalledWith(
+        10,
+        100,
+        "Thank you for the update!"
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+    });
+
+    it("should send message with multiline content", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = validUser;
+      const multilineContent =
+        "Update on your report:\n1. We identified the issue\n2. Parts are ordered\n3. Repair scheduled for next week";
+      mockReq.body = { content: multilineContent };
+      mockSendMessageToCitizenService.mockResolvedValue({ id: 1 } as any);
+
+      await sendMessageToCitizen(mockReq as Request, mockRes as Response);
+
+      expect(mockSendMessageToCitizenService).toHaveBeenCalledWith(
+        10,
+        50,
+        multilineContent
+      );
       expect(mockRes.status).toHaveBeenCalledWith(201);
     });
 
@@ -440,15 +626,146 @@ describe("reportController", () => {
         sendMessageToCitizen(mockReq as Request, mockRes as Response)
       ).rejects.toThrow("Message content is required");
     });
+
+    it("should throw BadRequestError if content is missing", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = validUser;
+      mockReq.body = {};
+      await expect(
+        sendMessageToCitizen(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow("Message content is required");
+    });
+
+    it("should throw BadRequestError if content is not a string", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = validUser;
+      mockReq.body = { content: 123 };
+      await expect(
+        sendMessageToCitizen(mockReq as Request, mockRes as Response)
+      ).rejects.toThrow("Message content is required");
+    });
   });
 
   describe("getReportMessages", () => {
-    it("should return messages for a report", async () => {
+    it("should return messages for a report as citizen", async () => {
       mockReq.params = { reportId: "10" };
-      mockReq.user = { id: 1 };
-      mockGetReportMessagesService.mockResolvedValue([] as any);
+      mockReq.user = { id: 100 }; // Citizen
+      const messages = [
+        {
+          id: 1,
+          content: "We are working on it",
+          senderId: 50,
+          senderRole: "TECHNICAL_STAFF",
+          createdAt: "2025-12-30T10:00:00Z",
+        },
+        {
+          id: 2,
+          content: "Thank you",
+          senderId: 100,
+          senderRole: "CITIZEN",
+          createdAt: "2025-12-30T11:00:00Z",
+        },
+      ];
+      mockGetReportMessagesService.mockResolvedValue(messages as any);
+
       await getReportMessages(mockReq as Request, mockRes as Response);
+
+      expect(mockGetReportMessagesService).toHaveBeenCalledWith(10, 100);
       expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(messages);
+    });
+
+    it("should return messages for a report as technical staff", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = { id: 50 }; // Technical staff
+      const messages = [
+        {
+          id: 1,
+          content: "Issue identified",
+          senderId: 50,
+          senderRole: "TECHNICAL_STAFF",
+          createdAt: "2025-12-30T10:00:00Z",
+        },
+        {
+          id: 2,
+          content: "Great!",
+          senderId: 100,
+          senderRole: "CITIZEN",
+          createdAt: "2025-12-30T11:00:00Z",
+        },
+      ];
+      mockGetReportMessagesService.mockResolvedValue(messages as any);
+
+      await getReportMessages(mockReq as Request, mockRes as Response);
+
+      expect(mockGetReportMessagesService).toHaveBeenCalledWith(10, 50);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(messages);
+    });
+
+    it("should return messages for a report as external maintainer", async () => {
+      mockReq.params = { reportId: "15" };
+      mockReq.user = { id: 60 }; // External maintainer
+      const messages = [
+        {
+          id: 3,
+          content: "Repair scheduled",
+          senderId: 60,
+          senderRole: "EXTERNAL_MAINTAINER",
+          createdAt: "2025-12-30T12:00:00Z",
+        },
+      ];
+      mockGetReportMessagesService.mockResolvedValue(messages as any);
+
+      await getReportMessages(mockReq as Request, mockRes as Response);
+
+      expect(mockGetReportMessagesService).toHaveBeenCalledWith(15, 60);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(messages);
+    });
+
+    it("should return empty array when no messages exist", async () => {
+      mockReq.params = { reportId: "20" };
+      mockReq.user = { id: 100 };
+      mockGetReportMessagesService.mockResolvedValue([] as any);
+
+      await getReportMessages(mockReq as Request, mockRes as Response);
+
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith([]);
+    });
+
+    it("should return messages in conversation order", async () => {
+      mockReq.params = { reportId: "10" };
+      mockReq.user = { id: 100 };
+      const orderedMessages = [
+        {
+          id: 1,
+          content: "First message",
+          senderId: 50,
+          senderRole: "TECHNICAL_STAFF",
+          createdAt: "2025-12-30T10:00:00Z",
+        },
+        {
+          id: 2,
+          content: "Second message",
+          senderId: 100,
+          senderRole: "CITIZEN",
+          createdAt: "2025-12-30T11:00:00Z",
+        },
+        {
+          id: 3,
+          content: "Third message",
+          senderId: 50,
+          senderRole: "TECHNICAL_STAFF",
+          createdAt: "2025-12-30T12:00:00Z",
+        },
+      ];
+      mockGetReportMessagesService.mockResolvedValue(orderedMessages as any);
+
+      await getReportMessages(mockReq as Request, mockRes as Response);
+
+      expect(mockRes.json).toHaveBeenCalledWith(orderedMessages);
     });
 
     it("should throw BadRequestError for invalid reportId", async () => {
@@ -457,6 +774,17 @@ describe("reportController", () => {
       await expect(
         getReportMessages(mockReq as Request, mockRes as Response)
       ).rejects.toThrow(BadRequestError);
+    });
+
+    it("should throw BadRequestError for negative reportId", async () => {
+      mockReq.params = { reportId: "-5" };
+      mockReq.user = { id: 1 };
+      mockGetReportMessagesService.mockResolvedValue([] as any);
+
+      await getReportMessages(mockReq as Request, mockRes as Response);
+
+      expect(mockGetReportMessagesService).toHaveBeenCalledWith(-5, 1);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
     });
   });
 
