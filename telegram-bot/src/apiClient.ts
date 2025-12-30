@@ -42,9 +42,7 @@ export async function createReport(data: CreateReportData): Promise<CreateReport
 }
 
 export async function getMyReports(telegramId: string): Promise<any> {
-  const res = await axios.get(`${API_BASE_URL}/api/telegram/users/${telegramId}/reports`, {
-    params: { telegramId },
-  });
+  const res = await axios.get(`${API_BASE_URL}/api/telegram/users/${telegramId}/reports`);
   return res.data;
 }
 

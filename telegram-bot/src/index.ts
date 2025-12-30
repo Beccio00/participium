@@ -130,7 +130,7 @@ bot.command("help", (ctx) => {
     "/start - Start the bot\n" +
     "/newreport - Create a new civic report\n" +
     "/myreports - View your recent reports\n" +
-    "/reportstatus <ID_REPORT> - Get status of a specific report\n" +
+    "/reportstatus <IDREPORT> - Get status of a specific report\n" +
     "/cancel - Cancel current operation\n" +
     "/help - Show this message",
     { parse_mode: "Markdown" }
@@ -165,9 +165,11 @@ bot.command("myreports", async (ctx) => {
 
     reports.slice(0,10).forEach((report:any)=> {
       const statusIcon = formatStatus(report.status).split(" ")[0]; //only emoji
-      message += `🆔 *#${report.id}* - ${statusIcon} ${report.title}\n`;
+      message += `🆔 #${report.reportId} - ${statusIcon} ${report.status}\n`;
+      message += `📝 ${report.title}\n`;
+      message += `📍 ${report.address}\n`;
       message += `📅 ${new Date(report.createdAt).toLocaleDateString()}\n`;
-      message += `👉 /reportstatus ${report.id}\n\n`;
+      message += `To see more details use this command 👉 /reportstatus ${report.reportId}\n\n`;
     })
     await ctx.reply(message, { parse_mode: "Markdown" });
   }catch(error:any){
@@ -188,15 +190,15 @@ bot.command("reportstatus", async (ctx) => {
   const telegramId = ctx.from.id.toString();
   const text = ctx.message.text.trim();
   
-  // Estrae l'ID dal comando (es: "/reportstatus 1024" -> "1024")
+  //i want ot extract the report ID from the command (e.g. "/reportstatus 1024" -> "1024")
   const parts = text.split(" ");
   const reportIdStr = parts[1];
 
   if (!reportIdStr || isNaN(Number(reportIdStr))) {
     await ctx.reply(
-      "⚠️ *Utilizzo corretto:*\n" +
-      "/reportstatus <ID_REPORT>\n\n" +
-      "Esempio: `/reportstatus 123`",
+      "⚠️ *Correct usage:*\n" +
+      "/reportstatus <IDREPORT>\n\n" +
+      "Example: `/reportstatus 123`",
       { parse_mode: "Markdown" }
     );
     return;
@@ -207,34 +209,18 @@ bot.command("reportstatus", async (ctx) => {
   try {
     const report = await getReportStatus(telegramId, reportId);
 
-    let details = `📄 *Report details #${report.id}*\n\n`;
+    let details = `📄 *Report details #${report.reportId}*\n\n`;
     details += `📝 *Title:* ${report.title}\n`;
     details += `🏷️ *Category:* ${getCategoryLabel(report.category)}\n`;
     details += `📊 *Status:* ${formatStatus(report.status)}\n`;
     details += `📅 *Date:* ${new Date(report.createdAt).toLocaleString()}\n\n`;
-    
+    details += `📍 *Address:* ${report.address}\n`;
+    details += `💬 *Anonymous:* ${report.isAnonymous ? "Yes" : "No"}\n\n`;
     details += `ℹ️ *Description:*\n${report.description}\n\n`;
 
     //if there is a rejection reason
     if (report.status === 'REJECTED' && report.rejectedReason) {
       details += `❌ *Rejection reason:* ${report.rejectedReason}\n\n`;
-    }
-
-    //if assigned
-    if (report.assignedOfficer) {
-      details += `👷 *Assigned to:* Technical Office\n`;
-    } else if (report.externalHandler) {
-      const handlerName = report.externalHandler.company ? report.externalHandler.company.name : "External Maintainer";
-      details += `🚜 *Assigned to:* ${handlerName}\n`;
-    }
-
-    //if there are messages (public comments)
-    if (report.messages && report.messages.length > 0) {
-        details += `\n💬 *Latest messages:*\n`;
-        //show only the last message for brevity
-        const lastMsg = report.messages[report.messages.length - 1];
-        const sender = lastMsg.senderRole.includes('CITIZEN') ? 'You' : 'Staff';
-        details += `*${sender}:* ${lastMsg.content}\n`;
     }
 
     await ctx.reply(details, { parse_mode: "Markdown" });
