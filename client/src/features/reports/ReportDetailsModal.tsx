@@ -46,10 +46,10 @@ export default function ReportDetailsModal({
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesError, setMessagesError] = useState("");
 
-  // Stato per la visibilità della chat
+  // State for chat visibility
   const [canSeeChat, setCanSeeChat] = useState(false);
 
-  // Scroll automatico in fondo ogni volta che arrivano nuovi messaggi
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (canSeeChat && chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -272,15 +272,15 @@ export default function ReportDetailsModal({
 
   function resolveExternalHandler(handler: any): string | null {
     if (!handler) return null;
-    
+
     if (handler.type === "user") {
       return resolveExternalUserName(handler.user);
     }
-    
+
     if (handler.type === "company") {
       return resolveExternalCompanyName(handler.company);
     }
-    
+
     return null;
   }
 
@@ -291,7 +291,10 @@ export default function ReportDetailsModal({
   }
 
   function resolveAssignee(r: any): string | null {
-    return resolveExternalHandler(r.externalHandler) || resolveAssignedOfficer(r.assignedOfficer);
+    return (
+      resolveExternalHandler(r.externalHandler) ||
+      resolveAssignedOfficer(r.assignedOfficer)
+    );
   }
 
   const assigneeLabel = resolveAssignee(display as any);
@@ -585,7 +588,6 @@ export default function ReportDetailsModal({
             messageError={messageError}
             onSend={handleSendMessage}
           />
-          
         </div>
       </Modal.Body>
     </Modal>
