@@ -1,6 +1,12 @@
 import { Telegraf, Markup } from "telegraf";
 import dotenv from "dotenv";
-import { linkTelegramAccount, createReport, CreateReportData } from "./apiClient";
+import { 
+  linkTelegramAccount, 
+  createReport, 
+  CreateReportData,
+  getMyReports,
+  getReportStatus
+} from "./apiClient";
 import { isPointInTurin } from "./turinBoundaries";
 
 dotenv.config();
@@ -8,6 +14,26 @@ dotenv.config();
 const token = process.env.BOT_TOKEN;
 if (!token) {
   throw new Error("BOT_TOKEN non definito");
+}
+
+//helper functions
+
+function formatStatus(status: string): string{
+  const statusMap: Record<string, string> = {
+    PENDING_APPROVAL: "⏳ Waiting Approval",
+    APPROVED: "📝 Approved",
+    ASSIGNED: "👷 Assigned",
+    EXTERNAL_ASSIGNED: "🚜 Assigned to External",
+    IN_PROGRESS: "🚧 In Progress",
+    SUSPENDED: "⏸️ Suspended",
+    REJECTED: "❌ Rejected",
+    RESOLVED: "✅ Resolved",
+  };
+  return statusMap[status] || status;
+}
+
+function getCategoryLabel(value: string): string {
+  return REPORT_CATEGORIES.find(c => c.value === value)?.label || value;
 }
 
 const bot = new Telegraf(token);
@@ -103,6 +129,8 @@ bot.command("help", (ctx) => {
     "📖 *Available Commands*\n\n" +
     "/start - Start the bot\n" +
     "/newreport - Create a new civic report\n" +
+    "/myreports - View your recent reports\n" +
+    "/reportstatus <IDREPORT> - Get status of a specific report\n" +
     "/cancel - Cancel current operation\n" +
     "/help - Show this message",
     { parse_mode: "Markdown" }
@@ -116,6 +144,102 @@ bot.command("cancel", async (ctx) => {
     await ctx.reply("❌ Report creation cancelled.", { parse_mode: "Markdown" });
   } else {
     await ctx.reply("No active operation to cancel.");
+  }
+});
+
+bot.command("myreports", async (ctx) => {
+  const telegramId = ctx.from.id.toString();
+
+  try{
+    const reports = await getMyReports(telegramId);
+
+    if(!reports || reports.length === 0){
+      await ctx.reply(
+        "📋 *My Reports*\n\n" +
+        "You have not submitted any reports yet.",
+        { parse_mode: "Markdown" }
+      );
+      return;
+    }
+    let message = "Your recent reports:\n\n";
+
+    reports.slice(0,10).forEach((report:any)=> {
+      const statusIcon = formatStatus(report.status).split(" ")[0]; //only emoji
+      message += `🆔 #${report.reportId} - ${statusIcon} ${report.status}\n`;
+      message += `📝 ${report.title}\n`;
+      message += `📍 ${report.address}\n`;
+      message += `📅 ${new Date(report.createdAt).toLocaleDateString()}\n`;
+      message += `To see more details use this command 👉 /reportstatus ${report.reportId}\n\n`;
+    })
+    await ctx.reply(message, { parse_mode: "Markdown" });
+  }catch(error:any){
+    console.error("Get my reports error:", error.response?.data || error.message);
+    if (error.response?.status === 404) {
+      await ctx.reply(
+        "⚠️ *Account not linked*\n\n" +
+        "To view your reports, you must first link your Telegram account through the Participium website.",
+        { parse_mode: "Markdown" }
+      );
+    } else {
+      await ctx.reply("❌ An error occurred while retrieving your reports.");
+    }
+  }
+});
+
+bot.command("reportstatus", async (ctx) => {
+  const telegramId = ctx.from.id.toString();
+  const text = ctx.message.text.trim();
+  
+  //i want ot extract the report ID from the command (e.g. "/reportstatus 1024" -> "1024")
+  const parts = text.split(" ");
+  const reportIdStr = parts[1];
+
+  if (!reportIdStr || isNaN(Number(reportIdStr))) {
+    await ctx.reply(
+      "⚠️ *Correct usage:*\n" +
+      "/reportstatus <IDREPORT>\n\n" +
+      "Example: `/reportstatus 123`",
+      { parse_mode: "Markdown" }
+    );
+    return;
+  }
+
+  const reportId = parseInt(reportIdStr);
+
+  try {
+    const report = await getReportStatus(telegramId, reportId);
+
+    let details = `📄 *Report details #${report.reportId}*\n\n`;
+    details += `📝 *Title:* ${report.title}\n`;
+    details += `🏷️ *Category:* ${getCategoryLabel(report.category)}\n`;
+    details += `📊 *Status:* ${formatStatus(report.status)}\n`;
+    details += `📅 *Date:* ${new Date(report.createdAt).toLocaleString()}\n\n`;
+    details += `📍 *Address:* ${report.address}\n`;
+    details += `💬 *Anonymous:* ${report.isAnonymous ? "Yes" : "No"}\n\n`;
+    details += `ℹ️ *Description:*\n${report.description}\n\n`;
+
+    //if there is a rejection reason
+    if (report.status === 'REJECTED' && report.rejectedReason) {
+      details += `❌ *Rejection reason:* ${report.rejectedReason}\n\n`;
+    }
+
+    await ctx.reply(details, { parse_mode: "Markdown" });
+
+  } catch (error: any) {
+    console.error("ReportStatus error:", error.response?.data || error.message);
+
+    if (error.response?.status === 404) {
+      // Could be non-existent report or unlinked user
+      if (error.response.data?.message?.includes("linked")) {
+         await ctx.reply("⚠️ Account not linked. Link it from the website.");
+      } else {
+         await ctx.reply("❌ Report not found or does not belong to you.");
+      }
+    } else if (error.response?.status === 403) {
+      await ctx.reply("⛔ You do not have permission to view this report.");
+    } else {
+      await ctx.reply("❌ Error retrieving report details.");
+    }
   }
 });
 

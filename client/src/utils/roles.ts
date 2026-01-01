@@ -25,7 +25,33 @@ export const MUNICIPALITY_AND_EXTERNAL_ROLES = [
   Role.EXTERNAL_MAINTAINER.toString()
 ];
 
-export function getRoleLabel(role: string) {
+//helper function to cast single role into array
+export function getRoleLabel(role: string | string[]): string {
+  if (Array.isArray(role)) {
+    return role.map(r => getSingleRoleLabel(r)).join(", ");
+  }
+  return getSingleRoleLabel(role);
+}
+
+//helper function to verify usre role
+export function userHasRole(user: any, role: string): boolean {
+  if (!user || !user.role) return false;
+  if (Array.isArray(user.role)) {
+    return user.role.includes(role);
+  }
+  return user.role === role;
+}
+
+//helper function to verify if user has at least one role of the list
+export function userHasAnyRole(user: any, roles: string[]): boolean {
+  if (!user || !user.role) return false;
+  if (Array.isArray(user.role)) {
+    return user.role.some((r: string) => roles.includes(r));
+  }
+  return roles.includes(user.role);
+}
+
+export function getSingleRoleLabel(role: string) {
   switch (role) {
     case "ADMINISTRATOR":
       return "Administrator";

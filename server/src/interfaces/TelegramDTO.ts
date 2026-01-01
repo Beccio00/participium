@@ -49,3 +49,24 @@ export interface TelegramCreateReportResponseDTO {
   message: string;
   reportId: number;
 }
+
+export type TelegramUserReportsResponseDTO = Array< {
+  reportId: number;
+  title: string;
+  address: string;
+  status: string;
+  createdAt: string; 
+}>;
+
+export interface TelegramReportStatusResponseDTO {
+  reportId: number;
+  title: string;
+  description: string;
+  category: string;
+  address: string;
+  isAnonymous: boolean;
+  photoUrls: string[];
+  status: string;
+  createdAt: string; 
+  rejectedReason?: string;
+}

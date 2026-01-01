@@ -8,6 +8,8 @@ import {
   getStatus,
   unlink,
   createReport,
+  getMyReports,
+  getReportStatus
 } from "../controllers/telegramController";
 
 const router = Router();
@@ -41,5 +43,19 @@ router.delete(
 
 // POST /api/telegram/reports - Create a new report (called by bot, authenticated via telegramId)
 router.post("/reports", ApiValidationMiddleware, asyncHandler(createReport));
+
+// GET /api/telegram/users/:telegramId/reports - Get user's reports (called by bot, authenticated via telegramId)
+router.get(
+  "/users/:telegramId/reports",
+  ApiValidationMiddleware,
+  asyncHandler(getMyReports)
+);
+
+// GET /api/telegram/users/:telegramId/reports/:reportId - Get report status (called by bot, authenticated via telegramId)
+router.get(
+  "/users/:telegramId/reports/:reportId",
+  ApiValidationMiddleware,
+  asyncHandler(getReportStatus)
+);
 
 export default router;

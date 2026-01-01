@@ -384,7 +384,8 @@ export async function createInternalNote(req: Request, res: Response): Promise<v
   const user = req.user as { id: number; role: Role };
   const { content } = req.body;
 
-  const note = await createInternalNoteService(reportId, content, user.id, user.role);
+  const role = [user.role];
+  const note = await createInternalNoteService(reportId, content, user.id, role);
   res.status(201).json(note);
 }
 

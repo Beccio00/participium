@@ -5,6 +5,8 @@ import {
   getTelegramStatus,
   unlinkTelegramAccount,
   createReportFromTelegram,
+  getMyReportsFromTelegram,
+  getReportStatusFromTelegram
 } from "../services/telegramService";
 import type { TelegramLinkRequestDTO, TelegramCreateReportRequestDTO } from "../interfaces/TelegramDTO";
 
@@ -37,4 +39,17 @@ export async function createReport(req: Request, res: Response): Promise<void> {
   const data = req.body as TelegramCreateReportRequestDTO;
   const result = await createReportFromTelegram(data);
   res.status(201).json(result);
+}
+
+export async function getMyReports(req: Request, res: Response): Promise<void> {
+  const telegramId = req.params.telegramId;
+  const result = await getMyReportsFromTelegram(telegramId);
+  res.status(200).json(result);
+}
+
+export async function getReportStatus(req: Request, res: Response): Promise<void> {
+  const telegramId = req.params.telegramId;
+  const reportId = parseInt(req.params.reportId, 10);
+  const result = await getReportStatusFromTelegram(telegramId, reportId);
+  res.status(200).json(result);
 }

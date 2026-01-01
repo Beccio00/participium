@@ -52,7 +52,7 @@ export default function InternalStaffTable({ users, onDelete }: InternalStaffTab
               </td>
               <td>{user.email}</td>
               <td>
-                <Badge bg="primary">{getRoleLabel(user.role)}</Badge>
+                <Badge bg="primary">{getRoleLabel(user.role[0])}</Badge>
               </td>
               <td className="text-end">
                 <button
