@@ -19,6 +19,8 @@ import { BadRequestError, UnauthorizedError } from "../utils";
 import { createInternalNote as createInternalNoteService } from "../services/internalNoteService";
 import { Role } from "../../../shared/RoleTypes";
 import { getInternalNotes } from "../services/internalNoteService";
+import { forwardGeocode, validateAddress, validateZoom, parseBoundingBox } from "../services/geocodingService";
+import { validateTurinBoundaries } from "../middlewares/validateTurinBoundaries";
 
 // Helper functions for validation
 function validateRequiredFields(
@@ -216,7 +218,7 @@ export async function createReport(req: Request, res: Response): Promise<void> {
 }
 
 export async function getReports(req: Request, res: Response): Promise<void> {
-  const { category } = req.query;
+  const { category, bbox } = req.query;
 
   if (
     category &&
@@ -227,7 +229,17 @@ export async function getReports(req: Request, res: Response): Promise<void> {
     );
   }
 
-  const reports = await getApprovedReportsService(category as ReportCategory);
+  // Validate and parse bbox parameter if provided
+  let boundingBox;
+  if (bbox) {
+    try {
+      boundingBox = parseBoundingBox(bbox as string);
+    } catch (error: any) {
+      throw new BadRequestError(error.message);
+    }
+  }
+
+  const reports = await getApprovedReportsService(category as ReportCategory, boundingBox);
   res.status(200).json(reports);
 }
 
@@ -249,6 +261,68 @@ export async function getReportById(
 
   const report = await getReportByIdService(reportId, user.id);
   res.status(200).json(report);
+}
+
+export async function geocodeAddress(req: Request, res: Response): Promise<void> {
+  const { address, zoom = 16 } = req.query;
+
+  try {
+    // Validate input parameters
+    const validatedAddress = validateAddress(address);
+    const validatedZoom = validateZoom(zoom);
+
+    // Forward geocoding
+    const result = await forwardGeocode(validatedAddress, validatedZoom);
+
+    // Check if coordinates are within Turin boundaries using the existing utility
+    // Create a temporary request object for boundary validation
+    const tempReq = {
+      body: {
+        latitude: result.latitude,
+        longitude: result.longitude
+      }
+    } as Request;
+
+    // Call the validation directly - it will throw an error if outside boundaries
+    let isValidLocation = true;
+    const tempRes = {
+      status: () => ({ json: () => { isValidLocation = false; } })
+    } as unknown as Response;
+    
+    validateTurinBoundaries(tempReq, tempRes, () => {});
+    
+    if (!isValidLocation) {
+      throw new BadRequestError('Address is outside Turin municipality boundaries');
+    }
+
+    res.status(200).json({
+      address: result.address,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      bbox: result.bbox,
+      zoom: result.zoom
+    });
+  } catch (error: any) {
+    if (error.message.includes('Address not found')) {
+      throw new BadRequestError('Address not found by geocoding service');
+    } else if (error.message.includes('service temporarily unavailable')) {
+      res.status(500).json({
+        code: 500,
+        error: 'InternalServerError',
+        message: 'Geocoding service temporarily unavailable'
+      });
+      return;
+    } else if (error instanceof BadRequestError) {
+      throw error;
+    } else {
+      res.status(500).json({
+        code: 500,
+        error: 'InternalServerError',
+        message: 'Geocoding service error'
+      });
+      return;
+    }
+  }
 }
 
 // =========================
