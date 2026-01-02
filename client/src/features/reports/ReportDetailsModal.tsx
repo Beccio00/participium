@@ -2,6 +2,7 @@ import { Modal, Badge, Carousel } from "react-bootstrap";
 import { useEffect, useState, useRef } from "react";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import type { Report } from "../../types/report.types";
+import { userHasRole, TECHNICIAN_ROLES } from "../../utils/roles";
 import ReportChat from "./ReportChat";
 
 interface Props {
@@ -205,7 +206,11 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === display.user.id &&
+<<<<<<< HEAD
           Array.isArray(user.role) && user.role.includes("CITIZEN")
+=======
+          userHasRole(user, "CITIZEN")
+>>>>>>> story#10/dev
         ) {
           setCanSeeChat(true);
           return;
@@ -220,7 +225,11 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === extId &&
+<<<<<<< HEAD
           Array.isArray(user.role) && user.role.includes("EXTERNAL_MAINTAINER")
+=======
+          userHasRole(user, "EXTERNAL_MAINTAINER")
+>>>>>>> story#10/dev
         ) {
           setCanSeeChat(true);
           return;
@@ -231,7 +240,13 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === display.assignedOfficer.id &&
+<<<<<<< HEAD
           Array.isArray(user.role) && user.role.some((r: string) => r.startsWith("MUNICIPAL"))
+=======
+          user.role && (Array.isArray(user.role) 
+              ? user.role.some((r: string) => r.startsWith("MUNICIPAL") || TECHNICIAN_ROLES.includes(r))
+              : (user.role as string).startsWith("MUNICIPAL") || TECHNICIAN_ROLES.includes(user.role as string))
+>>>>>>> story#10/dev
         ) {
           setCanSeeChat(true);
           return;

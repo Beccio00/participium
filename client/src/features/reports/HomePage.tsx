@@ -15,7 +15,11 @@ import { getReports as getReportsApi } from "../../api/api";
 
 import { Role } from "../../../../shared/RoleTypes.ts";
 import { ReportStatus } from "../../../../shared/ReportTypes.ts";
+<<<<<<< HEAD
 
+=======
+import { userHasRole, userHasAnyRole, TECHNICIAN_ROLES } from "../../utils/roles";
+>>>>>>> story#10/dev
 import "../../styles/HomePage.css";
 
 // --- Helpers ---------------------------------------------------------------
@@ -111,12 +115,18 @@ export default function HomePage() {
     if (window.innerWidth < 992) setShowReportsSidebar(false);
   };
 
+<<<<<<< HEAD
   const handleAddReport = () => {
     if (isAuthenticated) navigate("/report/new");
     else setShowAuthModal(true);
   };
 
   // --- Load reports --------------------------------------------------------
+=======
+  const isCitizen = isAuthenticated && userHasRole(user, Role.CITIZEN);
+  const isPublicRelations = isAuthenticated && userHasRole(user, Role.PUBLIC_RELATIONS);
+  const isTechnicalOfficer = isAuthenticated && (userHasAnyRole(user, TECHNICIAN_ROLES) || userHasRole(user, Role.EXTERNAL_MAINTAINER));
+>>>>>>> story#10/dev
 
   useEffect(() => {
     let mounted = true;
@@ -161,8 +171,15 @@ export default function HomePage() {
 
   // redirect admin
   useEffect(() => {
+<<<<<<< HEAD
     if (isAdmin) navigate("/admin", { replace: true });
   }, [isAdmin, navigate]);
+=======
+    if (userHasRole(user, "ADMINISTRATOR")) {
+      navigate("/admin", { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
+>>>>>>> story#10/dev
 
   // Ripristina scroll sidebar quando cambi selezione
   useEffect(() => {
@@ -344,9 +361,76 @@ export default function HomePage() {
         )}
       </div>
 
+<<<<<<< HEAD
       <div style={{ padding: "1.5rem", borderTop: "1px solid #f8f9fa", background: "#fdfdfd" }}>
         <FooterCTA />
         <LoginHint />
+=======
+      <div
+        style={{
+          padding: "1.5rem",
+          borderTop: "1px solid #f8f9fa",
+          background: "#fdfdfd",
+        }}
+      >
+        {isPublicRelations ? (
+          <Button
+            onClick={() => navigate("/assign-reports")}
+            variant="primary"
+            fullWidth
+          >
+            <Pencil className="me-2" />
+            Manage reports
+          </Button>
+        ) : isTechnicalOfficer ? (
+          <Button
+            onClick={() => navigate("/assign-reports")}
+            variant="primary"
+            fullWidth
+          >
+            <Pencil className="me-2" />
+            My Reports
+          </Button>
+        ) : isCitizen && (
+          <Button onClick={handleAddReport} variant="primary" fullWidth>
+            <Pencil className="me-2" />
+            Select a location
+          </Button>
+        )}
+
+        {!isAuthenticated && (
+          <p
+            className="text-center text-muted mb-0 mt-3"
+            style={{ fontSize: "0.85rem" }}
+          >
+            You need to{" "}
+            <button
+              onClick={() => navigate("/login")}
+              className="btn btn-link p-0"
+              style={{
+                color: "var(--primary)",
+                textDecoration: "underline",
+                fontSize: "inherit",
+              }}
+            >
+              login
+            </button>{" "}
+            or{" "}
+            <button
+              onClick={() => navigate("/signup")}
+              className="btn btn-link p-0"
+              style={{
+                color: "var(--primary)",
+                textDecoration: "underline",
+                fontSize: "inherit",
+              }}
+            >
+              sign up
+            </button>{" "}
+            to submit reports
+          </p>
+        )}
+>>>>>>> story#10/dev
       </div>
     </>
   );
@@ -436,9 +520,78 @@ export default function HomePage() {
             </Offcanvas.Title>
           </Offcanvas.Header>
 
+<<<<<<< HEAD
           <Offcanvas.Body className="p-0 d-flex flex-column" style={{ background: "var(--surface)" }}>
             {/* stessa sidebar content, così non hai divergenze */}
             <ReportsSidebarContent />
+=======
+            {/* Add Report Button in Offcanvas */}
+            <div
+              style={{
+                padding: "1.5rem",
+                borderTop: "1px solid #f8f9fa",
+                background: "#fdfdfd",
+              }}
+            >
+              {isPublicRelations ? (
+                <Button
+                  onClick={() => navigate("/assign-reports")}
+                  variant="primary"
+                  fullWidth
+                >
+                  <Pencil className="me-2" />
+                  Assign technical
+                </Button>
+              ) : isTechnicalOfficer ? (
+                <Button
+                  onClick={() => navigate("/assign-reports")}
+                  variant="primary"
+                  fullWidth
+                >
+                  <Pencil className="me-2" />
+                  My Reports
+                </Button>
+              ) : (
+                <Button onClick={handleAddReport} variant="primary" fullWidth>
+                  <Pencil className="me-2" />
+                  Select a location
+                </Button>
+              )}
+
+              {!isAuthenticated && (
+                <p
+                  className="text-center text-muted mb-0 mt-3"
+                  style={{ fontSize: "0.85rem" }}
+                >
+                  You need to{" "}
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="btn btn-link p-0"
+                    style={{
+                      color: "var(--primary)",
+                      textDecoration: "underline",
+                      fontSize: "inherit",
+                    }}
+                  >
+                    login
+                  </button>{" "}
+                  or{" "}
+                  <button
+                    onClick={() => navigate("/signup")}
+                    className="btn btn-link p-0"
+                    style={{
+                      color: "var(--primary)",
+                      textDecoration: "underline",
+                      fontSize: "inherit",
+                    }}
+                  >
+                    sign up
+                  </button>{" "}
+                  to submit reports
+                </p>
+              )}
+            </div>
+>>>>>>> story#10/dev
           </Offcanvas.Body>
         </Offcanvas>
       </div>
