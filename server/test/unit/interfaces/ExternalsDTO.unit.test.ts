@@ -39,7 +39,10 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
       const mockCompany = {
         id: 2,
         name: "Multi Service",
-        categories: [ReportCategory.PUBLIC_LIGHTING, ReportCategory.ROADS_URBAN_FURNISHINGS],
+        categories: [
+          ReportCategory.PUBLIC_LIGHTING,
+          ReportCategory.ROADS_URBAN_FURNISHINGS,
+        ],
         platformAccess: false,
       };
 
@@ -47,7 +50,9 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
 
       expect(result.categories).toHaveLength(2);
       expect(result.categories).toContain(ReportCategory.PUBLIC_LIGHTING);
-      expect(result.categories).toContain(ReportCategory.ROADS_URBAN_FURNISHINGS);
+      expect(result.categories).toContain(
+        ReportCategory.ROADS_URBAN_FURNISHINGS
+      );
     });
 
     it("should handle company without platform access", () => {
@@ -75,7 +80,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
         first_name: "Marco",
         last_name: "Bianchi",
         email: "marco@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         externalCompany: {
           id: 1,
           name: "Enel X",
@@ -91,7 +96,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
         firstName: "Marco",
         lastName: "Bianchi",
         email: "marco@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         company: {
           id: 1,
           name: "Enel X",
@@ -113,7 +118,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
         first_name: "Marco",
         last_name: "Bianchi",
         email: "marco@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         externalCompany: null,
       };
 
@@ -142,7 +147,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
           first_name: "Marco",
           last_name: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: {
             id: 1,
             name: "Enel X",
@@ -162,7 +167,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
           firstName: "Marco",
           lastName: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           company: {
             id: 1,
             name: "Enel X",
@@ -206,7 +211,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
           first_name: "Marco",
           last_name: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: {
             id: 1,
             name: "Enel X",
@@ -247,7 +252,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
           first_name: "Marco",
           last_name: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: null,
         },
         externalCompany: null,
@@ -286,7 +291,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
         first_name: "Marco",
         last_name: "Bianchi",
         email: "marco@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         externalCompany: {
           id: 1,
           name: "Enel X",
@@ -295,7 +300,8 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
         },
       };
 
-      const result: ExternalMaintainerDTO | null = toExternalMaintainerDTO(mockUser);
+      const result: ExternalMaintainerDTO | null =
+        toExternalMaintainerDTO(mockUser);
 
       if (result) {
         expect(result).toHaveProperty("id");
@@ -315,7 +321,7 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
           first_name: "Marco",
           last_name: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: {
             id: 1,
             name: "Enel X",
@@ -325,7 +331,8 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
         },
       };
 
-      const result: ExternalHandlerDTO | null = toExternalHandlerDTO(mockReport);
+      const result: ExternalHandlerDTO | null =
+        toExternalHandlerDTO(mockReport);
 
       if (result && result.type === "user") {
         expect(result.user).toHaveProperty("id");
@@ -344,7 +351,8 @@ describe("ExternalsDTO Unit Tests - PT25", () => {
         },
       };
 
-      const result: ExternalHandlerDTO | null = toExternalHandlerDTO(mockReport);
+      const result: ExternalHandlerDTO | null =
+        toExternalHandlerDTO(mockReport);
 
       if (result && result.type === "company") {
         expect(result.company).toHaveProperty("id");

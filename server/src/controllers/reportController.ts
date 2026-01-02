@@ -10,7 +10,7 @@ import {
   updateReportStatus as updateReportStatusService,
   getAssignedReportsService,
   getAssignedReportsForExternalMaintainer,
-  getReportById as getReportByIdService
+  getReportById as getReportByIdService,
 } from "../services/reportService";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
@@ -21,8 +21,20 @@ import { Role } from "../../../shared/RoleTypes";
 import { getInternalNotes } from "../services/internalNoteService";
 
 // Helper functions for validation
-function validateRequiredFields(title: any, description: any, category: any, latitude: any, longitude: any): void {
-  if (!title || !description || !category || latitude === undefined || longitude === undefined) {
+function validateRequiredFields(
+  title: any,
+  description: any,
+  category: any,
+  latitude: any,
+  longitude: any
+): void {
+  if (
+    !title ||
+    !description ||
+    !category ||
+    latitude === undefined ||
+    longitude === undefined
+  ) {
     throw new BadRequestError(
       "Missing required fields: title, description, category, latitude, longitude"
     );
@@ -41,12 +53,17 @@ function validatePhotos(photos: any[]): void {
 function validateCategory(category: string): void {
   if (!Object.values(ReportCategory).includes(category as ReportCategory)) {
     throw new BadRequestError(
-      `Invalid category. Allowed values: ${Object.values(ReportCategory).join(", ")}`
+      `Invalid category. Allowed values: ${Object.values(ReportCategory).join(
+        ", "
+      )}`
     );
   }
 }
 
-function validateAndParseCoordinates(latitude: any, longitude: any): { latitude: number; longitude: number } {
+function validateAndParseCoordinates(
+  latitude: any,
+  longitude: any
+): { latitude: number; longitude: number } {
   const parsedLatitude = parseFloat(latitude);
   const parsedLongitude = parseFloat(longitude);
 
@@ -61,7 +78,9 @@ function validateAndParseCoordinates(latitude: any, longitude: any): { latitude:
   }
 
   if (parsedLongitude < -180 || parsedLongitude > 180) {
-    throw new BadRequestError("Invalid longitude: must be between -180 and 180");
+    throw new BadRequestError(
+      "Invalid longitude: must be between -180 and 180"
+    );
   }
 
   return { latitude: parsedLatitude, longitude: parsedLongitude };
@@ -110,7 +129,11 @@ function extractPhotos(reqFiles: any): any[] {
 }
 
 // Helper function to resolve address
-async function resolveAddress(address: string | undefined, latitude: number, longitude: number): Promise<string> {
+async function resolveAddress(
+  address: string | undefined,
+  latitude: number,
+  longitude: number
+): Promise<string> {
   if (!address || address.trim() === "") {
     return await calculateAddress(latitude, longitude);
   }
@@ -144,11 +167,19 @@ function buildReportData(
 
 export async function createReport(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
-  const { title, description, category, latitude, longitude, isAnonymous, address } = req.body;
+  const {
+    title,
+    description,
+    category,
+    latitude,
+    longitude,
+    isAnonymous,
+    address,
+  } = req.body;
 
   // Extract and validate photos
   const photos = extractPhotos(req.files);
-  
+
   // Validate all inputs
   validateRequiredFields(title, description, category, latitude, longitude);
   validatePhotos(photos);
@@ -157,7 +188,11 @@ export async function createReport(req: Request, res: Response): Promise<void> {
 
   // Process photos and resolve address
   const photoData = await processPhotos(photos);
-  const resolvedAddress = await resolveAddress(address, coordinates.latitude, coordinates.longitude);
+  const resolvedAddress = await resolveAddress(
+    address,
+    coordinates.latitude,
+    coordinates.longitude
+  );
 
   // Build and create report
   const reportData = buildReportData(
@@ -176,7 +211,7 @@ export async function createReport(req: Request, res: Response): Promise<void> {
 
   res.status(201).json({
     message: "Report created successfully",
-    report: newReport
+    report: newReport,
   });
 }
 
@@ -192,13 +227,14 @@ export async function getReports(req: Request, res: Response): Promise<void> {
     );
   }
 
-  const reports = await getApprovedReportsService(
-    category as ReportCategory
-  );
+  const reports = await getApprovedReportsService(category as ReportCategory);
   res.status(200).json(reports);
 }
 
-export async function getReportById(req: Request, res: Response): Promise<void> {
+export async function getReportById(
+  req: Request,
+  res: Response
+): Promise<void> {
   const reportId = parseInt(req.params.reportId);
   const authReq = req as Request & { user?: any };
   const user = authReq.user;
@@ -214,8 +250,6 @@ export async function getReportById(req: Request, res: Response): Promise<void> 
   const report = await getReportByIdService(reportId, user.id);
   res.status(200).json(report);
 }
-
-
 
 // =========================
 // REPORT PR CONTROLLERS
@@ -242,7 +276,7 @@ export async function approveReport(
   if (isNaN(reportId)) {
     throw new BadRequestError("Invalid report ID parameter");
   }
-  
+
   const assignedIdNum = parseInt(assignedTechnicalId);
 
   if (!assignedTechnicalId || isNaN(parseInt(assignedTechnicalId))) {
@@ -296,14 +330,15 @@ export async function rejectReport(req: Request, res: Response): Promise<void> {
   });
 }
 
-
-
 // =========================
 // REPORT TECH/EXTERNAL CONTROLLERS
 // =========================
 
 // Update report status
-export async function updateReportStatus(req: Request, res: Response): Promise<void> {
+export async function updateReportStatus(
+  req: Request,
+  res: Response
+): Promise<void> {
   const reportId = parseInt(req.params.reportId);
   const user = req.user as { id: number };
   const { status } = req.body;
@@ -317,12 +352,22 @@ export async function updateReportStatus(req: Request, res: Response): Promise<v
   }
 
   // Validate status
-  const validStatuses = [ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED, ReportStatus.RESOLVED];
+  const validStatuses = [
+    ReportStatus.IN_PROGRESS,
+    ReportStatus.SUSPENDED,
+    ReportStatus.RESOLVED,
+  ];
   if (!validStatuses.includes(status as ReportStatus)) {
-    throw new BadRequestError(`Invalid status. Allowed values: ${validStatuses.join(", ")}`);
+    throw new BadRequestError(
+      `Invalid status. Allowed values: ${validStatuses.join(", ")}`
+    );
   }
 
-  const updatedReport = await updateReportStatusService(reportId, user.id, status as ReportStatus);
+  const updatedReport = await updateReportStatusService(
+    reportId,
+    user.id,
+    status as ReportStatus
+  );
   res.status(200).json({
     message: "Report status updated successfully",
     report: updatedReport,
@@ -346,7 +391,12 @@ export async function getAssignedReports(
   // Validate status
   let statusFilter;
   if (status) {
-    const allowed = ["ASSIGNED", "EXTERNAL_ASSIGNED", "IN_PROGRESS", "RESOLVED"];
+    const allowed = [
+      "ASSIGNED",
+      "EXTERNAL_ASSIGNED",
+      "IN_PROGRESS",
+      "RESOLVED",
+    ];
     if (!allowed.includes(status)) {
       throw new BadRequestError("Invalid status filter");
     }
@@ -356,7 +406,7 @@ export async function getAssignedReports(
   const allowedSort = ["createdAt", "priority"];
   const sortField = allowedSort.includes(sortBy ?? "") ? sortBy! : "createdAt";
   const sortOrder = order === "asc" ? "asc" : "desc";
-  
+
   // Call appropriate service based on user role
   let reports;
   if (user.role === Role.EXTERNAL_MAINTAINER) {
@@ -375,25 +425,34 @@ export async function getAssignedReports(
       sortOrder
     );
   }
-  
+
   res.status(200).json(reports);
 }
 
-export async function createInternalNote(req: Request, res: Response): Promise<void> {
+export async function createInternalNote(
+  req: Request,
+  res: Response
+): Promise<void> {
   const reportId = parseInt(req.params.reportId);
-  const user = req.user as { id: number; role: Role };
+  const user = req.user as { id: number; role: Role[] };
   const { content } = req.body;
 
-  const role = [user.role];
-  const note = await createInternalNoteService(reportId, content, user.id, role);
+  const note = await createInternalNoteService(
+    reportId,
+    content,
+    user.id,
+    user.role
+  );
   res.status(201).json(note);
 }
 
-export async function getInternalNote(req: Request, res: Response): Promise<void> {
+export async function getInternalNote(
+  req: Request,
+  res: Response
+): Promise<void> {
   const reportId = parseInt(req.params.reportId);
-  const user = req.user as { id: number; role: Role };
+  const user = req.user as { id: number; role: Role[] };
 
   const messages = await getInternalNotes(reportId, user.id);
   res.status(200).json(messages);
 }
-

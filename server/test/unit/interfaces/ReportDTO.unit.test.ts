@@ -152,7 +152,7 @@ describe("ReportDTO", () => {
         firstName: "Jane",
         lastName: "Smith",
         email: "jane.smith@example.com",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
         isVerified: true,
         telegramUsername: null,
         emailNotificationsEnabled: false,
@@ -436,7 +436,7 @@ describe("ReportDTO", () => {
 
       const result = toReportDTO(mockReport);
 
-      expect(result.user?.role).toBe("TECHNICAL_OFFICE");
+      expect(result.user?.role).toEqual(["TECHNICAL_OFFICE"]);
       expect(result.user?.email).toBe("mario.rossi@comune.torino.it");
       expect(result.user?.telegramUsername).toBeNull();
     });

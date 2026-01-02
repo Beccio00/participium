@@ -50,7 +50,7 @@ describe("GET /api/admin/municipality-users", () => {
     // Assert
     expect(response.body).toBeInstanceOf(Array);
     expect(response.body.length).toBe(1);
-    expect(response.body[0]).toHaveProperty("role", "PUBLIC_RELATIONS");
+    expect(response.body[0].role).toEqual(["PUBLIC_RELATIONS"]);
     expect(response.body[0]).toHaveProperty("email", munUserEmail);
     expect(response.body[0]).not.toHaveProperty("password");
   });
@@ -128,7 +128,7 @@ describe("GET /api/admin/municipality-users/:id", () => {
 
     // Assert
     expect(response.body).toHaveProperty("id", munUser.id);
-    expect(response.body).toHaveProperty("role", "PUBLIC_RELATIONS");
+    expect(response.body.role).toEqual(["PUBLIC_RELATIONS"]);
     expect(response.body).not.toHaveProperty("password");
   });
 
@@ -378,7 +378,7 @@ describe("Error scenarios coverage tests", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@comune.torino.it",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       })
       .expect(400);
 
@@ -452,7 +452,7 @@ describe("Service coverage integration tests", () => {
         lastName: "User",
         email: munUserEmail,
         password: "Test123!",
-        role: "MUNICIPAL_BUILDING_MAINTENANCE",
+        role: ["MUNICIPAL_BUILDING_MAINTENANCE"],
       })
       .expect(409);
 

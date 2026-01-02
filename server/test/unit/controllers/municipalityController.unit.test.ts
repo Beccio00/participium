@@ -72,14 +72,14 @@ describe("municipalityController", () => {
         lastName: "B",
         email: "a@b.com",
         password: "P",
-        role: Roles.PUBLIC_RELATIONS,
+        role: [Roles.PUBLIC_RELATIONS],
       };
       mockFindByEmail.mockResolvedValue(null as any);
       mockHash.mockResolvedValue({ hashedPassword: "h", salt: "s" });
       const created = {
         id: 1,
         email: "a@b.com",
-        role: Roles.PUBLIC_RELATIONS,
+        role: [Roles.PUBLIC_RELATIONS],
       } as any;
       mockCreate.mockResolvedValue(created);
 
@@ -126,7 +126,7 @@ describe("municipalityController", () => {
         lastName: "B",
         email: "a@b",
         password: "P",
-        role: Roles.PUBLIC_RELATIONS,
+        role: [Roles.PUBLIC_RELATIONS],
       };
       mockFindByEmail.mockResolvedValue({ id: 1 } as any);
       await expect(
@@ -143,7 +143,7 @@ describe("municipalityController", () => {
         lastName: "B",
         email: "a@b.com",
         password: "P",
-        role: Roles.PUBLIC_RELATIONS,
+        role: [Roles.PUBLIC_RELATIONS],
       };
       mockFindByEmail.mockResolvedValue(null as any);
       mockHash.mockRejectedValue(new Error("Hash failed"));
@@ -165,14 +165,14 @@ describe("municipalityController", () => {
           first_name: "John",
           last_name: "Doe",
           email: "john@example.com",
-          role: Roles.ADMINISTRATOR,
+          role: [Roles.ADMINISTRATOR],
         },
         {
           id: 2,
           first_name: "Jane",
           last_name: "Smith",
           email: "jane@example.com",
-          role: Roles.MUNICIPAL_BUILDING_MAINTENANCE,
+          role: [Roles.MUNICIPAL_BUILDING_MAINTENANCE],
         },
       ];
       mockGetAll.mockResolvedValue(mockUsers as any);
@@ -203,7 +203,7 @@ describe("municipalityController", () => {
         first_name: "John",
         last_name: "Doe",
         email: "john@example.com",
-        role: Roles.ADMINISTRATOR,
+        role: [Roles.ADMINISTRATOR],
       };
       mockGetById.mockResolvedValue(mockUser as any);
 
