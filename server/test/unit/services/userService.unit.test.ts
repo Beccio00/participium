@@ -41,14 +41,14 @@ describe("userService", () => {
     it("should return user if found", async () => {
       const mockUser = { id: 1, email: "test@example.com" } as any;
       mockFindByEmail.mockResolvedValue(mockUser);
-      
+
       const result = await findByEmail("test@example.com");
       expect(result).toEqual(mockUser);
     });
 
     it("should return null if user not found", async () => {
       mockFindByEmail.mockResolvedValue(null);
-      
+
       const result = await findByEmail("notfound@example.com");
       expect(result).toBeNull();
     });
@@ -58,14 +58,14 @@ describe("userService", () => {
     it("should return user if found", async () => {
       const mockUser = { id: 1 } as any;
       mockFindById.mockResolvedValue(mockUser);
-      
+
       const result = await findById(1);
       expect(result).toEqual(mockUser);
     });
 
     it("should return null if not found", async () => {
       mockFindById.mockResolvedValue(null);
-      
+
       const result = await findById(999);
       expect(result).toBeNull();
     });
@@ -79,7 +79,7 @@ describe("userService", () => {
         last_name: "U",
         password: "p",
         salt: "s",
-        role: Role.CITIZEN,
+        role: [Role.CITIZEN],
         telegram_username: "tele",
         email_notifications_enabled: true,
       };
@@ -98,9 +98,14 @@ describe("userService", () => {
         last_name: "U",
         password: "p",
         salt: "s",
-        role: Role.CITIZEN,
+        role: [Role.CITIZEN],
       };
-      const createdUser = { id: 1, ...input, telegram_username: null, email_notifications_enabled: true };
+      const createdUser = {
+        id: 1,
+        ...input,
+        telegram_username: null,
+        email_notifications_enabled: true,
+      };
       mockCreate.mockResolvedValue(createdUser);
 
       const res = await createUser(input);
@@ -126,7 +131,7 @@ describe("userService", () => {
         last_name: "L",
         password: "p",
         salt: "s",
-        role: Role.ADMINISTRATOR,
+        role: [Role.ADMINISTRATOR],
         telegram_username: "tg",
         email_notifications_enabled: false,
       };
@@ -140,7 +145,7 @@ describe("userService", () => {
 
     it("should return null on database error (catch block)", async () => {
       mockUpdate.mockRejectedValue(new Error("DB Error"));
-      
+
       const res = await updateUser(1, { first_name: "Fail" });
       expect(res).toBeNull();
     });
@@ -149,14 +154,14 @@ describe("userService", () => {
   describe("deleteUser", () => {
     it("should return true on successful deletion", async () => {
       mockDelete.mockResolvedValue(true);
-      
+
       const res = await deleteUser(1);
       expect(res).toBe(true);
     });
 
     it("should return false on database error (catch block)", async () => {
       mockDelete.mockRejectedValue(new Error("DB Error"));
-      
+
       const res = await deleteUser(1);
       expect(res).toBe(false);
     });
@@ -165,18 +170,21 @@ describe("userService", () => {
   describe("findUsersByRoles", () => {
     it("should call findByRoles with roles array", async () => {
       mockFindByRoles.mockResolvedValue([]);
-      
+
       await findUsersByRoles([Role.CITIZEN, Role.ADMINISTRATOR]);
-      expect(mockFindByRoles).toHaveBeenCalledWith([Role.CITIZEN, Role.ADMINISTRATOR]);
+      expect(mockFindByRoles).toHaveBeenCalledWith([
+        Role.CITIZEN,
+        Role.ADMINISTRATOR,
+      ]);
     });
 
     it("should return users matching roles", async () => {
       const mockUsers = [
-        { id: 1, role: Role.CITIZEN },
-        { id: 2, role: Role.ADMINISTRATOR },
+        { id: 1, role: [Role.CITIZEN] },
+        { id: 2, role: [Role.ADMINISTRATOR] },
       ];
       mockFindByRoles.mockResolvedValue(mockUsers);
-      
+
       const res = await findUsersByRoles([Role.CITIZEN]);
       expect(res).toEqual(mockUsers);
     });
