@@ -2955,6 +2955,16 @@ paths:
                 code: 409
                 error: "Conflict"
                 message: "Report has already been processed"
+        "422":
+          description: Unprocessable Entity - Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: "UnprocessableEntity"
+                message: "Assigned technical is not valid for this report category"
         "500":
           description: Unable to approve report
           content:

@@ -11,8 +11,8 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
-      # Optional: mount init scripts
-      # - ./server/database/init:/docker-entrypoint-initdb.d:ro
+      # Mount init scripts to create test database
+      - ./server/database/init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     networks:
       - participium-network-dev
