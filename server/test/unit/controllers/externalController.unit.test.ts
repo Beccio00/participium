@@ -93,7 +93,10 @@ describe("External Controller Unit Tests - PT25", () => {
       mockReq.body = companyData;
       mockCreateExternalCompany.mockResolvedValue(mockResult);
 
-      await createExternalCompanyController(mockReq as Request, mockRes as Response);
+      await createExternalCompanyController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockCreateExternalCompany).toHaveBeenCalledWith(companyData);
       expect(statusMock).toHaveBeenCalledWith(201);
@@ -107,7 +110,9 @@ describe("External Controller Unit Tests - PT25", () => {
         platformAccess: true,
       };
 
-      mockCreateExternalCompany.mockRejectedValue(new BadRequestError("Company name is required"));
+      mockCreateExternalCompany.mockRejectedValue(
+        new BadRequestError("Company name is required")
+      );
 
       await expect(
         createExternalCompanyController(mockReq as Request, mockRes as Response)
@@ -129,7 +134,7 @@ describe("External Controller Unit Tests - PT25", () => {
               firstName: "Marco",
               lastName: "Bianchi",
               email: "marco@enelx.com",
-              role: Role.EXTERNAL_MAINTAINER,
+              role: [Role.EXTERNAL_MAINTAINER],
             },
           ],
         },
@@ -144,7 +149,10 @@ describe("External Controller Unit Tests - PT25", () => {
 
       mockListExternalCompanies.mockResolvedValue(mockCompanies);
 
-      await listExternalCompaniesController(mockReq as Request, mockRes as Response);
+      await listExternalCompaniesController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockListExternalCompanies).toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(200);
@@ -166,7 +174,10 @@ describe("External Controller Unit Tests - PT25", () => {
 
       mockGetExternalCompaniesWithAccess.mockResolvedValue(mockCompanies);
 
-      await getExternalCompaniesWithAccessController(mockReq as Request, mockRes as Response);
+      await getExternalCompaniesWithAccessController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockGetExternalCompaniesWithAccess).toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(200);
@@ -179,7 +190,10 @@ describe("External Controller Unit Tests - PT25", () => {
       mockReq.params = { id: "1" };
       mockDeleteExternalCompany.mockResolvedValue(undefined);
 
-      await deleteExternalCompanyController(mockReq as Request, mockRes as Response);
+      await deleteExternalCompanyController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockDeleteExternalCompany).toHaveBeenCalledWith(1);
       expect(statusMock).toHaveBeenCalledWith(204);
@@ -196,7 +210,9 @@ describe("External Controller Unit Tests - PT25", () => {
 
     it("should throw error if company not found", async () => {
       mockReq.params = { id: "999" };
-      mockDeleteExternalCompany.mockRejectedValue(new NotFoundError("External company not found"));
+      mockDeleteExternalCompany.mockRejectedValue(
+        new NotFoundError("External company not found")
+      );
 
       await expect(
         deleteExternalCompanyController(mockReq as Request, mockRes as Response)
@@ -223,7 +239,7 @@ describe("External Controller Unit Tests - PT25", () => {
         firstName: "Marco",
         lastName: "Bianchi",
         email: "marco.bianchi@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         company: {
           id: 1,
           name: "Enel X",
@@ -235,7 +251,10 @@ describe("External Controller Unit Tests - PT25", () => {
       mockReq.body = maintainerData;
       mockCreateExternalMaintainer.mockResolvedValue(mockResult);
 
-      await createExternalMaintainerController(mockReq as Request, mockRes as Response);
+      await createExternalMaintainerController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockCreateExternalMaintainer).toHaveBeenCalledWith(maintainerData);
       expect(statusMock).toHaveBeenCalledWith(201);
@@ -251,7 +270,7 @@ describe("External Controller Unit Tests - PT25", () => {
           firstName: "Marco",
           lastName: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           company: {
             id: 1,
             name: "Enel X",
@@ -263,7 +282,10 @@ describe("External Controller Unit Tests - PT25", () => {
 
       mockGetAllExternalMaintainers.mockResolvedValue(mockMaintainers);
 
-      await listExternalMaintainersController(mockReq as Request, mockRes as Response);
+      await listExternalMaintainersController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockGetAllExternalMaintainers).toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(200);
@@ -278,7 +300,7 @@ describe("External Controller Unit Tests - PT25", () => {
         firstName: "Marco",
         lastName: "Bianchi",
         email: "marco@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         company: {
           id: 1,
           name: "Enel X",
@@ -290,7 +312,10 @@ describe("External Controller Unit Tests - PT25", () => {
       mockReq.params = { id: "501" };
       mockGetExternalMaintainerById.mockResolvedValue(mockMaintainer);
 
-      await getExternalMaintainerController(mockReq as Request, mockRes as Response);
+      await getExternalMaintainerController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockGetExternalMaintainerById).toHaveBeenCalledWith(501);
       expect(statusMock).toHaveBeenCalledWith(200);
@@ -320,7 +345,10 @@ describe("External Controller Unit Tests - PT25", () => {
       mockReq.params = { id: "501" };
       mockDeleteExternalMaintainer.mockResolvedValue(true);
 
-      await deleteExternalMaintainerController(mockReq as Request, mockRes as Response);
+      await deleteExternalMaintainerController(
+        mockReq as Request,
+        mockRes as Response
+      );
 
       expect(mockDeleteExternalMaintainer).toHaveBeenCalledWith(501);
       expect(statusMock).toHaveBeenCalledWith(204);
@@ -331,7 +359,10 @@ describe("External Controller Unit Tests - PT25", () => {
       mockReq.params = { id: "invalid" };
 
       await expect(
-        deleteExternalMaintainerController(mockReq as Request, mockRes as Response)
+        deleteExternalMaintainerController(
+          mockReq as Request,
+          mockRes as Response
+        )
       ).rejects.toThrow(BadRequestError);
     });
 
@@ -340,7 +371,10 @@ describe("External Controller Unit Tests - PT25", () => {
       mockDeleteExternalMaintainer.mockResolvedValue(false);
 
       await expect(
-        deleteExternalMaintainerController(mockReq as Request, mockRes as Response)
+        deleteExternalMaintainerController(
+          mockReq as Request,
+          mockRes as Response
+        )
       ).rejects.toThrow(NotFoundError);
     });
   });
