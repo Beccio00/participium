@@ -1199,24 +1199,18 @@ paths:
     patch:
       tags:
         - Administration
-      summary: Replace roles for a municipality user (multi-role, includes cancellation)
+      summary: Update municipality user
       description: |
-        Replace the entire list of roles assigned to a municipality user.
-
-        **Important (story requirement):**
-        - A municipality user can have multiple roles at the same time.
-        - This operation **includes cancellation**: roles NOT included in the request will be removed.
-
-        Only users with the ADMINISTRATOR role can perform this operation.
-        The request body must provide an array of valid roles (see GET /admin/roles).
-      operationId: updateMunicipalityUserRoles
+        Update municipality user data including basic information and roles.
+        At least one field must be provided for update.
+      operationId: updateMunicipalityUser
       security:
         - SessionAuth: []
       parameters:
         - name: userId
           in: path
           required: true
-          description: ID of the municipality user to update
+          description: ID of the municipality user
           schema:
             type: integer
             format: int64
@@ -1226,37 +1220,90 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - roles
               properties:
+                firstName:
+                  type: string
+                  description: First name of the user
+                lastName:
+                  type: string
+                  description: Last name of the user
+                email:
+                  type: string
+                  format: email
+                  description: Email address of the user
+                password:
+                  type: string
+                  minLength: 8
+                  description: New password for the user
                 roles:
                   type: array
                   minItems: 1
                   items:
                     $ref: "#/components/schemas/MunicipalityRole"
-                  description: |
-                    Full list of roles the user must have after the update.
-                    This list replaces the previous one; omitted roles are removed (cancellation).
+                  description: List of roles for the user
               additionalProperties: false
             example:
-              roles: ["ADMINISTRATOR", "PUBLIC_RELATIONS"]
+              firstName: "Mario"
+              lastName: "Rossi"
+              email: "mario.rossi@comune.torino.it"
+              roles: ["PUBLIC_RELATIONS", "ADMINISTRATOR"]
       responses:
         "200":
-          description: Municipality user roles updated successfully
+          description: Municipality user updated successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/MunicipalityUserResponse"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Missing required fields: firstName, lastName, email, password, role"
         "401":
-          $ref: "#/components/responses/Unauthorized"
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
         "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Email already in use"
         "500":
-          $ref: "#/components/responses/InternalServerError"
+          description: Unable to update user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to update municipality user"
 
   /admin/roles:
     get:
@@ -2201,7 +2248,7 @@ paths:
                       url: "https://cdn.example.com/reports/1024/photo1.jpg"
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
-                  updatedAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T11:15:00Z"
 
                 - id: 1025
                   title: "Broken street light"
@@ -2480,7 +2527,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                               $ref: "#/components/schemas/ErrorResponse"
               example:
                 code: 401
                 error: "Unauthorized"
@@ -2532,7 +2579,7 @@ paths:
       summary: Assign a report to an external maintainer or company
       description: |
         Assign a report to an external entity for specialized intervention.
-        Only technical office staff members can perform this operation.
+        Only technical office members can perform this operation.
         The report status changes from PENDING_APPROVAL or ASSIGNED to EXTERNAL_ASSIGNED when assigned to external entities.
         External assignment creates a specialized workflow for external company maintenance.
 
@@ -2846,7 +2893,7 @@ paths:
                       senderId: 201
                       senderRole: CITIZEN
                     - id: 2
-                      content: "Report approved and assigned by public relations officer"
+                      content: "Report approved by public relations officer"
                       createdAt: "2025-11-11T11:15:00Z"
                       senderId: 123
                       senderRole: PUBLIC_RELATIONS
@@ -3153,6 +3200,7 @@ paths:
                       content: "Initial report created by user"
                       createdAt: "2025-11-11T10:12:34Z"
                       senderId: 201
+                      senderRole: CITIZEN
                     - id: 2
                       content: "Report assigned to technical staff"
                       createdAt: "2025-11-12T09:00:00Z"
@@ -4827,12 +4875,12 @@ components:
         telegramUsername:
           type: string
           nullable: true
-          description: Telegram username if linked, null otherwise
+          description: Telegram username if linked, or null if not linked
           example: "mario_rossi"
         telegramId:
           type: string
           nullable: true
-          description: Telegram user ID if linked, null otherwise
+          description: Telegram user ID if linked, or null if not linked
           example: "123456789"
       required:
         - linked

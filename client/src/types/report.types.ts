@@ -32,11 +32,7 @@ export interface Report {
     firstName: string;
     lastName: string;
     email: string;
-<<<<<<< HEAD
-    role: string[];
-=======
     role: string | string[];
->>>>>>> story#10/dev
   };
   externalHandler?: {
     user:{
@@ -48,11 +44,7 @@ export interface Report {
       firstName: string;
       lastName: string;
       email: string;
-<<<<<<< HEAD
-      role: string[];
-=======
       role: string | string[];
->>>>>>> story#10/dev
     }
   };
 }

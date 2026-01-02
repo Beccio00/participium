@@ -50,11 +50,7 @@ export default function ReportChat({
             if (
               display?.user && 
               currentUserId === display.user.id &&
-<<<<<<< HEAD
-              Array.isArray(display.user.role) && display.user.role.includes("CITIZEN")
-=======
               display.user.role == "CITIZEN"
->>>>>>> story#10/dev
             ) {
               return "Chat with Participium Support";
             }

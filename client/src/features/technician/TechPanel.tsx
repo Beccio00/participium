@@ -139,13 +139,8 @@ export default function TechPanel() {
 
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-<<<<<<< HEAD
-  const isPublicRelations = Array.isArray(user?.role) && user.role.includes(Role.PUBLIC_RELATIONS.toString());
-  const isExternalMaintainer = Array.isArray(user?.role) && user.role.includes(Role.EXTERNAL_MAINTAINER.toString());
-=======
   const isPublicRelations = userHasRole(user, Role.PUBLIC_RELATIONS);
   const isExternalMaintainer = userHasRole(user, Role.EXTERNAL_MAINTAINER);
->>>>>>> story#10/dev
 
   const [noteModalError, setNoteModalError] = useState<string | null>(null);
   const [toast, setToast] = useState({show: false, message: "", variant: "success" });
@@ -185,11 +180,7 @@ export default function TechPanel() {
   useEffect(() => {
     if (
       !isAuthenticated ||
-<<<<<<< HEAD
-      (Array.isArray(user?.role) && !user.role.some((r: string) => MUNICIPALITY_AND_EXTERNAL_ROLES.includes(r)))
-=======
       (user && !userHasAnyRole(user,MUNICIPALITY_AND_EXTERNAL_ROLES))
->>>>>>> story#10/dev
     ) {
       navigate("/");
     }
@@ -251,11 +242,7 @@ export default function TechPanel() {
       let technicals = [];
       let externals = [];
 
-<<<<<<< HEAD
-      if (user && Array.isArray(user.role) && user.role.includes(Role.PUBLIC_RELATIONS.toString())) {
-=======
       if (user && userHasRole(user,Role.PUBLIC_RELATIONS)) {
->>>>>>> story#10/dev
         try {
           technicals = await getAssignableTechnicals(id);
         } catch (err) {
@@ -267,11 +254,7 @@ export default function TechPanel() {
           setProcessingId(null);
           return;
         }
-<<<<<<< HEAD
-      } else if (user && Array.isArray(user.role) && user.role.some((r: string) => TECHNICIAN_ROLES.includes(r))) {
-=======
       } else if (user && userHasAnyRole(user, TECHNICIAN_ROLES)) {
->>>>>>> story#10/dev
         try {
           externals = await getAssignableExternals(id);
         } catch (err) {

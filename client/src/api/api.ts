@@ -1,16 +1,3 @@
-// PATCH roles for a municipality user (multi-ruolo)
-export async function updateMunicipalityUserRoles(
-  userId: number,
-  role: string[]
-): Promise<MunicipalityUserResponse> {
-  const res = await fetch(`${API_PREFIX}/admin/municipality-users/${userId}/roles`, {
-    method: "PATCH",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ role }),
-  });
-  return handleResponse<MunicipalityUserResponse>(res);
-}
 // Notification API
 export async function getNotifications(): Promise<any[]> {
   const res = await fetch(`${API_PREFIX}/notifications`, {
@@ -140,7 +127,13 @@ export async function deleteMunicipalityUser(userId: number): Promise<void> {
 
 export async function updateMunicipalityUser(
   userId: number,
-  data: Partial<MunicipalityUserRequest>
+  data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    roles?: string[];
+  }
 ): Promise<MunicipalityUserResponse> {
   const res = await fetch(`${API_PREFIX}/admin/municipality-users/${userId}`, {
     method: "PATCH",

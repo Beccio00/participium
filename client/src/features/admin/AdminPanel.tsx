@@ -14,7 +14,6 @@ import {
   listMunicipalityUsers, 
   deleteMunicipalityUser,
   updateMunicipalityUser,
-  updateMunicipalityUserRoles,
   createExternalMaintainer,
   getExternalMaintainers,
   getExternalCompanies,
@@ -206,14 +205,10 @@ export default function AdminPanel() {
     try {
       if (activeTab === 'internal') {
         if (editingUser) {
-          // UPDATE: aggiorna i dati base e i ruoli separatamente
+          // UPDATE: modifica solo i ruoli
           await updateMunicipalityUser(editingUser.id, {
-            firstName: values.firstName,
-            lastName: values.lastName,
-            email: values.email,
-            role: values.role,
+            roles: values.role,
           });
-          await updateMunicipalityUserRoles(editingUser.id, values.role);
         } else {
           // CREATE
           await createInternalUser(values);
@@ -406,6 +401,8 @@ export default function AdminPanel() {
                     }}
                     isSubmitting={form.isSubmitting}
                     isInternal={activeTab === 'internal'}
+                    isEditing={!!editingUser}
+                    editingUser={editingUser}
                     companies={companies}
                     onChange={form.handleChange}
                     onSubmit={form.handleSubmit}

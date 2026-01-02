@@ -2,7 +2,7 @@ import * as React from "react";
 import { Form } from "react-bootstrap";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import type { ExternalCompanyResponse } from "../../types";
+import type { ExternalCompanyResponse, MunicipalityUserResponse } from "../../types";
 import { MUNICIPALITY_ROLES, getRoleLabel } from "../../utils/roles";
 import type { MunicipalityUserRoles } from "../../../../shared/MunicipalityUserTypes";
 
@@ -19,6 +19,8 @@ interface UserFormProps {
   values: UserFormFields;
   isSubmitting: boolean;
   isInternal: boolean;
+  isEditing?: boolean;
+  editingUser?: MunicipalityUserResponse | null;
   companies?: ExternalCompanyResponse[];
   onChange: (e: React.ChangeEvent<any>) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -28,10 +30,14 @@ export default function UserForm({
   values,
   isSubmitting,
   isInternal,
+  isEditing = false,
+  editingUser = null,
   companies = [],
   onChange,
   onSubmit,
 }: UserFormProps) {
+  const [validationError, setValidationError] = React.useState<string>("");
+
   const roleOptions = React.useMemo(
     () =>
       MUNICIPALITY_ROLES.map((role) => ({
@@ -51,64 +57,105 @@ export default function UserForm({
     ? "Saving..."
     : "Save";
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setValidationError("");
+
+    // Validate that at least one role is selected for internal users
+    if (isInternal && (!values.role || values.role.length === 0)) {
+      setValidationError("Please select at least one role for this user.");
+      return;
+    }
+
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit} autoComplete="off">
-      <div className="row g-3 mb-3">
-        <div className="col-md-6">
+    <form onSubmit={handleSubmit} autoComplete="off">
+      {validationError && (
+        <div className="alert alert-danger mb-3" role="alert">
+          {validationError}
+        </div>
+      )}
+      {isEditing && editingUser && (
+        <div className="mb-4">
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">First Name</label>
+              <p className="form-control-plaintext">{editingUser.firstName}</p>
+            </div>
+            <div className="col-md-6">
+              <label className="form-label fw-semibold">Last Name</label>
+              <p className="form-control-plaintext">{editingUser.lastName}</p>
+            </div>
+          </div>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Email Address</label>
+            <p className="form-control-plaintext">{editingUser.email}</p>
+          </div>
+        </div>
+      )}
+
+      {!isEditing && (
+        <>
+          <div className="row g-3 mb-3">
+            <div className="col-md-6">
+              <Input
+                type="text"
+                id="firstName"
+                name="firstName"
+                label="First Name"
+                value={values.firstName}
+                onChange={onChange}
+                disabled={isSubmitting}
+                required
+                placeholder="e.g. Mario"
+              />
+            </div>
+
+            <div className="col-md-6">
+              <Input
+                type="text"
+                id="lastName"
+                name="lastName"
+                label="Last Name"
+                value={values.lastName}
+                onChange={onChange}
+                disabled={isSubmitting}
+                required
+                placeholder="e.g. Rossi"
+              />
+            </div>
+          </div>
+
           <Input
-            type="text"
-            id="firstName"
-            name="firstName"
-            label="First Name"
-            value={values.firstName}
+            type="email"
+            id="email"
+            name="email"
+            label="Email Address"
+            value={values.email}
             onChange={onChange}
             disabled={isSubmitting}
             required
-            placeholder="e.g. Mario"
+            className="mb-3"
+            placeholder="name@example.com"
           />
-        </div>
 
-        <div className="col-md-6">
           <Input
-            type="text"
-            id="lastName"
-            name="lastName"
-            label="Last Name"
-            value={values.lastName}
+            type="password"
+            id="password"
+            name="password"
+            label="Password"
+            value={values.password}
             onChange={onChange}
             disabled={isSubmitting}
+            minLength={8}
             required
-            placeholder="e.g. Rossi"
+            className="mb-3"
+            placeholder="Min. 8 characters"
           />
-        </div>
-      </div>
-
-      <Input
-        type="email"
-        id="email"
-        name="email"
-        label="Email Address"
-        value={values.email}
-        onChange={onChange}
-        disabled={isSubmitting}
-        required
-        className="mb-3"
-        placeholder="name@example.com"
-      />
-
-      <Input
-        type="password"
-        id="password"
-        name="password"
-        label="Password"
-        value={values.password}
-        onChange={onChange}
-        disabled={isSubmitting}
-        minLength={8}
-        required
-        className="mb-3"
-        placeholder="Min. 8 characters"
-      />
+        </>
+      )}
 
       {isInternal ? (
         <Form.Group className="mb-4">
@@ -133,6 +180,12 @@ export default function UserForm({
                   } else {
                     newRoles = values.role.filter((r) => r !== value);
                   }
+                  
+                  // Clear validation error when user makes changes
+                  if (validationError) {
+                    setValidationError("");
+                  }
+                  
                   // Simula un evento compatibile con useForm
                   const syntheticEvent = {
                     target: {
@@ -185,7 +238,7 @@ export default function UserForm({
           disabled={isSubmitting}
           isLoading={isSubmitting}
         >
-          {submitLabel}
+          {isEditing ? (isSubmitting ? "Updating Roles..." : "Update Roles") : submitLabel}
         </Button>
       </div>
     </form>

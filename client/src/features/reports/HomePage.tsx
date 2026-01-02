@@ -15,11 +15,7 @@ import { getReports as getReportsApi } from "../../api/api";
 
 import { Role } from "../../../../shared/RoleTypes.ts";
 import { ReportStatus } from "../../../../shared/ReportTypes.ts";
-<<<<<<< HEAD
-
-=======
-import { userHasRole, userHasAnyRole, TECHNICIAN_ROLES } from "../../utils/roles";
->>>>>>> story#10/dev
+import { userHasRole } from "../../utils/roles";
 import "../../styles/HomePage.css";
 
 // --- Helpers ---------------------------------------------------------------
@@ -79,7 +75,6 @@ export default function HomePage() {
 
   const hasRole = (role: Role | string) => roles.includes(String(role));
 
-  const isAdmin = useMemo(() => isAuthenticated && hasRole(Role.ADMINISTRATOR), [isAuthenticated, roles]);
   const isCitizen = useMemo(() => isAuthenticated && hasRole(Role.CITIZEN), [isAuthenticated, roles]);
   const isPublicRelations = useMemo(
     () => isAuthenticated && hasRole(Role.PUBLIC_RELATIONS),
@@ -101,6 +96,14 @@ export default function HomePage() {
 
   const refreshReports = () => setRefreshTrigger((prev) => prev + 1);
 
+  const handleAddReport = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+    navigate("/reports/new");
+  };
+
   useEffect(() => {
     const handleRefresh = () => refreshReports();
     window.addEventListener("refreshReports", handleRefresh);
@@ -115,18 +118,8 @@ export default function HomePage() {
     if (window.innerWidth < 992) setShowReportsSidebar(false);
   };
 
-<<<<<<< HEAD
-  const handleAddReport = () => {
-    if (isAuthenticated) navigate("/report/new");
-    else setShowAuthModal(true);
-  };
-
-  // --- Load reports --------------------------------------------------------
-=======
-  const isCitizen = isAuthenticated && userHasRole(user, Role.CITIZEN);
-  const isPublicRelations = isAuthenticated && userHasRole(user, Role.PUBLIC_RELATIONS);
-  const isTechnicalOfficer = isAuthenticated && (userHasAnyRole(user, TECHNICIAN_ROLES) || userHasRole(user, Role.EXTERNAL_MAINTAINER));
->>>>>>> story#10/dev
+  // Role checks using the utility functions for consistency
+  // (Already defined above using useMemo for better performance)
 
   useEffect(() => {
     let mounted = true;
@@ -171,15 +164,10 @@ export default function HomePage() {
 
   // redirect admin
   useEffect(() => {
-<<<<<<< HEAD
-    if (isAdmin) navigate("/admin", { replace: true });
-  }, [isAdmin, navigate]);
-=======
     if (userHasRole(user, "ADMINISTRATOR")) {
       navigate("/admin", { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
->>>>>>> story#10/dev
 
   // Ripristina scroll sidebar quando cambi selezione
   useEffect(() => {
@@ -202,62 +190,7 @@ export default function HomePage() {
     setShowReportsSidebar(false);
   };
 
-  // CTA button: stessa logica ovunque
-  const FooterCTA = () => {
-    if (isPublicRelations) {
-      return (
-        <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
-          <Pencil className="me-2" />
-          Manage reports
-        </Button>
-      );
-    }
-
-    if (!isAuthenticated || isCitizen) {
-      return (
-        <Button onClick={handleAddReport} variant="primary" fullWidth>
-          <Pencil className="me-2" />
-          Select a location
-        </Button>
-      );
-    }
-
-    if (isTechnicalOfficer) {
-      return (
-        <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
-          <Pencil className="me-2" />
-          My Reports
-        </Button>
-      );
-    }
-
-    return null;
-  };
-
-  const LoginHint = () => {
-    if (isAuthenticated) return null;
-    return (
-      <p className="text-center text-muted mb-0 mt-3" style={{ fontSize: "0.85rem" }}>
-        You need to{" "}
-        <button
-          onClick={() => navigate("/login")}
-          className="btn btn-link p-0"
-          style={{ color: "var(--primary)", textDecoration: "underline", fontSize: "inherit" }}
-        >
-          login
-        </button>{" "}
-        or{" "}
-        <button
-          onClick={() => navigate("/signup")}
-          className="btn btn-link p-0"
-          style={{ color: "var(--primary)", textDecoration: "underline", fontSize: "inherit" }}
-        >
-          sign up
-        </button>{" "}
-        to submit reports
-      </p>
-    );
-  };
+  // Helper functions for conditional rendering
 
   // Sidebar content riusabile
   const ReportsSidebarContent = () => (
@@ -361,11 +294,6 @@ export default function HomePage() {
         )}
       </div>
 
-<<<<<<< HEAD
-      <div style={{ padding: "1.5rem", borderTop: "1px solid #f8f9fa", background: "#fdfdfd" }}>
-        <FooterCTA />
-        <LoginHint />
-=======
       <div
         style={{
           padding: "1.5rem",
@@ -430,7 +358,6 @@ export default function HomePage() {
             to submit reports
           </p>
         )}
->>>>>>> story#10/dev
       </div>
     </>
   );
@@ -519,12 +446,87 @@ export default function HomePage() {
               Recent Reports
             </Offcanvas.Title>
           </Offcanvas.Header>
+          
+          <Offcanvas.Body style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+            <div
+              className="reports-sidebar-scroll"
+              style={{
+                flex: 1,
+                padding: "1.5rem",
+                overflowY: "auto",
+                scrollbarWidth: "thin",
+                scrollbarColor: "#d1d5db #f9fafb",
+              }}
+            >
+              {loadingReports ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+                  Loading reports...
+                </div>
+              ) : reportsError ? (
+                <div style={{ color: "var(--danger)", padding: "1rem" }}>
+                  Error loading reports: {reportsError}
+                </div>
+              ) : reports.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {recentReports.map((report) => {
+                    const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
+                    return (
+                      <div key={report.id} style={{ position: "relative" }}>
+                        {isOwnReport && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              background: "#e0f7fa",
+                              color: "#00796b",
+                              fontWeight: 700,
+                              fontSize: "0.85rem",
+                              padding: "2px 8px",
+                              borderRadius: "0 0 0.5rem 0",
+                              zIndex: 2,
+                            }}
+                          >
+                            Your report
+                          </div>
+                        )}
 
-<<<<<<< HEAD
-          <Offcanvas.Body className="p-0 d-flex flex-column" style={{ background: "var(--surface)" }}>
-            {/* stessa sidebar content, così non hai divergenze */}
-            <ReportsSidebarContent />
-=======
+                        <ReportCard
+                          report={report}
+                          isSelected={selectedReportId === report.id}
+                          onClick={() => handleReportCardClick(report.id)}
+                          onOpenDetails={handleReportDetailsClick}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    color: "#adb5bd",
+                    padding: "2rem 1rem",
+                  }}
+                >
+                  <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }}>
+                    <Clipboard />
+                  </div>
+                  <p style={{ fontSize: "1.1rem", margin: "0 0 0.5rem 0", color: "#6c757d", fontWeight: 500 }}>
+                    No reports yet
+                  </p>
+                  <small style={{ fontSize: "0.9rem", lineHeight: 1.4, color: "#adb5bd" }}>
+                    Reports will appear here once submitted by citizens.
+                  </small>
+                </div>
+              )}
+            </div>
+
             {/* Add Report Button in Offcanvas */}
             <div
               style={{
@@ -540,7 +542,7 @@ export default function HomePage() {
                   fullWidth
                 >
                   <Pencil className="me-2" />
-                  Assign technical
+                  Manage reports
                 </Button>
               ) : isTechnicalOfficer ? (
                 <Button
@@ -591,7 +593,6 @@ export default function HomePage() {
                 </p>
               )}
             </div>
->>>>>>> story#10/dev
           </Offcanvas.Body>
         </Offcanvas>
       </div>
