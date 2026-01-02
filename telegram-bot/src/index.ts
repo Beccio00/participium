@@ -9,12 +9,22 @@ import {
 } from "./apiClient";
 import { isPointInTurin } from "./turinBoundaries";
 
-dotenv.config();
+// Only load dotenv in development (not in Docker)
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const token = process.env.BOT_TOKEN;
 if (!token) {
+  console.error("Environment variables:");
+  console.error("NODE_ENV:", process.env.NODE_ENV);
+  console.error("BOT_TOKEN available:", !!process.env.BOT_TOKEN);
+  console.error("Available BOT vars:", Object.keys(process.env).filter(k => k.includes('BOT')));
+  console.error("All env keys:", Object.keys(process.env).slice(0, 10));
   throw new Error("BOT_TOKEN non definito");
 }
+
+console.log("✅ BOT_TOKEN loaded successfully, length:", token.length);
 
 //helper functions
 
@@ -36,7 +46,7 @@ function getCategoryLabel(value: string): string {
   return REPORT_CATEGORIES.find(c => c.value === value)?.label || value;
 }
 
-const bot = new Telegraf(token);
+const bot = new Telegraf(token as string);
 
 const REPORT_CATEGORIES = [
   { value: "WATER_SUPPLY_DRINKING_WATER", label: "💧 Water Supply" },
@@ -70,6 +80,29 @@ function cleanOldSessions() {
 }
 
 setInterval(cleanOldSessions, 5 * 60 * 1000);
+
+// Helper function to show main menu
+async function showMainMenu(ctx: any) {
+  await ctx.reply(
+    "🎆 *Welcome to Participium Bot!*\n\n" +
+    "🔔 I will send you notifications about your civic reports.\n" +
+    "💪 Together we make our city better!\n\n" +
+    "👇 *Choose an action:*",
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback("📋 My Reports", "menu_myreports"),
+          Markup.button.callback("📝 New Report", "menu_newreport")
+        ],
+        [
+          Markup.button.callback("🆘 Help", "menu_help"),
+          Markup.button.callback("🔗 Link Account", "menu_link_help")
+        ]
+      ])
+    }
+  );
+}
 
 bot.start(async (ctx) => {
   const startPayload = ctx.startPayload;
@@ -112,28 +145,28 @@ bot.start(async (ctx) => {
         { parse_mode: "Markdown" }
       );
     }
+    await showMainMenu(ctx);
     return;
   }
   
-  await ctx.reply(
-    "👋 *Welcome to Participium Bot!*\n\n" +
-    "I will send you notifications about your civic reports.\n\n" +
-    "To link your account, please go to the Participium website and click on the Telegram icon in the navigation bar.\n\n" +
-    "Use /help to see available commands.",
-    { parse_mode: "Markdown" }
-  );
+  await showMainMenu(ctx);
 });
 
 bot.command("help", (ctx) => {
   ctx.reply(
-    "📖 *Available Commands*\n\n" +
-    "/start - Start the bot\n" +
-    "/newreport - Create a new civic report\n" +
-    "/myreports - View your recent reports\n" +
-    "/reportstatus <IDREPORT> - Get status of a specific report\n" +
-    "/cancel - Cancel current operation\n" +
-    "/help - Show this message",
-    { parse_mode: "Markdown" }
+    "🆘 *Participium Bot Help*\n\n" +
+    "💡 **Tip**: Use the buttons below to navigate more easily!",
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback("📋 My Reports", "menu_myreports"),
+          Markup.button.callback("📝 New Report", "menu_newreport")
+        ],
+        [Markup.button.callback("🔗 Link Help", "menu_link_help")],
+        [Markup.button.callback("🏠 Main Menu", "menu_main")]
+      ])
+    }
   );
 });
 
@@ -161,17 +194,28 @@ bot.command("myreports", async (ctx) => {
       );
       return;
     }
-    let message = "Your recent reports:\n\n";
+    
+    let message = "📋 *Your Recent Reports*\n\n";
+    const inlineButtons: any[][] = [];
 
     reports.slice(0,10).forEach((report:any)=> {
       const statusIcon = formatStatus(report.status).split(" ")[0]; //only emoji
-      message += `🆔 #${report.reportId} - ${statusIcon} ${report.status}\n`;
+      message += `🆔 *#${report.reportId}*\n`;
       message += `📝 ${report.title}\n`;
       message += `📍 ${report.address}\n`;
-      message += `📅 ${new Date(report.createdAt).toLocaleDateString()}\n`;
-      message += `To see more details use this command 👉 /reportstatus ${report.reportId}\n\n`;
-    })
-    await ctx.reply(message, { parse_mode: "Markdown" });
+      message += `📅 ${new Date(report.createdAt).toLocaleDateString()}\n\n`;
+      
+      // Add two buttons for each report: Status and Details
+      inlineButtons.push([
+        Markup.button.callback(`📊 Status #${report.reportId}`, `report_status_${report.reportId}`),
+        Markup.button.callback(`📄 Details #${report.reportId}`, `report_details_${report.reportId}`)
+      ]);
+    });
+
+    await ctx.reply(message, { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard(inlineButtons)
+    });
   }catch(error:any){
     console.error("Get my reports error:", error.response?.data || error.message);
     if (error.response?.status === 404) {
@@ -186,30 +230,255 @@ bot.command("myreports", async (ctx) => {
   }
 });
 
-bot.command("reportstatus", async (ctx) => {
-  const telegramId = ctx.from.id.toString();
-  const text = ctx.message.text.trim();
+
+// Menu callback handlers
+bot.action("menu_main", async (ctx) => {
+  await ctx.answerCbQuery("🏠 Returning to main menu");
+  await ctx.editMessageText(
+    "🎆 *Welcome to Participium Bot!*\n\n" +
+    "🔔 I will send you notifications about your civic reports.\n" +
+    "💪 Together we make our city better!\n\n" +
+    "👇 *Choose an action:*",
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback("📋 My Reports", "menu_myreports"),
+          Markup.button.callback("📝 New Report", "menu_newreport")
+        ],
+        [
+          Markup.button.callback("🆘 Help", "menu_help"),
+          Markup.button.callback("🔗 Link Account", "menu_link_help")
+        ]
+      ])
+    }
+  );
+});
+
+bot.action("menu_myreports", async (ctx) => {
+  await ctx.answerCbQuery("📋 Loading reports...");
   
-  //i want ot extract the report ID from the command (e.g. "/reportstatus 1024" -> "1024")
-  const parts = text.split(" ");
-  const reportIdStr = parts[1];
+  const telegramId = ctx.from.id.toString();
+  try {
+    const reports = await getMyReports(telegramId);
 
-  if (!reportIdStr || isNaN(Number(reportIdStr))) {
-    await ctx.reply(
-      "⚠️ *Correct usage:*\n" +
-      "/reportstatus <IDREPORT>\n\n" +
-      "Example: `/reportstatus 123`",
-      { parse_mode: "Markdown" }
-    );
-    return;
+    if(!reports || reports.length === 0) {
+      await ctx.editMessageText(
+        "📋 *Your Reports*\n\n" +
+        "🤔 You haven't submitted any reports yet.\n\n" +
+        "📝 Would you like to create your first report?",
+        { 
+          parse_mode: "Markdown",
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback("📝 Create First Report", "menu_newreport")],
+            [Markup.button.callback("🏠 Main Menu", "menu_main")]
+          ])
+        }
+      );
+      return;
+    }
+    
+    let message = "📋 *Your Reports*\n\n";
+    const inlineButtons: any[][] = [];
+
+    reports.slice(0,10).forEach((report:any)=> {
+      const statusIcon = formatStatus(report.status).split(" ")[0];
+      const statusText = formatStatus(report.status);
+      
+      message += `${statusIcon} *Report #${report.reportId}*\n`;
+      message += `📝 ${report.title}\n`;
+      message += `📍 ${report.address}\n`;
+      message += `📊 ${statusText}\n`;
+      message += `📅 ${new Date(report.createdAt).toLocaleDateString()}\n\n`;
+      
+      inlineButtons.push([Markup.button.callback(
+        `${statusIcon} Details #${report.reportId}`, 
+        `report_details_${report.reportId}`
+      )]);
+    });
+
+    // Navigation buttons
+    inlineButtons.push([
+      Markup.button.callback("🔄 Refresh List", "menu_myreports"),
+      Markup.button.callback("📝 New Report", "menu_newreport")
+    ]);
+    inlineButtons.push([
+      Markup.button.callback("🏠 Main Menu", "menu_main")
+    ]);
+
+    await ctx.editMessageText(message, { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard(inlineButtons)
+    });
+
+  } catch(error: any) {
+    if (error.response?.status === 404) {
+      await ctx.editMessageText(
+        "⚠️ *Account Not Linked*\n\n" +
+        "🔗 You need to link your account to view reports.\n\n" +
+        "🌐 Go to Participium website → Click Telegram icon",
+        { 
+          parse_mode: "Markdown",
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback("🔗 Link Help", "menu_link_help")],
+            [Markup.button.callback("🏠 Main Menu", "menu_main")]
+          ])
+        }
+      );
+    } else {
+      await ctx.editMessageText(
+        "❌ Error retrieving reports.",
+        { 
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback("🔄 Retry", "menu_myreports")],
+            [Markup.button.callback("🏠 Main Menu", "menu_main")]
+          ])
+        }
+      );
+    }
   }
+});
 
-  const reportId = parseInt(reportIdStr);
+bot.action("menu_newreport", async (ctx) => {
+  await ctx.answerCbQuery("📝 Starting report creation...");
+  
+  const chatId = ctx.chat!.id;
+  const telegramId = ctx.from.id.toString();
 
+  reportSessions.set(chatId, {
+    step: "title",
+    data: { telegramId },
+    photoFileIds: [],
+    createdAt: Date.now(),
+  });
+
+  await ctx.editMessageText(
+    "📝 *Create New Report*\n\n" +
+    "✨ Let's create a civic report step by step.\n\n" +
+    "*Step 1/6: Title*\n" +
+    "📝 Please enter a brief title for your report.\n\n" +
+    "💡 Example: \"Broken streetlight on Via Roma\"",
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("❌ Cancel", "menu_main")]
+      ])
+    }
+  );
+});
+
+bot.action("menu_help", async (ctx) => {
+  await ctx.answerCbQuery("🆘 Loading help...");
+  
+  await ctx.editMessageText(
+    "🆘 *Participium Bot Help*\n\n" +
+    "📋 **My Reports**: View all your reports with interactive buttons\n\n" +
+    "📝 **New Report**: Create a new civic report step by step\n\n" +
+    "🔗 **Link Account**: Instructions to connect your Telegram account\n\n" +
+    "💡 **Tip**: Always use the buttons for easier navigation!",
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback("📋 My Reports", "menu_myreports"),
+          Markup.button.callback("📝 New Report", "menu_newreport")
+        ],
+        [Markup.button.callback("🔗 Link Help", "menu_link_help")],
+        [Markup.button.callback("🏠 Main Menu", "menu_main")]
+      ])
+    }
+  );
+});
+
+bot.action("menu_link_help", async (ctx) => {
+  await ctx.answerCbQuery("🔗 Loading link guide...");
+  
+  await ctx.editMessageText(
+    "🔗 *How to Link Your Account*\n\n" +
+    "🌐 **Step 1**: Go to the Participium website\n" +
+    "📱 **Step 2**: Click the Telegram icon in the navigation bar\n" +
+    "✨ **Step 3**: Follow the instructions to generate the link\n" +
+    "🎯 **Step 4**: Click the link and return here!\n\n" +
+    "🔔 Once linked, you'll receive all notifications here!",
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("📋 Check Reports", "menu_myreports")],
+        [Markup.button.callback("🏠 Main Menu", "menu_main")]
+      ])
+    }
+  );
+});
+
+// Helper function to display only report status
+async function displayReportStatus(ctx: any, telegramId: string, reportId: number) {
   try {
     const report = await getReportStatus(telegramId, reportId);
 
-    let details = `📄 *Report details #${report.reportId}*\n\n`;
+    let statusMessage = `📊 *Report Status #${report.reportId}*\n\n`;
+    statusMessage += `📝 *Title:* ${report.title}\n`;
+    statusMessage += `📊 *Current Status:* ${formatStatus(report.status)}\n`;
+    statusMessage += `📅 *Last Updated:* ${new Date(report.createdAt).toLocaleString()}\n\n`;
+
+    // Add status-specific information
+    if (report.status === 'REJECTED' && report.rejectedReason) {
+      statusMessage += `❌ *Rejection Reason:* ${report.rejectedReason}\n\n`;
+    } else if (report.status === 'IN_PROGRESS') {
+      statusMessage += `🚧 *Your report is being worked on!*\n\n`;
+    } else if (report.status === 'RESOLVED') {
+      statusMessage += `✅ *Great! Your report has been resolved.*\n\n`;
+    } else if (report.status === 'PENDING_APPROVAL') {
+      statusMessage += `⏳ *Your report is waiting for approval.*\n\n`;
+    } else if (report.status === 'APPROVED') {
+      statusMessage += `📝 *Your report has been approved and is ready for assignment.*\n\n`;
+    } else if (report.status === 'ASSIGNED') {
+      statusMessage += `👷 *Your report has been assigned to a technician.*\n\n`;
+    }
+
+    await ctx.editMessageText(statusMessage, { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback("📄 Full Details", `report_details_${report.reportId}`),
+          Markup.button.callback("🔄 Refresh Status", `report_status_${report.reportId}`)
+        ],
+        [
+          Markup.button.callback("⬅️ Back to Reports", "back_to_reports"),
+          Markup.button.callback("🏠 Main Menu", "menu_main")
+        ]
+      ])
+    });
+
+    await ctx.answerCbQuery("📊 Status loaded!");
+
+  } catch (error: any) {
+    console.error("ReportStatus error:", error.response?.data || error.message);
+
+    const errorMessage = (() => {
+      if (error.response?.status === 404) {
+        if (error.response.data?.message?.includes("linked")) {
+          return "⚠️ Account not linked. Link it from the website.";
+        } else {
+          return "❌ Report not found or does not belong to you.";
+        }
+      } else if (error.response?.status === 403) {
+        return "⛔ You do not have permission to view this report.";
+      } else {
+        return "❌ An error occurred while retrieving the report status.";
+      }
+    })();
+
+    await ctx.answerCbQuery("❌ Error loading status", { show_alert: true });
+    await ctx.reply(errorMessage);
+  }
+}
+
+// Helper function to display report details (used by both /reportstatus command and inline buttons)
+async function displayReportDetails(ctx: any, telegramId: string, reportId: number, isCallback = false) {
+  try {
+    const report = await getReportStatus(telegramId, reportId);
+
+    let details = `📄 *Report Details #${report.reportId}*\n\n`;
     details += `📝 *Title:* ${report.title}\n`;
     details += `🏷️ *Category:* ${getCategoryLabel(report.category)}\n`;
     details += `📊 *Status:* ${formatStatus(report.status)}\n`;
@@ -223,23 +492,158 @@ bot.command("reportstatus", async (ctx) => {
       details += `❌ *Rejection reason:* ${report.rejectedReason}\n\n`;
     }
 
-    await ctx.reply(details, { parse_mode: "Markdown" });
+    // Add back button for inline callbacks
+    const keyboard = isCallback ? 
+      Markup.inlineKeyboard([
+        [Markup.button.callback("⬅️ Back to Reports", "back_to_reports")],
+        [Markup.button.callback("🏠 Main Menu", "menu_main")]
+      ]) : 
+      undefined;
+
+    if (isCallback) {
+      await ctx.editMessageText(details, { 
+        parse_mode: "Markdown",
+        ...keyboard
+      });
+      await ctx.answerCbQuery("📄 Report details loaded!");
+    } else {
+      await ctx.reply(details, { parse_mode: "Markdown" });
+    }
 
   } catch (error: any) {
     console.error("ReportStatus error:", error.response?.data || error.message);
 
-    if (error.response?.status === 404) {
-      // Could be non-existent report or unlinked user
-      if (error.response.data?.message?.includes("linked")) {
-         await ctx.reply("⚠️ Account not linked. Link it from the website.");
+    const errorMessage = (() => {
+      if (error.response?.status === 404) {
+        if (error.response.data?.message?.includes("linked")) {
+          return "⚠️ Account not linked. Link it from the website.";
+        } else {
+          return "❌ Report not found or does not belong to you.";
+        }
+      } else if (error.response?.status === 403) {
+        return "⛔ You do not have permission to view this report.";
       } else {
-         await ctx.reply("❌ Report not found or does not belong to you.");
+        return "❌ An error occurred while retrieving the report details.";
       }
-    } else if (error.response?.status === 403) {
-      await ctx.reply("⛔ You do not have permission to view this report.");
+    })();
+
+    if (isCallback) {
+      await ctx.answerCbQuery("❌ Error loading details", { show_alert: true });
+      await ctx.reply(errorMessage);
     } else {
-      await ctx.reply("❌ Error retrieving report details.");
+      await ctx.reply(errorMessage);
     }
+  }
+}
+
+bot.command("reportstatus", async (ctx) => {
+  const telegramId = ctx.from.id.toString();
+  const text = ctx.message.text.trim();
+  
+  //i want ot extract the report ID from the command (e.g. "/reportstatus 1024" -> "1024")
+  const parts = text.split(" ");
+  const reportIdStr = parts[1];
+
+  if (!reportIdStr || isNaN(Number(reportIdStr))) {
+    await ctx.reply(
+      "⚠️ *Correct usage:*\n" +
+      "`/reportstatus <REPORT_ID>`\n\n" +
+      "📝 Example: `/reportstatus 123`\n\n" +
+      "💡 **Better Tip**: Use the button below for easier navigation!",
+      { 
+        parse_mode: "Markdown",
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback("📋 My Reports (Interactive)", "menu_myreports")],
+          [Markup.button.callback("🏠 Main Menu", "menu_main")]
+        ])
+      }
+    );
+    return;
+  }
+
+  const reportId = parseInt(reportIdStr);
+  await displayReportDetails(ctx, telegramId, reportId, false);
+});
+
+// Callback handler for report details buttons
+bot.action(/^report_details_(\d+)$/, async (ctx) => {
+  const reportId = parseInt(ctx.match[1]);
+  const telegramId = ctx.from.id.toString();
+  
+  await displayReportDetails(ctx, telegramId, reportId, true);
+});
+
+// Callback handler for report status buttons
+bot.action(/^report_status_(\d+)$/, async (ctx) => {
+  const reportId = parseInt(ctx.match[1]);
+  const telegramId = ctx.from.id.toString();
+  
+  await displayReportStatus(ctx, telegramId, reportId);
+});
+
+// Callback handler for back to reports list button
+bot.action("back_to_reports", async (ctx) => {
+  await ctx.answerCbQuery("📋 Returning to reports list");
+  
+  // Re-execute the myreports logic with navigation buttons
+  const telegramId = ctx.from.id.toString();
+  
+  try {
+    const reports = await getMyReports(telegramId);
+
+    if(!reports || reports.length === 0){
+      await ctx.editMessageText(
+        "📋 *Your Reports*\n\n" +
+        "🤔 You haven't submitted any reports yet.",
+        { 
+          parse_mode: "Markdown",
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback("📝 Create First Report", "menu_newreport")],
+            [Markup.button.callback("🏠 Main Menu", "menu_main")]
+          ])
+        }
+      );
+      return;
+    }
+    
+    let message = "📋 *Your Reports*\n\n";
+    const inlineButtons: any[][] = [];
+
+    reports.slice(0,10).forEach((report:any)=> {
+      const statusIcon = formatStatus(report.status).split(" ")[0];
+      
+      message += `🆔 *Report #${report.reportId}*\n`;
+      message += `📝 ${report.title}\n`;
+      message += `📍 ${report.address}\n`;
+      message += `📅 ${new Date(report.createdAt).toLocaleDateString()}\n\n`;
+      
+      // Two buttons for each report: Status and Details
+      inlineButtons.push([
+        Markup.button.callback(`📊 Status #${report.reportId}`, `report_status_${report.reportId}`),
+        Markup.button.callback(`📄 Details #${report.reportId}`, `report_details_${report.reportId}`)
+      ]);
+    });
+
+    // Navigation buttons
+    inlineButtons.push([
+      Markup.button.callback("🔄 Refresh List", "menu_myreports"),
+      Markup.button.callback("📝 New Report", "menu_newreport")
+    ]);
+    inlineButtons.push([
+      Markup.button.callback("🏠 Main Menu", "menu_main")
+    ]);
+
+    await ctx.editMessageText(message, { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard(inlineButtons)
+    });
+  } catch (error: any) {
+    await ctx.editMessageText("❌ An error occurred while retrieving your reports.", {
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("🔄 Retry", "menu_myreports")],
+        [Markup.button.callback("🏠 Main Menu", "menu_main")]
+      ])
+    });
   }
 });
 
@@ -256,11 +660,16 @@ bot.command("newreport", async (ctx) => {
 
   await ctx.reply(
     "📝 *Create New Report*\n\n" +
-    "Let's create a new civic report step by step.\n" +
-    "You can type /cancel at any time to abort.\n\n" +
+    "✨ Let's create a civic report step by step.\n" +
+    "You can use the button below to cancel at any time.\n\n" +
     "*Step 1/6: Title*\n" +
     "Please enter a brief title for your report (e.g., \"Broken streetlight on Via Roma\"):",
-    { parse_mode: "Markdown" }
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("❌ Cancel", "menu_main")]
+      ])
+    }
   );
 });
 
@@ -386,7 +795,14 @@ bot.action("confirm_yes", async (ctx) => {
       `Your report has been created with ID: *#${result.reportId}*\n\n` +
       "You will receive notifications here when there are updates on your report.\n\n" +
       "Thank you for helping improve our city! 🏙️",
-      { parse_mode: "Markdown" }
+      { 
+        parse_mode: "Markdown",
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback("📋 View My Reports", "menu_myreports")],
+          [Markup.button.callback("📝 Create Another Report", "menu_newreport")],
+          [Markup.button.callback("🏠 Main Menu", "menu_main")]
+        ])
+      }
     );
   } catch (error: any) {
     console.error("Create report error:", error.response?.data || error.message);
@@ -399,8 +815,14 @@ bot.action("confirm_yes", async (ctx) => {
     await ctx.editMessageText(
       "❌ *Failed to Create Report*\n\n" +
       `Error: ${errorMessage}\n\n` +
-      "Please try again with /newreport",
-      { parse_mode: "Markdown" }
+      "Please try again using the button below:",
+      { 
+        parse_mode: "Markdown",
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback("🔄 Try Again", "menu_newreport")],
+          [Markup.button.callback("🏠 Main Menu", "menu_main")]
+        ])
+      }
     );
 
     reportSessions.delete(chatId);
@@ -414,8 +836,14 @@ bot.action("confirm_no", async (ctx) => {
   await ctx.answerCbQuery("Report cancelled");
   await ctx.editMessageText(
     "❌ *Report Cancelled*\n\n" +
-    "Your report has been discarded. Use /newreport to start again.",
-    { parse_mode: "Markdown" }
+    "Your report has been discarded.",
+    { 
+      parse_mode: "Markdown",
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("📝 Create New Report", "menu_newreport")],
+        [Markup.button.callback("🏠 Main Menu", "menu_main")]
+      ])
+    }
   );
 });
 
