@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Navbar, Container, Nav, Button, Badge, Image } from "react-bootstrap";
 import { useAuth } from "../hooks/useAuth";
-import { MUNICIPALITY_AND_EXTERNAL_ROLES, getRoleLabel, TECHNICIAN_ROLES } from "../utils/roles";
+import { 
+  MUNICIPALITY_AND_EXTERNAL_ROLES, 
+  getRoleLabel, 
+  TECHNICIAN_ROLES,
+  userHasRole,
+  userHasAnyRole,
+} from "../utils/roles";
 import {
   PersonCircle,
   ArrowLeft,
@@ -24,9 +30,9 @@ interface HeaderProps {
 function canUserSeeNotifications(user: any, isAuthenticated: boolean): boolean {
   if (!isAuthenticated || !user) return false;
   return (
-    user.role === "CITIZEN" ||
+    userHasRole(user, "CITIZEN") ||
     TECHNICIAN_ROLES.includes(user.role) ||
-    user.role === "EXTERNAL_MAINTAINER"
+    userHasRole(user, "EXTERNAL_MAINTAINER")
   );
 }
 
@@ -182,9 +188,10 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
+
   useEffect(() => {
     // Carica i report solo se il cittadino è loggato
-    if (isAuthenticated && user?.role === "CITIZEN") {
+    if (isAuthenticated && userHasRole(user, "CITIZEN")) {
       getReports()
         .then(setReports)
         .catch(() => {});
@@ -253,10 +260,10 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const handleGoToLogin = () => navigate("/login");
   const handleGoToSignup = () => navigate("/signup");
   const handleBackHome = () => {
-    const shouldLogout = user?.role === "ADMINISTRATOR" || user?.role === "TECHNICAL_OFFICE";
+    const shouldLogout = userHasRole(user, "ADMINISTRATOR") || userHasAnyRole(user, TECHNICIAN_ROLES);
     if (shouldLogout) {
       handleLogout();
-      return;
+      return; 
     }
     navigate("/");
   };
@@ -349,7 +356,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                     </div>
                   </div>
                 </div>
-                {user.role === "CITIZEN" && (
+                {userHasRole(user, "CITIZEN") && (
                   <button
                     onClick={() => navigate("/me")}
                     className="border-0 bg-transparent d-flex align-items-center justify-content-center"
@@ -364,7 +371,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                     <GearFill />
                   </button>
                 )}
-                {user.role === "CITIZEN" && (
+                {userHasRole(user, "CITIZEN") && (
                   <button
                     onClick={() => setShowTelegramModal(true)}
                     className="border-0 bg-transparent d-flex align-items-center justify-content-center"
@@ -421,7 +428,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
 
           <Navbar.Collapse id="navbar-nav">
             <Nav className="ms-auto align-items-lg-center mt-3 mt-lg-0">
-              {showBackToHome && user?.role === "ADMINISTRATOR" ? (
+              {showBackToHome && userHasRole(user, "ADMINISTRATOR") ? (
                 <>
                   {/* Logout button for admin both mobile and desktop */}
                   <Button
@@ -444,8 +451,8 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                   className="fw-semibold d-none d-lg-block"
                   style={{ ...buttonStyle, color: "var(--primary)" }}
                 >
-                  {user?.role == "ADMINISTRATOR" ||
-                  user?.role == "TECHNICAL_OFFICE"
+                  {userHasRole(user, "ADMINISTRATOR") ||
+                  userHasAnyRole(user, TECHNICIAN_ROLES)
                     ? "Logout"
                     : "← Back to Home"}
                 </Button>
@@ -469,7 +476,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                         <div style={userSurnameStyle}>{user.lastName}</div>
                       </div>
                     </div>
-                    {user.role === "CITIZEN" && (
+                    {userHasRole(user, "CITIZEN") && (
                       <button
                         onClick={() => navigate("/me")}
                         className="border-0 bg-transparent d-flex align-items-center justify-content-center"
@@ -485,7 +492,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                         <GearFill />
                       </button>
                     )}
-                    {user.role === "CITIZEN" && (
+                    {userHasRole(user, "CITIZEN") && (
                       <button
                         onClick={() => setShowTelegramModal(true)}
                         className="border-0 bg-transparent d-flex align-items-center justify-content-center"

@@ -18,10 +18,16 @@ import {
   createInternalNote,
   getInternalNotes,
 } from "../../api/api";
+import { 
+  MUNICIPALITY_AND_EXTERNAL_ROLES, 
+  TECHNICIAN_ROLES, 
+  getRoleLabel,
+  userHasRole,
+  userHasAnyRole 
+} from "../../utils/roles";
 import type { Report as AppReport, InternalNote } from "../../types/report.types";
 import ReportCard from "../reports/ReportCard";
 import ReportDetailsModal from "../reports/ReportDetailsModal";
-import { MUNICIPALITY_AND_EXTERNAL_ROLES,  TECHNICIAN_ROLES, getRoleLabel } from "../../utils/roles";
 import { Role } from "../../../../shared/RoleTypes";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import "../../styles/TechPanelstyle.css";
@@ -133,8 +139,8 @@ export default function TechPanel() {
 
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  const isPublicRelations = user?.role === Role.PUBLIC_RELATIONS.toString();
-  const isExternalMaintainer = user?.role === Role.EXTERNAL_MAINTAINER.toString();
+  const isPublicRelations = userHasRole(user, Role.PUBLIC_RELATIONS);
+  const isExternalMaintainer = userHasRole(user, Role.EXTERNAL_MAINTAINER);
 
   const [noteModalError, setNoteModalError] = useState<string | null>(null);
   const [toast, setToast] = useState({show: false, message: "", variant: "success" });
@@ -174,7 +180,7 @@ export default function TechPanel() {
   useEffect(() => {
     if (
       !isAuthenticated ||
-      (user?.role && !MUNICIPALITY_AND_EXTERNAL_ROLES.includes(user.role))
+      (user && !userHasAnyRole(user,MUNICIPALITY_AND_EXTERNAL_ROLES))
     ) {
       navigate("/");
     }
@@ -236,7 +242,7 @@ export default function TechPanel() {
       let technicals = [];
       let externals = [];
 
-      if (user && user.role === Role.PUBLIC_RELATIONS.toString()) {
+      if (user && userHasRole(user,Role.PUBLIC_RELATIONS)) {
         try {
           technicals = await getAssignableTechnicals(id);
         } catch (err) {
@@ -248,7 +254,7 @@ export default function TechPanel() {
           setProcessingId(null);
           return;
         }
-      } else if (user && TECHNICIAN_ROLES.includes(user.role)) {
+      } else if (user && userHasAnyRole(user, TECHNICIAN_ROLES)) {
         try {
           externals = await getAssignableExternals(id);
         } catch (err) {
@@ -315,7 +321,7 @@ export default function TechPanel() {
       setProcessingId(selectedReportId);
       let updatedReport = null;
 
-      if (user && user.role === Role.PUBLIC_RELATIONS.toString() && selectedTechnicalId) {
+      if (user && userHasRole(user, Role.PUBLIC_RELATIONS) && selectedTechnicalId) {
         updatedReport = await assignToPublicRelations(selectedReportId, selectedTechnicalId);
       } else if (user && selectedExternalId) {
         const selectedCompany = assignableExternals.find(

@@ -125,6 +125,25 @@ export async function deleteMunicipalityUser(userId: number): Promise<void> {
   await handleResponse<unknown>(res);
 }
 
+export async function updateMunicipalityUser(
+  userId: number,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    roles?: string[];
+  }
+): Promise<MunicipalityUserResponse> {
+  const res = await fetch(`${API_PREFIX}/admin/municipality-users/${userId}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<MunicipalityUserResponse>(res);
+}
+
 // ADMINISTRATION API -(external company)
 
 // company
@@ -459,4 +478,5 @@ export default {
   deleteCitizenPhoto,
   deleteMunicipalityUser,
   getNotifications,
+  updateMunicipalityUser,
 };
