@@ -41,19 +41,19 @@ router.delete(
   asyncHandler(unlink)
 );
 
-// POST /api/telegram/reports - Create a new report (called by bot, authenticated via telegramId)
+// POST /api/telegram/reports - Create a new report (called by bot, authenticated via telegramId in body)
 router.post("/reports", ApiValidationMiddleware, asyncHandler(createReport));
 
-// GET /api/telegram/users/:telegramId/reports - Get user's reports (called by bot, authenticated via telegramId)
+// GET /api/telegram/:telegramId/reports - Get user's reports (called by bot)
 router.get(
-  "/users/:telegramId/reports",
+  "/:telegramId/reports",
   ApiValidationMiddleware,
   asyncHandler(getMyReports)
 );
 
-// GET /api/telegram/users/:telegramId/reports/:reportId - Get report status (called by bot, authenticated via telegramId)
+// GET /api/telegram/:telegramId/reports/:reportId - Get report status (called by bot)
 router.get(
-  "/users/:telegramId/reports/:reportId",
+  "/:telegramId/reports/:reportId",
   ApiValidationMiddleware,
   asyncHandler(getReportStatus)
 );

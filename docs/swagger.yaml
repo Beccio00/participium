@@ -889,7 +889,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /telegram/users/{telegramId}/reports:
+  /telegram/{telegramId}/reports:
     get:
       tags:
         - Telegram
@@ -936,7 +936,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /telegram/users/{telegramId}/reports/{reportId}:
+  /telegram/{telegramId}/reports/{reportId}:
     get:
       tags:
         - Telegram
