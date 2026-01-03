@@ -11,6 +11,8 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Mount init scripts to create test database  
+      - ./server/database/init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     networks:
       - participium-network

@@ -39,7 +39,7 @@ describe("Administrator Managing Municipality Users", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       // Crea un nuovo agent e fai login per ottenere la sessione aggiornata
       const agent = request.agent(app);
@@ -51,7 +51,7 @@ describe("Administrator Managing Municipality Users", () => {
         })
         .expect(200);
 
-      expect(loginResponse.body.user.role).toBe("ADMINISTRATOR");
+      expect(loginResponse.body.user.role).toEqual(["ADMINISTRATOR"]);
 
       // Step 2: Create Municipality User (PUBLIC_RELATIONS)
       const newMunicipalityUser = {
@@ -59,7 +59,7 @@ describe("Administrator Managing Municipality Users", () => {
         lastName: "PR",
         email: `pr${Date.now()}@municipality.gov`,
         password: "PRPass123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       };
 
       const createResponse = await agent
@@ -69,7 +69,7 @@ describe("Administrator Managing Municipality Users", () => {
 
       expect(createResponse.body).toHaveProperty("id");
       expect(createResponse.body.email).toBe(newMunicipalityUser.email);
-      expect(createResponse.body.role).toBe("PUBLIC_RELATIONS");
+      expect(createResponse.body.role).toEqual(["PUBLIC_RELATIONS"]);
       const userId = createResponse.body.id;
 
       // Step 3: List All Municipality Users
@@ -107,7 +107,7 @@ describe("Administrator Managing Municipality Users", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       const agent = request.agent(app);
       await agent
@@ -125,7 +125,7 @@ describe("Administrator Managing Municipality Users", () => {
           lastName: role,
           email: `${role.toLowerCase()}${Date.now()}@municipality.gov`,
           password: "Pass123!",
-          role: role,
+          role: [role],
         };
 
         const response = await agent
@@ -133,7 +133,7 @@ describe("Administrator Managing Municipality Users", () => {
           .send(userData)
           .expect(201);
 
-        expect(response.body.role).toBe(role);
+        expect(response.body.role).toEqual([role]);
         createdUserIds.push(response.body.id);
 
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -184,7 +184,7 @@ describe("Administrator Managing Municipality Users", () => {
           lastName: "User",
           email: "test@test.com",
           password: "Pass123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         })
         .expect(403);
 
@@ -201,7 +201,7 @@ describe("Administrator Managing Municipality Users", () => {
           lastName: "User",
           email: "test@test.com",
           password: "Pass123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         })
         .expect(401);
 
@@ -227,7 +227,7 @@ describe("Administrator Managing Municipality Users", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       adminAgent = request.agent(app);
       await adminAgent
@@ -256,7 +256,7 @@ describe("Administrator Managing Municipality Users", () => {
         lastName: "Doe",
         email: `test${Date.now()}@municipality.gov`,
         password: "Pass123!",
-        role: "INVALID_ROLE",
+        role: ["INVALID_ROLE"],
       };
 
       const response = await adminAgent
@@ -273,7 +273,7 @@ describe("Administrator Managing Municipality Users", () => {
         lastName: "Doe",
         email: `duplicate${Date.now()}@municipality.gov`,
         password: "Pass123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       };
 
       // First creation should succeed
@@ -321,7 +321,7 @@ describe("Administrator Managing Municipality Users", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       adminAgent = request.agent(app);
       await adminAgent
@@ -346,7 +346,7 @@ describe("Administrator Managing Municipality Users", () => {
         lastName: "Citizen",
         email: `testcitizen${Date.now()}@example.com`,
         password: "Pass123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       };
 
       const response = await adminAgent

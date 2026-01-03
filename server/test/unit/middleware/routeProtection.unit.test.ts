@@ -138,181 +138,271 @@ describe("routeProtection", () => {
 
       expect(mockNext).not.toHaveBeenCalled();
     });
-  
   });
 
   describe("requirePublicRelations (unauthenticated)", () => {
-    const { requirePublicRelations } = require("../../../src/middlewares/routeProtection");
+    const {
+      requirePublicRelations,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("forbids when not authenticated", () => {
-      const req: any = { isAuthenticated: () => false, user: { role: 'PUBLIC_RELATIONS' } };
-      expect(() => requirePublicRelations(req, res, next)).toThrow("Authentication required");
+      const req: any = {
+        isAuthenticated: () => false,
+        user: { role: "PUBLIC_RELATIONS" },
+      };
+      expect(() => requirePublicRelations(req, res, next)).toThrow(
+        "Authentication required"
+      );
       expect(next).not.toHaveBeenCalled();
     });
   });
-  
+
   describe("requirePublicRelations", () => {
-    const { requirePublicRelations } = require("../../../src/middlewares/routeProtection");
+    const {
+      requirePublicRelations,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("calls next for PUBLIC_RELATIONS", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'PUBLIC_RELATIONS' } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "PUBLIC_RELATIONS" },
+      };
       expect(() => requirePublicRelations(req, res, next)).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("forbids other roles", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'TECHNICAL_OFFICE' } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "TECHNICAL_OFFICE" },
+      };
       expect(() => requirePublicRelations(req, res, next)).toThrow();
     });
   });
 
   describe("requireCitizen", () => {
-    const { requireCitizen } = require("../../../src/middlewares/routeProtection");
+    const {
+      requireCitizen,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("allows citizen", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'CITIZEN' } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "CITIZEN" },
+      };
       expect(() => requireCitizen(req, res, next)).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("forbids other roles", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'ADMINISTRATOR' } };
-      expect(() => requireCitizen(req, res, next)).toThrow("Only citizens can create reports");
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "ADMINISTRATOR" },
+      };
+      expect(() => requireCitizen(req, res, next)).toThrow(
+        "Only citizens can create reports"
+      );
       expect(next).not.toHaveBeenCalled();
     });
 
     it("requires authentication", () => {
       const req: any = { isAuthenticated: () => false };
-      expect(() => requireCitizen(req, res, next)).toThrow("Authentication required");
+      expect(() => requireCitizen(req, res, next)).toThrow(
+        "Authentication required"
+      );
       expect(next).not.toHaveBeenCalled();
     });
 
     it("forbids when user is missing", () => {
       const req: any = { isAuthenticated: () => true, user: undefined };
-      expect(() => requireCitizen(req, res, next)).toThrow("Only citizens can create reports");
+      expect(() => requireCitizen(req, res, next)).toThrow(
+        "Only citizens can create reports"
+      );
       expect(next).not.toHaveBeenCalled();
     });
   });
 
   describe("requireTechnicalStaffOnly", () => {
-    const { requireTechnicalStaffOnly } = require("../../../src/middlewares/routeProtection");
+    const {
+      requireTechnicalStaffOnly,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("allows technical roles", () => {
       const { Role } = require("../../../src/interfaces/UserDTO");
-      const req: any = { isAuthenticated: () => true, user: { role: Role.ROAD_MAINTENANCE } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: [Role.ROAD_MAINTENANCE] },
+      };
       expect(() => requireTechnicalStaffOnly(req, res, next)).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("forbids citizen", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'CITIZEN' } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "CITIZEN" },
+      };
       expect(() => requireTechnicalStaffOnly(req, res, next)).toThrow();
     });
   });
 
   describe("requireTechnicalOrExternal (unauthenticated)", () => {
-    const { requireTechnicalOrExternal } = require("../../../src/middlewares/routeProtection");
+    const {
+      requireTechnicalOrExternal,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("requires authentication", () => {
-      const req: any = { isAuthenticated: () => false, user: { role: 'EXTERNAL_MAINTAINER' } };
-      expect(() => requireTechnicalOrExternal(req, res, next)).toThrow("Authentication required");
+      const req: any = {
+        isAuthenticated: () => false,
+        user: { role: "EXTERNAL_MAINTAINER" },
+      };
+      expect(() => requireTechnicalOrExternal(req, res, next)).toThrow(
+        "Authentication required"
+      );
       expect(next).not.toHaveBeenCalled();
     });
   });
 
   describe("requireTechnicalOrExternal", () => {
-    const { requireTechnicalOrExternal } = require("../../../src/middlewares/routeProtection");
+    const {
+      requireTechnicalOrExternal,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("allows external maintainer", () => {
       const { Role } = require("../../../src/interfaces/UserDTO");
-      const req: any = { isAuthenticated: () => true, user: { role: Role.EXTERNAL_MAINTAINER } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: [Role.EXTERNAL_MAINTAINER] },
+      };
       expect(() => requireTechnicalOrExternal(req, res, next)).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("forbids citizen", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'CITIZEN' } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "CITIZEN" },
+      };
       expect(() => requireTechnicalOrExternal(req, res, next)).toThrow();
     });
   });
 
   describe("requireExternalMaintainer", () => {
-    const { requireExternalMaintainer } = require("../../../src/middlewares/routeProtection");
+    const {
+      requireExternalMaintainer,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("allows external maintainer", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'EXTERNAL_MAINTAINER' } };
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "EXTERNAL_MAINTAINER" },
+      };
       expect(() => requireExternalMaintainer(req, res, next)).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("forbids other roles", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'CITIZEN' } };
-      expect(() => requireExternalMaintainer(req, res, next)).toThrow("External maintainer privileges required");
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "CITIZEN" },
+      };
+      expect(() => requireExternalMaintainer(req, res, next)).toThrow(
+        "External maintainer privileges required"
+      );
       expect(next).not.toHaveBeenCalled();
     });
 
     it("requires authentication", () => {
-      const req: any = { isAuthenticated: () => false, user: { role: 'EXTERNAL_MAINTAINER' } };
-      expect(() => requireExternalMaintainer(req, res, next)).toThrow("Authentication required");
+      const req: any = {
+        isAuthenticated: () => false,
+        user: { role: "EXTERNAL_MAINTAINER" },
+      };
+      expect(() => requireExternalMaintainer(req, res, next)).toThrow(
+        "Authentication required"
+      );
       expect(next).not.toHaveBeenCalled();
     });
 
     it("forbids when user is null", () => {
       const req: any = { isAuthenticated: () => true, user: null };
-      expect(() => requireExternalMaintainer(req, res, next)).toThrow("External maintainer privileges required");
+      expect(() => requireExternalMaintainer(req, res, next)).toThrow(
+        "External maintainer privileges required"
+      );
       expect(next).not.toHaveBeenCalled();
     });
   });
 
   describe("requireCitizenOrTechnicalOrExternal", () => {
-    const { requireCitizenOrTechnicalOrExternal } = require("../../../src/middlewares/routeProtection");
+    const {
+      requireCitizenOrTechnicalOrExternal,
+    } = require("../../../src/middlewares/routeProtection");
     const next = jest.fn();
     const res: any = {};
     beforeEach(() => next.mockReset());
 
     it("allows citizen", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'CITIZEN' } };
-      expect(() => requireCitizenOrTechnicalOrExternal(req, res, next)).not.toThrow();
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "CITIZEN" },
+      };
+      expect(() =>
+        requireCitizenOrTechnicalOrExternal(req, res, next)
+      ).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("allows technical", () => {
       const { Role } = require("../../../src/interfaces/UserDTO");
-      const req: any = { isAuthenticated: () => true, user: { role: Role.ROAD_MAINTENANCE } };
-      expect(() => requireCitizenOrTechnicalOrExternal(req, res, next)).not.toThrow();
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: [Role.ROAD_MAINTENANCE] },
+      };
+      expect(() =>
+        requireCitizenOrTechnicalOrExternal(req, res, next)
+      ).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("allows external maintainer", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'EXTERNAL_MAINTAINER' } };
-      expect(() => requireCitizenOrTechnicalOrExternal(req, res, next)).not.toThrow();
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "EXTERNAL_MAINTAINER" },
+      };
+      expect(() =>
+        requireCitizenOrTechnicalOrExternal(req, res, next)
+      ).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
     it("forbids other roles", () => {
-      const req: any = { isAuthenticated: () => true, user: { role: 'PUBLIC_RELATIONS' } };
-      expect(() => requireCitizenOrTechnicalOrExternal(req, res, next)).toThrow();
+      const req: any = {
+        isAuthenticated: () => true,
+        user: { role: "PUBLIC_RELATIONS" },
+      };
+      expect(() =>
+        requireCitizenOrTechnicalOrExternal(req, res, next)
+      ).toThrow();
     });
   });
 });
