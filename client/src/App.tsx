@@ -10,6 +10,7 @@ import CitizenSettings from "./features/auth/CitizenSettings";
 import AdminPanel from "./features/admin/AdminPanel.tsx";
 import TechPanel from "./features/technician/TechPanel.tsx";
 import ReportForm from "./components/ReportForm";
+import { NotFound } from "./features/reports/NotFound";
 
 function App() {
   const { loading } = useAuth();
@@ -52,6 +53,7 @@ function App() {
           <Route path="/assign-reports" element={<TechPanel />} />
           <Route path="/report/new" element={<ReportForm />} />
           <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </div>

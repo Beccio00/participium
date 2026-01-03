@@ -101,7 +101,7 @@ export default function HomePage() {
       setShowAuthModal(true);
       return;
     }
-    navigate("/reports/new");
+    navigate("/report/new");
   };
 
   useEffect(() => {
