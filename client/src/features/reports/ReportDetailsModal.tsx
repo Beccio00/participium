@@ -4,6 +4,8 @@ import { ReportStatus } from "../../../../shared/ReportTypes";
 import type { Report } from "../../types/report.types";
 import { userHasRole, TECHNICIAN_ROLES } from "../../utils/roles";
 import ReportChat from "./ReportChat";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 interface Props {
   show: boolean;
@@ -41,6 +43,10 @@ export default function ReportDetailsModal({
 }: Props) {
   // Ref per la chat container
   const chatRef = useRef<HTMLDivElement>(null);
+  
+  // Ref per la mini mappa
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
 
   // Chat state (dichiarato subito dopo il ref)
   const [messages, setMessages] = useState<any[]>([]);
@@ -112,6 +118,9 @@ export default function ReportDetailsModal({
     let isMounted = true;
     let prevLength = 0;
     async function fetchMessages(showLoading = false) {
+      // Skip if user is not authorized to see chat
+      if (!canSeeChat) return;
+      
       if (showLoading) setMessagesLoading(true);
       setMessagesError("");
       try {
@@ -137,7 +146,7 @@ export default function ReportDetailsModal({
         if (isMounted && showLoading) setMessagesLoading(false);
       }
     }
-    if (show && report?.id) {
+    if (show && report?.id && canSeeChat) {
       fetchMessages(true);
       interval = setInterval(() => fetchMessages(false), 5000);
     }
@@ -145,7 +154,7 @@ export default function ReportDetailsModal({
       isMounted = false;
       if (interval) clearInterval(interval);
     };
-  }, [show, report?.id]);
+  }, [show, report?.id, canSeeChat]);
 
   // Aggiorna chat dopo invio messaggio
   async function handleSendMessage() {
@@ -252,6 +261,81 @@ export default function ReportDetailsModal({
     display?.externalMaintainer?.id,
     display?.assignedOfficer?.id,
   ]);
+
+  // Inizializza la mini mappa quando il modale si apre
+  useEffect(() => {
+    if (!show || !mapRef.current || !display?.latitude || !display?.longitude) {
+      return;
+    }
+
+    // Cleanup della mappa precedente
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+
+    // Pulisci il container completamente
+    if (mapRef.current) {
+      mapRef.current.innerHTML = '';
+      // Rimuovi eventuali classi aggiunte da Leaflet
+      mapRef.current.className = '';
+    }
+
+    // Aspetta un po' per essere sicuri che il DOM sia pronto
+    const timeoutId = setTimeout(() => {
+      if (!mapRef.current) return;
+
+      try {
+        const map = L.map(mapRef.current, {
+          center: [display.latitude, display.longitude],
+          zoom: 16,
+          zoomControl: true,
+          dragging: true,
+          scrollWheelZoom: false,
+        });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(map);
+
+        // Aggiungi marker alla posizione
+        L.marker([display.latitude, display.longitude], {
+          icon: L.icon({
+            iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+            iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          }),
+        }).addTo(map);
+
+        mapInstanceRef.current = map;
+
+        // Forza il resize dopo che la mappa è stata aggiunta
+        setTimeout(() => {
+          if (map) {
+            map.invalidateSize();
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Error initializing map:", error);
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+      // Pulisci anche il container al cleanup
+      if (mapRef.current) {
+        mapRef.current.innerHTML = '';
+      }
+    };
+  }, [show, display?.latitude, display?.longitude, display?.id]);
 
   // Resolve assignee: prefer full objects (assignedOfficer, externalMaintainer, externalCompany)
   function resolveExternalUserName(user: any): string | null {
@@ -573,6 +657,22 @@ export default function ReportDetailsModal({
               </span>
             </div>
           </div>
+
+          {/* Mini Map */}
+          {display.latitude && display.longitude && (
+            <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
+              <div
+                ref={mapRef}
+                style={{
+                  width: "100%",
+                  height: "200px",
+                  borderRadius: "0.5rem",
+                  border: "1px solid var(--muted)",
+                  overflow: "hidden",
+                }}
+              />
+            </div>
+          )}
 
           <ReportChat
             canSeeChat={canSeeChat}

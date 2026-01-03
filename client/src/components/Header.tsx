@@ -258,14 +258,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
 
   const handleGoToLogin = () => navigate("/login");
   const handleGoToSignup = () => navigate("/signup");
-  const handleBackHome = () => {
-    const shouldLogout = userHasRole(user, "ADMINISTRATOR") || userHasAnyRole(user, TECHNICIAN_ROLES);
-    if (shouldLogout) {
-      handleLogout();
-      return; 
-    }
-    navigate("/");
-  };
+  const handleBackHome = () => navigate("/");
 
   const navbarStyle = {
     background:
@@ -395,34 +388,17 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
               </div>
             )}
 
-            {showBackToHome && location.pathname !== "/admin" ? (
-              <button
-                onClick={handleBackHome}
-                disabled={loading}
-                className="d-lg-none border-0 bg-transparent d-flex align-items-center justify-content-center"
-                style={{
-                  color: "white",
-                  fontSize: "1.5rem",
-                  padding: "0.5rem",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.6 : 1,
-                }}
+            <Navbar.Toggle
+              aria-controls="navbar-nav"
+              className="d-lg-none border-0 d-flex align-items-center justify-content-center"
+              style={{ color: "white", padding: "0.5rem" }}
+            >
+              <span
+                style={{ color: "white", fontSize: "1.5rem", lineHeight: 1 }}
               >
-                <ArrowLeft size={24} />
-              </button>
-            ) : (
-              <Navbar.Toggle
-                aria-controls="navbar-nav"
-                className="d-lg-none border-0 d-flex align-items-center justify-content-center"
-                style={{ color: "white", padding: "0.5rem" }}
-              >
-                <span
-                  style={{ color: "white", fontSize: "1.5rem", lineHeight: 1 }}
-                >
-                  ☰
-                </span>
-              </Navbar.Toggle>
-            )}
+                ☰
+              </span>
+            </Navbar.Toggle>
           </div>
 
           <Navbar.Collapse id="navbar-nav">
@@ -534,24 +510,28 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                         Home
                       </Button>
                     )}
-                    <Button
-                      onClick={handleGoToLogin}
-                      variant="light"
-                      size="sm"
-                      className="fw-semibold"
-                      style={{ ...buttonStyle, color: "var(--primary)" }}
-                    >
-                      Login
-                    </Button>
-                    <Button
-                      onClick={handleGoToSignup}
-                      variant="light"
-                      size="sm"
-                      className="fw-semibold"
-                      style={{ ...buttonStyle, color: "var(--primary)" }}
-                    >
-                      Sign Up
-                    </Button>
+                    {location.pathname !== "/login" && location.pathname !== "/verify-email" && (
+                      <Button
+                        onClick={handleGoToLogin}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Login
+                      </Button>
+                    )}
+                    {location.pathname !== "/signup" && location.pathname !== "/verify-email" && (
+                      <Button
+                        onClick={handleGoToSignup}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Sign Up
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

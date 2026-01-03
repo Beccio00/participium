@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { useAuth, useForm, useLoadingState } from "../../hooks";
 import Button from "../../components/ui/Button.tsx";
 import Card, { CardHeader, CardBody } from "../../components/ui/Card.tsx";
+import AccessRestricted from "../../components/AccessRestricted";
 import InternalStaffTable from './InternalStaffTable';
 import ExternalMaintainersTable from './ExternalMaintainersTable';
 import CompaniesTable from './CompaniesTable';
@@ -131,22 +132,19 @@ export default function AdminPanel() {
       (Array.isArray(user?.role) && user.role.includes(Role.ADMINISTRATOR.toString())));
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate("/", { replace: true });
-      return;
+    if (isAdmin) {
+      loadData();
     }
-    loadData();
-  }, [isAdmin, navigate]);
+  }, [isAdmin]);
 
-  useEffect(() => {
-    if (
-      isAuthenticated &&
-      (user?.role === "ADMINISTRATOR" ||
-        (Array.isArray(user?.role) && user.role.includes("ADMINISTRATOR")))
-    ) {
-      navigate("/admin", { replace: true });
-    }
-  }, [isAuthenticated, user, navigate]);
+  // Check access before rendering
+  if (!isAdmin) {
+    const message = !isAuthenticated
+      ? "You need to be logged in as an administrator to access this page."
+      : "Only administrators can access the admin panel.";
+    
+    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+  }
 
   const loadData = async () => {
     try {
@@ -326,30 +324,33 @@ export default function AdminPanel() {
         </div>
 
         {/* Navigation tabs */}
-        <Nav variant="tabs" className="mb-3" activeKey={activeTab}>
-          <Nav.Item>
+        <Nav variant="tabs" className="mb-3 flex-wrap" activeKey={activeTab} style={{ overflowX: 'auto', minHeight: '50px' }}>
+          <Nav.Item style={{ minWidth: '200px' }}>
             <Nav.Link 
               eventKey="internal" 
               onClick={() => handleTabChange('internal')}
               className={activeTab === 'internal' ? 'fw-bold text-dark' : 'text-muted'}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <People className="me-2" /> Internal Staff
             </Nav.Link>
           </Nav.Item>
-          <Nav.Item>
+          <Nav.Item style={{ minWidth: '200px' }}>
             <Nav.Link 
               eventKey="external" 
               onClick={() => handleTabChange('external')}
               className={activeTab === 'external' ? 'fw-bold text-dark' : 'text-muted'}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <Briefcase className="me-2" /> External Maintainers
             </Nav.Link>
           </Nav.Item>
-          <Nav.Item>
+          <Nav.Item style={{ minWidth: '180px' }}>
             <Nav.Link 
               eventKey="companies" 
               onClick={() => handleTabChange('companies')}
               className={activeTab === 'companies' ? 'fw-bold text-dark' : 'text-muted'}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <Building className="me-2" /> Partner Companies
             </Nav.Link>

@@ -4,7 +4,7 @@ import { PersonCircle } from 'react-bootstrap-icons';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth } from '../../hooks/useAuth';
-import AuthRequiredModal from './AuthRequiredModal';
+import AccessRestricted from '../../components/AccessRestricted';
 import TelegramModal from '../../components/TelegramModal';
 import * as api from '../../api/api';
 
@@ -34,7 +34,6 @@ export default function CitizenSettings() {
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -49,8 +48,6 @@ export default function CitizenSettings() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setShowAuthModal(true);
-      setLoading(false);
       return;
     }
 
@@ -237,6 +234,10 @@ export default function CitizenSettings() {
     </div>
   );
 
+  if (!isAuthenticated) {
+    return <AccessRestricted message="You need to be logged in as a citizen to access your settings." showLoginButton={true} />;
+  }
+
   return (
     <Container className="py-4">
       <Row className="justify-content-center">
@@ -416,7 +417,6 @@ export default function CitizenSettings() {
             </Card.Body>
           </Card>
 
-          <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
           <TelegramModal show={showTelegramModal} onHide={() => setShowTelegramModal(false)} />
         </Col>
       </Row>

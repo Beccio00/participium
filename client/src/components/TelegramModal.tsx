@@ -227,7 +227,7 @@ export default function TelegramModal({ show, onHide }: Props) {
     <Modal show={show} onHide={handleClose} centered>
       <Modal.Header closeButton style={{ borderBottom: "1px solid #e5e7eb" }}>
         <Modal.Title style={{ color: "var(--primary)" }}>
-          <Telegram style={{ marginRight: 8, color: "#0088cc" }} />
+          <Telegram style={{ marginRight: 8, color: "var(--navbar-accent)" }} />
           Telegram Notifications
         </Modal.Title>
       </Modal.Header>

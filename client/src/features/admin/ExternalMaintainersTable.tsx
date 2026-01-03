@@ -11,13 +11,13 @@ export default function ExternalMaintainersTable({ users, onDelete }: ExternalMa
   if (users.length === 0) {
     return (
       <div className="table-responsive">
-        <Table hover className="align-middle">
+        <Table hover responsive className="align-middle mb-0">
           <thead className="bg-light">
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Company</th>
-              <th className="text-end">Actions</th>
+              <th style={{ minWidth: '150px' }}>Name</th>
+              <th style={{ minWidth: '200px' }}>Email</th>
+              <th style={{ minWidth: '180px' }}>Company</th>
+              <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -34,13 +34,13 @@ export default function ExternalMaintainersTable({ users, onDelete }: ExternalMa
 
   return (
     <div className="table-responsive">
-      <Table hover className="align-middle">
+      <Table hover responsive className="align-middle mb-0">
         <thead className="bg-light">
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Company</th>
-            <th className="text-end">Actions</th>
+            <th style={{ minWidth: '150px' }}>Name</th>
+            <th style={{ minWidth: '200px' }}>Email</th>
+            <th style={{ minWidth: '180px' }}>Company</th>
+            <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
           </tr>
         </thead>
         <tbody>

@@ -3,14 +3,14 @@ import EmailVerification from "./components/EmailVerification";
 import { useAuth } from "./hooks/useAuth";
 import LoadingSpinner from "./components/ui/LoadingSpinner.tsx";
 import Header from "./components/Header";
-import HomePage from "./features/reports/HomePage.tsx";
+import RootPage from "./components/RootPage";
 import LoginPage from "./features/auth/LoginPage.tsx";
 import SignupPage from "./features/auth/SignupPage.tsx";
 import CitizenSettings from "./features/auth/CitizenSettings";
-import AdminPanel from "./features/admin/AdminPanel.tsx";
 import TechPanel from "./features/technician/TechPanel.tsx";
 import ReportForm from "./components/ReportForm";
-import { NotFound } from "./features/reports/NotFound";
+import MyReportsPage from "./features/reports/MyReportsPage.tsx";
+import NotFound from "./components/NotFound";
 
 function App() {
   const { loading } = useAuth();
@@ -40,19 +40,18 @@ function App() {
       <div
         style={{
           flex: 1,
-          overflow: location.pathname === "/" ? "hidden" : "auto",
+          overflow: "auto",
         }}
       >
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<RootPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/me" element={<CitizenSettings />} />
           <Route path="/verify-email" element={<EmailVerification />} />
-          <Route path="/admin" element={<AdminPanel />} />
           <Route path="/assign-reports" element={<TechPanel />} />
           <Route path="/report/new" element={<ReportForm />} />
-          <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/my-reports" element={<MyReportsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

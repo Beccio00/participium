@@ -9,7 +9,7 @@ import {
   Form,
   Card,
 } from "react-bootstrap";
-import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon} from "react-bootstrap-icons";
+import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon, LockFill } from "react-bootstrap-icons";
 import MapView from "./MapView";
 // Marker stile Google Maps puntatore, usato per la location selezionata
 import L from "leaflet";
@@ -37,6 +37,10 @@ const createColoredIcon = () => {
 };
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
 import { createReport } from "../api/api";
+import { useAuth } from "../hooks/useAuth";
+import { userHasRole } from "../utils/roles";
+import { Role } from "../../../shared/RoleTypes";
+import AccessRestricted from "./AccessRestricted";
 import {
   formCardStyle,
   headerStyle,
@@ -65,6 +69,8 @@ import { fetchAddressFromCoordinates } from "../utils/address";
 
 export default function ReportForm() {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -213,6 +219,15 @@ export default function ReportForm() {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // Se l'utente non è autenticato o non è un cittadino, mostra messaggio
+  if (!isAuthenticated || (user && !userHasRole(user, Role.CITIZEN))) {
+    const message = !isAuthenticated
+      ? "You need to be logged in as a citizen to create a report."
+      : "Only citizens can create reports.";
+    
+    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+  }
 
   return (
     <div style={divStyle} ref={topRef}>

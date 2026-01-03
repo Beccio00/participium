@@ -17,13 +17,13 @@ export default function InternalStaffTable({
   if (users.length === 0) {
     return (
       <div className="table-responsive">
-        <Table hover className="align-middle">
-          <thead className="bg-light">
+        <Table hover responsive className="align-middle mb-0">
+        <thead className="bg-light">
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Roles</th>
-              <th className="text-end">Actions</th>
+              <th style={{ minWidth: '150px' }}>Name</th>
+              <th style={{ minWidth: '200px' }}>Email</th>
+              <th style={{ minWidth: '150px' }}>Roles</th>
+              <th className="text-end" style={{ minWidth: '120px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -40,13 +40,13 @@ export default function InternalStaffTable({
 
   return (
     <div className="table-responsive">
-      <Table hover className="align-middle">
+      <Table hover responsive className="align-middle mb-0">
         <thead className="bg-light">
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Roles</th>
-            <th className="text-end">Actions</th>
+            <th style={{ minWidth: '150px' }}>Name</th>
+            <th style={{ minWidth: '200px' }}>Email</th>
+            <th style={{ minWidth: '150px' }}>Roles</th>
+            <th className="text-end" style={{ minWidth: '120px' }}>Actions</th>
           </tr>
         </thead>
 
