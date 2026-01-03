@@ -2,8 +2,14 @@ openapi: 3.0.3
 info:
   title: Participium API - Citizen Registration & Municipality Administration
   description: |
-    API for citizen registration, authentication (PT01), municipality user management (PT02) and municipality users role assignment (PT03).
+    API for citizen registration, authentication (PT01), municipality user management (PT02), municipality users role assignment (PT03),
+    and geographic report search (Story #30).
     Uses session-based authentication with HTTP-only cookies.
+
+    ## Report Search by Address (Story #30)
+    Citizens and unregistered users can search for reports in a specific area by typing an address.
+    The `/geocode` endpoint converts addresses to coordinates and provides a bounding box for the search area.
+    Users can choose the zoom level to control the search radius (from street level to city area level).
 
     ## Municipality User Management
     System administrators can create, update and delete internal municipality user accounts.
@@ -123,9 +129,6 @@ paths:
                 error: "InternalServerError"
                 message: "An unexpected error occurred"
 
-
-  
-
   /session/current:
     get:
       tags:
@@ -205,8 +208,7 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Logout failed"
-  
-  
+
   /citizen/signup:
     post:
       tags:
@@ -3564,6 +3566,160 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Unable to retrieve report"
+  # Story #30
+  /geocode:
+    get:
+      tags:
+        - Reports
+      summary: Convert address to geographic coordinates and bounding box
+      description: |
+        Convert a human-readable address to geographic coordinates and bounding box for report searching.
+        This endpoint enables citizens and unregistered users to search for reports by typing an address 
+        instead of manually selecting coordinates on a map (Story #30).
+
+        The endpoint uses a geocoding service to convert the address to coordinates and calculates 
+        a bounding box based on the provided zoom level. The zoom level determines the size of the 
+        search area around the geocoded location.
+
+        **Available zoom levels and search radius:**
+        - 19: Street level (~100m radius)
+        - 16: Neighborhood level (~500m radius)  
+        - 14: District level (~2km radius)
+        - 12: City area level (~5km radius)
+
+        The returned bounding box can be used with the `/reports?bbox=` endpoint to retrieve 
+        reports within that specific area. This allows users to easily explore and analyze 
+        existing reports in a specific geographic area by typing an address.
+
+        **Workflow:**
+        1. User types an address (e.g., "Via Roma, Torino")
+        2. User selects zoom level (determines search area size)
+        3. Frontend calls `/geocode?address=Via+Roma,+Torino&zoom=16`
+        4. Backend returns coordinates and bounding box
+        5. Frontend calls `/reports?bbox=<returned_bbox>` to get reports in that area
+        6. Frontend displays reports on map centered at the geocoded location
+
+        This endpoint does not require authentication and can be used by unregistered users.
+      operationId: geocodeAddress
+      parameters:
+        - name: address
+          in: query
+          required: true
+          description: |
+            Address to geocode. Can be a street name, district, landmark, or any location within Turin.
+            Examples: "Via Roma, Torino", "Piazza Castello", "Porta Nuova", "Corso Vittorio Emanuele II 53"
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 200
+          example: "Via Roma, Torino"
+        - name: zoom
+          in: query
+          required: false
+          description: |
+            Map zoom level (12-19) to determine the size of the search area. 
+            Higher zoom = smaller area. Default is 16 (neighborhood level).
+          schema:
+            type: integer
+            minimum: 12
+            maximum: 19
+            default: 16
+          example: 16
+      responses:
+        "200":
+          description: Address successfully geocoded
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - address
+                  - latitude
+                  - longitude
+                  - bbox
+                  - zoom
+                properties:
+                  address:
+                    type: string
+                    description: Formatted address returned by the geocoding service
+                    example: "Via Roma, 10123 Torino TO, Italy"
+                  latitude:
+                    type: number
+                    format: double
+                    description: Latitude of the geocoded location in decimal degrees (WGS84)
+                    example: 45.070312
+                  longitude:
+                    type: number
+                    format: double
+                    description: Longitude of the geocoded location in decimal degrees (WGS84)
+                    example: 7.686856
+                  bbox:
+                    type: string
+                    description: |
+                      Bounding box for the search area in format "minLon,minLat,maxLon,maxLat".
+                      This can be directly used with the `/reports?bbox=` parameter.
+                    pattern: '^-?([0-9]*\.?[0-9]+),-?([0-9]*\.?[0-9]+),-?([0-9]*\.?[0-9]+),-?([0-9]*\.?[0-9]+)$'
+                    example: "7.681,45.065,7.692,45.075"
+                  zoom:
+                    type: integer
+                    description: Zoom level used for calculating the bounding box
+                    minimum: 12
+                    maximum: 19
+                    example: 16
+              example:
+                address: "Via Roma, 10123 Torino TO, Italy"
+                latitude: 45.070312
+                longitude: 7.686856
+                bbox: "7.681,45.065,7.692,45.075"
+                zoom: 16
+        "400":
+          description: Invalid address format or zoom level
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAddress:
+                  summary: Invalid address format
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Address must be between 3 and 200 characters"
+                invalidZoom:
+                  summary: Invalid zoom level
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Zoom level must be between 12 and 19"
+        "404":
+          description: Address not found or not within Turin municipality boundaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                notFound:
+                  summary: Address not found
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Address not found by geocoding service"
+                outsideBoundaries:
+                  summary: Outside Turin boundaries
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Address is outside Turin municipality boundaries"
+        "500":
+          description: Geocoding service error or temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Geocoding service temporarily unavailable"
 
 components:
   securitySchemes:

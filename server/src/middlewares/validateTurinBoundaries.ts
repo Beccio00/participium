@@ -38,6 +38,11 @@ function isPointInPolygon(lat: number, lng: number, polygon: [number, number][])
   return inside;
 }
 
+// Export for use in geocoding controller
+export function isWithinTurinBoundaries(lat: number, lng: number): boolean {
+  return isPointInPolygon(lat, lng, TURIN_POLYGON);
+}
+
 export function validateTurinBoundaries(req: Request, res: Response, next: NextFunction) {
   const { latitude, longitude } = req.body;
   
