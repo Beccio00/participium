@@ -20,7 +20,7 @@ import { createInternalNote as createInternalNoteService } from "../services/int
 import { Role } from "../../../shared/RoleTypes";
 import { getInternalNotes } from "../services/internalNoteService";
 import { forwardGeocode, validateAddress, validateZoom, parseBoundingBox } from "../services/geocodingService";
-import { validateTurinBoundaries } from "../middlewares/validateTurinBoundaries";
+import { validateTurinBoundaries, isWithinTurinBoundaries } from "../middlewares/validateTurinBoundaries";
 
 // Helper functions for validation
 function validateRequiredFields(
@@ -274,24 +274,8 @@ export async function geocodeAddress(req: Request, res: Response): Promise<void>
     // Forward geocoding
     const result = await forwardGeocode(validatedAddress, validatedZoom);
 
-    // Check if coordinates are within Turin boundaries using the existing utility
-    // Create a temporary request object for boundary validation
-    const tempReq = {
-      body: {
-        latitude: result.latitude,
-        longitude: result.longitude
-      }
-    } as Request;
-
-    // Call the validation directly - it will throw an error if outside boundaries
-    let isValidLocation = true;
-    const tempRes = {
-      status: () => ({ json: () => { isValidLocation = false; } })
-    } as unknown as Response;
-    
-    validateTurinBoundaries(tempReq, tempRes, () => {});
-    
-    if (!isValidLocation) {
+    // Check if coordinates are within Turin boundaries
+    if (!isWithinTurinBoundaries(result.latitude, result.longitude)) {
       throw new BadRequestError('Address is outside Turin municipality boundaries');
     }
 
