@@ -195,8 +195,15 @@ export async function requireCitizenAuthorOrTechnicalOrExternal(
     throw new UnauthorizedError("Authentication required");
   }
 
-  // allows citizens to send messages only for reports they authored
-  if (!authReq.user.role.includes(Role.CITIZEN)) {
+  const role = authReq.user.role;
+  
+  // Technical staff and external maintainers can always send messages
+  if (TECHNICAL_AND_EXTERNAL_ROLES.some(r => role.includes(r))) {
+    return next();
+  }
+  
+  // Citizens can only send messages for reports they authored
+  if (role.includes(Role.CITIZEN)) {
     const reportId = req.params.reportId;
     const repo = new ReportRepository();
     try {
@@ -214,11 +221,8 @@ export async function requireCitizenAuthorOrTechnicalOrExternal(
       );
     }
   }
-  const role = authReq.user.role;
-  if (!TECHNICAL_AND_EXTERNAL_ROLES.some(r => role.includes(r))) {
-    throw new ForbiddenError(
-        "Technical staff or external maintainer privileges required"
-      );
-  }
-  return next();
+  
+  throw new ForbiddenError(
+      "Technical staff, external maintainer, or report author privileges required"
+    );
 }
