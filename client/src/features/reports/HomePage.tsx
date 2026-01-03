@@ -7,6 +7,8 @@ import Button from "../../components/ui/Button.tsx";
 import AuthRequiredModal from "../auth/AuthRequiredModal.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
+import AddressSearchBar from "../../components/AddressSearchBar";
+import { geocodeAddress, getReportsByBbox } from "../../api/api";
 import ReportDetailsModal from "./ReportDetailsModal";
 import type { Report } from "../../types";
 import { getReports as getReportsApi } from "../../api/api";
@@ -25,18 +27,101 @@ function getRecentReports(reports: Report[]): Report[] {
     .slice(0, 10);
 }
 
-function isUserOwnReport(report: Report, isAuthenticated: boolean, user: any): boolean {
-  return isAuthenticated && user && report.user && user.email === report.user.email;
+function isUserOwnReport(
+  report: Report,
+  isAuthenticated: boolean,
+  user: any
+): boolean {
+  return (
+    isAuthenticated && user && report.user && user.email === report.user.email
+  );
 }
 
 function saveSidebarScroll(sidebarScrollRef: React.MutableRefObject<number>) {
-  const sidebar = document.querySelector(".reports-sidebar-scroll") as HTMLElement;
+  const sidebar = document.querySelector(
+    ".reports-sidebar-scroll"
+  ) as HTMLElement;
   if (sidebar) {
     sidebarScrollRef.current = sidebar.scrollTop;
   }
 }
 
 export default function HomePage() {
+  // Clear address search and restore all reports
+  const handleClearAddressSearch = async () => {
+    // Default center and zoom for Turin
+    setSearchCenter([45.0703, 7.6869]);
+    setSearchZoom(13);
+    setSearchError(null);
+    setSearchAreaBbox(null);
+    setSearchLoading(true);
+    try {
+      const data = await getReportsApi();
+      const normalized = (data || []).map((r: any) => ({
+        ...r,
+        latitude: Number(r.latitude),
+        longitude: Number(r.longitude),
+      }));
+      setReports(normalized);
+    } catch (err: any) {
+      setReportsError(err?.message || String(err));
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+  // Serach address and zoom
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchCenter, setSearchCenter] = useState<[number, number] | null>(
+    null
+  );
+  const [searchZoom, setSearchZoom] = useState<number>(16);
+  const [searchAreaBbox, setSearchAreaBbox] = useState<
+    [number, number, number, number] | null
+  >(null);
+
+  // Address search handler
+  const handleAddressSearch = async (address: string, zoom: number) => {
+    setSearchLoading(true);
+    setSearchError(null);
+    try {
+      const geo = await geocodeAddress(address, zoom);
+      setSearchCenter([geo.latitude, geo.longitude]);
+      setSearchZoom(geo.zoom);
+      // Parse bbox string into array of numbers: "minLon,minLat,maxLon,maxLat"
+      const bboxParts = geo.bbox.split(",").map(Number) as [
+        number,
+        number,
+        number,
+        number
+      ];
+      setSearchAreaBbox(bboxParts);
+      // Load reports in the area
+      const reportsInArea = await getReportsByBbox(geo.bbox);
+      setReports(
+        (reportsInArea || []).map((r: any) => ({
+          ...r,
+          latitude: Number(r.latitude),
+          longitude: Number(r.longitude),
+        }))
+      );
+    } catch (err: any) {
+      // Custom error for out-of-Turin or geocoding errors
+      if (
+        err?.message?.toLowerCase().includes("not in turin") ||
+        err?.message?.toLowerCase().includes("not in allowed area") ||
+        err?.message?.toLowerCase().includes("geocoding error")
+      ) {
+        setSearchError(
+          "Invalid address: please enter a location within Turin."
+        );
+      } else {
+        setSearchError(err.message || "Error in address search.");
+      }
+    } finally {
+      setSearchLoading(false);
+    }
+  };
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -48,7 +133,7 @@ export default function HomePage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Aggiorna un report nella lista
+  // Update a report in the list
   const handleReportUpdate = (updatedReport: Report) => {
     setReports((prevReports) =>
       prevReports.map((r) => (r.id === updatedReport.id ? updatedReport : r))
@@ -233,7 +318,11 @@ export default function HomePage() {
         ) : reports.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {recentReports.map((report) => {
-              const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
+              const isOwnReport = isUserOwnReport(
+                report,
+                isAuthenticated,
+                user
+              );
               return (
                 <div key={report.id} style={{ position: "relative" }}>
                   {isOwnReport && (
@@ -398,10 +487,35 @@ export default function HomePage() {
               <div
                 style={{ flex: 1, display: "flex", flexDirection: "column" }}
               >
+                {/* Address search bar above the map */}
+                <div
+                  style={{
+                    maxWidth: 600,
+                    margin: "0 auto 1rem auto",
+                    zIndex: 10,
+                  }}
+                >
+                  <AddressSearchBar
+                    onSearch={handleAddressSearch}
+                    loading={searchLoading}
+                    onClear={handleClearAddressSearch}
+                    isClearVisible={!!searchCenter}
+                  />
+                  {searchError && (
+                    <div style={{ color: "crimson", marginTop: 4 }}>
+                      {searchError}
+                    </div>
+                  )}
+                </div>
                 <MapView
                   reports={reports}
                   selectedReportId={selectedReportId}
                   onReportDetailsClick={handleReportDetailsClick}
+                  selectedLocation={searchCenter || undefined}
+                  selectedZoom={searchZoom}
+                  searchArea={
+                    searchAreaBbox ? { bbox: searchAreaBbox } : undefined
+                  }
                 />
               </div>
             </div>

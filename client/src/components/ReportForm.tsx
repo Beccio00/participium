@@ -9,7 +9,14 @@ import {
   Form,
   Card,
 } from "react-bootstrap";
-import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon } from "react-bootstrap-icons";
+import {
+  GeoAlt,
+  FileText,
+  Tag,
+  Camera,
+  X,
+  Map as MapIcon,
+} from "react-bootstrap-icons";
 import MapView from "./MapView";
 import L from "leaflet"; // Used for custom marker icon
 
@@ -76,7 +83,9 @@ export default function ReportForm() {
     photos: [] as ReportPhoto[],
   });
   // State for selected location on the map
-  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<
+    [number, number] | null
+  >(null);
   // State for error messages
   const [error, setError] = useState<string | null>(null);
   // State for uploaded files (photos)
@@ -99,7 +108,9 @@ export default function ReportForm() {
   // Handle and validate new files (drag-and-drop or file input)
   const processFiles = (newFiles: File[]) => {
     // Only allow image files
-    const validateImages = newFiles.filter((file) => file.type.startsWith("image/"));
+    const validateImages = newFiles.filter((file) =>
+      file.type.startsWith("image/")
+    );
     if (validateImages.length < newFiles.length) {
       setError("Only image files are allowed.");
     }
@@ -449,7 +460,14 @@ export default function ReportForm() {
                       )}
                     </Form.Group>
 
-                    <Form.Group className="mb-3 mt-3 p-3" style={{ background: 'var(--bg)', borderRadius: '10px', border: '2px solid #e1e5e9' }}>
+                    <Form.Group
+                      className="mb-3 mt-3 p-3"
+                      style={{
+                        background: "var(--bg)",
+                        borderRadius: "10px",
+                        border: "2px solid #e1e5e9",
+                      }}
+                    >
                       <Form.Check
                         type="checkbox"
                         id="anonymous"
@@ -457,11 +475,14 @@ export default function ReportForm() {
                         checked={formData.isAnonymous}
                         onChange={handleInputChange}
                         label={
-                            <span>
+                          <span>
                             Make this report anonymous
                             <br />
-                            <small className="text-muted">If selected, your name will not be publicly visible in the report list.</small>
-                            </span>
+                            <small className="text-muted">
+                              If selected, your name will not be publicly
+                              visible in the report list.
+                            </small>
+                          </span>
                         }
                       />
                     </Form.Group>
@@ -490,7 +511,7 @@ export default function ReportForm() {
                       <MapView
                         onLocationSelect={handleLocationSelect}
                         selectedLocation={selectedLocation}
-                        // Passo una prop customIcon per il marker selezionato
+                        // Pass a customIcon prop for the selected marker
                         customSelectedIcon={createColoredIcon()}
                         hideInfoButton={true}
                       />
