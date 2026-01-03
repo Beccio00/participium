@@ -47,14 +47,11 @@ function saveSidebarScroll(sidebarScrollRef: React.MutableRefObject<number>) {
 }
 
 export default function HomePage() {
-  // Track if address search is active
-  const [addressSearchActive, setAddressSearchActive] = useState(false);
   // Clear address search and restore all reports
   const handleClearAddressSearch = async () => {
     // Default center and zoom for Turin
     setSearchCenter([45.0703, 7.6869]);
     setSearchZoom(13);
-    setAddressSearchActive(false);
     setSearchError(null);
     setSearchAreaBbox(null);
     setSearchLoading(true);
