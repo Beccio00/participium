@@ -5,7 +5,8 @@ import {
   createReport, 
   CreateReportData,
   getMyReports,
-  getReportStatus
+  getReportStatus,
+  checkLinked
 } from "./apiClient";
 import { isPointInTurin } from "./turinBoundaries";
 
@@ -251,6 +252,21 @@ bot.command("cancel", async (ctx) => {
 
 bot.command("myreports", async (ctx) => {
   const telegramId = ctx.from.id.toString();
+  try {
+    const status = await checkLinked(telegramId);
+    if (!status.linked) {
+      await ctx.reply(
+        "⚠️ Your Telegram account is not linked to any Participium user.\n\n" +
+        "Please link your account on the Participium website by clicking the Telegram icon in the navigation bar, then try /newreport again.",
+        { parse_mode: "Markdown" }
+      );
+      return;
+    }
+  } catch (error: any) {
+    console.error("checkLinked error:", error.response?.data || error.message);
+    await ctx.reply("An error occurred while checking your account link. Please try again later.");
+    return;
+  }
 
   try{
     const reports = await getMyReports(telegramId);
@@ -1071,6 +1087,13 @@ bot.on("text", async (ctx) => {
       break;
 
     case "description":
+      if (text.length < 10) {
+        await ctx.reply(
+          "⚠️ Description is too short. Please provide more details (at least 10 characters).",
+          { parse_mode: "Markdown" }
+        );
+        return;
+      }
       if (text.length > 1000) {
         await ctx.reply(
           "⚠️ Description is too long. Please keep it under 1000 characters.",

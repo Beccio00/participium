@@ -9,7 +9,8 @@ import {
   unlink,
   createReport,
   getMyReports,
-  getReportStatus
+  getReportStatus,
+  checkLinked
 } from "../controllers/telegramController";
 
 const router = Router();
@@ -57,5 +58,8 @@ router.get(
   ApiValidationMiddleware,
   asyncHandler(getReportStatus)
 );
+
+// POST /api/telegram/check-linked - Check if a telegramId is linked to a user (called by bot)
+router.post("/check-linked", ApiValidationMiddleware, asyncHandler(checkLinked));
 
 export default router;

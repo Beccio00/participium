@@ -50,3 +50,8 @@ export async function getReportStatus(telegramId: string, reportId: number): Pro
   const res = await axios.get(`${API_BASE_URL}/api/telegram/${telegramId}/reports/${reportId}`);
   return res.data;
 }
+
+export async function checkLinked(telegramId: string): Promise<{ linked: boolean }> {
+  const res = await axios.post(`${API_BASE_URL}/api/telegram/check-linked`, { telegramId });
+  return res.data;
+}
