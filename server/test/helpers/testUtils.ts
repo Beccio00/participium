@@ -17,7 +17,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     last_name: "User",
     password: "hashedPassword",
     salt: "salt",
-    role: Role.CITIZEN,
+    role: [Role.CITIZEN],
     telegram_username: null,
     telegram_id: null,
     email_notifications_enabled: true,
@@ -46,7 +46,7 @@ export function createMockUserDTO(overrides: Partial<UserDTO> = {}): UserDTO {
     email: "test@test.com",
     firstName: "Test",
     lastName: "User",
-    role: Role.CITIZEN,
+    role: [Role.CITIZEN],
     isVerified: true,
     telegramUsername: null,
     emailNotificationsEnabled: true,
@@ -57,13 +57,15 @@ export function createMockUserDTO(overrides: Partial<UserDTO> = {}): UserDTO {
 /**
  * 创建一个 mock MunicipalityUserDTO 对象
  */
-export function createMockMunicipalityUserDTO(overrides: Partial<MunicipalityUserDTO> = {}): MunicipalityUserDTO {
+export function createMockMunicipalityUserDTO(
+  overrides: Partial<MunicipalityUserDTO> = {}
+): MunicipalityUserDTO {
   return {
     id: 1,
     email: "municipality@test.com",
     firstName: "Municipality",
     lastName: "User",
-    role: Role.PUBLIC_RELATIONS,
+    role: [Role.PUBLIC_RELATIONS],
     ...overrides,
   };
 }
@@ -109,17 +111,21 @@ export async function createUserInDatabase(data: {
   isVerified?: boolean;
   externalCompanyId?: number | null;
 }): Promise<User> {
-  const password = data.password || 'Test1234!';
+  const password = data.password || "Test1234!";
   const { hashedPassword, salt } = await hashPassword(password);
-  
+
   const userRepo = AppDataSource.getRepository(User);
   const user = userRepo.create({
     email: data.email,
-    first_name: data.firstName || 'Test',
-    last_name: data.lastName || 'User',
+    first_name: data.firstName || "Test",
+    last_name: data.lastName || "User",
     password: hashedPassword,
     salt: salt,
-    role: (data.role as Role) || Role.CITIZEN,
+    role: data.role
+      ? Array.isArray(data.role)
+        ? (data.role as Role[])
+        : [data.role as Role]
+      : [Role.CITIZEN],
     isVerified: data.isVerified ?? true, // Default to verified for E2E tests
     telegram_username: null,
     email_notifications_enabled: true,
@@ -133,31 +139,35 @@ export async function createUserInDatabase(data: {
 export function createTestUserData(overrides: any = {}) {
   // Remove role from overrides as it's not accepted in signup API
   const { role, ...restOverrides } = overrides;
-  
+
   // Build the data object with defaults, using restOverrides (without role)
   return {
-    firstName: restOverrides.firstName || 'Test',
-    lastName: restOverrides.lastName || 'User',
-    email: restOverrides.email || 'test@example.com',
-    password: restOverrides.password || 'Test1234!',
+    firstName: restOverrides.firstName || "Test",
+    lastName: restOverrides.lastName || "User",
+    email: restOverrides.email || "test@example.com",
+    password: restOverrides.password || "Test1234!",
   };
 }
 
-export async function verifyPasswordIsHashed(email: string, plainPassword: string): Promise<boolean> {
+export async function verifyPasswordIsHashed(
+  email: string,
+  plainPassword: string
+): Promise<boolean> {
   // Fetch user from database
   const userRepo = AppDataSource.getRepository(User);
   const user = await userRepo.findOne({ where: { email } });
-  
+
   if (!user) {
     return false;
   }
-  
+
   // Check if stored password is hashed (starts with $2b$ or $2a$ for bcrypt)
-  const isHashed = user.password.startsWith('$2b$') || user.password.startsWith('$2a$');
-  
+  const isHashed =
+    user.password.startsWith("$2b$") || user.password.startsWith("$2a$");
+
   // Also verify the password is not stored in plain text
   const isNotPlainText = user.password !== plainPassword;
-  
+
   return isHashed && isNotPlainText;
 }
 

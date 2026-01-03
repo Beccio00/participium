@@ -1,21 +1,25 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Clipboard, Pencil, List } from "react-bootstrap-icons";
 import { Offcanvas } from "react-bootstrap";
+
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button.tsx";
 import AuthRequiredModal from "../auth/AuthRequiredModal.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
 import ReportDetailsModal from "./ReportDetailsModal";
+
 import type { Report } from "../../types";
 import { getReports as getReportsApi } from "../../api/api";
+
 import { Role } from "../../../../shared/RoleTypes.ts";
 import { ReportStatus } from "../../../../shared/ReportTypes.ts";
-import { userHasRole, userHasAnyRole, TECHNICIAN_ROLES } from "../../utils/roles";
+import { userHasRole } from "../../utils/roles";
 import "../../styles/HomePage.css";
 
-// Helper functions
+// --- Helpers ---------------------------------------------------------------
+
 function getRecentReports(reports: Report[]): Report[] {
   return [...reports]
     .sort((a, b) => {
@@ -27,93 +31,122 @@ function getRecentReports(reports: Report[]): Report[] {
 }
 
 function isUserOwnReport(report: Report, isAuthenticated: boolean, user: any): boolean {
-  return isAuthenticated && user && report.user && user.email === report.user.email;
+  return Boolean(isAuthenticated && user && report.user && user.email === report.user.email);
 }
 
 function saveSidebarScroll(sidebarScrollRef: React.MutableRefObject<number>) {
-  const sidebar = document.querySelector(".reports-sidebar-scroll") as HTMLElement;
-  if (sidebar) {
-    sidebarScrollRef.current = sidebar.scrollTop;
-  }
+  const sidebar = document.querySelector(".reports-sidebar-scroll") as HTMLElement | null;
+  if (sidebar) sidebarScrollRef.current = sidebar.scrollTop;
 }
+
+// Normalizza lat/long numerici (API può restituire stringhe)
+function normalizeReports(data: any[]): Report[] {
+  return (data || []).map((r: any) => ({
+    ...r,
+    latitude: Number(r.latitude),
+    longitude: Number(r.longitude),
+  }));
+}
+
+// --------------------------------------------------------------------------
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReportsSidebar, setShowReportsSidebar] = useState(false);
+
   const sidebarScrollRef = useRef<number>(0);
 
   const [reports, setReports] = useState<Report[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Aggiorna un report nella lista
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [reportsError, setReportsError] = useState<string | null>(null);
+
+  // --- Roles (user.role è string[]) ---------------------------------------
+
+  const roles: string[] = useMemo(() => {
+    return Array.isArray(user?.role) ? user.role : [];
+  }, [user?.role]);
+
+  const hasRole = (role: Role | string) => roles.includes(String(role));
+
+  const isCitizen = useMemo(() => isAuthenticated && hasRole(Role.CITIZEN), [isAuthenticated, roles]);
+  const isPublicRelations = useMemo(
+    () => isAuthenticated && hasRole(Role.PUBLIC_RELATIONS),
+    [isAuthenticated, roles]
+  );
+
+  const isTechnicalOfficer = useMemo(() => {
+    if (!isAuthenticated) return false;
+    // "Tecnico" = qualsiasi ruolo che NON sia citizen/admin/public_relations
+    const blocked = [String(Role.CITIZEN), String(Role.ADMINISTRATOR), String(Role.PUBLIC_RELATIONS)];
+    return roles.length > 0 && !roles.some((r) => blocked.includes(r));
+  }, [isAuthenticated, roles]);
+
+  // --- Report handlers -----------------------------------------------------
+
   const handleReportUpdate = (updatedReport: Report) => {
-    setReports((prevReports) =>
-      prevReports.map((r) => (r.id === updatedReport.id ? updatedReport : r))
-    );
+    setReports((prev) => prev.map((r) => (r.id === updatedReport.id ? updatedReport : r)));
   };
 
-  // Ricarica tutti i report
-  const refreshReports = () => {
-    setRefreshTrigger((prev) => prev + 1);
+  const refreshReports = () => setRefreshTrigger((prev) => prev + 1);
+
+  const handleAddReport = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+    navigate("/reports/new");
   };
 
-  // Ascolta eventi di refresh report
   useEffect(() => {
     const handleRefresh = () => refreshReports();
     window.addEventListener("refreshReports", handleRefresh);
     return () => window.removeEventListener("refreshReports", handleRefresh);
   }, []);
 
-  // Seleziona il report e mostra i dettagli
   const handleReportDetailsClick = (reportId: number) => {
     setSelectedReportId(reportId);
     setShowDetailsModal(true);
-    if (window.innerWidth < 992) {
-      setShowReportsSidebar(true);
-    }
+
+    // su mobile: chiudo la lista (offcanvas) e lascio la mappa visibile
+    if (window.innerWidth < 992) setShowReportsSidebar(false);
   };
-  const [loadingReports, setLoadingReports] = useState(false);
-  const [reportsError, setReportsError] = useState<string | null>(null);
 
-  const isCitizen = isAuthenticated && userHasRole(user, Role.CITIZEN);
-  const isPublicRelations = isAuthenticated && userHasRole(user, Role.PUBLIC_RELATIONS);
-  const isTechnicalOfficer = isAuthenticated && (userHasAnyRole(user, TECHNICIAN_ROLES) || userHasRole(user, Role.EXTERNAL_MAINTAINER));
+  // Role checks using the utility functions for consistency
+  // (Already defined above using useMemo for better performance)
 
-  // load reports from backend and filter statuses: appending, in progress, complete
   useEffect(() => {
-    // Re-load reports when authentication state or user changes so that
-    // newly created reports (PENDING_APPROVAL) by the current user are shown.
     let mounted = true;
+
     async function load() {
       setLoadingReports(true);
       setReportsError(null);
+
       try {
         const data = await getReportsApi();
         if (!mounted) return;
-        // Ensure citizens see their own pending reports even if backend didn't include them
-        const approvedStatuses = [
-          ReportStatus.ASSIGNED.toString(),
-          ReportStatus.EXTERNAL_ASSIGNED.toString(),
-          ReportStatus.IN_PROGRESS.toString(),
-          ReportStatus.RESOLVED.toString(),
-        ];
+
+        // visibilità: stati "approvati" + i pending dell'utente loggato
+        const approvedStatuses = new Set<string>([
+          String(ReportStatus.ASSIGNED),
+          String(ReportStatus.EXTERNAL_ASSIGNED),
+          String(ReportStatus.IN_PROGRESS),
+          String(ReportStatus.RESOLVED),
+        ]);
+
         const visible = (data || []).filter((r: any) => {
-          if (approvedStatuses.includes(r.status)) return true;
-          if (isAuthenticated && user && r.user && r.user.email === user.email)
-            return true;
+          if (approvedStatuses.has(String(r.status))) return true;
+          if (isAuthenticated && user?.email && r?.user?.email === user.email) return true;
           return false;
         });
-        // Ensure latitude/longitude are numbers (API may return strings to satisfy OpenAPI schema)
-        const normalized = visible.map((r: any) => ({
-          ...r,
-          latitude: Number(r.latitude),
-          longitude: Number(r.longitude),
-        }));
-        setReports(normalized);
+
+        setReports(normalizeReports(visible));
       } catch (err: any) {
         console.error("Failed to load reports:", err);
         if (!mounted) return;
@@ -122,38 +155,34 @@ export default function HomePage() {
         if (mounted) setLoadingReports(false);
       }
     }
+
     load();
     return () => {
       mounted = false;
     };
   }, [isAuthenticated, user?.email, refreshTrigger]);
 
+  // redirect admin
   useEffect(() => {
     if (userHasRole(user, "ADMINISTRATOR")) {
       navigate("/admin", { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
-  // Ripristina la posizione scroll dopo il re-render
+  // Ripristina scroll sidebar quando cambi selezione
   useEffect(() => {
-    const sidebar = document.querySelector(
-      ".reports-sidebar-scroll"
-    ) as HTMLElement;
-    if (sidebar && sidebarScrollRef.current > 0) {
-      sidebar.scrollTop = sidebarScrollRef.current;
-    }
+    const sidebar = document.querySelector(".reports-sidebar-scroll") as HTMLElement | null;
+    if (sidebar && sidebarScrollRef.current > 0) sidebar.scrollTop = sidebarScrollRef.current;
   }, [selectedReportId]);
 
-  const handleAddReport = () => {
-    if (isAuthenticated) {
-      navigate("/report/new");
-    } else {
-      setShowAuthModal(true);
-    }
-  };
+  // --- Derived data --------------------------------------------------------
 
-  // Compute recent reports for the sidebar
   const recentReports = useMemo(() => getRecentReports(reports), [reports]);
+
+  const selectedReport = useMemo(() => {
+    if (selectedReportId == null) return null;
+    return reports.find((r) => r.id === selectedReportId) || null;
+  }, [reports, selectedReportId]);
 
   const handleReportCardClick = (reportId: number) => {
     saveSidebarScroll(sidebarScrollRef);
@@ -161,15 +190,11 @@ export default function HomePage() {
     setShowReportsSidebar(false);
   };
 
-  // Find the selected report for details modal
-  const selectedReport = useMemo(
-    () => reports.find((r) => r.id === selectedReportId) || null,
-    [reports, selectedReportId]
-  );
+  // Helper functions for conditional rendering
 
+  // Sidebar content riusabile
   const ReportsSidebarContent = () => (
     <>
-      {/* Reports Header */}
       <div
         style={{
           display: "flex",
@@ -181,50 +206,32 @@ export default function HomePage() {
         }}
       >
         <div>
-          <h3
-            style={{
-              color: "var(--text)",
-              margin: 0,
-              fontSize: "1.3rem",
-              fontWeight: 700,
-            }}
-          >
+          <h3 style={{ color: "var(--text)", margin: 0, fontSize: "1.3rem", fontWeight: 700 }}>
             Recent Reports
           </h3>
-          <small
-            style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}
-          >
+          <small style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}>
             Showing the 10 most recent reports
           </small>
         </div>
       </div>
 
-      {/* Reports List */}
       <div
         className="reports-sidebar-scroll"
         style={{
           flex: 1,
           padding: "1.5rem",
           overflowY: "auto",
-          /* Custom scrollbar styles */
           scrollbarWidth: "thin",
           scrollbarColor: "#d1d5db #f9fafb",
         }}
       >
         {loadingReports ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "2rem",
-            }}
-          >
-            Loading report...
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+            Loading reports...
           </div>
         ) : reportsError ? (
           <div style={{ color: "var(--danger)", padding: "1rem" }}>
-            Error loading report: {reportsError}
+            Error loading reports: {reportsError}
           </div>
         ) : reports.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -250,6 +257,7 @@ export default function HomePage() {
                       Your report
                     </div>
                   )}
+
                   <ReportCard
                     report={report}
                     isSelected={selectedReportId === report.id}
@@ -273,24 +281,13 @@ export default function HomePage() {
               padding: "2rem 1rem",
             }}
           >
-            <div
-              style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }}
-            >
+            <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }}>
               <Clipboard />
             </div>
-            <p
-              style={{
-                fontSize: "1.1rem",
-                margin: "0 0 0.5rem 0",
-                color: "#6c757d",
-                fontWeight: 500,
-              }}
-            >
+            <p style={{ fontSize: "1.1rem", margin: "0 0 0.5rem 0", color: "#6c757d", fontWeight: 500 }}>
               No reports yet
             </p>
-            <small
-              style={{ fontSize: "0.9rem", lineHeight: 1.4, color: "#adb5bd" }}
-            >
+            <small style={{ fontSize: "0.9rem", lineHeight: 1.4, color: "#adb5bd" }}>
               Reports will appear here once submitted by citizens.
             </small>
           </div>
@@ -365,11 +362,11 @@ export default function HomePage() {
     </>
   );
 
+  // --- Render --------------------------------------------------------------
+
   return (
     <>
-      <div
-        style={{ height: "100%", background: "var(--bg)", overflow: "hidden" }}
-      >
+      <div style={{ height: "100%", background: "var(--bg)", overflow: "hidden" }}>
         <main style={{ height: "100%", display: "flex", position: "relative" }}>
           {/* Map Section */}
           <div
@@ -391,9 +388,7 @@ export default function HomePage() {
               }}
               className="px-md-4"
             >
-              <div
-                style={{ flex: 1, display: "flex", flexDirection: "column" }}
-              >
+              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                 <MapView
                   reports={reports}
                   selectedReportId={selectedReportId}
@@ -446,41 +441,65 @@ export default function HomePage() {
           placement="end"
           style={{ width: "90%", maxWidth: "400px" }}
         >
-          <Offcanvas.Header
-            closeButton
-            style={{ borderBottom: "2px solid #f8f9fa", background: "#fdfdfd" }}
-          >
-            <Offcanvas.Title
-              style={{
-                color: "var(--text)",
-                fontSize: "1.3rem",
-                fontWeight: 700,
-              }}
-            >
+          <Offcanvas.Header closeButton style={{ borderBottom: "2px solid #f8f9fa", background: "#fdfdfd" }}>
+            <Offcanvas.Title style={{ color: "var(--text)", fontSize: "1.3rem", fontWeight: 700 }}>
               Recent Reports
             </Offcanvas.Title>
           </Offcanvas.Header>
-          <Offcanvas.Body
-            className="p-0 d-flex flex-column"
-            style={{ background: "var(--surface)" }}
-          >
-            <div style={{ flex: 1, padding: "1.5rem", overflowY: "auto" }}>
-              {reports.length > 0 ? (
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 0 }}
-                >
-                  {reports.map((report) => (
-                    <ReportCard
-                      key={report.id}
-                      report={report}
-                      isSelected={selectedReportId === report.id}
-                      onClick={() => {
-                        setSelectedReportId(report.id);
-                        setShowReportsSidebar(false);
-                      }}
-                      onOpenDetails={handleReportDetailsClick}
-                    />
-                  ))}
+          
+          <Offcanvas.Body style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+            <div
+              className="reports-sidebar-scroll"
+              style={{
+                flex: 1,
+                padding: "1.5rem",
+                overflowY: "auto",
+                scrollbarWidth: "thin",
+                scrollbarColor: "#d1d5db #f9fafb",
+              }}
+            >
+              {loadingReports ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+                  Loading reports...
+                </div>
+              ) : reportsError ? (
+                <div style={{ color: "var(--danger)", padding: "1rem" }}>
+                  Error loading reports: {reportsError}
+                </div>
+              ) : reports.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {recentReports.map((report) => {
+                    const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
+                    return (
+                      <div key={report.id} style={{ position: "relative" }}>
+                        {isOwnReport && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              background: "#e0f7fa",
+                              color: "#00796b",
+                              fontWeight: 700,
+                              fontSize: "0.85rem",
+                              padding: "2px 8px",
+                              borderRadius: "0 0 0.5rem 0",
+                              zIndex: 2,
+                            }}
+                          >
+                            Your report
+                          </div>
+                        )}
+
+                        <ReportCard
+                          report={report}
+                          isSelected={selectedReportId === report.id}
+                          onClick={() => handleReportCardClick(report.id)}
+                          onOpenDetails={handleReportDetailsClick}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div
@@ -495,33 +514,14 @@ export default function HomePage() {
                     padding: "2rem 1rem",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "3rem",
-                      marginBottom: "1rem",
-                      opacity: 0.5,
-                    }}
-                  >
+                  <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }}>
                     <Clipboard />
                   </div>
-                  <p
-                    style={{
-                      fontSize: "1.1rem",
-                      margin: "0 0 0.5rem 0",
-                      color: "#6c757d",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <p style={{ fontSize: "1.1rem", margin: "0 0 0.5rem 0", color: "#6c757d", fontWeight: 500 }}>
                     No reports yet
                   </p>
-                  <small
-                    style={{
-                      fontSize: "0.9rem",
-                      lineHeight: 1.4,
-                      color: "#adb5bd",
-                    }}
-                  >
-                    Reports will appear here..
+                  <small style={{ fontSize: "0.9rem", lineHeight: 1.4, color: "#adb5bd" }}>
+                    Reports will appear here once submitted by citizens.
                   </small>
                 </div>
               )}
@@ -542,7 +542,7 @@ export default function HomePage() {
                   fullWidth
                 >
                   <Pencil className="me-2" />
-                  Assign technical
+                  Manage reports
                 </Button>
               ) : isTechnicalOfficer ? (
                 <Button
@@ -597,10 +597,8 @@ export default function HomePage() {
         </Offcanvas>
       </div>
 
-      <AuthRequiredModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-      />
+      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
       {selectedReport && (
         <ReportDetailsModal
           show={showDetailsModal}

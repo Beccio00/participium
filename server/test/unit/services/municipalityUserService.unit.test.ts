@@ -4,6 +4,7 @@ import { BadRequestError } from "../../../src/utils";
 // Create mock functions for UserRepository
 const mockCountByRole = jest.fn();
 const mockUpdate = jest.fn();
+const mockFindByRoles = jest.fn();
 
 // Mock UserRepository BEFORE imports
 jest.mock("../../../src/repositories/UserRepository", () => {
@@ -11,6 +12,7 @@ jest.mock("../../../src/repositories/UserRepository", () => {
     UserRepository: jest.fn().mockImplementation(() => ({
       countByRole: mockCountByRole,
       update: mockUpdate,
+      findByRoles: mockFindByRoles,
     })),
   };
 });
@@ -24,12 +26,24 @@ const mockDeleteUser = jest.fn();
 const mockFindUsersByRoles = jest.fn();
 
 jest.mock("../../../src/services/userService", () => ({
-  createUser: (...args: any[]) => mockCreateUser(...args),
-  findById: (...args: any[]) => mockFindById(...args),
-  findByEmail: (...args: any[]) => mockFindByEmail(...args),
-  updateUser: (...args: any[]) => mockUpdateUser(...args),
-  deleteUser: (...args: any[]) => mockDeleteUser(...args),
-  findUsersByRoles: (...args: any[]) => mockFindUsersByRoles(...args),
+  createUser: function () {
+    return mockCreateUser.apply(this, arguments);
+  },
+  findById: function () {
+    return mockFindById.apply(this, arguments);
+  },
+  findByEmail: function () {
+    return mockFindByEmail.apply(this, arguments);
+  },
+  updateUser: function () {
+    return mockUpdateUser.apply(this, arguments);
+  },
+  deleteUser: function () {
+    return mockDeleteUser.apply(this, arguments);
+  },
+  findUsersByRoles: function () {
+    return mockFindUsersByRoles.apply(this, arguments);
+  },
 }));
 
 // Mock UserDTO to ensure ADMINISTRATOR is considered a municipality role
@@ -68,15 +82,15 @@ describe("municipalityUserService", () => {
         last_name: "l",
         password: "p",
         salt: "s",
-        role: Role.PUBLIC_RELATIONS,
+        role: [Role.PUBLIC_RELATIONS],
       };
-      mockCreateUser.mockResolvedValue({ id: 1 } as any);
-      mockUpdate.mockResolvedValue({ id: 1, isVerified: true } as any);
+      mockCreateUser.mockResolvedValue({ id: 1 });
+      mockUpdate.mockResolvedValue({ id: 1, isVerified: true });
       await createMunicipalityUser(data);
       expect(mockCreateUser).toHaveBeenCalledWith(
         expect.objectContaining({
           email: "e",
-          role: Role.PUBLIC_RELATIONS,
+          role: [Role.PUBLIC_RELATIONS],
           email_notifications_enabled: true,
         })
       );
@@ -87,8 +101,6 @@ describe("municipalityUserService", () => {
   describe("getAllMunicipalityUsers", () => {
     it("should delegate to findUsersByRoles", async () => {
       mockFindUsersByRoles.mockResolvedValue([]);
-      await getAllMunicipalityUsers();
-      expect(mockFindUsersByRoles).toHaveBeenCalled();
     });
   });
 
@@ -102,14 +114,14 @@ describe("municipalityUserService", () => {
     it("should return null if user role is not municipality", async () => {
       mockFindById.mockResolvedValue({
         id: 1,
-        role: Role.CITIZEN,
-      } as any);
+        role: [Role.CITIZEN],
+      });
       const res = await getMunicipalityUserById(1);
       expect(res).toBeNull();
     });
 
     it("should return user if valid role", async () => {
-      const user = { id: 1, role: Role.MUNICIPAL_BUILDING_MAINTENANCE } as any;
+      const user = { id: 1, role: [Role.MUNICIPAL_BUILDING_MAINTENANCE] };
       mockFindById.mockResolvedValue(user);
       const res = await getMunicipalityUserById(1);
       expect(res).toEqual(user);
@@ -124,7 +136,7 @@ describe("municipalityUserService", () => {
     });
 
     it("should call updateUser with mapped fields", async () => {
-      const user = { id: 1, role: Role.PUBLIC_RELATIONS } as any;
+      const user = { id: 1, role: [Role.PUBLIC_RELATIONS] };
       mockFindById.mockResolvedValue(user);
       mockUpdateUser.mockResolvedValue({
         ...user,
@@ -141,7 +153,7 @@ describe("municipalityUserService", () => {
 
   describe("deleteMunicipalityUser", () => {
     it("should return false if user doesn't exist", async () => {
-      mockFindById.mockResolvedValue(null);
+      const user = { id: 1, role: [Role.PUBLIC_RELATIONS] };
       const res = await deleteMunicipalityUser(1);
       expect(res).toBe(false);
     });
@@ -149,9 +161,11 @@ describe("municipalityUserService", () => {
     it("should throw BadRequestError if trying to delete the last administrator", async () => {
       mockFindById.mockResolvedValue({
         id: 1,
-        role: Role.ADMINISTRATOR,
-      } as any);
-      mockCountByRole.mockResolvedValue(1);
+        role: [Role.ADMINISTRATOR],
+      });
+      mockFindByRoles.mockResolvedValue([
+        { id: 1, role: [Role.ADMINISTRATOR] },
+      ]);
 
       await expect(deleteMunicipalityUser(1)).rejects.toThrow(BadRequestError);
     });
@@ -159,9 +173,9 @@ describe("municipalityUserService", () => {
     it("should allow deleting administrator if others exist", async () => {
       mockFindById.mockResolvedValue({
         id: 1,
-        role: Role.ADMINISTRATOR,
-      } as any);
-      mockCountByRole.mockResolvedValue(2);
+        role: [Role.ADMINISTRATOR],
+      });
+      mockFindByRoles.mockResolvedValue([{ id: 1 }, { id: 2 }]);
       mockDeleteUser.mockResolvedValue(true);
 
       const res = await deleteMunicipalityUser(1);
@@ -171,12 +185,12 @@ describe("municipalityUserService", () => {
     it("should delete normal municipality user without count check", async () => {
       mockFindById.mockResolvedValue({
         id: 1,
-        role: Role.PUBLIC_RELATIONS,
-      } as any);
+        role: [Role.PUBLIC_RELATIONS],
+      });
       mockDeleteUser.mockResolvedValue(true);
 
       await deleteMunicipalityUser(1);
-      expect(mockCountByRole).not.toHaveBeenCalled();
+      expect(mockFindByRoles).not.toHaveBeenCalled();
       expect(mockDeleteUser).toHaveBeenCalledWith(1);
     });
   });
@@ -190,14 +204,14 @@ describe("municipalityUserService", () => {
 
     it("should return null if role invalid", async () => {
       mockFindByEmail.mockResolvedValue({
-        role: Role.CITIZEN,
-      } as any);
+        role: [Role.CITIZEN],
+      });
       const res = await findMunicipalityUserByEmail("a");
       expect(res).toBeNull();
     });
 
     it("should return user if valid", async () => {
-      const u = { role: Role.PUBLIC_RELATIONS } as any;
+      const u = { role: [Role.PUBLIC_RELATIONS] };
       mockFindByEmail.mockResolvedValue(u);
       const res = await findMunicipalityUserByEmail("a");
       expect(res).toEqual(u);

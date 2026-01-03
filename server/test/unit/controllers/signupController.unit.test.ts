@@ -16,7 +16,9 @@ const mockHashPassword = hashPassword as jest.MockedFunction<
 const mockSendCitizenVerification = jest.fn();
 
 // ensure the citizen service mock exposes sendCitizenVerification
-(require("../../../src/services/citizenService") as any).sendCitizenVerification = mockSendCitizenVerification;
+(
+  require("../../../src/services/citizenService") as any
+).sendCitizenVerification = mockSendCitizenVerification;
 
 describe("signupController", () => {
   let mockReq: any;
@@ -65,7 +67,7 @@ describe("signupController", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: UserDTO.Roles.CITIZEN,
+        role: [UserDTO.Roles.CITIZEN],
         telegramUsername: null,
         emailNotificationsEnabled: true,
         isVerified: true,
@@ -95,7 +97,7 @@ describe("signupController", () => {
         last_name: "User",
         password: "hashed",
         salt: "salt",
-        role: UserDTO.Roles.CITIZEN,
+        role: [UserDTO.Roles.CITIZEN],
         telegram_username: null,
         email_notifications_enabled: true,
       });
