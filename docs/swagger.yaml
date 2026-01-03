@@ -129,9 +129,6 @@ paths:
                 error: "InternalServerError"
                 message: "An unexpected error occurred"
 
-
-  
-
   /session/current:
     get:
       tags:
@@ -211,8 +208,7 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Logout failed"
-  
-  
+
   /citizen/signup:
     post:
       tags:
@@ -3570,8 +3566,8 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Unable to retrieve report"
-# Story #30
-  /geocode: 
+  # Story #30
+  /geocode:
     get:
       tags:
         - Reports
@@ -3580,21 +3576,21 @@ paths:
         Convert a human-readable address to geographic coordinates and bounding box for report searching.
         This endpoint enables citizens and unregistered users to search for reports by typing an address 
         instead of manually selecting coordinates on a map (Story #30).
-        
+
         The endpoint uses a geocoding service to convert the address to coordinates and calculates 
         a bounding box based on the provided zoom level. The zoom level determines the size of the 
         search area around the geocoded location.
-        
-        **Zoom levels and search radius:**
-        - 18-19: Street level (~100m radius)
-        - 16-17: Neighborhood level (~500m radius)  
-        - 14-15: District level (~2km radius)
-        - 12-13: City area level (~5km radius)
-        
+
+        **Available zoom levels and search radius:**
+        - 19: Street level (~100m radius)
+        - 16: Neighborhood level (~500m radius)  
+        - 14: District level (~2km radius)
+        - 12: City area level (~5km radius)
+
         The returned bounding box can be used with the `/reports?bbox=` endpoint to retrieve 
         reports within that specific area. This allows users to easily explore and analyze 
         existing reports in a specific geographic area by typing an address.
-        
+
         **Workflow:**
         1. User types an address (e.g., "Via Roma, Torino")
         2. User selects zoom level (determines search area size)
@@ -3602,7 +3598,7 @@ paths:
         4. Backend returns coordinates and bounding box
         5. Frontend calls `/reports?bbox=<returned_bbox>` to get reports in that area
         6. Frontend displays reports on map centered at the geocoded location
-        
+
         This endpoint does not require authentication and can be used by unregistered users.
       operationId: geocodeAddress
       parameters:

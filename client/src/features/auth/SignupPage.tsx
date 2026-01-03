@@ -7,8 +7,8 @@ import Input from "../../components/ui/Input.tsx";
 import { SignupValidator } from "../../validators/SignupValidator";
 import type { SignupFormData } from "../../../../shared/SignupTypes";
 
-interface ExtendedSignupFormData extends SignupFormData{
-    confirmPassword: string,
+interface ExtendedSignupFormData extends SignupFormData {
+  confirmPassword: string;
 }
 
 export default function SignupPage() {
@@ -19,9 +19,9 @@ export default function SignupPage() {
 
   const handleSignup = async (values: ExtendedSignupFormData) => {
     try {
-      const { confirmPassword, ...apiData} = values;
+      const { confirmPassword, ...apiData } = values;
       await signup(apiData);
-      // Dopo la registrazione, reindirizza alla pagina di verifica email
+      // After registration, redirect to the email verification page
       navigate("/verify-email", { state: { email: values.email } });
       form.resetForm();
     } catch (err) {
@@ -57,9 +57,14 @@ export default function SignupPage() {
     },
     validate: (values) => {
       const result = SignupValidator.validate(values as SignupFormData);
-      const errors: Partial<Record<keyof ExtendedSignupFormData,string>> = result.isValid ? {} : (result.errors as Partial<Record<keyof ExtendedSignupFormData,string>>)
+      const errors: Partial<Record<keyof ExtendedSignupFormData, string>> =
+        result.isValid
+          ? {}
+          : (result.errors as Partial<
+              Record<keyof ExtendedSignupFormData, string>
+            >);
 
-      if(values.confirmPassword && values.password != values.confirmPassword){
+      if (values.confirmPassword && values.password != values.confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
       return errors;
@@ -178,7 +183,7 @@ export default function SignupPage() {
               }
               className="mb-4"
             />
-             <Input
+            <Input
               type="password"
               id="confirmPassword"
               name="confirmPassword"
@@ -187,7 +192,9 @@ export default function SignupPage() {
               onChange={form.handleChange}
               onFocus={() => setShowPasswordRequirements(true)}
               onBlur={() =>
-                setShowPasswordRequirements(form.values.confirmPassword.length > 0)
+                setShowPasswordRequirements(
+                  form.values.confirmPassword.length > 0
+                )
               }
               error={form.errors.confirmPassword}
               disabled={form.isSubmitting}
