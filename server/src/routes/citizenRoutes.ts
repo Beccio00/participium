@@ -1,6 +1,14 @@
 import { Router } from "express";
 import { asyncHandler } from "../middlewares/errorMiddleware";
-import { signup, verifyEmail, resendVerificationEmail, getCitizenProfile, updateCitizenProfile, uploadCitizenPhoto, deleteCitizenPhoto } from "../controllers/citizenController";
+import { 
+    signup, 
+    verifyEmail, 
+    resendVerificationEmail, 
+    getCitizenProfile, 
+    updateCitizenProfile, 
+    uploadCitizenPhoto, 
+    deleteCitizenPhoto 
+} from "../controllers/citizenController";
 import { Roles } from "../interfaces/UserDTO";
 import { requireCitizen } from "../middlewares/routeProtection";
 import { ApiValidationMiddleware } from "../middlewares/validationMiddlewere";

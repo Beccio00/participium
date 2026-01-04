@@ -1,17 +1,23 @@
+// React hooks
 import { useEffect, useRef, useState } from "react";
-import { getReports } from "../api/api";
+// API to fetch approved reports
+
+// Leaflet and marker cluster plugin
 import L from "leaflet";
 import "leaflet.markercluster/dist/leaflet.markercluster.js";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
+// Types
 import type { Report } from "../types/report.types";
+// Styles
 import "../styles/MapView.css";
+// Info modal
 import InfoModal from "./InfoModal";
 
-// Torino coordinates fallback
+// Default coordinates to center the map on Turin
 const TURIN: [number, number] = [45.0703, 7.6869];
 
-// Helper function to get status color for map markers
+// Returns a color based on the report status (for markers)
 const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
     case "resolved":
@@ -27,9 +33,9 @@ const getStatusColor = (status: string): string => {
   }
 };
 
-// Helper function to create colored marker icon
+// Creates a colored SVG icon for report markers
 const createColoredIcon = (color: string) => {
-  // marker svg
+  // Custom SVG marker
   const svg = `
     <svg width="38" height="54" viewBox="0 0 38 54" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g filter="url(#shadow)">
@@ -51,7 +57,7 @@ const createColoredIcon = (color: string) => {
   });
 };
 
-// Helper function to create selected location marker icon
+// Creates an icon for the selected location on the map
 const createSelectedLocationIcon = () => {
   return L.divIcon({
     className: "selected-location-marker",
@@ -80,56 +86,54 @@ const createSelectedLocationIcon = () => {
   });
 };
 
+// Props accepted by the MapView component
 interface MapViewProps {
   onLocationSelect?: (lat: number, lng: number) => void;
   selectedLocation?: [number, number] | null;
+  selectedZoom?: number;
   reports?: Report[];
   selectedReportId?: number | null;
   customSelectedIcon?: L.DivIcon | null;
   onReportDetailsClick?: (reportId: number) => void;
   hideInfoButton?: boolean;
+  searchArea?: {
+    bbox?: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
+    center?: [number, number];
+    radiusMeters?: number;
+  } | null;
 }
 
+// Main component for the interactive map
 export default function MapView({
   onLocationSelect,
   selectedLocation,
-  reports: initialReports = [],
+  selectedZoom,
+  reports = [],
   selectedReportId,
   customSelectedIcon,
   onReportDetailsClick,
   hideInfoButton = false,
+  searchArea = null,
 }: MapViewProps) {
+  // Ref for the map div
   const mapRef = useRef<HTMLDivElement>(null);
+  // Ref for the Leaflet map instance
   const mapInstanceRef = useRef<L.Map | null>(null);
+  // Ref for the selected marker
   const markerRef = useRef<L.Marker | null>(null);
+  // Ref for report markers
   const reportMarkersRef = useRef<L.Marker[]>([]);
+  // Map center e zoom
   const [center, setCenter] = useState<[number, number]>(TURIN);
+  const [zoom, setZoom] = useState<number>(13);
+  // State for tile loading errors
   const [hasTileError, setHasTileError] = useState(false);
+  // Geojson data for Turin (optional)
   const [turinData, setTurinData] = useState<any | null>(null);
+  // State for boundary alert
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
+  // State for showing the info modal
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [reports, setReports] = useState<Report[]>(initialReports);
-  // Polling per aggiornare i report ogni 10 secondi
-  useEffect(() => {
-    let polling = true;
-    const fetchReports = async () => {
-      try {
-        const data = await getReports();
-        // Filtra solo i report non risolti
-        setReports(data.filter((r) => r.status.toLowerCase() !== "resolved"));
-      } catch (err) {
-        // Puoi gestire errori qui se vuoi
-      }
-    };
-    fetchReports();
-    const interval = setInterval(() => {
-      if (polling) fetchReports();
-    }, 10000);
-    return () => {
-      polling = false;
-      clearInterval(interval);
-    };
-  }, []);
 
   useEffect(() => {
     fetch("/turin-boundary3.geojson")
@@ -147,15 +151,18 @@ export default function MapView({
       });
   }, []);
 
-  // Always center on Turin
+  // Upddate center/zoom if selectedLocation/selectedZoom change
   useEffect(() => {
-    setCenter(TURIN);
-  }, []);
+    if (selectedLocation) {
+      setCenter(selectedLocation);
+      if (selectedZoom) setZoom(selectedZoom);
+    }
+  }, [selectedLocation, selectedZoom]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current || !turinData) return;
 
-    const map = L.map(mapRef.current).setView(center, 13);
+    const map = L.map(mapRef.current).setView(center, zoom);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
@@ -243,7 +250,7 @@ export default function MapView({
     // Add markers for reports using MarkerClusterGroup
     /* const markerCluster = (L as any).markerClusterGroup({
       showCoverageOnHover: false,
-      maxClusterRadius: 60, // distanza in pixel per raggruppare
+      maxClusterRadius: 60, // distance in pixels for clustering
       spiderfyOnMaxZoom: true,
       zoomToBoundsOnClick: true,
       iconCreateFunction: function (cluster: any) {
@@ -260,7 +267,7 @@ export default function MapView({
       const marker = L.marker([report.latitude, report.longitude], {
         icon: createColoredIcon(getStatusColor(report.status)),
       });
-      // Popup HTML con pulsante View Details
+      // Popup HTML with View Details button
       const popupContent = document.createElement("div");
       popupContent.className = "report-popup";
       popupContent.innerHTML = `
@@ -318,6 +325,69 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turinData]);
 
+  // Draw search area (circle or bbox) when searchArea is provided
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    let areaLayer: L.Layer | null = null;
+    if (searchArea) {
+      if (searchArea.bbox) {
+        // Validate bbox values
+        let [minLon, minLat, maxLon, maxLat] = searchArea.bbox;
+        if (
+          [minLon, minLat, maxLon, maxLat].some(
+            (v) => typeof v !== "number" || isNaN(v)
+          )
+        ) {
+          // Invalid bbox, do not draw
+          return;
+        }
+        // Ensure correct order: [southWest, northEast]
+        const swLat = Math.min(minLat, maxLat);
+        const swLon = Math.min(minLon, maxLon);
+        const neLat = Math.max(minLat, maxLat);
+        const neLon = Math.max(minLon, maxLon);
+
+        // Create a custom pane with higher z-index for the search area
+        const map = mapInstanceRef.current;
+        if (!map.getPane("searchAreaPane")) {
+          const pane = map.createPane("searchAreaPane");
+          pane.style.zIndex = "650"; // Above overlays (400) and markers (600)
+          pane.style.pointerEvents = "none"; // Allow clicking through
+        }
+
+        // Draw rectangle for bbox
+        areaLayer = L.rectangle(
+          [
+            [swLat, swLon],
+            [neLat, neLon],
+          ],
+          {
+            color: "#3388ff", // soft blue
+            weight: 2, // thin border
+            fillColor: "#3388ff",
+            fillOpacity: 0.15, // more transparent
+            opacity: 0.8, // softer border
+            pane: "searchAreaPane", // Use custom pane with higher z-index
+          }
+        ).addTo(mapInstanceRef.current);
+      } else if (searchArea.center && searchArea.radiusMeters) {
+        // Draw circle for radius
+        areaLayer = L.circle(searchArea.center, {
+          radius: searchArea.radiusMeters,
+          color: "#007bff",
+          fillColor: "#007bff",
+          fillOpacity: 0.15,
+          weight: 2,
+        }).addTo(mapInstanceRef.current);
+      }
+    }
+    return () => {
+      if (areaLayer && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(areaLayer);
+      }
+    };
+  }, [searchArea]);
+
   // Update report markers when reports change
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -373,9 +443,9 @@ export default function MapView({
               )};">${report.status}</span>
             </div>
           </div>
-          <div style="margin-top:0.5rem;font-size:12px;">Reported by: <b>${
+          <div style="margin-top:0.5rem;font-size:12px;">Created by: <b>${
             report.isAnonymous
-              ? "anonymous"
+              ? "Anonymous"
               : report.user
               ? `${report.user.firstName} ${report.user.lastName}`
               : "user"
@@ -405,9 +475,9 @@ export default function MapView({
 
   useEffect(() => {
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView(center);
+      mapInstanceRef.current.setView(center, zoom);
     }
-  }, [center]);
+  }, [center, zoom]);
 
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -434,7 +504,7 @@ export default function MapView({
       const marker = reportMarkersRef.current[reportIndex];
       const report = reports[reportIndex];
 
-      // Trova il cluster che contiene il marker
+      // Find the cluster containing the marker
       let markerClusterLayer: any = null;
       mapInstanceRef.current.eachLayer((layer: any) => {
         if (layer && typeof layer.getVisibleParent === "function") {
@@ -443,7 +513,7 @@ export default function MapView({
       });
 
       if (markerClusterLayer) {
-        // Zooma sul marker e apri il popup dopo lo zoom
+        // Zoom to the marker and open the popup after zooming
         markerClusterLayer.zoomToShowLayer(marker, () => {
           marker.openPopup();
         });

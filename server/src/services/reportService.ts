@@ -11,6 +11,7 @@ import {
 } from "../interfaces/ReportDTO";
 import { ReportPhoto as SharedReportPhoto } from "../../../shared/ReportTypes";
 import { Role } from "../interfaces/UserDTO";
+import { BoundingBox } from "./geocodingService";
 
 // Repositories
 import { ReportRepository } from "../repositories/ReportRepository";
@@ -190,16 +191,18 @@ export async function getReportById(
  * Restituisce tutti i report approvati (assegnati, in corso, risolti)
  */
 export async function getApprovedReports(
-  category?: ReportCategory
+  category?: ReportCategory,
+  bbox?: BoundingBox
 ): Promise<ReportDTO[]> {
-  const reports = await reportRepository.findByStatusAndCategory(
+  const reports = await reportRepository.findByStatusCategoryAndBounds(
     [
       ReportStatus.ASSIGNED,
       ReportStatus.EXTERNAL_ASSIGNED,
       ReportStatus.IN_PROGRESS,
       ReportStatus.RESOLVED,
     ],
-    category
+    category,
+    bbox
   );
 
   return reports.map(toReportDTO);

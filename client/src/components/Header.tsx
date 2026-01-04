@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Navbar, Container, Nav, Button, Badge, Image } from "react-bootstrap";
 import { useAuth } from "../hooks/useAuth";
-import { MUNICIPALITY_AND_EXTERNAL_ROLES, getRoleLabel, TECHNICIAN_ROLES } from "../utils/roles";
+import {
+  MUNICIPALITY_AND_EXTERNAL_ROLES,
+  getRoleLabel,
+  TECHNICIAN_ROLES,
+} from "../utils/roles";
 import {
   PersonCircle,
   ArrowLeft,
@@ -67,7 +71,13 @@ function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
   return (
     <div style={avatarStyle}>
       {photo ? (
-        <Image src={photo} roundedCircle width={size} height={size} alt="avatar" />
+        <Image
+          src={photo}
+          roundedCircle
+          width={size}
+          height={size}
+          alt="avatar"
+        />
       ) : (
         <PersonCircle />
       )}
@@ -132,7 +142,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationCount, setNotificationCount] = useState(0);
 
-  // Carica e salva le notifiche lette in localStorage
+  // Load and save read notifications in localStorage
   const [readNotificationIds, setReadNotificationIds] = useState<number[]>(
     () => {
       const saved = localStorage.getItem("readNotificationIds");
@@ -140,7 +150,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     }
   );
 
-  // Salva le notifiche lette in localStorage quando cambiano
+  // Save read notifications in localStorage when they change
   useEffect(() => {
     localStorage.setItem(
       "readNotificationIds",
@@ -148,10 +158,10 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     );
   }, [readNotificationIds]);
 
-  // Polling per le notifiche
+  // Polling for notifications
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
-    
+
     async function pollNotifications() {
       if (!canUserSeeNotifications(user, isAuthenticated)) {
         setNotifications([]);
@@ -161,7 +171,9 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
 
       try {
         const notifs = await getNotifications();
-        const unread = notifs.filter((n) => !readNotificationIds.includes(n.id));
+        const unread = notifs.filter(
+          (n) => !readNotificationIds.includes(n.id)
+        );
         setNotifications(unread);
         setNotificationCount(unread.length);
       } catch {
@@ -169,14 +181,14 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
         setNotificationCount(0);
       }
     }
-    
+
     pollNotifications();
     interval = setInterval(pollNotifications, 10000); // ogni 10s
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isAuthenticated, user, readNotificationIds]);
-  
+
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -191,7 +203,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     }
   }, [isAuthenticated, user]);
 
-  // Funzione per aprire il modale report dalla notifica
+  // Function to open the report modal from the notification
   const handleOpenReportFromNotification = async (reportId: number) => {
     setShowNotifications(false);
     markNotificationAsRead(reportId);
@@ -203,7 +215,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const markNotificationAsRead = (reportId: number) => {
     const notif = notifications.find((n) => n.reportId === reportId);
     if (!notif) return;
-    
+
     setReadNotificationIds((prev) => [...prev, notif.id]);
     setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
     setNotificationCount((prev) => Math.max(0, prev - 1));
@@ -222,7 +234,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     } catch {
       // fallback: usa lo stato locale se la fetch fallisce
     }
-    
+
     const report = reports.find((r) => r.id === reportId);
     if (report) {
       setSelectedReport(report);
@@ -253,7 +265,8 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const handleGoToLogin = () => navigate("/login");
   const handleGoToSignup = () => navigate("/signup");
   const handleBackHome = () => {
-    const shouldLogout = user?.role === "ADMINISTRATOR" || user?.role === "TECHNICAL_OFFICE";
+    const shouldLogout =
+      user?.role === "ADMINISTRATOR" || user?.role === "TECHNICAL_OFFICE";
     if (shouldLogout) {
       handleLogout();
       return;
