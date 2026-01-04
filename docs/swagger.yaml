@@ -390,7 +390,7 @@ paths:
       tags:
         - Citizens
       summary: Update citizen profile configuration
-      description: Update name, surname, email, password, Telegram username and email notification preference. At least one field must be provided.
+      description: Update name, surname, email, password and email notification preference. At least one field must be provided.
       operationId: updateCitizenConfig
       security:
         - SessionAuth: []
@@ -756,6 +756,49 @@ paths:
                 code: 403
                 error: "Forbidden"
                 message: "Only citizens can access this resource"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/check-linked:
+    post:
+      tags:
+        - Telegram
+      summary: Check if a Telegram ID is linked to a user
+      description: |
+        Check whether a given Telegram ID is already linked to a Participium user account.
+        This endpoint is intended to be called by the Telegram bot before starting interactive flows.
+      operationId: checkTelegramLinked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                telegramId:
+                  type: string
+              required:
+                - telegramId
+            example:
+              telegramId: "123456789"
+      responses:
+        "200":
+          description: Telegram linkage status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  linked:
+                    type: boolean
+              example:
+                linked: true
+        "400":
+          description: Bad request - missing telegramId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -4336,6 +4379,8 @@ components:
         description:
           type: string
           description: Detailed description of the issue
+          minLength: 10
+          maxLength: 1000
           example: "Large pothole near the pedestrian crossing, causing risk for cyclists."
         category:
           $ref: "#/components/schemas/ReportCategory"
@@ -4536,13 +4581,7 @@ components:
           format: password
           description: New password (minimum 8 characters)
           example: NewSecurePass123!
-        telegramUsername:
-          type: string
-          nullable: true
-          minLength: 0
-          maxLength: 32
-          description: Telegram username (without @)
-          example: mario_rossi
+        
         emailNotificationsEnabled:
           type: boolean
           description: Toggle for email notifications

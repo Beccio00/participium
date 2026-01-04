@@ -72,7 +72,6 @@ export async function updateCitizenProfile(
     email?: string;
     password?: string;
     salt?: string;
-    telegramUsername?: string | null;
     emailNotificationsEnabled?: boolean;
   }
 ): Promise<CitizenProfileDTO> {
@@ -82,7 +81,6 @@ export async function updateCitizenProfile(
   if (data.email) updateData.email = data.email;
   if (data.password) updateData.password = data.password;
   if (data.salt) updateData.salt = data.salt;
-  if (data.telegramUsername !== undefined) updateData.telegram_username = data.telegramUsername;
   if (data.emailNotificationsEnabled !== undefined) updateData.email_notifications_enabled = data.emailNotificationsEnabled;
 
   const updatedUser = await userRepository.update(userId, updateData);
