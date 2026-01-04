@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UnprocessableEntityError } from "../utils";
-import { isPointInTurin } from "../../../shared/TurinBoundaries";
+import { isPointInTurin, isPointInPolygon , TURIN_POLYGON} from "../../../shared/TurinBoundaries";
 
 // Export for use in geocoding controller
 export function isWithinTurinBoundaries(lat: number, lng: number): boolean {
