@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
   Button,
@@ -9,7 +9,7 @@ import {
   Form,
   Card,
 } from "react-bootstrap";
-import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon, LockFill } from "react-bootstrap-icons";
+import { GeoAlt, FileText, Tag, Camera, X, Map as MapIcon, ExclamationCircleFill } from "react-bootstrap-icons";
 import MapView from "./MapView";
 // Marker stile Google Maps puntatore, usato per la location selezionata
 import L from "leaflet";
@@ -47,7 +47,6 @@ import {
   sectionTitleStyle,
   coordinatesStyle,
   mapContainerStyle,
-  alertOverlayStyle,
   photoPreviewStyle,
   dndStyle,
   formControlStyle,
@@ -83,7 +82,6 @@ export default function ReportForm() {
   const [selectedLocation, setSelectedLocation] = useState<
     [number, number] | null
   >(null);
-  const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -92,27 +90,40 @@ export default function ReportForm() {
   const [address, setAddress] = useState<string | null>(null); 
   const [loadingAddress, setLoadingAddress] = useState(false); 
   const topRef = useRef<HTMLDivElement>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    description?: string;
+    category?: string;
+    photos?: string;
+    location?: string;
+  }>({});
+  const [touched, setTouched] = useState<{
+    title?: boolean;
+    description?: boolean;
+    category?: boolean;
+    photos?: boolean;
+    location?: boolean;
+  }>({});
+  const [serverError, setServerError] = useState<string | null>(null);
+
+
 
   const processFiles = (newFiles: File[]) => {
     //validation on dnd
     const validateImages = newFiles.filter((file) =>
       file.type.startsWith("image/")
     );
-    if (validateImages.length < newFiles.length) {
-      setError("Only image files are allowed.");
-    }
     if (validateImages.length === 0) return;
 
     const totalFiles = [...files, ...validateImages];
 
     if (totalFiles.length > 3) {
-      setError("You can upload a maximum of 3 photos.");
       setFiles(totalFiles.slice(0, 3));
     } else {
       setFiles(totalFiles);
-
-      if (validateImages.length === newFiles.length) {
-        setError(null);
+      // Clear photo error when files are added
+      if (totalFiles.length > 0) {
+        setFieldErrors((prev) => ({ ...prev, photos: undefined }));
       }
     }
   };
@@ -156,7 +167,52 @@ export default function ReportForm() {
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
+      // Clear error when user starts typing (except for description min length)
+      if (name === 'description') {
+        if (value.trim().length < 10) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            description: value.trim() ? 'Description is too short. Please provide at least 10 characters' : undefined,
+          }));
+        } else {
+          setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
+      } else if (value.trim()) {
+        setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
     }
+  };
+
+  const validateField = (fieldName: string) => {
+    const errors: typeof fieldErrors = {};
+    
+    switch (fieldName) {
+      case 'title':
+        if (!formData.title.trim()) {
+          errors.title = 'The title is required';
+        }
+        break;
+      case 'description':
+        if (!formData.description.trim()) {
+          errors.description = 'The description is required';
+        } else if (formData.description.trim().length < 10) {
+          errors.description = 'Description is too short. Please provide at least 10 characters';
+        }
+        break;
+      case 'category':
+        if (!formData.category) {
+          errors.category = 'Please select a category';
+        }
+        break;
+    }
+    
+    setFieldErrors((prev) => ({ ...prev, ...errors }));
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleBlur = (fieldName: string) => {
+    setTouched((prev) => ({ ...prev, [fieldName]: true }));
+    validateField(fieldName);
   };
 
   const handleLocationSelect = async (lat: number, lng: number) => {
@@ -166,27 +222,50 @@ export default function ReportForm() {
     const fetchedAddress = await fetchAddressFromCoordinates(lat, lng);
     setAddress(fetchedAddress);
     setLoadingAddress(false);
+    // Clear location error when location is selected
+    setFieldErrors((prev) => ({ ...prev, location: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const missingFields = [];
-    if (!formData.title.trim()) missingFields.push("Title");
-    if (!formData.description.trim()) missingFields.push("Description");
-    if (!formData.category) missingFields.push("Category");
-    if (files.length === 0) missingFields.push("Photos (min 1 max 3)");
-    if (!selectedLocation) missingFields.push("Location");
+    // Mark all fields as touched
+    setTouched({
+      title: true,
+      description: true,
+      category: true,
+      photos: true,
+      location: true,
+    });
 
-    if (missingFields.length > 0) {
-      setError(
-        `Please fill in the following fields: ${missingFields.join(", ")}.`
-      );
+    const errors: typeof fieldErrors = {};
+    
+    if (!formData.title.trim()) {
+      errors.title = "The title is required";
+    }
+    if (!formData.description.trim()) {
+      errors.description = "The description is required";
+    } else if (formData.description.trim().length < 10) {
+      errors.description = "Description is too short. Please provide at least 10 characters";
+    }
+    if (!formData.category) {
+      errors.category = "Please select a category";
+    }
+    if (files.length === 0) {
+      errors.photos = "Upload at least 1 photo (max 3)";
+    }
+    if (!selectedLocation) {
+      errors.location = "Click on the map to select a location";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       topRef.current?.scrollIntoView({ behavior: "smooth" });
       return;
     }
 
-    setError(null);
+    setFieldErrors({});
+    setServerError(null);
 
     try {
       const dataToSend = new FormData();
@@ -204,21 +283,14 @@ export default function ReportForm() {
       navigate("/");
     } catch (err: any) {
       console.error("Error submitting report:", err);
-      setError(
-        err?.message || "An error occurred while submitting the report."
+      setServerError(
+        err?.message || "An error occurred while submitting the report. Please try again."
       );
       topRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => {
-        setError(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
+
 
   // Se l'utente non è autenticato o non è un cittadino, mostra messaggio
   if (!isAuthenticated || (user && !userHasRole(user, Role.CITIZEN))) {
@@ -245,20 +317,25 @@ export default function ReportForm() {
               <Row className="justify-content-center">
                 <Col lg={8}>
                   <div className="mb-4">
+
+                    {serverError && (
+                      <Alert
+                        variant="danger"
+                        dismissible
+                        onClose={() => setServerError(null)}
+                        className="mb-5"
+                      >
+                        <Alert.Heading style={{ fontSize: "1rem", fontWeight: 600 }}>
+                          <ExclamationCircleFill className="me-2" />
+                          Error
+                        </Alert.Heading>
+                        {serverError}
+                      </Alert>
+                    )}
+
                     <h3 style={sectionTitleStyle}>
                       <Tag /> Report Details
                     </h3>
-
-                    {error && (
-                      <Alert
-                        style={alertOverlayStyle}
-                        variant="danger"
-                        dismissible
-                        onClose={() => setError(null)}
-                      >
-                        {error}
-                      </Alert>
-                    )}
 
                     <Form.Group className="mb-3">
                       <Form.Label className="fw-semibold">Title</Form.Label>
@@ -267,8 +344,10 @@ export default function ReportForm() {
                         name="title"
                         value={formData.title}
                         onChange={handleInputChange}
+                        onBlur={() => handleBlur('title')}
                         placeholder="Brief title for your report"
                         required
+                        isInvalid={touched.title && !!fieldErrors.title}
                         style={{
                           ...formControlStyle,
                           boxShadow:
@@ -279,10 +358,15 @@ export default function ReportForm() {
                             focusedInput === "title"
                               ? "translateY(-1px)"
                               : undefined,
+                          borderColor: touched.title && fieldErrors.title ? "#dc3545" : undefined,
                         }}
                         onFocus={() => setFocusedInput("title")}
-                        onBlur={() => setFocusedInput(null)}
                       />
+                      {touched.title && fieldErrors.title && (
+                        <Form.Control.Feedback type="invalid" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <ExclamationCircleFill size={14} /> {fieldErrors.title}
+                        </Form.Control.Feedback>
+                      )}
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -295,8 +379,10 @@ export default function ReportForm() {
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
+                        onBlur={() => handleBlur('description')}
                         placeholder="Describe the issue in detail..."
                         required
+                        isInvalid={touched.description && !!fieldErrors.description}
                         style={{
                           ...formControlStyle,
                           boxShadow:
@@ -307,10 +393,15 @@ export default function ReportForm() {
                             focusedInput === "description"
                               ? "translateY(-1px)"
                               : undefined,
+                          borderColor: touched.description && fieldErrors.description ? "#dc3545" : undefined,
                         }}
                         onFocus={() => setFocusedInput("description")}
-                        onBlur={() => setFocusedInput(null)}
                       />
+                      {touched.description && fieldErrors.description && (
+                        <Form.Control.Feedback type="invalid" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <ExclamationCircleFill size={14} /> {fieldErrors.description}
+                        </Form.Control.Feedback>
+                      )}
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -319,7 +410,9 @@ export default function ReportForm() {
                         name="category"
                         value={formData.category}
                         onChange={handleInputChange}
+                        onBlur={() => handleBlur('category')}
                         required
+                        isInvalid={touched.category && !!fieldErrors.category}
                         style={{
                           ...formControlStyle,
                           boxShadow:
@@ -330,9 +423,9 @@ export default function ReportForm() {
                             focusedInput === "category"
                               ? "translateY(-1px)"
                               : undefined,
+                          borderColor: touched.category && fieldErrors.category ? "#dc3545" : undefined,
                         }}
                         onFocus={() => setFocusedInput("category")}
-                        onBlur={() => setFocusedInput(null)}
                       >
                         <option value="">Select a category</option>
                         {[
@@ -354,6 +447,11 @@ export default function ReportForm() {
                           </option>
                         ))}
                       </Form.Select>
+                      {touched.category && fieldErrors.category && (
+                        <Form.Control.Feedback type="invalid" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <ExclamationCircleFill size={14} /> {fieldErrors.category}
+                        </Form.Control.Feedback>
+                      )}
                     </Form.Group>
                     <Form.Group className="mb-4 mt-4">
                       <Form.Label className="fw-semibold">
@@ -366,7 +464,10 @@ export default function ReportForm() {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
-                        style={dndStyle(isDragging)}
+                        style={{
+                          ...dndStyle(isDragging),
+                          borderColor: touched.photos && fieldErrors.photos ? "#dc3545" : dndStyle(isDragging).borderColor,
+                        }}
                       >
                         <input
                           type="file"
@@ -385,6 +486,11 @@ export default function ReportForm() {
                           JPG, PNG (Max 3 foto)
                         </small>
                       </div>
+                      {touched.photos && fieldErrors.photos && (
+                        <div className="text-danger mt-2" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem' }}>
+                          <ExclamationCircleFill size={14} /> {fieldErrors.photos}
+                        </div>
+                      )}
                       <div
                         style={{
                           display: "flex",
@@ -483,6 +589,8 @@ export default function ReportForm() {
                         height: "clamp(400px, 60vh, 600px)",
                         ...mapContainerStyle,
                         position: "relative",
+                        borderColor: touched.location && fieldErrors.location ? "#dc3545" : mapContainerStyle.borderColor,
+                        borderWidth: touched.location && fieldErrors.location ? "2px" : mapContainerStyle.borderWidth,
                       }}
                     >
                       {/* MapView con marker custom */}
@@ -494,6 +602,11 @@ export default function ReportForm() {
                         hideInfoButton={true}
                       />
                     </div>
+                    {touched.location && fieldErrors.location && (
+                      <div className="text-danger mt-2" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem' }}>
+                        <ExclamationCircleFill size={14} /> {fieldErrors.location}
+                      </div>
+                    )}
 
                     {selectedLocation && (
                       <div style={coordinatesStyle}>

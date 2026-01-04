@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Container, Alert, Badge, Nav } from 'react-bootstrap';
-import { useNavigate } from "react-router";
 import { useAuth, useForm, useLoadingState } from "../../hooks";
 import Button from "../../components/ui/Button.tsx";
 import Card, { CardHeader, CardBody } from "../../components/ui/Card.tsx";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import AccessRestricted from "../../components/AccessRestricted";
 import InternalStaffTable from './InternalStaffTable';
 import ExternalMaintainersTable from './ExternalMaintainersTable';
@@ -111,7 +111,6 @@ function getTabConfiguration(tab: UserTab): TabConfig {
 }
 
 export default function AdminPanel() {
-  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   
   //data States
@@ -125,6 +124,11 @@ export default function AdminPanel() {
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<MunicipalityUserResponse | null>(null);
   const { loadingState, setLoading, setIdle } = useLoadingState();
+  
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isAdmin =
     isAuthenticated &&
@@ -252,19 +256,31 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDelete = async (userId: number) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+  const handleDeleteClick = (userId: number) => {
+    setUserToDelete(userId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (userToDelete === null) return;
 
     try {
-      setLoading();
+      setIsDeleting(true);
       setError("");
-      await deleteByTab(userId);
+      await deleteByTab(userToDelete);
       await loadData();
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user");
     } finally {
-      setIdle();
+      setIsDeleting(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   };
 
   const toggleForm = () => {
@@ -413,20 +429,36 @@ export default function AdminPanel() {
             )}
 
             {activeTab === 'internal' && (
-              <InternalStaffTable users={internalUsers} onDelete={handleDelete} onEdit={handleEdit} />
+              <InternalStaffTable users={internalUsers} onDelete={handleDeleteClick} onEdit={handleEdit} />
             )}
             
             {activeTab === 'external' && (
-              <ExternalMaintainersTable users={externalUsers} onDelete={handleDelete} />
+              <ExternalMaintainersTable users={externalUsers} onDelete={handleDeleteClick} />
             )}
 
             {activeTab === 'companies' && (
-              <CompaniesTable companies={companies} onDelete={handleDelete} />
+              <CompaniesTable companies={companies} onDelete={handleDeleteClick} />
             )}
             
           </CardBody>
         </Card>
       </Container>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        show={showDeleteModal}
+        onHide={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Confirmation"
+        message={activeTab === 'companies' 
+          ? "Are you sure you want to delete this company? This action cannot be undone."
+          : "Are you sure you want to delete this user? This action cannot be undone."
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

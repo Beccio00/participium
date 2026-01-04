@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Modal, Button, Spinner, Alert } from "react-bootstrap";
-import { Telegram, Link45deg, CheckCircleFill, XCircleFill } from "react-bootstrap-icons";
+import { Telegram, Link45deg, CheckCircleFill, XCircleFill, ExclamationTriangleFill } from "react-bootstrap-icons";
 import {
   getTelegramStatus,
   generateTelegramToken,
@@ -20,6 +20,7 @@ export default function TelegramModal({ show, onHide }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [deepLink, setDeepLink] = useState<string | null>(null);
   const [linkGenerated, setLinkGenerated] = useState(false);
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
 
   useEffect(() => {
     if (show) {
@@ -69,20 +70,26 @@ export default function TelegramModal({ show, onHide }: Props) {
     }
   };
 
-  const handleUnlink = async () => {
-    if (!confirm("Are you sure you want to unlink your Telegram account?")) {
-      return;
-    }
+  const handleUnlinkClick = () => {
+    setShowUnlinkConfirm(true);
+  };
+
+  const handleUnlinkConfirm = async () => {
     setActionLoading(true);
     setError(null);
     try {
       await unlinkTelegram();
       setStatus({ linked: false, telegramUsername: null, telegramId: null });
+      setShowUnlinkConfirm(false);
     } catch (err: any) {
       setError(err.message || "Failed to unlink Telegram");
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleUnlinkCancel = () => {
+    setShowUnlinkConfirm(false);
   };
 
   const handleClose = () => {
@@ -108,6 +115,50 @@ export default function TelegramModal({ show, onHide }: Props) {
       );
     }
 
+    // Show unlink confirmation view
+    if (showUnlinkConfirm) {
+      return (
+        <div className="text-center py-3">
+          <ExclamationTriangleFill size={48} className="mb-3" style={{ color: "var(--primary)" }} />
+          <h5 style={{ color: "var(--text)" }}>Unlink Telegram</h5>
+          <p className="text-muted">
+            Are you sure you want to unlink your Telegram account? You will no longer receive notifications on Telegram.
+          </p>
+          <div className="d-flex gap-2 justify-content-center mt-4">
+            <Button
+              variant="outline-secondary"
+              onClick={handleUnlinkCancel}
+              disabled={actionLoading}
+              style={{
+                borderRadius: "8px",
+                padding: "8px 20px",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleUnlinkConfirm}
+              disabled={actionLoading}
+              style={{
+                borderRadius: "8px",
+                padding: "8px 20px",
+              }}
+            >
+              {actionLoading ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Unlinking...
+                </>
+              ) : (
+                "Unlink"
+              )}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     // Account is linked
     if (status?.linked) {
       return (
@@ -126,7 +177,7 @@ export default function TelegramModal({ show, onHide }: Props) {
           <hr />
           <Button
             variant="outline-danger"
-            onClick={handleUnlink}
+            onClick={handleUnlinkClick}
             disabled={actionLoading}
             size="sm"
           >

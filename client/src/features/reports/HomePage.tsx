@@ -14,7 +14,6 @@ import { getReports as getReportsApi } from "../../api/api";
 
 import { Role } from "../../../../shared/RoleTypes.ts";
 import { ReportStatus } from "../../../../shared/ReportTypes.ts";
-import { userHasRole } from "../../utils/roles";
 import "../../styles/HomePage.css";
 
 // --- Helpers ---------------------------------------------------------------

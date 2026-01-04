@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
 import { Container, Row, Col } from "react-bootstrap";
 import { Clipboard } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";

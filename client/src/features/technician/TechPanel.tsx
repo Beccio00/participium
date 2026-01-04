@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router";
 import { Container, Row, Col, Modal, Form, Toast, ToastContainer, Alert } from "react-bootstrap";
 import { CheckCircle, XCircle, Tools, FileText, Clipboard, BoxSeam } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
@@ -103,7 +102,6 @@ function filterExternalAssignedReports(reports: any[]): any[] {
 
 export default function TechPanel() {
   const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   const [pendingReports, setPendingReports] = useState<AppReport[]>([]);
   const [otherReports, setOtherReports] = useState<AppReport[]>([]);

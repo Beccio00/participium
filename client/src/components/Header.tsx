@@ -7,11 +7,9 @@ import {
   getRoleLabel, 
   TECHNICIAN_ROLES,
   userHasRole,
-  userHasAnyRole,
 } from "../utils/roles";
 import {
   PersonCircle,
-  ArrowLeft,
   GearFill,
   BellFill,
   Telegram,
@@ -85,11 +83,9 @@ function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
 function NotificationButton({
   onClick,
   notificationCount,
-  isMobile = false,
 }: {
   onClick: () => void;
   notificationCount: number;
-  isMobile?: boolean;
 }) {
   return (
     <button
@@ -382,7 +378,6 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                   <NotificationButton
                     onClick={() => setShowNotifications(true)}
                     notificationCount={notificationCount}
-                    isMobile={true}
                   />
                 )}
               </div>
@@ -464,7 +459,6 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                       <NotificationButton
                         onClick={() => setShowNotifications(true)}
                         notificationCount={notificationCount}
-                        isMobile={false}
                       />
                     )}
                   </div>
