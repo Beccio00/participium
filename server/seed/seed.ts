@@ -46,6 +46,12 @@ const seedDatabase = async () => {
   }
 
   try {
+    await AppDataSource.query('DELETE FROM "TelegramLinkToken"');
+  } catch (error) {
+    console.log("Table TelegramLinkToken doesn't exist yet, skipping...");
+  }
+
+  try {
     await AppDataSource.query("DELETE FROM report");
   } catch (error) {
     console.log("Table report doesn't exist yet, skipping...");
@@ -203,6 +209,7 @@ const seedDatabase = async () => {
       salt,
       role: u.role,
       telegram_username: null,
+      telegram_id: null,
       email_notifications_enabled: true,
       isVerified: true,
       verificationToken: null,

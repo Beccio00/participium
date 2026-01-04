@@ -16,6 +16,7 @@ import citizenRoutes from "./routes/citizenRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import reportRoutes from "./routes/reportRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
+import telegramRoutes from "./routes/telegramRoutes";
 import { ApiValidationMiddleware } from "./middlewares/validationMiddlewere";
 import { initMinio } from "./utils/minioClient";
 import { geocodeAddress } from "./controllers/reportController";
@@ -75,6 +76,7 @@ export function createApp(): Express {
   app.use(CONFIG.ROUTES.ADMIN, adminRoutes);
   app.use(CONFIG.ROUTES.REPORTS, reportRoutes);
   app.use(CONFIG.ROUTES.NOTIFICATIONS, notificationRoutes);
+  app.use(CONFIG.ROUTES.TELEGRAM, telegramRoutes);
 
   // Story #30: Geocoding endpoint (no authentication required)
   app.get("/api/geocode", ApiValidationMiddleware, asyncHandler(geocodeAddress));

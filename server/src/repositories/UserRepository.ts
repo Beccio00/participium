@@ -18,6 +18,10 @@ export class UserRepository {
     return await this.repository.findOne({ where: { id } });
   }
 
+  async findByTelegramId(telegramId: string): Promise<User | null> {
+    return await this.repository.findOne({ where: { telegram_id: telegramId } });
+  }
+
   async findByIds(ids: number[]): Promise<User[]> {
     return await this.repository.findByIds(ids);
   }

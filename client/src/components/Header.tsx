@@ -12,9 +12,11 @@ import {
   ArrowLeft,
   GearFill,
   BellFill,
+  Telegram,
 } from "react-bootstrap-icons";
 import { getNotifications } from "../api/api";
 import NotificationModal from "./NotificationModal";
+import TelegramModal from "./TelegramModal";
 import ReportDetailsModal from "../features/reports/ReportDetailsModal";
 import { getReports } from "../api/api";
 
@@ -188,6 +190,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   }, [isAuthenticated, user, readNotificationIds]);
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
@@ -374,6 +377,21 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                     <GearFill />
                   </button>
                 )}
+                {user.role === "CITIZEN" && (
+                  <button
+                    onClick={() => setShowTelegramModal(true)}
+                    className="border-0 bg-transparent d-flex align-items-center justify-content-center"
+                    style={{
+                      color: "white",
+                      fontSize: "1.25rem",
+                      padding: "0.25rem",
+                      cursor: "pointer",
+                    }}
+                    aria-label="Telegram settings"
+                  >
+                    <Telegram />
+                  </button>
+                )}
                 {canUserSeeNotifications(user, isAuthenticated) && (
                   <NotificationButton
                     onClick={() => setShowNotifications(true)}
@@ -480,6 +498,22 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                         <GearFill />
                       </button>
                     )}
+                    {user.role === "CITIZEN" && (
+                      <button
+                        onClick={() => setShowTelegramModal(true)}
+                        className="border-0 bg-transparent d-flex align-items-center justify-content-center"
+                        style={{
+                          color: "white",
+                          fontSize: "1.25rem",
+                          padding: "0.25rem",
+                          marginLeft: "0.5rem",
+                          cursor: "pointer",
+                        }}
+                        aria-label="Telegram settings"
+                      >
+                        <Telegram />
+                      </button>
+                    )}
                     {/* Campanella notifiche desktop */}
                     {canUserSeeNotifications(user, isAuthenticated) && (
                       <NotificationButton
@@ -532,6 +566,10 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
         onHide={() => setShowNotifications(false)}
         onOpenReport={handleOpenReportFromNotification}
         notifications={notifications}
+      />
+      <TelegramModal
+        show={showTelegramModal}
+        onHide={() => setShowTelegramModal(false)}
       />
       {selectedReport && (
         <ReportDetailsModal
