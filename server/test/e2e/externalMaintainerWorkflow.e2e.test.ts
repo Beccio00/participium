@@ -60,7 +60,7 @@ describe('External Maintainer Workflow E2E (Stories 24, 25, 26)', () => {
       .post('/api/citizen/signup')
       .send({ firstName: 'PR', lastName: 'Test', email: prEmail, password })
       .expect(201);
-    await AppDataSource.getRepository(User).update({ email: prEmail }, { role: 'PUBLIC_RELATIONS' as any, isVerified: true });
+    await AppDataSource.getRepository(User).update({ email: prEmail }, { role: ['PUBLIC_RELATIONS'] as any, isVerified: true });
     await prAgent
       .post('/api/session')
       .send({ email: prEmail, password })
@@ -73,7 +73,7 @@ describe('External Maintainer Workflow E2E (Stories 24, 25, 26)', () => {
       .post('/api/citizen/signup')
       .send({ firstName: 'Tech', lastName: 'Staff', email: techEmail, password })
       .expect(201);
-    await AppDataSource.getRepository(User).update({ email: techEmail }, { role: 'INFRASTRUCTURES' as any, isVerified: true });
+    await AppDataSource.getRepository(User).update({ email: techEmail }, { role: ['INFRASTRUCTURES'] as any, isVerified: true });
     await techAgent
       .post('/api/session')
       .send({ email: techEmail, password })
@@ -100,7 +100,7 @@ describe('External Maintainer Workflow E2E (Stories 24, 25, 26)', () => {
     await AppDataSource.getRepository(User).update(
       { email: externalEmail }, 
       { 
-        role: 'EXTERNAL_MAINTAINER' as any,
+        role: ['EXTERNAL_MAINTAINER'] as any,
         externalCompanyId: externalCompanyId,
         isVerified: true
       }
@@ -287,7 +287,7 @@ describe('External Maintainer Workflow E2E (Stories 24, 25, 26)', () => {
       await AppDataSource.getRepository(User).update(
         { email: otherExternalEmail }, 
         { 
-          role: 'EXTERNAL_MAINTAINER' as any,
+          role: ['EXTERNAL_MAINTAINER'] as any,
           externalCompanyId: externalCompanyId,
           isVerified: true
         }

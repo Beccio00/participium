@@ -1,473 +1,257 @@
 import { Request, Response } from "express";
-import {
-  generateToken,
-  linkAccount,
-  getStatus,
-  unlink,
-  createReport,
-  checkLinked,
-} from "../../../src/controllers/telegramController";
-import {
-  generateTelegramLinkToken,
-  linkTelegramAccount,
-  getTelegramStatus,
-  unlinkTelegramAccount,
-  createReportFromTelegram,
-} from "../../../src/services/telegramService";
-import { UserRepository } from "../../../src/repositories/UserRepository";
-import type {
-  TelegramLinkRequestDTO,
-  TelegramCreateReportRequestDTO,
-} from "../../../src/interfaces/TelegramDTO";
+
+jest.mock("../../../src/middlewares/errorMiddleware", () => ({
+  asyncHandler: (fn: any) => fn,
+}));
+
+import { getMyReports, getReportStatus } from "../../../src/controllers/telegramController";
+import * as telegramService from "../../../src/services/telegramService";
+import { NotFoundError } from "../../../src/utils/errors";
 
 jest.mock("../../../src/services/telegramService");
-jest.mock("../../../src/repositories/UserRepository");
 
-const mockGenerateTelegramLinkToken = generateTelegramLinkToken as jest.MockedFunction<
-  typeof generateTelegramLinkToken
+const mockGetMyReportsFromTelegram = telegramService.getMyReportsFromTelegram as jest.MockedFunction<
+  typeof telegramService.getMyReportsFromTelegram
 >;
-const mockLinkTelegramAccount = linkTelegramAccount as jest.MockedFunction<
-  typeof linkTelegramAccount
->;
-const mockGetTelegramStatus = getTelegramStatus as jest.MockedFunction<
-  typeof getTelegramStatus
->;
-const mockUnlinkTelegramAccount = unlinkTelegramAccount as jest.MockedFunction<
-  typeof unlinkTelegramAccount
->;
-const mockCreateReportFromTelegram = createReportFromTelegram as jest.MockedFunction<
-  typeof createReportFromTelegram
+const mockGetReportStatusFromTelegram = telegramService.getReportStatusFromTelegram as jest.MockedFunction<
+  typeof telegramService.getReportStatusFromTelegram
 >;
 
-const mockFindByTelegramId = jest.fn();
-const MockUserRepository = UserRepository as jest.MockedClass<typeof UserRepository>;
-
-describe("telegramController", () => {
-  let mockReq: any;
-  let mockRes: Partial<Response>;
+describe("telegramController - Reports API", () => {
+  let mockRequest: Partial<Request>;
+  let mockResponse: Partial<Response>;
+  let statusMock: jest.Mock;
+  let jsonMock: jest.Mock;
 
   beforeEach(() => {
-    mockReq = {
-      body: {},
-      user: { id: 1 },
-    };
-    mockRes = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
-
-    MockUserRepository.mockImplementation(() => ({
-      findByTelegramId: mockFindByTelegramId,
-    }) as any);
-
     jest.clearAllMocks();
+    jsonMock = jest.fn();
+    statusMock = jest.fn().mockReturnValue({ json: jsonMock });
+    mockResponse = {
+      status: statusMock,
+      json: jsonMock,
+    };
   });
 
-  describe("generateToken", () => {
-    it("should generate token for authenticated user", async () => {
-      const mockTokenResponse = {
-        token: "ABC123",
-        expiresAt: "2024-01-01T12:00:00.000Z",
-        deepLink: "https://t.me/participium_bot?start=link_ABC123",
-        message: "Click the link to connect your Telegram account",
-      };
-
-      mockGenerateTelegramLinkToken.mockResolvedValue(mockTokenResponse);
-
-      await generateToken(mockReq as Request, mockRes as Response);
-
-      expect(mockGenerateTelegramLinkToken).toHaveBeenCalledWith(1);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith(mockTokenResponse);
-    });
-
-    it("should handle service errors", async () => {
-      const error = new Error("Token generation failed");
-      mockGenerateTelegramLinkToken.mockRejectedValue(error);
-
-      await expect(
-        generateToken(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Token generation failed");
-
-      expect(mockGenerateTelegramLinkToken).toHaveBeenCalledWith(1);
-    });
-
-    it("should extract user ID from request correctly", async () => {
-      const mockTokenResponse = {
-        token: "XYZ789",
-        expiresAt: "2024-01-01T12:00:00.000Z",
-        deepLink: "https://t.me/participium_bot?start=link_XYZ789",
-        message: "Click the link to connect your Telegram account",
-      };
-
-      mockReq.user = { id: 999 };
-      mockGenerateTelegramLinkToken.mockResolvedValue(mockTokenResponse);
-
-      await generateToken(mockReq as Request, mockRes as Response);
-
-      expect(mockGenerateTelegramLinkToken).toHaveBeenCalledWith(999);
-    });
-  });
-
-  describe("linkAccount", () => {
-    it("should link telegram account successfully", async () => {
-      const linkRequest: TelegramLinkRequestDTO = {
-        token: "ABC123",
-        telegramId: "123456789",
-        telegramUsername: "johnDoe",
-      };
-
-      const mockLinkResponse = {
-        success: true,
-        message: "Telegram account linked successfully",
-        user: {
-          id: 1,
-          firstName: "John",
-          lastName: "Doe",
-          email: "john@example.com",
+  describe("GET /telegram/:telegramId/reports - getMyReports", () => {
+    it("should return 200 with list of reports for valid telegramId", async () => {
+      const mockReports = [
+        {
+          reportId: 1,
+          title: "Test Report 1",
+          address: "Via Roma 1, Torino",
+          status: "PENDING_APPROVAL",
+          createdAt: "2024-01-01T10:00:00.000Z",
         },
-      };
-
-      mockReq.body = linkRequest;
-      mockLinkTelegramAccount.mockResolvedValue(mockLinkResponse);
-
-      await linkAccount(mockReq as Request, mockRes as Response);
-
-      expect(mockLinkTelegramAccount).toHaveBeenCalledWith(
-        "ABC123",
-        "123456789",
-        "johnDoe"
-      );
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith(mockLinkResponse);
-    });
-
-    it("should handle link request without username", async () => {
-      const linkRequest: TelegramLinkRequestDTO = {
-        token: "ABC123",
-        telegramId: "123456789",
-      };
-
-      const mockLinkResponse = {
-        success: true,
-        message: "Telegram account linked successfully",
-        user: {
-          id: 1,
-          firstName: "John",
-          lastName: "Doe",
-          email: "john@example.com",
+        {
+          reportId: 2,
+          title: "Test Report 2",
+          address: "Via Milano 5, Torino",
+          status: "APPROVED",
+          createdAt: "2024-01-02T10:00:00.000Z",
         },
+      ];
+
+      mockRequest = {
+        params: { telegramId: "123456789" },
       };
 
-      mockReq.body = linkRequest;
-      mockLinkTelegramAccount.mockResolvedValue(mockLinkResponse);
+      mockGetMyReportsFromTelegram.mockResolvedValue(mockReports);
 
-      await linkAccount(mockReq as Request, mockRes as Response);
+      await getMyReports(mockRequest as Request, mockResponse as Response);
 
-      expect(mockLinkTelegramAccount).toHaveBeenCalledWith(
-        "ABC123",
-        "123456789",
-        undefined
+      expect(mockGetMyReportsFromTelegram).toHaveBeenCalledWith("123456789");
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(mockReports);
+    });
+
+    it("should return empty array when user has no reports", async () => {
+      mockRequest = {
+        params: { telegramId: "123456789" },
+      };
+
+      mockGetMyReportsFromTelegram.mockResolvedValue([]);
+
+      await getMyReports(mockRequest as Request, mockResponse as Response);
+
+      expect(mockGetMyReportsFromTelegram).toHaveBeenCalledWith("123456789");
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith([]);
+    });
+
+    it("should propagate NotFoundError when telegramId is not linked", async () => {
+      mockRequest = {
+        params: { telegramId: "999999999" },
+      };
+
+      mockGetMyReportsFromTelegram.mockRejectedValue(
+        new NotFoundError("No account linked to this Telegram ID. Please link your account first.")
       );
-    });
-
-    it("should handle service errors", async () => {
-      const linkRequest: TelegramLinkRequestDTO = {
-        token: "INVALID",
-        telegramId: "123456789",
-      };
-
-      mockReq.body = linkRequest;
-      const error = new Error("Invalid token");
-      mockLinkTelegramAccount.mockRejectedValue(error);
 
       await expect(
-        linkAccount(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid token");
+        getMyReports(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow(NotFoundError);
+
+      expect(mockGetMyReportsFromTelegram).toHaveBeenCalledWith("999999999");
+    });
+
+    it("should handle telegramId as string parameter", async () => {
+      mockRequest = {
+        params: { telegramId: "telegram_user_abc123" },
+      };
+
+      mockGetMyReportsFromTelegram.mockResolvedValue([]);
+
+      await getMyReports(mockRequest as Request, mockResponse as Response);
+
+      expect(mockGetMyReportsFromTelegram).toHaveBeenCalledWith("telegram_user_abc123");
     });
   });
 
-  describe("getStatus", () => {
-    it("should return telegram status for authenticated user", async () => {
-      const mockStatusResponse = {
-        linked: true,
-        telegramUsername: "johnDoe",
-        telegramId: "123456789",
-      };
-
-      mockGetTelegramStatus.mockResolvedValue(mockStatusResponse);
-
-      await getStatus(mockReq as Request, mockRes as Response);
-
-      expect(mockGetTelegramStatus).toHaveBeenCalledWith(1);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith(mockStatusResponse);
-    });
-
-    it("should return unlinked status", async () => {
-      const mockStatusResponse = {
-        linked: false,
-        telegramUsername: null,
-        telegramId: null,
-      };
-
-      mockGetTelegramStatus.mockResolvedValue(mockStatusResponse);
-
-      await getStatus(mockReq as Request, mockRes as Response);
-
-      expect(mockGetTelegramStatus).toHaveBeenCalledWith(1);
-      expect(mockRes.json).toHaveBeenCalledWith(mockStatusResponse);
-    });
-
-    it("should handle service errors", async () => {
-      const error = new Error("User not found");
-      mockGetTelegramStatus.mockRejectedValue(error);
-
-      await expect(
-        getStatus(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("User not found");
-    });
-  });
-
-  describe("unlink", () => {
-    it("should unlink telegram account successfully", async () => {
-      const mockUnlinkResponse = {
-        success: true,
-        message: "Telegram account unlinked successfully",
-      };
-
-      mockUnlinkTelegramAccount.mockResolvedValue(mockUnlinkResponse);
-
-      await unlink(mockReq as Request, mockRes as Response);
-
-      expect(mockUnlinkTelegramAccount).toHaveBeenCalledWith(1);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith(mockUnlinkResponse);
-    });
-
-    it("should handle unlink errors", async () => {
-      const error = new Error("No telegram account linked");
-      mockUnlinkTelegramAccount.mockRejectedValue(error);
-
-      await expect(
-        unlink(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("No telegram account linked");
-    });
-
-    it("should use correct user ID from request", async () => {
-      const mockUnlinkResponse = {
-        success: true,
-        message: "Telegram account unlinked successfully",
-      };
-
-      mockReq.user = { id: 456 };
-      mockUnlinkTelegramAccount.mockResolvedValue(mockUnlinkResponse);
-
-      await unlink(mockReq as Request, mockRes as Response);
-
-      expect(mockUnlinkTelegramAccount).toHaveBeenCalledWith(456);
-    });
-  });
-
-  describe("createReport", () => {
-    it("should create report from telegram successfully", async () => {
-      const reportRequest: TelegramCreateReportRequestDTO = {
-        telegramId: "123456789",
-        title: "Broken streetlight",
-        description: "The streetlight on Main Street is not working",
-        category: "PUBLIC_LIGHTING",
-        latitude: 45.0703,
-        longitude: 7.6869,
+  describe("GET /telegram/:telegramId/reports/:reportId - getReportStatus", () => {
+    it("should return 200 with report details for valid telegramId and reportId", async () => {
+      const mockReportStatus = {
+        reportId: 1,
+        title: "Test Report",
+        description: "This is a test report description",
+        category: "OTHER",
+        address: "Via Roma 1, Torino",
         isAnonymous: false,
-        photoFileIds: ["file1", "file2"],
+        photoUrls: ["http://minio/bucket/photo1.jpg"],
+        status: "APPROVED",
+        createdAt: "2024-01-01T10:00:00.000Z",
       };
 
-      const mockReportResponse = {
-        success: true,
-        message: "Report created successfully",
-        reportId: 123,
+      mockRequest = {
+        params: { telegramId: "123456789", reportId: "1" },
       };
 
-      mockReq.body = reportRequest;
-      mockCreateReportFromTelegram.mockResolvedValue(mockReportResponse);
+      mockGetReportStatusFromTelegram.mockResolvedValue(mockReportStatus);
 
-      await createReport(mockReq as Request, mockRes as Response);
+      await getReportStatus(mockRequest as Request, mockResponse as Response);
 
-      expect(mockCreateReportFromTelegram).toHaveBeenCalledWith(reportRequest);
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith(mockReportResponse);
+      expect(mockGetReportStatusFromTelegram).toHaveBeenCalledWith("123456789", 1);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(mockReportStatus);
     });
 
-    it("should handle minimal report request", async () => {
-      const reportRequest: TelegramCreateReportRequestDTO = {
-        telegramId: "123456789",
-        title: "Simple report",
-        description: "Simple description",
-        category: "ROADS_URBAN_FURNISHINGS",
-        latitude: 45.0703,
-        longitude: 7.6869,
+    it("should return report with rejectedReason when status is REJECTED", async () => {
+      const mockReportStatus = {
+        reportId: 2,
+        title: "Rejected Report",
+        description: "This report was rejected",
+        category: "ROAD_MAINTENANCE",
+        address: "Via Milano 5, Torino",
+        isAnonymous: true,
+        photoUrls: [],
+        status: "REJECTED",
+        createdAt: "2024-01-01T10:00:00.000Z",
+        rejectedReason: "Not within municipality jurisdiction",
       };
 
-      const mockReportResponse = {
-        success: true,
-        message: "Report created successfully",
-        reportId: 456,
+      mockRequest = {
+        params: { telegramId: "123456789", reportId: "2" },
       };
 
-      mockReq.body = reportRequest;
-      mockCreateReportFromTelegram.mockResolvedValue(mockReportResponse);
+      mockGetReportStatusFromTelegram.mockResolvedValue(mockReportStatus);
 
-      await createReport(mockReq as Request, mockRes as Response);
+      await getReportStatus(mockRequest as Request, mockResponse as Response);
 
-      expect(mockCreateReportFromTelegram).toHaveBeenCalledWith(reportRequest);
+      expect(mockGetReportStatusFromTelegram).toHaveBeenCalledWith("123456789", 2);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(mockReportStatus);
     });
 
-    it("should handle service errors", async () => {
-      const reportRequest: TelegramCreateReportRequestDTO = {
-        telegramId: "invalid",
-        title: "Test",
-        description: "Test description",
-        category: "TEST",
-        latitude: 45.0703,
-        longitude: 7.6869,
+    it("should propagate NotFoundError when telegramId is not linked", async () => {
+      mockRequest = {
+        params: { telegramId: "999999999", reportId: "1" },
       };
 
-      mockReq.body = reportRequest;
-      const error = new Error("Invalid telegram ID");
-      mockCreateReportFromTelegram.mockRejectedValue(error);
+      mockGetReportStatusFromTelegram.mockRejectedValue(
+        new NotFoundError("No account linked to this Telegram ID. Please link your account first.")
+      );
 
       await expect(
-        createReport(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Invalid telegram ID");
-    });
-  });
+        getReportStatus(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow(NotFoundError);
 
-  describe("checkLinked", () => {
-    it("should return linked status when user exists", async () => {
-      const mockUser = {
-        id: 1,
-        telegram_id: "123456789",
-        first_name: "John",
-        last_name: "Doe",
+      expect(mockGetReportStatusFromTelegram).toHaveBeenCalledWith("999999999", 1);
+    });
+
+    it("should propagate NotFoundError when report does not belong to user", async () => {
+      mockRequest = {
+        params: { telegramId: "123456789", reportId: "999" },
       };
 
-      mockReq.body = { telegramId: "123456789" };
-      mockFindByTelegramId.mockResolvedValue(mockUser);
-
-      await checkLinked(mockReq as Request, mockRes as Response);
-
-      expect(mockFindByTelegramId).toHaveBeenCalledWith("123456789");
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({ linked: true });
-    });
-
-    it("should return unlinked status when user does not exist", async () => {
-      mockReq.body = { telegramId: "999999999" };
-      mockFindByTelegramId.mockResolvedValue(null);
-
-      await checkLinked(mockReq as Request, mockRes as Response);
-
-      expect(mockFindByTelegramId).toHaveBeenCalledWith("999999999");
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({ linked: false });
-    });
-
-    it("should return error when telegramId is missing", async () => {
-      mockReq.body = {};
-
-      await checkLinked(mockReq as Request, mockRes as Response);
-
-      expect(mockFindByTelegramId).not.toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        linked: false,
-        message: "telegramId is required",
-      });
-    });
-
-    it("should return error when telegramId is empty string", async () => {
-      mockReq.body = { telegramId: "" };
-
-      await checkLinked(mockReq as Request, mockRes as Response);
-
-      expect(mockFindByTelegramId).not.toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        linked: false,
-        message: "telegramId is required",
-      });
-    });
-
-    it("should return error when telegramId is null", async () => {
-      mockReq.body = { telegramId: null };
-
-      await checkLinked(mockReq as Request, mockRes as Response);
-
-      expect(mockFindByTelegramId).not.toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        linked: false,
-        message: "telegramId is required",
-      });
-    });
-
-    it("should handle repository errors", async () => {
-      mockReq.body = { telegramId: "123456789" };
-      const error = new Error("Database connection failed");
-      mockFindByTelegramId.mockRejectedValue(error);
+      mockGetReportStatusFromTelegram.mockRejectedValue(
+        new NotFoundError("Report not found for this user.")
+      );
 
       await expect(
-        checkLinked(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Database connection failed");
+        getReportStatus(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow(NotFoundError);
 
-      expect(mockFindByTelegramId).toHaveBeenCalledWith("123456789");
+      expect(mockGetReportStatusFromTelegram).toHaveBeenCalledWith("123456789", 999);
     });
-  });
 
-  describe("Integration tests", () => {
-    it("should handle all controller methods with proper response format", async () => {
-      // Test that all methods use proper response structure
-      const mockTokenResponse = {
-        token: "ABC123",
-        expiresAt: "2024-01-01T12:00:00.000Z",
-        deepLink: "https://t.me/participium_bot?start=link_ABC123",
-        message: "Click the link",
+    it("should parse reportId as integer", async () => {
+      const mockReportStatus = {
+        reportId: 42,
+        title: "Test Report",
+        description: "Description",
+        category: "OTHER",
+        address: "Via Test 1, Torino",
+        isAnonymous: false,
+        photoUrls: [],
+        status: "PENDING_APPROVAL",
+        createdAt: "2024-01-01T10:00:00.000Z",
       };
 
-      mockGenerateTelegramLinkToken.mockResolvedValue(mockTokenResponse);
+      mockRequest = {
+        params: { telegramId: "123456789", reportId: "42" },
+      };
 
-      await generateToken(mockReq as Request, mockRes as Response);
+      mockGetReportStatusFromTelegram.mockResolvedValue(mockReportStatus);
 
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledTimes(1);
-      expect(mockRes.json).toHaveBeenCalledWith(
+      await getReportStatus(mockRequest as Request, mockResponse as Response);
+
+      expect(mockGetReportStatusFromTelegram).toHaveBeenCalledWith("123456789", 42);
+    });
+
+    it("should handle multiple photos in photoUrls", async () => {
+      const mockReportStatus = {
+        reportId: 1,
+        title: "Report with Photos",
+        description: "Multiple photos test",
+        category: "WASTE_MANAGEMENT",
+        address: "Piazza Castello, Torino",
+        isAnonymous: false,
+        photoUrls: [
+          "http://minio/bucket/photo1.jpg",
+          "http://minio/bucket/photo2.jpg",
+          "http://minio/bucket/photo3.jpg",
+        ],
+        status: "IN_PROGRESS",
+        createdAt: "2024-01-01T10:00:00.000Z",
+      };
+
+      mockRequest = {
+        params: { telegramId: "123456789", reportId: "1" },
+      };
+
+      mockGetReportStatusFromTelegram.mockResolvedValue(mockReportStatus);
+
+      await getReportStatus(mockRequest as Request, mockResponse as Response);
+
+      expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          token: expect.any(String),
-          message: expect.any(String),
+          photoUrls: expect.arrayContaining([
+            "http://minio/bucket/photo1.jpg",
+            "http://minio/bucket/photo2.jpg",
+            "http://minio/bucket/photo3.jpg",
+          ]),
         })
       );
-    });
-
-    it("should maintain consistent error handling across methods", async () => {
-      const error = new Error("Service unavailable");
-
-      // Test generateToken error handling
-      mockGenerateTelegramLinkToken.mockRejectedValue(error);
-      await expect(
-        generateToken(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Service unavailable");
-
-      // Test getStatus error handling
-      mockGetTelegramStatus.mockRejectedValue(error);
-      await expect(
-        getStatus(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Service unavailable");
-
-      // Test unlink error handling
-      mockUnlinkTelegramAccount.mockRejectedValue(error);
-      await expect(
-        unlink(mockReq as Request, mockRes as Response)
-      ).rejects.toThrow("Service unavailable");
     });
   });
 });

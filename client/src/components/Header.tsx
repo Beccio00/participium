@@ -7,11 +7,9 @@ import {
   getRoleLabel, 
   TECHNICIAN_ROLES,
   userHasRole,
-  userHasAnyRole,
 } from "../utils/roles";
 import {
   PersonCircle,
-  ArrowLeft,
   GearFill,
   BellFill,
   Telegram,
@@ -91,11 +89,9 @@ function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
 function NotificationButton({
   onClick,
   notificationCount,
-  isMobile = false,
 }: {
   onClick: () => void;
   notificationCount: number;
-  isMobile?: boolean;
 }) {
   return (
     <button
@@ -105,7 +101,6 @@ function NotificationButton({
         color: "white",
         fontSize: "1.25rem",
         padding: "0.25rem",
-        marginLeft: isMobile ? "0" : "0.5rem",
         cursor: "pointer",
       }}
       aria-label="Show notifications"
@@ -267,14 +262,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
 
   const handleGoToLogin = () => navigate("/login");
   const handleGoToSignup = () => navigate("/signup");
-  const handleBackHome = () => {
-    const shouldLogout = userHasRole(user, "ADMINISTRATOR") || userHasAnyRole(user, TECHNICIAN_ROLES);
-    if (shouldLogout) {
-      handleLogout();
-      return; 
-    }
-    navigate("/");
-  };
+  const handleBackHome = () => navigate("/");
 
   const navbarStyle = {
     background:
@@ -316,12 +304,12 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
       >
         <Container
           fluid
-          className="px-3 px-md-4"
+          className="px-2 px-sm-3 px-md-4"
           style={{ maxWidth: "1200px" }}
         >
           <div
-            className="d-flex align-items-center justify-content-between w-100"
-            style={{ minHeight: "60px" }}
+            className="d-flex align-items-center justify-content-between w-100 flex-wrap"
+            style={{ minHeight: "60px", rowGap: "0.5rem" }}
           >
             <Navbar.Brand className="text-white mb-0">
               <div
@@ -352,7 +340,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
 
             {/* User info visible always on desktop and mobile, outside the burger */}
             {isAuthenticated && user && !showBackToHome && (
-              <div className="d-flex align-items-center gap-2 d-lg-none">
+              <div className="d-flex align-items-center gap-1 gap-md-2 d-lg-none">
                 <div className="d-flex align-items-center gap-2">
                   <UserAvatar user={user} size={32} />
                   <div className="d-flex flex-column">
@@ -398,76 +386,30 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                   <NotificationButton
                     onClick={() => setShowNotifications(true)}
                     notificationCount={notificationCount}
-                    isMobile={true}
                   />
                 )}
               </div>
             )}
 
-            {showBackToHome && location.pathname !== "/admin" ? (
-              <button
-                onClick={handleBackHome}
-                disabled={loading}
-                className="d-lg-none border-0 bg-transparent d-flex align-items-center justify-content-center"
-                style={{
-                  color: "white",
-                  fontSize: "1.5rem",
-                  padding: "0.5rem",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.6 : 1,
-                }}
+            <Navbar.Toggle
+              aria-controls="navbar-nav"
+              className="d-lg-none border-0 d-flex align-items-center justify-content-center"
+              style={{ color: "white", padding: "0.5rem" }}
+            >
+              <span
+                style={{ color: "white", fontSize: "1.5rem", lineHeight: 1 }}
               >
-                <ArrowLeft size={24} />
-              </button>
-            ) : (
-              <Navbar.Toggle
-                aria-controls="navbar-nav"
-                className="d-lg-none border-0 d-flex align-items-center justify-content-center"
-                style={{ color: "white", padding: "0.5rem" }}
-              >
-                <span
-                  style={{ color: "white", fontSize: "1.5rem", lineHeight: 1 }}
-                >
-                  ☰
-                </span>
-              </Navbar.Toggle>
-            )}
+                ☰
+              </span>
+            </Navbar.Toggle>
           </div>
 
           <Navbar.Collapse id="navbar-nav">
-            <Nav className="ms-auto align-items-lg-center mt-3 mt-lg-0">
-              {showBackToHome && userHasRole(user, "ADMINISTRATOR") ? (
-                <>
-                  {/* Logout button for admin both mobile and desktop */}
-                  <Button
-                    onClick={handleLogout}
-                    disabled={loading}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    {loading ? "Logging out..." : "Logout"}
-                  </Button>
-                </>
-              ) : showBackToHome ? (
-                <Button
-                  onClick={handleBackHome}
-                  disabled={loading}
-                  variant="light"
-                  size="sm"
-                  className="fw-semibold d-none d-lg-block"
-                  style={{ ...buttonStyle, color: "var(--primary)" }}
-                >
-                  {userHasRole(user, "ADMINISTRATOR") ||
-                  userHasAnyRole(user, TECHNICIAN_ROLES)
-                    ? "Logout"
-                    : "← Back to Home"}
-                </Button>
-              ) : isAuthenticated && user ? (
-                <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2">
-                  {/* User info only on desktop in the collapse */}
-                  <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-3">
+            <Nav className="ms-auto align-items-lg-center mt-2 mt-lg-0">
+              <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 gap-lg-4">
+                {/* Blocco 1: User info - always visible when logged in */}
+                {isAuthenticated && user && (
+                  <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-2">
                     {MUNICIPALITY_AND_EXTERNAL_ROLES.includes(user.role) && (
                       <Badge
                         bg="dark"
@@ -484,6 +426,12 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                         <div style={userSurnameStyle}>{user.lastName}</div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Blocco 2: Action icons */}
+                {isAuthenticated && user && (
+                  <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-2">
                     {userHasRole(user, "CITIZEN") && (
                       <button
                         onClick={() => navigate("/me")}
@@ -492,7 +440,6 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                           color: "white",
                           fontSize: "1.25rem",
                           padding: "0.25rem",
-                          marginLeft: "0.5rem",
                           cursor: "pointer",
                         }}
                         aria-label="Account settings"
@@ -508,7 +455,6 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                           color: "white",
                           fontSize: "1.25rem",
                           padding: "0.25rem",
-                          marginLeft: "0.5rem",
                           cursor: "pointer",
                         }}
                         aria-label="Telegram settings"
@@ -521,44 +467,76 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                       <NotificationButton
                         onClick={() => setShowNotifications(true)}
                         notificationCount={notificationCount}
-                        isMobile={false}
                       />
                     )}
                   </div>
-                  {/* Logout button */}
-                  <Button
-                    onClick={handleLogout}
-                    disabled={loading}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold ms-lg-3"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    {loading ? "Logging out..." : "Logout"}
-                  </Button>
-                </div>
-              ) : (
-                <div className="d-flex flex-column flex-sm-row gap-2">
-                  <Button
-                    onClick={handleGoToLogin}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    Login
-                  </Button>
-                  <Button
-                    onClick={handleGoToSignup}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    Sign Up
-                  </Button>
-                </div>
-              )}
+                )}
+
+                {/* Blocco 3: Buttons on the right */}
+                {isAuthenticated && user ? (
+                  <div className="d-flex gap-2 w-100 d-lg-auto">
+                    {showBackToHome && (
+                      <Button
+                        onClick={handleBackHome}
+                        disabled={loading}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Home
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handleLogout}
+                      disabled={loading}
+                      variant="light"
+                      size="sm"
+                      className="fw-semibold"
+                      style={{ ...buttonStyle, color: "var(--primary)" }}
+                    >
+                      {loading ? "Logging out..." : "Logout"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="d-flex gap-2 w-100 d-lg-auto">
+                    {showBackToHome && (
+                      <Button
+                        onClick={handleBackHome}
+                        disabled={loading}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Home
+                      </Button>
+                    )}
+                    {location.pathname !== "/login" && location.pathname !== "/verify-email" && (
+                      <Button
+                        onClick={handleGoToLogin}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Login
+                      </Button>
+                    )}
+                    {location.pathname !== "/signup" && location.pathname !== "/verify-email" && (
+                      <Button
+                        onClick={handleGoToSignup}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Sign Up
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </Nav>
           </Navbar.Collapse>
         </Container>

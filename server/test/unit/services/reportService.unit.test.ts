@@ -215,12 +215,8 @@ describe("reportService", () => {
     });
 
     it("should throw UnprocessableEntityError if technical has wrong role", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(
-        createMockReportEntity({
-          category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
-        })
-      );
-      mockUserFindById.mockResolvedValue({ id: 99, role: "WRONG_ROLE" });
+      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity({ category: ReportCategory.WATER_SUPPLY_DRINKING_WATER }));
+      mockUserFindById.mockResolvedValue({ id: 99, role: ["WRONG_ROLE"] });
 
       await expect(approveReport(1, 2, 99)).rejects.toThrow(
         UnprocessableEntityError
@@ -235,7 +231,7 @@ describe("reportService", () => {
       });
       mockUserFindById.mockResolvedValue({
         id: 99,
-        role: TechnicalType.WASTE_MANAGEMENT,
+        role: [TechnicalType.WASTE_MANAGEMENT],
       });
 
       await expect(approveReport(1, 2, 99)).rejects.toThrow(
@@ -244,19 +240,12 @@ describe("reportService", () => {
     });
 
     it("should succeed, update status, and notify", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(
-        createMockReportEntity()
-      );
-      mockUserFindById.mockResolvedValue({
-        id: 99,
-        role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
-      });
-      mockReportUpdate.mockResolvedValue(
-        createMockReportEntity({
-          status: ReportStatus.ASSIGNED,
-          assignedOfficerId: 99,
-        })
-      );
+      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity());
+      mockUserFindById.mockResolvedValue({ id: 99, role: [TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE] });
+      mockReportUpdate.mockResolvedValue(createMockReportEntity({ 
+        status: ReportStatus.ASSIGNED, 
+        assignedOfficerId: 99 
+      }));
 
       const res = await approveReport(1, 2, 99);
       expect(mockReportUpdate).toHaveBeenCalledWith(1, {

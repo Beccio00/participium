@@ -132,7 +132,7 @@ describe("Municipality User Roles Management", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       await agent
         .post("/api/session")
@@ -194,7 +194,7 @@ describe("Municipality User Roles Management", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       await adminAgent
         .post("/api/session")
@@ -387,7 +387,7 @@ describe("Municipality User Roles Management", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       await agent
         .post("/api/session")
@@ -434,9 +434,9 @@ describe("Municipality User Roles Management", () => {
       for (const userId of userIds) {
         const user = listResponse.body.find((u: any) => u.id === userId);
         expect(user).toBeDefined();
-        expect(user.role).toMatch(
-          /PUBLIC_RELATIONS|MUNICIPAL_BUILDING_MAINTENANCE/
-        );
+        expect(user.role.some((r: string) => 
+          ["PUBLIC_RELATIONS", "MUNICIPAL_BUILDING_MAINTENANCE"].includes(r)
+        )).toBe(true);
       }
 
       console.log("✓ All roles correctly persisted in database");

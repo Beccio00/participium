@@ -928,7 +928,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /telegram/users/{telegramId}/reports:
+  /telegram/{telegramId}/reports:
     get:
       tags:
         - Telegram
@@ -945,14 +945,6 @@ paths:
           schema:
             type: string
           example: "123456789"
-        - name: limit
-          in: query
-          required: false
-          description: Max number of reports to return
-          schema:
-            type: integer
-            default: 5
-            maximum: 20
       responses:
         "200":
           description: List of reports retrieved successfully
@@ -975,7 +967,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /telegram/users/{telegramId}/reports/{reportId}:
+  /telegram/{telegramId}/reports/{reportId}:
     get:
       tags:
         - Telegram

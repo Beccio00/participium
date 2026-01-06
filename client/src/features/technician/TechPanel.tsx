@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router";
 import { Container, Row, Col, Modal, Form, Toast, ToastContainer, Alert } from "react-bootstrap";
-import { CheckCircle, XCircle, Tools, FileText } from "react-bootstrap-icons";
+import { CheckCircle, XCircle, Tools, FileText, Clipboard, BoxSeam } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import AccessRestricted from "../../components/AccessRestricted";
 import {
   getReports,
   getPendingReports,
@@ -102,7 +102,6 @@ function filterExternalAssignedReports(reports: any[]): any[] {
 
 export default function TechPanel() {
   const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   const [pendingReports, setPendingReports] = useState<AppReport[]>([]);
   const [otherReports, setOtherReports] = useState<AppReport[]>([]);
@@ -177,15 +176,22 @@ export default function TechPanel() {
     [assignableExternals, selectedExternalId]
   );
 
+  const hasAccess = isAuthenticated && user && userHasAnyRole(user, MUNICIPALITY_AND_EXTERNAL_ROLES);
+
   useEffect(() => {
-    if (
-      !isAuthenticated ||
-      (user && !userHasAnyRole(user,MUNICIPALITY_AND_EXTERNAL_ROLES))
-    ) {
-      navigate("/");
+    if (hasAccess) {
+      fetchReports();
     }
-    fetchReports();
-  }, [isAuthenticated, user, navigate]);
+  }, [hasAccess]);
+
+  // Check access before rendering
+  if (!hasAccess) {
+    const message = !isAuthenticated
+      ? "You need to be logged in to access this page."
+      : "You don't have permission to access the reports management panel.";
+    
+    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+  }
 
   const fetchReportsForPublicRelations = async () => {
     const pendingData = (await getPendingReports()) as AppReport[];
@@ -491,8 +497,11 @@ export default function TechPanel() {
 
   return (
     <Container className="py-4 tech-panel-container">
-      <div className="mb-4">
-        <h2 className="tech-panel-title">Reports Management</h2>
+      <div className="mb-4 text-center">
+        <h2 style={{ color: "var(--text)", fontWeight: 700 }}>Reports Management</h2>
+        <p className="text-muted">
+          View and manage reports assigned to you
+        </p>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -547,9 +556,46 @@ export default function TechPanel() {
           <div>
             <h4>Assigned to me</h4>
             {pendingReports.length === 0 ? (
-              <p className="text-muted">No reports assigned to you.</p>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  padding: "3rem 2rem",
+                  background: "var(--surface)",
+                  borderRadius: "0.75rem",
+                  border: "2px dashed #dee2e6",
+                  marginBottom: "2rem",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "3rem",
+                    marginBottom: "1rem",
+                    opacity: 0.5,
+                    color: "#6c757d",
+                  }}
+                >
+                  <Clipboard size={64} />
+                </div>
+                <p
+                  style={{
+                    fontSize: "1.1rem",
+                    margin: "0 0 0.5rem 0",
+                    color: "#6c757d",
+                    fontWeight: 500,
+                  }}
+                >
+                  No reports assigned to you
+                </p>
+                <small style={{ fontSize: "0.95rem", color: "#adb5bd" }}>
+                  Reports will appear here once assigned by public relations.
+                </small>
+              </div>
             ) : (
-              <Row>
+              <Row className="mt-3">
                 {pendingReports.map((report) => (
                   <Col key={report.id} lg={6} xl={4} className="mb-4">
                     <div className="h-100 shadow-sm report-card d-flex flex-column">
@@ -610,11 +656,45 @@ export default function TechPanel() {
             <div className="mt-5">
               <h4>Assigned by me to External</h4>
               {otherReports.length === 0 ? (
-                <p className="text-muted">
-                  No reports assigned to externals yet.
-                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    padding: "3rem 2rem",
+                    background: "var(--surface)",
+                    borderRadius: "0.75rem",
+                    border: "2px dashed #dee2e6"
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "3rem",
+                      marginBottom: "1rem",
+                      opacity: 0.5,
+                      color: "#6c757d",
+                    }}
+                  >
+                    <BoxSeam size={64} />
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "1.1rem",
+                      margin: "0 0 0.5rem 0",
+                      color: "#6c757d",
+                      fontWeight: 500,
+                    }}
+                  >
+                    No reports assigned to externals yet
+                  </p>
+                  <small style={{ fontSize: "0.95rem", color: "#adb5bd" }}>
+                    External assignments will appear here when you delegate reports.
+                  </small>
+                </div>
               ) : (
-                <Row>
+                <Row className="mt-3">
                         {otherReports.map((report) => (
                     <Col key={report.id} lg={6} xl={4} className="mb-4">
                       <div className="h-100 shadow-sm report-card d-flex flex-column">

@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Clipboard, Pencil, List } from "react-bootstrap-icons";
+import { Clipboard, Pencil, List, FileEarmarkText } from "react-bootstrap-icons";
 import { Offcanvas } from "react-bootstrap";
 
 import { useAuth } from "../../hooks";
 import Button from "../../components/ui/Button.tsx";
-import AuthRequiredModal from "../auth/AuthRequiredModal.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
 import AddressSearchBar from "../../components/AddressSearchBar";
@@ -17,7 +16,6 @@ import { getReports as getReportsApi } from "../../api/api";
 
 import { Role } from "../../../../shared/RoleTypes.ts";
 import { ReportStatus } from "../../../../shared/ReportTypes.ts";
-import { userHasRole } from "../../utils/roles";
 import "../../styles/HomePage.css";
 
 // --- Helpers ---------------------------------------------------------------
@@ -131,7 +129,6 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReportsSidebar, setShowReportsSidebar] = useState(false);
@@ -174,11 +171,7 @@ export default function HomePage() {
   const refreshReports = () => setRefreshTrigger((prev) => prev + 1);
 
   const handleAddReport = () => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
-    navigate("/reports/new");
+    navigate("/report/new");
   };
 
   useEffect(() => {
@@ -238,13 +231,6 @@ export default function HomePage() {
       mounted = false;
     };
   }, [isAuthenticated, user?.email, refreshTrigger]);
-
-  // redirect admin
-  useEffect(() => {
-    if (userHasRole(user, "ADMINISTRATOR")) {
-      navigate("/admin", { replace: true });
-    }
-  }, [isAuthenticated, user, navigate]);
 
   // Ripristina scroll sidebar quando cambi selezione
   useEffect(() => {
@@ -401,43 +387,78 @@ export default function HomePage() {
             My Reports
           </Button>
         ) : isCitizen && (
-          <Button onClick={handleAddReport} variant="primary" fullWidth>
-            <Pencil className="me-2" />
-            Select a location
-          </Button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
+              <FileEarmarkText className="me-2" />
+              My Reports
+            </Button>
+            <Button onClick={handleAddReport} variant="primary" fullWidth>
+              <Pencil className="me-2" />
+              Select a location
+            </Button>
+          </div>
         )}
 
         {!isAuthenticated && (
-          <p
-            className="text-center text-muted mb-0 mt-3"
-            style={{ fontSize: "0.85rem" }}
+          <div
+            style={{
+              backgroundColor: "#f8f9ff",
+              border: "1px solid #e0e7ff",
+              borderRadius: "0.5rem",
+              padding: "1rem",
+              textAlign: "center",
+            }}
           >
-            You need to{" "}
-            <button
-              onClick={() => navigate("/login")}
-              className="btn btn-link p-0"
+            <p
               style={{
-                color: "var(--primary)",
-                textDecoration: "underline",
-                fontSize: "inherit",
+                color: "var(--text)",
+                fontSize: "0.85rem",
+                fontWeight: "500",
+                margin: "0 0 0.5rem 0",
+                lineHeight: "1.3",
               }}
             >
-              login
-            </button>{" "}
-            or{" "}
-            <button
-              onClick={() => navigate("/signup")}
-              className="btn btn-link p-0"
+              Ready to report an issue?
+            </p>
+            <p
               style={{
-                color: "var(--primary)",
-                textDecoration: "underline",
-                fontSize: "inherit",
+                color: "#6c757d",
+                fontSize: "0.75rem",
+                margin: "0 0 0.75rem 0",
+                lineHeight: "1.3",
               }}
             >
-              sign up
-            </button>{" "}
-            to submit reports
-          </p>
+              Log in or create an account to submit reports.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                onClick={() => navigate("/login")}
+                className="btn btn-outline-primary"
+                style={{
+                  color: "var(--primary)",
+                  borderColor: "var(--primary)",
+                  fontWeight: "500",
+                  padding: "0.25rem 0.6rem",
+                  fontSize: "0.75rem",
+                  flex: 1,
+                }}
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => navigate("/signup")}
+                className="btn btn-primary"
+                style={{
+                  fontWeight: "500",
+                  padding: "0.25rem 0.6rem",
+                  fontSize: "0.75rem",
+                  flex: 1,
+                }}
+              >
+                Create Account
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </>
@@ -661,51 +682,85 @@ export default function HomePage() {
                   <Pencil className="me-2" />
                   My Reports
                 </Button>
-              ) : (
-                <Button onClick={handleAddReport} variant="primary" fullWidth>
-                  <Pencil className="me-2" />
-                  Select a location
-                </Button>
+              ) : isCitizen && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
+                    <FileEarmarkText className="me-2" />
+                    My Reports
+                  </Button>
+                  <Button onClick={handleAddReport} variant="primary" fullWidth>
+                    <Pencil className="me-2" />
+                    Select a location
+                  </Button>
+                </div>
               )}
 
               {!isAuthenticated && (
-                <p
-                  className="text-center text-muted mb-0 mt-3"
-                  style={{ fontSize: "0.85rem" }}
+                <div
+                  style={{
+                    backgroundColor: "#f8f9ff",
+                    border: "1px solid #e0e7ff",
+                    borderRadius: "0.5rem",
+                    padding: "1rem",
+                    marginTop: "0.75rem",
+                    textAlign: "center",
+                  }}
                 >
-                  You need to{" "}
-                  <button
-                    onClick={() => navigate("/login")}
-                    className="btn btn-link p-0"
+                  <p
                     style={{
-                      color: "var(--primary)",
-                      textDecoration: "underline",
-                      fontSize: "inherit",
+                      color: "var(--text)",
+                      fontSize: "0.85rem",
+                      fontWeight: "500",
+                      margin: "0 0 0.5rem 0",
+                      lineHeight: "1.3",
                     }}
                   >
-                    login
-                  </button>{" "}
-                  or{" "}
-                  <button
-                    onClick={() => navigate("/signup")}
-                    className="btn btn-link p-0"
+                    Ready to report an issue?
+                  </p>
+                  <p
                     style={{
-                      color: "var(--primary)",
-                      textDecoration: "underline",
-                      fontSize: "inherit",
+                      color: "#6c757d",
+                      fontSize: "0.75rem",
+                      margin: "0 0 0.75rem 0",
+                      lineHeight: "1.3",
                     }}
                   >
-                    sign up
-                  </button>{" "}
-                  to submit reports
-                </p>
+                    Log in or create an account to submit reports.
+                  </p>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button
+                      onClick={() => navigate("/login")}
+                      className="btn btn-outline-primary"
+                      style={{
+                        color: "var(--primary)",
+                        borderColor: "var(--primary)",
+                        fontWeight: "500",
+                        padding: "0.25rem 0.6rem",
+                        fontSize: "0.75rem",
+                        flex: 1,
+                      }}
+                    >
+                      Log In
+                    </button>
+                    <button
+                      onClick={() => navigate("/signup")}
+                      className="btn btn-primary"
+                      style={{
+                        fontWeight: "500",
+                        padding: "0.25rem 0.6rem",
+                        fontSize: "0.75rem",
+                        flex: 1,
+                      }}
+                    >
+                      Create Account
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </Offcanvas.Body>
         </Offcanvas>
       </div>
-
-      <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       {selectedReport && (
         <ReportDetailsModal

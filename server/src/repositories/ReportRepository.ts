@@ -170,4 +170,12 @@ export class ReportRepository {
       select: ["category"]
     });
   }
+
+  async findByUserId(userId: number): Promise<Report[]> {
+    return await this.repository.find({
+      where: { userId }, 
+      relations: ["photos"],
+      order: { createdAt: "DESC" } 
+    });
+  }
 }

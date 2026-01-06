@@ -18,7 +18,7 @@ export default function LoginPage() {
       const user = await login(values.email, values.password);
     
       if (user && userHasRole(user, "ADMINISTRATOR")) {
-        navigate("/admin", { replace: true });
+        navigate("/", { replace: true });
       } else if (
         userHasAnyRole(user, TECHNICIAN_ROLES) || 
         userHasRole(user, "PUBLIC_RELATIONS") || 
