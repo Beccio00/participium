@@ -201,7 +201,7 @@ async function startReportCreation(ctx: any, isCommand = false) {
 async function showMainMenu(ctx: any) {
   await ctx.reply(
     "🎆 *Welcome to Participium Bot!*\n\n" +
-      "🔔 I will send you notifications about your civic reports.\n" +
+      "📍 Submit new reports and track existing ones.\n" +
       "💪 Together we make our city better!\n\n" +
       "👇 *Choose an action:*\n" +
       "\nYou can also use /help, /faq, or /contact at any time.",
@@ -301,16 +301,16 @@ bot.action("menu_faq", async (ctx) => {
   await ctx.answerCbQuery("❓ Loading FAQ...");
   const faqText =
     "❓ FAQ - Frequently Asked Questions\n\n" +
-    "1. How can I report an issue?\n" +
-    "Use the /start command and follow the instructions to submit a report.\n\n" +
-    "2. How do I link my account?\n" +
-    "Press the 'Link Account' button in the main menu and follow the instructions.\n\n" +
-    "3. How can I check the status of my reports?\n" +
-    "Use the /mystatus command or the 'My Reports' button.\n\n" +
-    "4. Where can I submit reports?\n" +
-    "Only within the boundaries of the City of Turin.\n\n" +
-    "5. I need help, who can I contact?\n" +
-    "Use the /contact command to get support.";
+      "1. How can I report an issue?\n" +
+      "Use the /start command and follow the instructions to submit a report.\n\n" +
+      "2. How do I link my account?\n" +
+      "Press the 'Link Account' button in the main menu and follow the instructions.\n\n" +
+      "3. How can I check the status of my reports?\n" +
+      "Use the 'My Reports' button in the main menu to see your reports.\n\n" +
+      "4. Where can I submit reports?\n" +
+      "Reports can be submitted only within the boundaries of the City of Turin.\n\n" +
+      "5. I need help, who can I contact?\n" +
+      "Use the /contact command to get support.";
   await ctx.editMessageText(faqText, {
     parse_mode: "HTML",
     ...Markup.inlineKeyboard([
@@ -361,9 +361,9 @@ bot.command("faq", (ctx) => {
       "2. How do I link my account?\n" +
       "Press the 'Link Account' button in the main menu and follow the instructions.\n\n" +
       "3. How can I check the status of my reports?\n" +
-      "Use the /mystatus command or the 'My Reports' button.\n\n" +
+      "Use the 'My Reports' button in the main menu to see your reports.\n\n" +
       "4. Where can I submit reports?\n" +
-      "Only within the boundaries of the City of Turin.\n\n" +
+      "Reports can be submitted only within the boundaries of the City of Turin.\n\n" +
       "5. I need help, who can I contact?\n" +
       "Use the /contact command to get support.",
     {
@@ -511,7 +511,7 @@ bot.action("menu_main", async (ctx) => {
   await ctx.answerCbQuery("🏠 Returning to main menu");
   await ctx.editMessageText(
     "🎆 *Welcome to Participium Bot!*\n\n" +
-      "🔔 I will send you notifications about your civic reports.\n" +
+      "📍 Submit new reports and track existing ones.\n"  +
       "💪 Together we make our city better!\n\n" +
       "👇 *Choose an action:*\n" +
       "\nYou can also use /help, /faq, or /contact at any time.",
