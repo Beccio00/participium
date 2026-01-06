@@ -1315,6 +1315,16 @@ paths:
                 code: 403
                 error: "Forbidden"
                 message: "Administrator privileges required"
+        "404":
+          description: Municipality user not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Municipality user not found"
         "409":
           description: Email already exists
           content:
