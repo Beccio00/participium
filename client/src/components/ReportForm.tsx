@@ -44,7 +44,6 @@ const createColoredIcon = () => {
 };
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
 import { createReport } from "../api/api";
-import { useAuth } from "../hooks/useAuth";
 import { userHasRole } from "../utils/roles";
 import { Role } from "../../../shared/RoleTypes";
 import AccessRestricted from "./AccessRestricted";
