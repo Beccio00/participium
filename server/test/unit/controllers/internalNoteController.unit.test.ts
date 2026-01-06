@@ -38,7 +38,7 @@ describe("Internal Note Controller - PT26", () => {
       mockReq = {
         params: { reportId: "1" },
         body: { content: "Technical note content" },
-        user: { id: 10, role: Role.INFRASTRUCTURES } as any,
+        user: { id: 10, role: [Role.INFRASTRUCTURES] } as any,
       };
 
       const mockNote = {
@@ -46,13 +46,13 @@ describe("Internal Note Controller - PT26", () => {
         content: "Technical note content",
         reportId: 1,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
         createdAt: new Date("2024-01-01"),
         author: {
           id: 10,
           first_name: "Tech",
           last_name: "User",
-          role: Role.INFRASTRUCTURES,
+          role: [Role.INFRASTRUCTURES],
         },
       };
 
@@ -64,7 +64,7 @@ describe("Internal Note Controller - PT26", () => {
         1,
         "Technical note content",
         10,
-        Role.INFRASTRUCTURES
+        [Role.INFRASTRUCTURES]
       );
       expect(mockStatus).toHaveBeenCalledWith(201);
       expect(mockJson).toHaveBeenCalledWith(mockNote);
@@ -74,7 +74,7 @@ describe("Internal Note Controller - PT26", () => {
       mockReq = {
         params: { reportId: "5" },
         body: { content: "External maintainer note" },
-        user: { id: 20, role: Role.EXTERNAL_MAINTAINER } as any,
+        user: { id: 20, role: [Role.EXTERNAL_MAINTAINER] } as any,
       };
 
       const mockNote = {
@@ -82,13 +82,13 @@ describe("Internal Note Controller - PT26", () => {
         content: "External maintainer note",
         reportId: 5,
         authorId: 20,
-        authorRole: Role.EXTERNAL_MAINTAINER,
+        authorRole: [Role.EXTERNAL_MAINTAINER],
         createdAt: new Date("2024-01-02"),
         author: {
           id: 20,
           first_name: "External",
           last_name: "User",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
         },
       };
 
@@ -100,7 +100,7 @@ describe("Internal Note Controller - PT26", () => {
         5,
         "External maintainer note",
         20,
-        Role.EXTERNAL_MAINTAINER
+        [Role.EXTERNAL_MAINTAINER]
       );
       expect(mockStatus).toHaveBeenCalledWith(201);
       expect(mockJson).toHaveBeenCalledWith(mockNote);
@@ -110,7 +110,7 @@ describe("Internal Note Controller - PT26", () => {
       mockReq = {
         params: { reportId: "999" },
         body: { content: "Note for non-existent report" },
-        user: { id: 10, role: Role.INFRASTRUCTURES } as any,
+        user: { id: 10, role: [Role.INFRASTRUCTURES] } as any,
       };
 
       const error = new Error("Report not found");
@@ -124,7 +124,7 @@ describe("Internal Note Controller - PT26", () => {
         999,
         "Note for non-existent report",
         10,
-        Role.INFRASTRUCTURES
+        [Role.INFRASTRUCTURES]
       );
       expect(mockStatus).not.toHaveBeenCalled();
       expect(mockJson).not.toHaveBeenCalled();
@@ -134,7 +134,7 @@ describe("Internal Note Controller - PT26", () => {
       mockReq = {
         params: { reportId: "42" },
         body: { content: "Test note" },
-        user: { id: 10, role: Role.WASTE_MANAGEMENT } as any,
+        user: { id: 10, role: [Role.WASTE_MANAGEMENT] } as any,
       };
 
       const mockNote = {
@@ -142,13 +142,13 @@ describe("Internal Note Controller - PT26", () => {
         content: "Test note",
         reportId: 42,
         authorId: 10,
-        authorRole: Role.WASTE_MANAGEMENT,
+        authorRole: [Role.WASTE_MANAGEMENT],
         createdAt: new Date(),
         author: {
           id: 10,
           first_name: "Waste",
           last_name: "Manager",
-          role: Role.WASTE_MANAGEMENT,
+          role: [Role.WASTE_MANAGEMENT],
         },
       };
 
@@ -156,12 +156,9 @@ describe("Internal Note Controller - PT26", () => {
 
       await createInternalNote(mockReq as Request, mockRes as Response);
 
-      expect(mockCreateInternalNote).toHaveBeenCalledWith(
-        42,
-        "Test note",
-        10,
-        Role.WASTE_MANAGEMENT
-      );
+      expect(mockCreateInternalNote).toHaveBeenCalledWith(42, "Test note", 10, [
+        Role.WASTE_MANAGEMENT,
+      ]);
     });
   });
 
@@ -169,7 +166,7 @@ describe("Internal Note Controller - PT26", () => {
     it("should retrieve all internal notes for a report", async () => {
       mockReq = {
         params: { reportId: "1" },
-        user: { id: 10, role: Role.INFRASTRUCTURES } as any,
+        user: { id: 10, role: [Role.INFRASTRUCTURES] } as any,
       };
 
       const mockNotes = [
@@ -178,13 +175,13 @@ describe("Internal Note Controller - PT26", () => {
           content: "First note",
           reportId: 1,
           authorId: 10,
-          authorRole: Role.INFRASTRUCTURES,
+          authorRole: [Role.INFRASTRUCTURES],
           createdAt: new Date("2024-01-01"),
           author: {
             id: 10,
             first_name: "Tech",
             last_name: "User",
-            role: Role.INFRASTRUCTURES,
+            role: [Role.INFRASTRUCTURES],
           },
         },
         {
@@ -192,13 +189,13 @@ describe("Internal Note Controller - PT26", () => {
           content: "Second note",
           reportId: 1,
           authorId: 20,
-          authorRole: Role.EXTERNAL_MAINTAINER,
+          authorRole: [Role.EXTERNAL_MAINTAINER],
           createdAt: new Date("2024-01-02"),
           author: {
             id: 20,
             first_name: "External",
             last_name: "User",
-            role: Role.EXTERNAL_MAINTAINER,
+            role: [Role.EXTERNAL_MAINTAINER],
           },
         },
       ];
@@ -215,7 +212,7 @@ describe("Internal Note Controller - PT26", () => {
     it("should return empty array when no internal notes exist", async () => {
       mockReq = {
         params: { reportId: "5" },
-        user: { id: 10, role: Role.ROAD_MAINTENANCE } as any,
+        user: { id: 10, role: [Role.ROAD_MAINTENANCE] } as any,
       };
 
       mockGetInternalNotes.mockResolvedValue([]);
@@ -230,7 +227,7 @@ describe("Internal Note Controller - PT26", () => {
     it("should handle service errors during retrieval", async () => {
       mockReq = {
         params: { reportId: "999" },
-        user: { id: 10, role: Role.INFRASTRUCTURES } as any,
+        user: { id: 10, role: [Role.INFRASTRUCTURES] } as any,
       };
 
       const error = new Error("Report not found");
@@ -248,7 +245,7 @@ describe("Internal Note Controller - PT26", () => {
     it("should pass correct user id to service", async () => {
       mockReq = {
         params: { reportId: "10" },
-        user: { id: 42, role: Role.CIVIL_PROTECTION } as any,
+        user: { id: 42, role: [Role.CIVIL_PROTECTION] } as any,
       };
 
       mockGetInternalNotes.mockResolvedValue([]);
@@ -261,7 +258,7 @@ describe("Internal Note Controller - PT26", () => {
     it("should handle multiple notes in chronological order", async () => {
       mockReq = {
         params: { reportId: "3" },
-        user: { id: 15, role: Role.GREENSPACES_AND_ANIMAL_PROTECTION } as any,
+        user: { id: 15, role: [Role.GREENSPACES_AND_ANIMAL_PROTECTION] } as any,
       };
 
       const mockNotes = [
@@ -298,7 +295,7 @@ describe("Internal Note Controller - PT26", () => {
       mockReq = {
         params: { reportId: "invalid" },
         body: { content: "Test note" },
-        user: { id: 10, role: Role.INFRASTRUCTURES } as any,
+        user: { id: 10, role: [Role.INFRASTRUCTURES] } as any,
       };
 
       await createInternalNote(mockReq as Request, mockRes as Response);
@@ -308,7 +305,7 @@ describe("Internal Note Controller - PT26", () => {
         NaN,
         "Test note",
         10,
-        Role.INFRASTRUCTURES
+        [Role.INFRASTRUCTURES]
       );
     });
 
@@ -316,7 +313,7 @@ describe("Internal Note Controller - PT26", () => {
       mockReq = {
         params: { reportId: "1" },
         body: { content: "" },
-        user: { id: 10, role: Role.INFRASTRUCTURES } as any,
+        user: { id: 10, role: [Role.INFRASTRUCTURES] } as any,
       };
 
       const mockNote = {
@@ -324,7 +321,7 @@ describe("Internal Note Controller - PT26", () => {
         content: "",
         reportId: 1,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
         createdAt: new Date(),
       };
 
@@ -332,12 +329,9 @@ describe("Internal Note Controller - PT26", () => {
 
       await createInternalNote(mockReq as Request, mockRes as Response);
 
-      expect(mockCreateInternalNote).toHaveBeenCalledWith(
-        1,
-        "",
-        10,
-        Role.INFRASTRUCTURES
-      );
+      expect(mockCreateInternalNote).toHaveBeenCalledWith(1, "", 10, [
+        Role.INFRASTRUCTURES,
+      ]);
     });
 
     it("should handle very long note content", async () => {
@@ -345,7 +339,7 @@ describe("Internal Note Controller - PT26", () => {
       mockReq = {
         params: { reportId: "1" },
         body: { content: longContent },
-        user: { id: 10, role: Role.INFRASTRUCTURES } as any,
+        user: { id: 10, role: [Role.INFRASTRUCTURES] } as any,
       };
 
       const mockNote = {
@@ -353,7 +347,7 @@ describe("Internal Note Controller - PT26", () => {
         content: longContent,
         reportId: 1,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
         createdAt: new Date(),
       };
 
@@ -361,12 +355,9 @@ describe("Internal Note Controller - PT26", () => {
 
       await createInternalNote(mockReq as Request, mockRes as Response);
 
-      expect(mockCreateInternalNote).toHaveBeenCalledWith(
-        1,
-        longContent,
-        10,
-        Role.INFRASTRUCTURES
-      );
+      expect(mockCreateInternalNote).toHaveBeenCalledWith(1, longContent, 10, [
+        Role.INFRASTRUCTURES,
+      ]);
     });
   });
 });

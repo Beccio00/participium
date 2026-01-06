@@ -11,13 +11,13 @@ export default function CompaniesTable({ companies, onDelete }: CompaniesTablePr
   if (companies.length === 0) {
     return (
       <div className="table-responsive">
-        <Table hover className="align-middle">
+        <Table hover responsive className="align-middle mb-0">
           <thead className="bg-light">
             <tr>
-              <th>Company Name</th>
-              <th>Platform Access</th>
-              <th>Categories</th>
-              <th className="text-end">Actions</th>
+              <th style={{ minWidth: '180px' }}>Company Name</th>
+              <th style={{ minWidth: '140px' }}>Platform Access</th>
+              <th style={{ minWidth: '200px' }}>Categories</th>
+              <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -34,13 +34,13 @@ export default function CompaniesTable({ companies, onDelete }: CompaniesTablePr
 
   return (
     <div className="table-responsive">
-      <Table hover className="align-middle">
+      <Table hover responsive className="align-middle mb-0">
         <thead className="bg-light">
           <tr>
-            <th>Company Name</th>
-            <th>Platform Access</th>
-            <th>Categories</th>
-            <th className="text-end">Actions</th>
+            <th style={{ minWidth: '180px' }}>Company Name</th>
+            <th style={{ minWidth: '140px' }}>Platform Access</th>
+            <th style={{ minWidth: '200px' }}>Categories</th>
+            <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
           </tr>
         </thead>
         <tbody>

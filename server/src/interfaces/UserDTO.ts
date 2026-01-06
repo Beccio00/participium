@@ -50,21 +50,20 @@ export type UserDTO = {
   firstName: string;
   lastName: string;
   email: string;
-  role: Role;
+  role: Role[];
   isVerified: boolean;
   telegramUsername: string | null;
   emailNotificationsEnabled: boolean;
 };
 
 export function toUserDTO(u: User): UserDTO {
+  const roles = Array.isArray(u.role) ? u.role : [u.role as unknown as Role];
   return {
     id: u.id,
     firstName: u.first_name,
     lastName: u.last_name,
     email: u.email,
-    role: Object.values(Role).includes(String(u.role) as Role)
-      ? (u.role as unknown as Role)
-      : (String(u.role) as Role),
+    role: roles,
     isVerified: !!u.isVerified,
     telegramUsername: u.telegram_username ?? null,
     emailNotificationsEnabled: u.email_notifications_enabled ?? true,
@@ -79,13 +78,12 @@ export type MunicipalityUserDTO = Pick<
 };
 
 export function toMunicipalityUserDTO(u: User): MunicipalityUserDTO {
+  const roles = Array.isArray(u.role) ? u.role : [u.role as unknown as Role];
   return {
     id: u.id,
     firstName: u.first_name,
     lastName: u.last_name,
     email: u.email,
-    role: Object.values(Role).includes(String(u.role) as Role)
-      ? (u.role as unknown as Role)
-      : (String(u.role) as Role),
+    role: roles,
   };
 }

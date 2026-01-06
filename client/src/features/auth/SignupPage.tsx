@@ -7,16 +7,21 @@ import Input from "../../components/ui/Input.tsx";
 import { SignupValidator } from "../../validators/SignupValidator";
 import type { SignupFormData } from "../../../../shared/SignupTypes";
 
+interface ExtendedSignupFormData extends SignupFormData {
+  confirmPassword: string;
+}
+
 export default function SignupPage() {
   const navigate = useNavigate();
   const { signup } = useAuth();
   const [showPasswordRequirements, setShowPasswordRequirements] =
     useState(false);
 
-  const handleSignup = async (values: SignupFormData) => {
+  const handleSignup = async (values: ExtendedSignupFormData) => {
     try {
-      await signup(values);
-      // Dopo la registrazione, reindirizza alla pagina di verifica email
+      const { confirmPassword, ...apiData } = values;
+      await signup(apiData);
+      // After registration, redirect to the email verification page
       navigate("/verify-email", { state: { email: values.email } });
       form.resetForm();
     } catch (err) {
@@ -42,19 +47,27 @@ export default function SignupPage() {
     }
   };
 
-  const form = useForm<SignupFormData>({
+  const form = useForm<ExtendedSignupFormData>({
     initialValues: {
       firstName: "",
       lastName: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
     validate: (values) => {
-      const result = SignupValidator.validate(values);
-      if (!result.isValid) {
-        return result.errors as Partial<Record<keyof SignupFormData, string>>;
+      const result = SignupValidator.validate(values as SignupFormData);
+      const errors: Partial<Record<keyof ExtendedSignupFormData, string>> =
+        result.isValid
+          ? {}
+          : (result.errors as Partial<
+              Record<keyof ExtendedSignupFormData, string>
+            >);
+
+      if (values.confirmPassword && values.password != values.confirmPassword) {
+        errors.confirmPassword = "Passwords do not match";
       }
-      return {};
+      return errors;
     },
     onSubmit: handleSignup,
   });
@@ -64,6 +77,7 @@ export default function SignupPage() {
     form.values.lastName.trim() &&
     form.values.email.trim() &&
     form.values.password.trim() &&
+    form.values.confirmPassword.trim() &&
     Object.values(form.errors).every((error) => !error);
 
   // Rimosso il messaggio di successo, ora si viene reindirizzati a /verify-email
@@ -161,6 +175,30 @@ export default function SignupPage() {
               error={form.errors.password}
               disabled={form.isSubmitting}
               placeholder="Choose a secure password"
+              maxLength={100}
+              helperText={
+                showPasswordRequirements
+                  ? "Password must be at least 8 characters long"
+                  : undefined
+              }
+              className="mb-4"
+            />
+            <Input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              label="Confirm password *"
+              value={form.values.confirmPassword}
+              onChange={form.handleChange}
+              onFocus={() => setShowPasswordRequirements(true)}
+              onBlur={() =>
+                setShowPasswordRequirements(
+                  form.values.confirmPassword.length > 0
+                )
+              }
+              error={form.errors.confirmPassword}
+              disabled={form.isSubmitting}
+              placeholder="Confirm your password"
               maxLength={100}
               helperText={
                 showPasswordRequirements

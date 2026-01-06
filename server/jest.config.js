@@ -7,6 +7,7 @@ module.exports = {
   testMatch: ["**/*.test.ts"],
   maxWorkers: 1, // Run tests sequentially to avoid database conflicts
   setupFiles: ["<rootDir>/test/helpers/setupEnv.ts"],
+  globalSetup: "<rootDir>/test/helpers/globalSetup.ts",
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
@@ -17,13 +18,14 @@ module.exports = {
   coverageReporters: ["text", "lcov", "html"],
   verbose: true,
   forceExit: true,
+  detectOpenHandles: true,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
   // TypeORM需要这个
   transform: {
     "^.+\\.tsx?$": ["ts-jest", {
-      tsconfig: "tsconfig.json",
+      tsconfig: "<rootDir>/tsconfig.json",
     }],
   },
   // 设置测试超时时间

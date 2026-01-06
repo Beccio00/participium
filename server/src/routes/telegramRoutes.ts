@@ -8,7 +8,9 @@ import {
   getStatus,
   unlink,
   createReport,
-  checkLinked,
+  getMyReports,
+  getReportStatus,
+  checkLinked
 } from "../controllers/telegramController";
 
 const router = Router();
@@ -40,8 +42,22 @@ router.delete(
   asyncHandler(unlink)
 );
 
-// POST /api/telegram/reports - Create a new report (called by bot, authenticated via telegramId)
+// POST /api/telegram/reports - Create a new report (called by bot, authenticated via telegramId in body)
 router.post("/reports", ApiValidationMiddleware, asyncHandler(createReport));
+
+// GET /api/telegram/:telegramId/reports - Get user's reports (called by bot)
+router.get(
+  "/:telegramId/reports",
+  ApiValidationMiddleware,
+  asyncHandler(getMyReports)
+);
+
+// GET /api/telegram/:telegramId/reports/:reportId - Get report status (called by bot)
+router.get(
+  "/:telegramId/reports/:reportId",
+  ApiValidationMiddleware,
+  asyncHandler(getReportStatus)
+);
 
 // POST /api/telegram/check-linked - Check if a telegramId is linked to a user (called by bot)
 router.post("/check-linked", ApiValidationMiddleware, asyncHandler(checkLinked));
