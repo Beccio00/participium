@@ -195,7 +195,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
   useEffect(() => {
-    // Carica i report solo se il cittadino è loggato
+    // Load reports only if the citizen is logged in
     if (isAuthenticated && user?.role === "CITIZEN") {
       getReports()
         .then(setReports)
