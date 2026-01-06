@@ -16,6 +16,7 @@ import {
   Camera,
   X,
   Map as MapIcon,
+  ExclamationCircleFill,
 } from "react-bootstrap-icons";
 import MapView from "./MapView";
 import L from "leaflet"; // Used for custom marker icon
@@ -44,6 +45,7 @@ const createColoredIcon = () => {
 };
 import type { ReportCategory, ReportPhoto } from "../../../shared/ReportTypes";
 import { createReport } from "../api/api";
+import { useAuth } from "../hooks/useAuth";
 import { userHasRole } from "../utils/roles";
 import { Role } from "../../../shared/RoleTypes";
 import AccessRestricted from "./AccessRestricted";
@@ -74,6 +76,7 @@ import { fetchAddressFromCoordinates } from "../utils/address";
 
 export default function ReportForm() {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   // State for all form fields
   
   const [formData, setFormData] = useState({
