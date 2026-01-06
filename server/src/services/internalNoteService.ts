@@ -14,7 +14,7 @@ export async function createInternalNote(
   reportId: number,
   content: string,
   authorId: number,
-  authorRole: Role
+  authorRole: Role[]
 ): Promise<InternalNoteDTO> {
 
   if (!content || content.trim().length === 0) {

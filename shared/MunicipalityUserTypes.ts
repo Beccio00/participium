@@ -3,22 +3,7 @@ export interface MunicipalityUserRequest {
   lastName: string;
   email: string;
   password: string;
-  role:
-    | "ADMINISTRATOR"
-    | "PUBLIC_RELATIONS"
-    | "CULTURE_EVENTS_TOURISM_SPORTS"
-    | "LOCAL_PUBLIC_SERVICES"
-    | "EDUCATION_SERVICES"
-    | "PUBLIC_RESIDENTIAL_HOUSING"
-    | "INFORMATION_SYSTEMS"
-    | "MUNICIPAL_BUILDING_MAINTENANCE"
-    | "PRIVATE_BUILDINGS"
-    | "INFRASTRUCTURES"
-    | "GREENSPACES_AND_ANIMAL_PROTECTION"
-    | "WASTE_MANAGEMENT"
-    | "ROAD_MAINTENANCE"
-    | "CIVIL_PROTECTION"
-    | "EXTERNAL_MAINTAINER";
+  role: MunicipalityUserRoles[];
 }
 
 export interface MunicipalityUserResponse {
@@ -26,7 +11,10 @@ export interface MunicipalityUserResponse {
   firstName: string;
   lastName: string;
   email: string;
-  role:
+  role: MunicipalityUserRoles[];
+}
+
+export type MunicipalityUserRoles =
     | "ADMINISTRATOR"
     | "PUBLIC_RELATIONS"
     | "CULTURE_EVENTS_TOURISM_SPORTS"
@@ -42,4 +30,5 @@ export interface MunicipalityUserResponse {
     | "ROAD_MAINTENANCE"
     | "CIVIL_PROTECTION"
     | "EXTERNAL_MAINTAINER";
-}
+
+

@@ -14,13 +14,22 @@ import { BadRequestError } from "../utils";
 
 const userRepository = new UserRepository();
 
+//helper function for roles
+
+const getRolesAsArray = (roleData:any): Role[] =>{
+  if(Array.isArray(roleData)){
+    return roleData as Role[];
+  }
+  return [roleData as Role];
+}
+
 export async function createMunicipalityUser(data: {
   email: string;
   first_name: string;
   last_name: string;
   password: string;
   salt: string;
-  role: Role;
+  role: Role[];
 }): Promise<User> {
   const created = await createUser({
     email: data.email,
@@ -28,7 +37,7 @@ export async function createMunicipalityUser(data: {
     last_name: data.last_name,
     password: data.password,
     salt: data.salt,
-    role: data.role,
+    role: getRolesAsArray(data.role),
     telegram_username: null,
     email_notifications_enabled: true,
   });
@@ -47,7 +56,7 @@ export async function getAllMunicipalityUsers(): Promise<User[]> {
 export async function getMunicipalityUserById(id: number): Promise<User | null> {
   const user = await findById(id);
   if (!user) return null;
-  if (!MUNICIPALITY_ROLES.includes(user.role as Role)) return null;
+  if (!MUNICIPALITY_ROLES.some(role => getRolesAsArray(user.role).includes(role))) return null;
   return user;
 }
 
@@ -57,7 +66,7 @@ export async function updateMunicipalityUser(id: number, data: {
   last_name?: string;
   password?: string;
   salt?: string;
-  role?: Role;
+  role?: Role[];
 }): Promise<User | null> {
   const existing = await getMunicipalityUserById(id);
   if (!existing) return null;
@@ -75,14 +84,15 @@ export async function updateMunicipalityUser(id: number, data: {
 }
 
 async function countAdministrators(): Promise<number> {
-  return await userRepository.countByRole(Role.ADMINISTRATOR);
+  const users = await userRepository.findByRoles([Role.ADMINISTRATOR]);
+  return users.length;
 }
 
 export async function deleteMunicipalityUser(id: number): Promise<boolean> {
   const existing = await getMunicipalityUserById(id);
   if (!existing) return false;
 
-  if (existing.role === Role.ADMINISTRATOR) {
+  if (existing.role.includes(Role.ADMINISTRATOR)) {
     const adminCount = await countAdministrators();
     if (adminCount <= 1) {
       throw new BadRequestError("Cannot delete the last administrator account");
@@ -95,6 +105,6 @@ export async function deleteMunicipalityUser(id: number): Promise<boolean> {
 export async function findMunicipalityUserByEmail(email: string): Promise<User | null> {
   const user = await findByEmail(email);
   if (!user) return null;
-  if (!MUNICIPALITY_ROLES.includes(user.role as Role)) return null;
+  if (!MUNICIPALITY_ROLES.some(role => getRolesAsArray(user.role).includes(role))) return null;
   return user;
 }

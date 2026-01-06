@@ -144,7 +144,7 @@ paths:
                   firstName: Mario
                   lastName: Rossi
                   email: mario.rossi@example.com
-                  role: CITIZEN
+                  roles: CITIZEN
                   telegramUsername: null
                   emailNotificationsEnabled: true
         "401":
@@ -928,6 +928,116 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /telegram/users/{telegramId}/reports:
+    get:
+      tags:
+        - Telegram
+      summary: Get list of reports for a Telegram user
+      description: |
+        Retrieve the list of reports submitted by the user associated with the provided Telegram ID.
+        Used by the Telegram bot for the `/myreports` command.
+      operationId: getTelegramUserReports
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+        - name: limit
+          in: query
+          required: false
+          description: Max number of reports to return
+          schema:
+            type: integer
+            default: 5
+            maximum: 20
+      responses:
+        "200":
+          description: List of reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSummary"
+        "404":
+          description: User not found or Telegram account not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/users/{telegramId}/reports/{reportId}:
+    get:
+      tags:
+        - Telegram
+      summary: Get report details for a Telegram user
+      description: |
+        Retrieve detailed status of a specific report for a Telegram user.
+        Used by the Telegram bot for the `/reportstatus {id}` command.
+        The backend verifies that the report belongs to the user linked to the telegramId.
+      operationId: getTelegramReportDetails
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report to retrieve
+          schema:
+            type: integer
+            format: int64
+          example: 1024
+      responses:
+        "200":
+          description: Report details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+        "403":
+          description: Not authorized to view this report (report belongs to another user)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "You do not have permission to view this report"
+        "404":
+          description: Report not found or User not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                reportNotFound:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Report not found"
+                userNotLinked:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /admin/municipality-users:
     post:
       tags:
@@ -950,7 +1060,7 @@ paths:
               lastName: Verdi
               email: giuseppe.verdi@comune.torino.it
               password: AdminPass123!
-              role: LOCAL_PUBLIC_SERVICES
+              roles: LOCAL_PUBLIC_SERVICES
       responses:
         "201":
           description: Municipality user created successfully
@@ -1038,17 +1148,17 @@ paths:
                   firstName: "Giuseppe"
                   lastName: "Verdi"
                   email: "giuseppe.verdi@comune.torino.it"
-                  role: "LOCAL_PUBLIC_SERVICES"
+                  roles: "LOCAL_PUBLIC_SERVICES"
                 - id: 456
                   firstName: "Maria"
                   lastName: "Rossi"
                   email: "maria.rossi@comune.torino.it"
-                  role: "ADMINISTRATOR"
+                  roles: "ADMINISTRATOR"
                 - id: 789
                   firstName: "Franco"
                   lastName: "Bianchi"
                   email: "franco.bianchi@comune.torino.it"
-                  role: "ROAD_MAINTENANCE"
+                  roles: "ROAD_MAINTENANCE"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1124,6 +1234,115 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      tags:
+        - Administration
+      summary: Update municipality user
+      description: |
+        Update municipality user data including basic information and roles.
+        At least one field must be provided for update.
+      operationId: updateMunicipalityUser
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the municipality user
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  description: First name of the user
+                lastName:
+                  type: string
+                  description: Last name of the user
+                email:
+                  type: string
+                  format: email
+                  description: Email address of the user
+                password:
+                  type: string
+                  minLength: 8
+                  description: New password for the user
+                roles:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/MunicipalityRole"
+                  description: List of roles for the user
+              additionalProperties: false
+            example:
+              firstName: "Mario"
+              lastName: "Rossi"
+              email: "mario.rossi@comune.torino.it"
+              roles: ["PUBLIC_RELATIONS", "ADMINISTRATOR"]
+      responses:
+        "200":
+          description: Municipality user updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MunicipalityUserResponse"
+        "400":
+          description: Missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                error: "BadRequest"
+                message: "Missing required fields: firstName, lastName, email, password, role"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Administrator privileges required"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Email already in use"
+        "500":
+          description: Unable to update user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Unable to update municipality user"
 
   /admin/roles:
     get:
@@ -1308,7 +1527,7 @@ paths:
                             type: string
                           email:
                             type: string
-                          role:
+                          roles:
                             type: string
               example:
                 - id: 1
@@ -1320,7 +1539,7 @@ paths:
                       firstName: "Mario"
                       lastName: "Rossi"
                       email: "mario.rossi@greentech.com"
-                      role: "EXTERNAL_MAINTAINER"
+                      roles: "EXTERNAL_MAINTAINER"
         "401":
           description: Not authenticated
           content:
@@ -1462,7 +1681,7 @@ paths:
                             type: string
                           email:
                             type: string
-                          role:
+                          roles:
                             type: string
                             enum: ["EXTERNAL_MAINTAINER"]
               example:
@@ -1475,7 +1694,7 @@ paths:
                       firstName: "Giuseppe"
                       lastName: "Bianchi"
                       email: "giuseppe.bianchi@greentech.com"
-                      role: "EXTERNAL_MAINTAINER"
+                      roles: "EXTERNAL_MAINTAINER"
                 - id: 2
                   name: "Tech Services Inc"
                   categories: ["INFRASTRUCTURE"]
@@ -1544,7 +1763,7 @@ paths:
                     type: string
                   email:
                     type: string
-                  role:
+                  roles:
                     type: string
                   company:
                     type: object
@@ -1564,7 +1783,7 @@ paths:
                 firstName: "Mario"
                 lastName: "Rossi"
                 email: "mario.rossi@greentech.com"
-                role: "EXTERNAL_MAINTAINER"
+                roles: "EXTERNAL_MAINTAINER"
                 company:
                   id: 1
                   name: "Green Tech Solutions"
@@ -1635,7 +1854,7 @@ paths:
                       type: string
                     email:
                       type: string
-                    role:
+                    roles:
                       type: string
                     company:
                       type: object
@@ -1655,7 +1874,7 @@ paths:
                   firstName: "Mario"
                   lastName: "Rossi"
                   email: "mario.rossi@greentech.com"
-                  role: "EXTERNAL_MAINTAINER"
+                  roles: "EXTERNAL_MAINTAINER"
                   company:
                     id: 1
                     name: "Green Tech Solutions"
@@ -1665,7 +1884,7 @@ paths:
                   firstName: "Laura"
                   lastName: "Bianchi"
                   email: "laura.bianchi@aquafix.com"
-                  role: "EXTERNAL_MAINTAINER"
+                  roles: "EXTERNAL_MAINTAINER"
                   company:
                     id: 2
                     name: "Aqua Fix Srl"
@@ -1727,7 +1946,7 @@ paths:
                     type: string
                   email:
                     type: string
-                  role:
+                  roles:
                     type: string
                   company:
                     type: object
@@ -1747,7 +1966,7 @@ paths:
                 firstName: "Mario"
                 lastName: "Rossi"
                 email: "mario.rossi@greentech.com"
-                role: "EXTERNAL_MAINTAINER"
+                roles: "EXTERNAL_MAINTAINER"
                 company:
                   id: 1
                   name: "Green Tech Solutions"
@@ -1902,7 +2121,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -2047,7 +2266,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2055,7 +2274,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -2073,7 +2292,7 @@ paths:
                       url: "https://cdn.example.com/reports/1024/photo1.jpg"
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
-                  updatedAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T11:15:00Z"
 
                 - id: 1025
                   title: "Broken street light"
@@ -2096,7 +2315,7 @@ paths:
                     firstName: Paolo
                     lastName: Neri
                     email: paolo.neri@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages: []
                   rejectedReason: null
                   photos: []
@@ -2159,7 +2378,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -2242,12 +2461,12 @@ paths:
                   firstName: Luca
                   lastName: Verdi
                   email: luca.verdi@municipality.com
-                  role: MUNICIPAL_BUILDING_MAINTENANCE
+                  roles: MUNICIPAL_BUILDING_MAINTENANCE
                 - id: 306
                   firstName: Paolo
                   lastName: Neri
                   email: paolo.neri@municipality.com
-                  role: ROAD_MAINTENANCE
+                  roles: ROAD_MAINTENANCE
         "401":
           description: Not authenticated
           content:
@@ -2335,12 +2554,12 @@ paths:
                       firstName: Marco
                       lastName: Bianchi
                       email: marco.bianchi@enelx.com
-                      role: EXTERNAL_MAINTAINER
+                      roles: EXTERNAL_MAINTAINER
                     - id: 502
                       firstName: Giulia
                       lastName: Ferrari
                       email: giulia.ferrari@enelx.com
-                      role: EXTERNAL_MAINTAINER
+                      roles: EXTERNAL_MAINTAINER
                 - id: 11
                   name: AMIAT Torino
                   categories:
@@ -2353,7 +2572,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                               $ref: "#/components/schemas/ErrorResponse"
               example:
                 code: 401
                 error: "Unauthorized"
@@ -2405,7 +2624,7 @@ paths:
       summary: Assign a report to an external maintainer or company
       description: |
         Assign a report to an external entity for specialized intervention.
-        Only technical office staff members can perform this operation.
+        Only technical office members can perform this operation.
         The report status changes from PENDING_APPROVAL or ASSIGNED to EXTERNAL_ASSIGNED when assigned to external entities.
         External assignment creates a specialized workflow for external company maintenance.
 
@@ -2482,7 +2701,7 @@ paths:
                         firstName: Mario
                         lastName: Rossi
                         email: mario.rossi@example.com
-                        role: CITIZEN
+                        roles: CITIZEN
                         telegramUsername: null
                         emailNotificationsEnabled: true
                       assignedOfficer:
@@ -2490,7 +2709,7 @@ paths:
                         firstName: Luca
                         lastName: Verdi
                         email: luca.verdi@municipality.com
-                        role: MUNICIPAL_BUILDING_MAINTENANCE
+                        roles: MUNICIPAL_BUILDING_MAINTENANCE
                       externalHandler:
                         type: user
                         user:
@@ -2498,7 +2717,7 @@ paths:
                           firstName: Marco
                           lastName: Bianchi
                           email: marco.bianchi@enelx.com
-                          role: EXTERNAL_MAINTAINER
+                          roles: EXTERNAL_MAINTAINER
                           company:
                             id: 10
                             name: Enel X
@@ -2523,7 +2742,7 @@ paths:
                         firstName: Maria
                         lastName: Bianchi
                         email: maria.bianchi@example.com
-                        role: CITIZEN
+                        roles: CITIZEN
                         telegramUsername: null
                         emailNotificationsEnabled: true
                       assignedOfficer:
@@ -2531,7 +2750,7 @@ paths:
                         firstName: Paolo
                         lastName: Neri
                         email: paolo.neri@municipality.com
-                        role: MUNICIPAL_BUILDING_MAINTENANCE
+                        roles: MUNICIPAL_BUILDING_MAINTENANCE
                       externalHandler:
                         type: company
                         company:
@@ -2703,7 +2922,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2711,7 +2930,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: MUNICIPAL_BUILDING_MAINTENANCE
+                    roles: MUNICIPAL_BUILDING_MAINTENANCE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -2719,7 +2938,7 @@ paths:
                       senderId: 201
                       senderRole: CITIZEN
                     - id: 2
-                      content: "Report approved and assigned by public relations officer"
+                      content: "Report approved by public relations officer"
                       createdAt: "2025-11-11T11:15:00Z"
                       senderId: 123
                       senderRole: PUBLIC_RELATIONS
@@ -2781,6 +3000,16 @@ paths:
                 code: 409
                 error: "Conflict"
                 message: "Report has already been processed"
+        "422":
+          description: Unprocessable Entity - Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: "UnprocessableEntity"
+                message: "Assigned technical is not valid for this report category"
         "500":
           description: Unable to approve report
           content:
@@ -2847,7 +3076,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -3012,7 +3241,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -3020,12 +3249,13 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
                       createdAt: "2025-11-11T10:12:34Z"
                       senderId: 201
+                      senderRole: CITIZEN
                     - id: 2
                       content: "Report assigned to technical staff"
                       createdAt: "2025-11-12T09:00:00Z"
@@ -3050,7 +3280,7 @@ paths:
                     firstName: Maria
                     lastName: Bianchi
                     email: maria.bianchi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -3058,7 +3288,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 3
                       content: "Initial report created by user"
@@ -4113,8 +4343,13 @@ components:
         email:
           type: string
           example: mario.rossi@example.com
-        role:
-          $ref: "#/components/schemas/UserRole"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
+          description: |
+            List of roles assigned to the user.
+            Municipality users may have multiple roles simultaneously."
         telegramUsername:
           type: string
           nullable: true
@@ -4181,8 +4416,12 @@ components:
           format: password
           description: Password (minimum 8 characters)
           example: AdminPass123!
-        role:
-          $ref: "#/components/schemas/MunicipalityRole"
+        roles:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
+          description: Initial roles assigned to the user
 
     MunicipalityUserResponse:
       type: object
@@ -4201,8 +4440,10 @@ components:
         email:
           type: string
           example: giuseppe.verdi@comune.torino.it
-        role:
-          $ref: "#/components/schemas/MunicipalityRole"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
 
     ExternalMaintainerResponse:
       type: object
@@ -4225,10 +4466,12 @@ components:
           format: email
           description: External maintainer's email address
           example: marco.bianchi@enelx.com
-        role:
-          type: string
-          enum:
-            - EXTERNAL_MAINTAINER
+        roles:
+          type: array                
+          items:                     
+            type: string
+            enum:
+              - EXTERNAL_MAINTAINER
           description: Role is always EXTERNAL_MAINTAINER
           example: EXTERNAL_MAINTAINER
         company:
@@ -4461,7 +4704,9 @@ components:
           format: int64
           example: 201
         senderRole:
-          $ref: "#/components/schemas/UserRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
           description: Role of the user who sent the message
           example: CITIZEN
 
@@ -4733,7 +4978,9 @@ components:
           description: Full name of the author (first name + last name)
           example: "Marco Bianchi"
         authorRole:
-          type: string
+          type: array
+          items:
+            type: string
           description: Role of the technical staff member who wrote the note
           example: "INFRASTRUCTURES"
         createdAt:
@@ -4842,12 +5089,12 @@ components:
         telegramUsername:
           type: string
           nullable: true
-          description: Telegram username if linked, null otherwise
+          description: Telegram username if linked, or null if not linked
           example: "mario_rossi"
         telegramId:
           type: string
           nullable: true
-          description: Telegram user ID if linked, null otherwise
+          description: Telegram user ID if linked, or null if not linked
           example: "123456789"
       required:
         - linked

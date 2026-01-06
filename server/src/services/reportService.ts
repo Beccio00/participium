@@ -266,7 +266,13 @@ export async function approveReport(
   );
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
   const assignedTechnical = await userRepository.findById(assignedTechnicalId);
-  if (!assignedTechnical || !validRoles.includes(assignedTechnical.role)) {
+  
+  // Controlla se l'utente ha almeno uno dei ruoli validi (role è un array)
+  const hasValidRole = assignedTechnical?.role?.some(userRole => 
+    validRoles.includes(userRole)
+  );
+  
+  if (!assignedTechnical || !hasValidRole) {
     throw new UnprocessableEntityError(
       "Assigned technical is not valid for this report category"
     );

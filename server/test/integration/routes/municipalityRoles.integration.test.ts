@@ -5,11 +5,11 @@ import {
   createTestUserData,
   createUserInDatabase,
 } from "../../helpers/testUtils";
+import { Role } from "../../../../shared/RoleTypes"; // Aggiungi questa linea
 
 const app = createApp();
 
-// Municipality User Role Management - User Story 935
-
+// Municipality User Role Management - User Story 935 + Story 10 // Aggiorna questo commento
 describe("GET /api/admin/municipality-users", () => {
   beforeEach(async () => {
     await cleanDatabase();
@@ -50,7 +50,7 @@ describe("GET /api/admin/municipality-users", () => {
     // Assert
     expect(response.body).toBeInstanceOf(Array);
     expect(response.body.length).toBe(1);
-    expect(response.body[0]).toHaveProperty("role", "PUBLIC_RELATIONS");
+    expect(response.body[0].role).toEqual(["PUBLIC_RELATIONS"]);
     expect(response.body[0]).toHaveProperty("email", munUserEmail);
     expect(response.body[0]).not.toHaveProperty("password");
   });
@@ -87,6 +87,166 @@ describe("GET /api/admin/municipality-users", () => {
       .expect(401);
 
     // Assert
+    expect(response.body).toHaveProperty("error", "Unauthorized");
+  });
+});
+
+describe("POST /api/admin/municipality-users", () => {
+  beforeEach(async () => {
+    await cleanDatabase();
+    jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    await disconnectDatabase();
+  });
+
+  it("should create new municipality user successfully", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    const newUserData = {
+      firstName: "Test",
+      lastName: "User",
+      email: `new-user-${Date.now()}@comune.torino.it`,
+      password: "Password123!",
+      role: ["PUBLIC_RELATIONS"]
+    };
+
+    // Act
+    const response = await agent
+      .post("/api/admin/municipality-users")
+      .send(newUserData)
+      .expect(201);
+
+    // Assert
+    expect(response.body).toHaveProperty("id");
+    expect(response.body.firstName).toBe(newUserData.firstName);
+    expect(response.body.lastName).toBe(newUserData.lastName);
+    expect(response.body.email).toBe(newUserData.email);
+    expect(response.body.role).toEqual(newUserData.role);
+    expect(response.body).not.toHaveProperty("password");
+  });
+
+  it("should reject creation with missing required fields", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    const incompleteUserData = {
+      firstName: "Test",
+      // missing lastName, email, password, role
+    };
+
+    // Act & Assert
+    const response = await agent
+      .post("/api/admin/municipality-users")
+      .send(incompleteUserData)
+      .expect(400);
+
+    expect(response.body.message).toContain("request/body must have required property");
+  });
+
+  it("should reject creation with invalid email format", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    const invalidEmailData = {
+      firstName: "Test",
+      lastName: "User",
+      email: "invalid-email",
+      password: "Password123!",
+      role: ["PUBLIC_RELATIONS"]
+    };
+
+    // Act & Assert
+    const response = await agent
+      .post("/api/admin/municipality-users")
+      .send(invalidEmailData)
+      .expect(400);
+
+    expect(response.body.message).toContain("email");
+  });
+
+  it("should reject creation with invalid roles", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    const invalidRolesData = {
+      firstName: "Test",
+      lastName: "User",
+      email: `test-${Date.now()}@comune.torino.it`,
+      password: "Password123!",
+      role: ["INVALID_ROLE"]
+    };
+
+    // Act & Assert
+    const response = await agent
+      .post("/api/admin/municipality-users")
+      .send(invalidRolesData)
+      .expect(400);
+
+    expect(response.body.message).toContain("Invalid role. Must be one of the municipality roles");
+  });
+
+  it("should return 401 when not authenticated", async () => {
+    const newUserData = {
+      firstName: "Test",
+      lastName: "User",
+      email: `test-${Date.now()}@comune.torino.it`,
+      password: "Password123!",
+      role: ["PUBLIC_RELATIONS"]
+    };
+
+    // Act & Assert
+    const response = await request(app)
+      .post("/api/admin/municipality-users")
+      .send(newUserData)
+      .expect(401);
+
     expect(response.body).toHaveProperty("error", "Unauthorized");
   });
 });
@@ -128,7 +288,7 @@ describe("GET /api/admin/municipality-users/:id", () => {
 
     // Assert
     expect(response.body).toHaveProperty("id", munUser.id);
-    expect(response.body).toHaveProperty("role", "PUBLIC_RELATIONS");
+    expect(response.body.role).toEqual(["PUBLIC_RELATIONS"]);
     expect(response.body).not.toHaveProperty("password");
   });
 
@@ -378,7 +538,7 @@ describe("Error scenarios coverage tests", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@comune.torino.it",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       })
       .expect(400);
 
@@ -452,7 +612,7 @@ describe("Service coverage integration tests", () => {
         lastName: "User",
         email: munUserEmail,
         password: "Test123!",
-        role: "MUNICIPAL_BUILDING_MAINTENANCE",
+        role: ["MUNICIPAL_BUILDING_MAINTENANCE"],
       })
       .expect(409);
 
@@ -520,5 +680,348 @@ describe("Service coverage integration tests", () => {
 
     // Assert
     expect(response.body).toHaveProperty("error", "NotFound");
+  });
+});
+
+describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modification", () => {
+  beforeEach(async () => {
+    await cleanDatabase();
+    jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    await disconnectDatabase();
+  });
+
+  it("should modify a user's roles successfully", async () => {
+    // Arrange - create admin and municipality user
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    const munUserEmail = `mun-${Date.now()}@comune.torino.it`;
+
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+    const munUser = await createUserInDatabase({
+      email: munUserEmail,
+      password: "Mun123!",
+      role: "PUBLIC_RELATIONS",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    // Act - Modify user roles
+    const response = await agent
+      .patch(`/api/admin/municipality-users/${munUser.id}`)
+      .send({
+        roles: ["MUNICIPAL_BUILDING_MAINTENANCE", "INFRASTRUCTURES"],
+      })
+      .expect(200);
+
+    // Assert
+    expect(response.body.role).toEqual([
+      "MUNICIPAL_BUILDING_MAINTENANCE",
+      "INFRASTRUCTURES",
+    ]);
+    expect(response.body.id).toBe(munUser.id);
+  });
+
+  it("should allow assigning multiple technical office roles (Story 10 key feature)", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    const munUserEmail = `multi-office-${Date.now()}@comune.torino.it`;
+
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+    const munUser = await createUserInDatabase({
+      email: munUserEmail,
+      password: "Mun123!",
+      role: "PUBLIC_RELATIONS",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    // Act - Assign multiple technical office roles
+    const multipleRoles = [
+      "MUNICIPAL_BUILDING_MAINTENANCE",
+      "INFRASTRUCTURES",
+      "ROAD_MAINTENANCE",
+      "GREENSPACES_AND_ANIMAL_PROTECTION",
+    ];
+
+    const response = await agent
+      .patch(`/api/admin/municipality-users/${munUser.id}`)
+      .send({
+        roles: multipleRoles,
+      })
+      .expect(200);
+
+    // Assert
+    expect(response.body.role).toHaveLength(4);
+    multipleRoles.forEach((role) => {
+      expect(response.body.role).toContain(role);
+    });
+  });
+
+  it("should support role cancellation (removing specific roles)", async () => {
+    // Arrange - Create user with multiple roles
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    const munUserEmail = `role-removal-${Date.now()}@comune.torino.it`;
+
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+
+    // Create user via API to have multiple roles
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    const createResponse = await agent
+      .post("/api/admin/municipality-users")
+      .send({
+        firstName: "Multi",
+        lastName: "Role",
+        email: munUserEmail,
+        password: "Test123!",
+        role: [
+          "PUBLIC_RELATIONS",
+          "MUNICIPAL_BUILDING_MAINTENANCE",
+          "INFRASTRUCTURES",
+        ],
+      })
+      .expect(201);
+
+    const userId = createResponse.body.id;
+
+    // Act - Remove some roles, keep others
+    const response = await agent
+      .patch(`/api/admin/municipality-users/${userId}`)
+      .send({
+        roles: ["PUBLIC_RELATIONS"], // Remove technical roles, keep administrative
+      })
+      .expect(200);
+
+    // Assert
+    expect(response.body.role).toEqual(["PUBLIC_RELATIONS"]);
+    expect(response.body.role).not.toContain("MUNICIPAL_BUILDING_MAINTENANCE");
+    expect(response.body.role).not.toContain("INFRASTRUCTURES");
+  });
+
+  it("should update roles combined with other user data", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    const munUserEmail = `combined-update-${Date.now()}@comune.torino.it`;
+
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+    const munUser = await createUserInDatabase({
+      email: munUserEmail,
+      password: "Mun123!",
+      role: "PUBLIC_RELATIONS",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    // Act - Update name and roles simultaneously
+    const response = await agent
+      .patch(`/api/admin/municipality-users/${munUser.id}`)
+      .send({
+        firstName: "Updated",
+        lastName: "Name",
+        roles: ["EDUCATION_SERVICES", "WASTE_MANAGEMENT"],
+      })
+      .expect(200);
+
+    // Assert
+    expect(response.body.firstName).toBe("Updated");
+    expect(response.body.lastName).toBe("Name");
+    expect(response.body.role).toEqual([
+      "EDUCATION_SERVICES",
+      "WASTE_MANAGEMENT",
+    ]);
+  });
+
+  it("should reject empty roles array", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    const munUserEmail = `empty-roles-${Date.now()}@comune.torino.it`;
+
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+    const munUser = await createUserInDatabase({
+      email: munUserEmail,
+      password: "Mun123!",
+      role: "PUBLIC_RELATIONS",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    // Act & Assert
+    const response = await agent
+      .patch(`/api/admin/municipality-users/${munUser.id}`)
+      .send({
+        roles: [],
+      })
+      .expect(400);
+
+    expect(response.body.message).toContain("request/body/roles must NOT have fewer than 1 items");
+  });
+
+  it("should reject invalid roles", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    const munUserEmail = `invalid-roles-${Date.now()}@comune.torino.it`;
+
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+    const munUser = await createUserInDatabase({
+      email: munUserEmail,
+      password: "Mun123!",
+      role: "PUBLIC_RELATIONS",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    // Act & Assert
+    const response = await agent
+      .patch(`/api/admin/municipality-users/${munUser.id}`)
+      .send({
+        roles: ["INVALID_ROLE", "ANOTHER_INVALID"],
+      })
+      .expect(400);
+
+    expect(response.body.message).toContain("must be equal to one of the allowed values");
+  });
+
+  it("should return 500 for non-existent user (no 404 defined in OpenAPI)", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    // Act & Assert
+    // Note: The OpenAPI spec for PATCH municipality-users doesn't define a 404 response,
+    // so when the user doesn't exist, the application logic handles it and likely returns 500
+    const response = await agent
+      .patch("/api/admin/municipality-users/999999")
+      .send({
+        roles: ["PUBLIC_RELATIONS"],
+      })
+      .expect(500);
+
+    // The response structure might vary depending on how the error is handled
+    expect(response.status).toBe(500);
+  });
+
+  it("should return 401 when not authenticated", async () => {
+    // Act & Assert
+    const response = await request(app)
+      .patch("/api/admin/municipality-users/1")
+      .send({
+        roles: ["PUBLIC_RELATIONS"],
+      })
+      .expect(401);
+
+    expect(response.body).toHaveProperty("error", "Unauthorized");
+  });
+
+  it("should reflect role changes in subsequent GET requests", async () => {
+    // Arrange
+    const adminEmail = `admin-${Date.now()}@example.com`;
+    const munUserEmail = `persistence-test-${Date.now()}@comune.torino.it`;
+
+    await createUserInDatabase({
+      email: adminEmail,
+      password: "Admin1234!",
+      role: "ADMINISTRATOR",
+    });
+    const munUser = await createUserInDatabase({
+      email: munUserEmail,
+      password: "Mun123!",
+      role: "PUBLIC_RELATIONS",
+    });
+
+    const agent = request.agent(app);
+    await agent
+      .post("/api/session")
+      .send({ email: adminEmail, password: "Admin1234!" })
+      .expect(200);
+
+    // Act - Modify roles
+    await agent
+      .patch(`/api/admin/municipality-users/${munUser.id}`)
+      .send({
+        roles: ["MUNICIPAL_BUILDING_MAINTENANCE", "EDUCATION_SERVICES"],
+      })
+      .expect(200);
+
+    // Assert - Check individual user GET
+    const getUserResponse = await agent
+      .get(`/api/admin/municipality-users/${munUser.id}`)
+      .expect(200);
+
+    expect(getUserResponse.body.role).toEqual([
+      "MUNICIPAL_BUILDING_MAINTENANCE",
+      "EDUCATION_SERVICES",
+    ]);
+
+    // Assert - Check in users list
+    const listResponse = await agent
+      .get("/api/admin/municipality-users")
+      .expect(200);
+
+    const updatedUser = listResponse.body.find((u: any) => u.id === munUser.id);
+    expect(updatedUser).toBeDefined();
+    expect(updatedUser.role).toEqual([
+      "MUNICIPAL_BUILDING_MAINTENANCE",
+      "EDUCATION_SERVICES",
+    ]);
   });
 });

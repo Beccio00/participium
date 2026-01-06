@@ -18,7 +18,7 @@ export async function createUser(data: {
   last_name: string;
   password: string;
   salt: string;
-  role: Role;
+  role: Role[];
   telegram_username?: string | null;
   email_notifications_enabled?: boolean;
 }): Promise<User> {
@@ -46,7 +46,7 @@ export async function updateUser(id: number, data: {
   last_name?: string;
   password?: string;
   salt?: string;
-  role?: Role;
+  role?: Role[];
   telegram_username?: string | null;
   email_notifications_enabled?: boolean;
 }): Promise<User | null> {

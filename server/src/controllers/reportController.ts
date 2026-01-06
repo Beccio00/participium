@@ -534,7 +534,7 @@ export async function createInternalNote(
   res: Response
 ): Promise<void> {
   const reportId = parseInt(req.params.reportId);
-  const user = req.user as { id: number; role: Role };
+  const user = req.user as { id: number; role: Role[] };
   const { content } = req.body;
 
   const note = await createInternalNoteService(
@@ -551,7 +551,7 @@ export async function getInternalNote(
   res: Response
 ): Promise<void> {
   const reportId = parseInt(req.params.reportId);
-  const user = req.user as { id: number; role: Role };
+  const user = req.user as { id: number; role: Role[] };
 
   const messages = await getInternalNotes(reportId, user.id);
   res.status(200).json(messages);

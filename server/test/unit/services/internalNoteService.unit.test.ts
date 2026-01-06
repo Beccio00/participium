@@ -40,7 +40,7 @@ describe("internalNoteService", () => {
 
   describe("createInternalNote", () => {
     it("should add an internal note for technical staff", async () => {
-      mockReportRepo.findByIdWithRelations.mockResolvedValue({ 
+      mockReportRepo.findByIdWithRelations.mockResolvedValue({
         id: 1,
         assignedOfficerId: 2, // Assigned to user 2
       });
@@ -62,12 +62,9 @@ describe("internalNoteService", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      const result = await createInternalNote(
-        1,
-        "Test note",
-        2,
-        Role.INFRASTRUCTURES
-      );
+      const result = await createInternalNote(1, "Test note", 2, [
+        Role.INFRASTRUCTURES,
+      ]);
       expect(result).toMatchObject({
         id: 10,
         content: "Test note",
@@ -78,14 +75,14 @@ describe("internalNoteService", () => {
     it("should throw NotFoundError if report does not exist", async () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue(null);
       await expect(
-        createInternalNote(1, "Test note", 2, Role.INFRASTRUCTURES)
+        createInternalNote(1, "Test note", 2, [Role.INFRASTRUCTURES])
       ).rejects.toThrow(NotFoundError);
     });
 
     it("should throw BadRequestError if note content is empty", async () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue({ id: 1 });
       await expect(
-        createInternalNote(1, "", 2, Role.INFRASTRUCTURES)
+        createInternalNote(1, "", 2, [Role.INFRASTRUCTURES])
       ).rejects.toThrow(BadRequestError);
     });
   });

@@ -5,6 +5,7 @@ import Button from "../../components/ui/Button.tsx";
 import Input from "../../components/ui/Input.tsx";
 import { LoginValidator } from "../../validators/LoginValidator";
 import type { LoginFormData } from "../../../../shared/LoginTypes";
+import { userHasRole, userHasAnyRole, TECHNICIAN_ROLES } from "../../utils/roles";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,11 +15,15 @@ export default function LoginPage() {
   const handleLogin = async (values: LoginFormData) => {
     setLoading();
     try {
-      const response = await login(values.email, values.password);
-      if (response && response.role === "ADMINISTRATOR") {
+      const user = await login(values.email, values.password);
+    
+      if (user && userHasRole(user, "ADMINISTRATOR")) {
         navigate("/admin", { replace: true });
-      } else if (response && response.role === "TECHNICAL_OFFICE") {
-        navigate("/technician", { replace: true });
+      } else if (
+        userHasAnyRole(user, TECHNICIAN_ROLES) || 
+        userHasRole(user, "PUBLIC_RELATIONS") || 
+        userHasRole(user, "EXTERNAL_MAINTAINER")) {
+        navigate("/assign-reports", { replace: true });
       } else {
         navigate("/", { replace: true });
       }

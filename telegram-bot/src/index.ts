@@ -15,6 +15,26 @@ if (!token) {
   throw new Error("BOT_TOKEN non definito");
 }
 
+//helper functions
+
+function formatStatus(status: string): string{
+  const statusMap: Record<string, string> = {
+    PENDING_APPROVAL: "⏳ Waiting Approval",
+    APPROVED: "📝 Approved",
+    ASSIGNED: "👷 Assigned",
+    EXTERNAL_ASSIGNED: "🚜 Assigned to External",
+    IN_PROGRESS: "🚧 In Progress",
+    SUSPENDED: "⏸️ Suspended",
+    REJECTED: "❌ Rejected",
+    RESOLVED: "✅ Resolved",
+  };
+  return statusMap[status] || status;
+}
+
+function getCategoryLabel(value: string): string {
+  return REPORT_CATEGORIES.find(c => c.value === value)?.label || value;
+}
+
 const bot = new Telegraf(token);
 
 const REPORT_CATEGORIES = [

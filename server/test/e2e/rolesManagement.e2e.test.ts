@@ -39,7 +39,7 @@ describe("Municipality User Roles Management", () => {
       // Promote to ADMINISTRATOR directly in DB
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       // Crea un nuovo agent e fai login per ottenere la sessione aggiornata
       const agent = request.agent(app);
@@ -60,7 +60,7 @@ describe("Municipality User Roles Management", () => {
           lastName: "User",
           email: `${role.toLowerCase()}.${Date.now()}@municipality.gov`,
           password: "Pass123!",
-          role: role,
+          role: [role],
         };
 
         const response = await agent
@@ -68,7 +68,7 @@ describe("Municipality User Roles Management", () => {
           .send(userData)
           .expect(201);
 
-        expect(response.body.role).toBe(role);
+        expect(response.body.role).toEqual([role]);
         createdUsers.push(response.body);
         console.log(`✓ Created ${role} user (ID: ${response.body.id})`);
 
@@ -88,7 +88,7 @@ describe("Municipality User Roles Management", () => {
           (u: any) => u.id === createdUser.id
         );
         expect(foundUser).toBeDefined();
-        expect(foundUser.role).toBe(createdUser.role);
+        expect(foundUser.role).toEqual(createdUser.role);
         console.log(`✓ Verified ${createdUser.role} user in list`);
       }
 
@@ -100,7 +100,7 @@ describe("Municipality User Roles Management", () => {
           .expect(200);
 
         expect(response.body.id).toBe(user.id);
-        expect(response.body.role).toBe(user.role);
+        expect(response.body.role).toEqual(user.role);
         console.log(`✓ Retrieved ${user.role} user details`);
       }
 
@@ -150,7 +150,7 @@ describe("Municipality User Roles Management", () => {
           lastName: `${role}-${index}`,
           email: `concurrent.${role.toLowerCase()}.${index}.${Date.now()}@municipality.gov`,
           password: "Pass123!",
-          role: role,
+          role: [role],
         })
       );
 
@@ -215,7 +215,7 @@ describe("Municipality User Roles Management", () => {
           lastName: "User",
           email: prEmail,
           password: userPassword,
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         })
         .expect(201);
       // TECH
@@ -226,7 +226,7 @@ describe("Municipality User Roles Management", () => {
           lastName: "User",
           email: techEmail,
           password: userPassword,
-          role: "MUNICIPAL_BUILDING_MAINTENANCE",
+          role: ["MUNICIPAL_BUILDING_MAINTENANCE"],
         })
         .expect(201);
       // CITIZEN (via citizen signup)
@@ -301,7 +301,7 @@ describe("Municipality User Roles Management", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       await adminAgent
         .post("/api/session")
@@ -320,11 +320,11 @@ describe("Municipality User Roles Management", () => {
             lastName: role,
             email: `valid.${role.toLowerCase()}.${Date.now()}@municipality.gov`,
             password: "Pass123!",
-            role: role,
+            role: [role],
           })
           .expect(201);
 
-        expect(response.body.role).toBe(role);
+        expect(response.body.role).toEqual([role]);
         console.log(`✓ ${role} accepted`);
 
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -358,7 +358,7 @@ describe("Municipality User Roles Management", () => {
             lastName: "Role",
             email: `invalid.${Date.now()}@example.com`,
             password: "Pass123!",
-            role: role,
+            role: [role],
           })
           .expect(400);
 
@@ -406,12 +406,12 @@ describe("Municipality User Roles Management", () => {
             lastName: role,
             email: `persist.${role.toLowerCase()}.${Date.now()}@municipality.gov`,
             password: "Pass123!",
-            role: role,
+            role: [role],
           })
           .expect(201);
 
         userIds.push(createResponse.body.id);
-        expect(createResponse.body.role).toBe(role);
+        expect(createResponse.body.role).toEqual([role]);
 
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
@@ -422,7 +422,7 @@ describe("Municipality User Roles Management", () => {
           .get(`/api/admin/municipality-users/${userIds[i]}`)
           .expect(200);
 
-        expect(getResponse.body.role).toBe(roles[i]);
+        expect(getResponse.body.role).toEqual([roles[i]]);
         console.log(`✓ Role ${roles[i]} correctly persisted and retrieved`);
       }
 
@@ -460,7 +460,7 @@ describe("Municipality User Roles Management", () => {
         .expect(201);
       await AppDataSource.getRepository(User).update(
         { email: adminEmail },
-        { role: "ADMINISTRATOR" as any, isVerified: true }
+        { role: ["ADMINISTRATOR"] as any, isVerified: true }
       );
       await agent
         .post("/api/session")
