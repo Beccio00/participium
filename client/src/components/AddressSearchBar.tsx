@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { Search, XCircle } from "react-bootstrap-icons";
 
 interface AddressSearchBarProps {
   onSearch: (address: string, zoom: number) => void;
   loading?: boolean;
   onClear?: () => void;
   isClearVisible?: boolean;
+  externalError?: string | null;
 }
 
 const ZOOM_LEVELS = [19, 16, 14, 12];
@@ -20,9 +22,10 @@ export default function AddressSearchBar({
   loading,
   onClear,
   isClearVisible,
+  externalError,
 }: AddressSearchBarProps) {
   const [address, setAddress] = useState("");
-  const [zoom, setZoom] = useState(16);
+  const [zoom, setZoom] = useState(19);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,8 +41,8 @@ export default function AddressSearchBar({
   return (
     <div
       style={{
-        maxWidth: 700,
-        margin: "0 auto 1.5rem auto",
+        maxWidth: 900,
+        margin: "0 0 0 0",
         width: "100%",
         padding: "0 1rem",
       }}
@@ -48,35 +51,54 @@ export default function AddressSearchBar({
         onSubmit={handleSubmit}
         style={{
           display: "flex",
-          gap: 12,
-          alignItems: "center",
-          width: "100%",
+          gap: 8,
+          alignItems: "stretch",
           flexWrap: "wrap",
         }}
       >
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Search for an address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          style={{
-            flex: "1 1 200px",
-            minWidth: 200,
-            fontSize: 16,
-            padding: "0.75rem 1rem",
-          }}
-          disabled={loading}
-        />
+        <div style={{ 
+          flex: "1 1 250px", 
+          minWidth: 200,
+          position: "relative",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          <Search 
+            style={{
+              position: "absolute",
+              left: "0.75rem",
+              color: "#6c757d",
+              pointerEvents: "none",
+              fontSize: "1.1rem"
+            }}
+          />
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search for an address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            style={{
+              width: "100%",
+              fontSize: 15,
+              padding: "0.5rem 0.75rem 0.5rem 2.5rem",
+              border: "1px solid #dee2e6",
+              borderRadius: "6px",
+            }}
+            disabled={loading}
+          />
+        </div>
         <select
           className="form-select"
           value={zoom}
           onChange={(e) => setZoom(Number(e.target.value))}
           style={{
-            flex: "0 1 260px",
-            minWidth: 200,
-            fontSize: 15,
-            padding: "0.6rem 0.5rem",
+            flex: "0 1 220px",
+            minWidth: 180,
+            fontSize: 14,
+            padding: "0.5rem 0.5rem",
+            border: "1px solid #dee2e6",
+            borderRadius: "6px",
           }}
           disabled={loading}
         >
@@ -89,7 +111,14 @@ export default function AddressSearchBar({
         <button
           type="submit"
           className="btn btn-primary"
-          style={{ fontSize: 16, padding: "0.7rem 1.5rem", flex: "0 0 auto" }}
+          style={{ 
+            fontSize: 15, 
+            padding: "0.5rem 1.5rem", 
+            flex: "0 0 auto",
+            whiteSpace: "nowrap",
+            borderRadius: "6px",
+            fontWeight: 500,
+          }}
           disabled={loading}
         >
           {loading ? "Searching..." : "Search"}
@@ -102,29 +131,43 @@ export default function AddressSearchBar({
               setAddress("");
               if (onClear) onClear();
             }}
+            className="btn btn-secondary"
             style={{
-              marginLeft: 8,
-              fontSize: 20,
-              color: "#888",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              lineHeight: 1,
+              fontSize: 14,
+              padding: "0.5rem 1rem",
+              flex: "0 0 auto",
+              whiteSpace: "nowrap",
+              borderRadius: "6px",
+              fontWeight: 500,
             }}
-            tabIndex={0}
           >
-            ×
+            Cancel
           </button>
         )}
-        {error && (
-          <div style={{ color: "crimson", marginLeft: 8 }}>{error}</div>
-        )}
       </form>
-      <div style={{ marginTop: 8, color: "#555", fontSize: 14, maxWidth: 700 }}>
-        <b>Area size:</b> The search area depends on the selected zoom level. A
-        smaller radius means a more precise search area; a larger radius covers
-        a wider region.
+      {(error || externalError) && (
+        <div style={{ 
+          color: "#dc3545", 
+          fontSize: 13, 
+          marginTop: "0.5rem",
+          padding: "0.5rem 0.75rem",
+          background: "#f8d7da",
+          borderRadius: "4px",
+          border: "1px solid #f5c2c7"
+        }}>
+          {error || externalError}
+        </div>
+      )}
+      <div style={{ 
+        marginTop: 6, 
+        marginBottom: "1.5rem",
+        color: "#6c757d", 
+        fontSize: 12,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      }}>
+        <b>Area size:</b> The search area depends on the selected zoom level.
       </div>
     </div>
   );

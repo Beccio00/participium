@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { Clipboard } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import AccessRestricted from "../../components/AccessRestricted";
+import SearchAndFilterBar from "../../components/ui/SearchAndFilterBar";
+import EmptyState from "../../components/ui/EmptyState";
 import { getReports } from "../../api/api";
 import { userHasRole } from "../../utils/roles";
 import type { Report as AppReport } from "../../types/report.types";
@@ -31,6 +33,11 @@ export default function MyReportsPage() {
   // Details modal state
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
 
   const isCitizen = userHasRole(user, Role.CITIZEN);
 
@@ -90,6 +97,26 @@ export default function MyReportsPage() {
 
   const selectedReport = reports.find((r) => r.id === selectedReportId) || null;
 
+  // Filter function
+  const filteredReports = useMemo(() => {
+    return reports.filter((report) => {
+      const matchesSearch = !searchTerm || 
+        (report.title && report.title.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = !filterStatus || report.status === filterStatus;
+      const matchesCategory = !filterCategory || report.category === filterCategory;
+      return matchesSearch && matchesStatus && matchesCategory;
+    });
+  }, [reports, searchTerm, filterStatus, filterCategory]);
+
+  // Extract available statuses and categories
+  const availableStatuses = useMemo(() => {
+    return Array.from(new Set(reports.map(r => r.status).filter(Boolean)));
+  }, [reports]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(reports.map(r => r.category).filter(Boolean)));
+  }, [reports]);
+
   if (loading) {
     return (
       <Container className="py-4">
@@ -120,41 +147,33 @@ export default function MyReportsPage() {
         </p>
       </div>
 
-      {reports.length === 0 ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            color: "#adb5bd",
-            padding: "4rem 2rem",
-            background: "var(--surface)",
-            borderRadius: "0.75rem",
-            border: "2px dashed #dee2e6",
-          }}
-        >
-          <div style={{ fontSize: "4rem", marginBottom: "1.5rem", opacity: 0.5 }}>
-            <Clipboard />
-          </div>
-          <p
-            style={{
-              fontSize: "1.25rem",
-              margin: "0 0 0.5rem 0",
-              color: "#6c757d",
-              fontWeight: 500,
-            }}
-          >
-            No reports yet
-          </p>
-          <small style={{ fontSize: "1rem", lineHeight: 1.5, color: "#adb5bd" }}>
-            You haven't submitted any reports yet. Go back to the home page to create your first report!
-          </small>
-        </div>
+      {/* Search and Filter Bar */}
+      <div className="mb-4">
+        <SearchAndFilterBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          filterStatus={filterStatus}
+          onStatusChange={setFilterStatus}
+          filterCategory={filterCategory}
+          onCategoryChange={setFilterCategory}
+          availableStatuses={availableStatuses}
+          availableCategories={availableCategories}
+        />
+      </div>
+
+      {filteredReports.length === 0 ? (
+        <EmptyState
+          icon={<Clipboard />}
+          title={reports.length === 0 ? "No reports yet" : "No matching reports"}
+          description={
+            reports.length === 0
+              ? "You haven't submitted any reports yet. Go back to the home page to create your first report!"
+              : "Try adjusting your search or filter criteria."
+          }
+        />
       ) : (
         <Row>
-          {reports.map((report) => (
+          {filteredReports.map((report) => (
             <Col key={report.id} lg={4} md={6} className="mb-4">
               <div className="h-100 shadow-sm report-card">
                 <ReportCard

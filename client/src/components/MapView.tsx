@@ -11,8 +11,6 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import type { Report } from "../types/report.types";
 // Styles
 import "../styles/MapView.css";
-// Info modal
-import InfoModal from "./InfoModal";
 
 // Default coordinates to center the map on Turin
 const TURIN: [number, number] = [45.0703, 7.6869];
@@ -95,7 +93,6 @@ interface MapViewProps {
   selectedReportId?: number | null;
   customSelectedIcon?: L.DivIcon | null;
   onReportDetailsClick?: (reportId: number) => void;
-  hideInfoButton?: boolean;
   searchArea?: {
     bbox?: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
     center?: [number, number];
@@ -112,7 +109,6 @@ export default function MapView({
   selectedReportId,
   customSelectedIcon,
   onReportDetailsClick,
-  hideInfoButton = false,
   searchArea = null,
 }: MapViewProps) {
   // Ref for the map div
@@ -132,8 +128,6 @@ export default function MapView({
   const [turinData, setTurinData] = useState<any | null>(null);
   // State for boundary alert
   const [showBoundaryAlert, setShowBoundaryAlert] = useState(false);
-  // State for showing the info modal
-  const [showInfoModal, setShowInfoModal] = useState(false);
 
   useEffect(() => {
     fetch("/turin-boundary3.geojson")
@@ -527,19 +521,6 @@ export default function MapView({
 
   return (
     <div style={{ position: "relative", height: "100%", width: "100%" }}>
-      {/* Info button in the top-right corner of the map */}
-      {!hideInfoButton && (
-        <button
-          className="map-info-button"
-          aria-label="Map information"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowInfoModal(true);
-          }}
-        >
-          i
-        </button>
-      )}
       {/*alert bootstrap cudtom*/}
       {showBoundaryAlert && (
         <div
@@ -573,8 +554,6 @@ export default function MapView({
         </div>
       )}
       <div ref={mapRef} className="leaflet-map" />
-
-      <InfoModal open={showInfoModal} onClose={() => setShowInfoModal(false)} />
     </div>
   );
 }

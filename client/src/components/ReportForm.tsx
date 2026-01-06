@@ -632,7 +632,6 @@ export default function ReportForm() {
                         selectedLocation={selectedLocation}
                         // Pass a customIcon prop for the selected marker
                         customSelectedIcon={createColoredIcon()}
-                        hideInfoButton={true}
                       />
                     </div>
                     {touched.location && fieldErrors.location && (

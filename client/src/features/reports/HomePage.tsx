@@ -8,8 +8,11 @@ import Button from "../../components/ui/Button.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
 import AddressSearchBar from "../../components/AddressSearchBar";
+import SearchAndFilterBar from "../../components/ui/SearchAndFilterBar";
+import InfoModal from "../../components/InfoModal";
 import { geocodeAddress, getReportsByBbox } from "../../api/api";
 import ReportDetailsModal from "./ReportDetailsModal";
+import  EmptyState  from "../../components/ui/EmptyState.tsx";
 
 import type { Report } from "../../types";
 import { getReports as getReportsApi } from "../../api/api";
@@ -53,8 +56,8 @@ function normalizeReports(data: any[]): Report[] {
 export default function HomePage() {
   // Clear address search and restore all reports
   const handleClearAddressSearch = async () => {
-    // Default center and zoom for Turin
-    setSearchCenter([45.0703, 7.6869]);
+    // Reset search state
+    setSearchCenter(null);
     setSearchZoom(13);
     setSearchError(null);
     setSearchAreaBbox(null);
@@ -83,6 +86,11 @@ export default function HomePage() {
   const [searchAreaBbox, setSearchAreaBbox] = useState<
     [number, number, number, number] | null
   >(null);
+
+  // Sidebar search and filter states
+  const [sidebarSearchTerm, setSidebarSearchTerm] = useState("");
+  const [sidebarFilterStatus, setSidebarFilterStatus] = useState("");
+  const [sidebarFilterCategory, setSidebarFilterCategory] = useState("");
 
   // Address search handler
   const handleAddressSearch = async (address: string, zoom: number) => {
@@ -131,6 +139,7 @@ export default function HomePage() {
 
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [showReportsSidebar, setShowReportsSidebar] = useState(false);
 
   const sidebarScrollRef = useRef<number>(0);
@@ -240,7 +249,30 @@ export default function HomePage() {
 
   // --- Derived data --------------------------------------------------------
 
-  const recentReports = useMemo(() => getRecentReports(reports), [reports]);
+  // Filter function for sidebar
+  const filterSidebarReports = (reportsList: Report[]) => {
+    return reportsList.filter((report) => {
+      const matchesSearch = !sidebarSearchTerm || 
+        (report.title && report.title.toLowerCase().includes(sidebarSearchTerm.toLowerCase()));
+      const matchesStatus = !sidebarFilterStatus || report.status === sidebarFilterStatus;
+      const matchesCategory = !sidebarFilterCategory || report.category === sidebarFilterCategory;
+      return matchesSearch && matchesStatus && matchesCategory;
+    });
+  };
+
+  const recentReports = useMemo(() => {
+    const recent = getRecentReports(reports);
+    return filterSidebarReports(recent);
+  }, [reports, sidebarSearchTerm, sidebarFilterStatus, sidebarFilterCategory]);
+
+  // Extract available statuses and categories from reports
+  const availableStatuses = useMemo(() => {
+    return Array.from(new Set(reports.map(r => r.status).filter(Boolean)));
+  }, [reports]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(reports.map(r => r.category).filter(Boolean)));
+  }, [reports]);
 
   const selectedReport = useMemo(() => {
     if (selectedReportId == null) return null;
@@ -270,12 +302,29 @@ export default function HomePage() {
       >
         <div>
           <h3 style={{ color: "var(--text)", margin: 0, fontSize: "1.3rem", fontWeight: 700 }}>
-            Recent Reports
+            {searchCenter ? "Reports in Selected Area" : "Recent Reports"}
           </h3>
           <small style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}>
-            Showing the 10 most recent reports
+            {searchCenter 
+              ? "Showing reports in the searched location" 
+              : "Showing the 10 most recent reports"}
           </small>
         </div>
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div style={{ padding: "0 1.5rem", paddingTop: "1rem" }}>
+        <SearchAndFilterBar
+          searchTerm={sidebarSearchTerm}
+          onSearchChange={setSidebarSearchTerm}
+          filterStatus={sidebarFilterStatus}
+          onStatusChange={setSidebarFilterStatus}
+          filterCategory={sidebarFilterCategory}
+          onCategoryChange={setSidebarFilterCategory}
+          availableStatuses={availableStatuses}
+          availableCategories={availableCategories}
+          compact={true}
+        />
       </div>
 
       <div
@@ -283,6 +332,7 @@ export default function HomePage() {
         style={{
           flex: 1,
           padding: "1.5rem",
+          paddingTop: "0.5rem",
           overflowY: "auto",
           scrollbarWidth: "thin",
           scrollbarColor: "#d1d5db #f9fafb",
@@ -296,7 +346,7 @@ export default function HomePage() {
           <div style={{ color: "var(--danger)", padding: "1rem" }}>
             Error loading reports: {reportsError}
           </div>
-        ) : reports.length > 0 ? (
+        ) : recentReports.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {recentReports.map((report) => {
               const isOwnReport = isUserOwnReport(
@@ -335,28 +385,51 @@ export default function HomePage() {
               );
             })}
           </div>
-        ) : (
+        ) : reports.length > 0 ? (
           <div
             style={{
-              flex: 1,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               textAlign: "center",
-              color: "#adb5bd",
-              padding: "2rem 1rem",
+              padding: "3rem 2rem",
+              background: "var(--surface)",
+              borderRadius: "0.75rem",
+              border: "2px dashed #dee2e6",
             }}
           >
-            <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }}>
+            <div
+              style={{
+                fontSize: "3rem",
+                marginBottom: "1rem",
+                opacity: 0.5,
+                color: "#6c757d",
+              }}
+            >
               <Clipboard />
             </div>
-            <p style={{ fontSize: "1.1rem", margin: "0 0 0.5rem 0", color: "#6c757d", fontWeight: 500 }}>
-              No reports yet
+            <p
+              style={{
+                fontSize: "1.1rem",
+                margin: "0 0 0.5rem 0",
+                color: "#6c757d",
+                fontWeight: 500,
+              }}
+            >
+              No matching reports
             </p>
-            <small style={{ fontSize: "0.9rem", lineHeight: 1.4, color: "#adb5bd" }}>
-              Reports will appear here once submitted by citizens.
+            <small style={{ fontSize: "0.95rem", color: "#adb5bd" }}>
+              Try adjusting your search or filter criteria.
             </small>
+          </div>
+        ) : (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <EmptyState
+              icon={<Clipboard />}
+              title="No reports available"
+              description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
+            />
           </div>
         )}
       </div>
@@ -496,22 +569,40 @@ export default function HomePage() {
                 {/* Address search bar above the map */}
                 <div
                   style={{
-                    maxWidth: 600,
-                    margin: "0 auto 1rem auto",
                     zIndex: 10,
+                    display: "flex",
+                    gap: "0.5rem",
+                    alignItems: "flex-start",
                   }}
                 >
-                  <AddressSearchBar
-                    onSearch={handleAddressSearch}
-                    loading={searchLoading}
-                    onClear={handleClearAddressSearch}
-                    isClearVisible={!!searchCenter}
-                  />
-                  {searchError && (
-                    <div style={{ color: "crimson", marginTop: 4 }}>
-                      {searchError}
-                    </div>
-                  )}
+                  <div style={{ flex: 1 }}>
+                    <AddressSearchBar
+                      onSearch={handleAddressSearch}
+                      loading={searchLoading}
+                      onClear={handleClearAddressSearch}
+                      isClearVisible={!!searchCenter}
+                      externalError={searchError}
+                    />
+                  </div>
+                  <button
+                    className="btn btn-primary d-none d-lg-flex"
+                    aria-label="Site information"
+                    onClick={() => setShowInfoModal(true)}
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                      fontSize: "1.1rem",
+                      fontWeight: "bold",
+                      flexShrink: 0,
+                    }}
+                  >
+                    i
+                  </button>
                 </div>
                 <MapView
                   reports={reports}
@@ -572,9 +663,24 @@ export default function HomePage() {
         >
           <Offcanvas.Header closeButton style={{ borderBottom: "2px solid #f8f9fa", background: "#fdfdfd" }}>
             <Offcanvas.Title style={{ color: "var(--text)", fontSize: "1.3rem", fontWeight: 700 }}>
-              Recent Reports
+              {searchCenter ? "Reports in Selected Area" : "Recent Reports"}
             </Offcanvas.Title>
           </Offcanvas.Header>
+
+          {/* Search and Filter Bar */}
+          <div style={{ padding: "1rem 1.5rem 0.5rem 1.5rem" }}>
+            <SearchAndFilterBar
+              searchTerm={sidebarSearchTerm}
+              onSearchChange={setSidebarSearchTerm}
+              filterStatus={sidebarFilterStatus}
+              onStatusChange={setSidebarFilterStatus}
+              filterCategory={sidebarFilterCategory}
+              onCategoryChange={setSidebarFilterCategory}
+              availableStatuses={availableStatuses}
+              availableCategories={availableCategories}
+              compact={true}
+            />
+          </div>
           
           <Offcanvas.Body style={{ padding: 0, display: "flex", flexDirection: "column" }}>
             <div
@@ -595,7 +701,7 @@ export default function HomePage() {
                 <div style={{ color: "var(--danger)", padding: "1rem" }}>
                   Error loading reports: {reportsError}
                 </div>
-              ) : reports.length > 0 ? (
+              ) : recentReports.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {recentReports.map((report) => {
                     const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
@@ -630,28 +736,21 @@ export default function HomePage() {
                     );
                   })}
                 </div>
+              ) : reports.length > 0 ? (
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                  <EmptyState
+                    icon={<Clipboard />}
+                    title="No matching reports"
+                    description="Try adjusting your search or filter criteria."
+                  />
+                </div>
               ) : (
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textAlign: "center",
-                    color: "#adb5bd",
-                    padding: "2rem 1rem",
-                  }}
-                >
-                  <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5 }}>
-                    <Clipboard />
-                  </div>
-                  <p style={{ fontSize: "1.1rem", margin: "0 0 0.5rem 0", color: "#6c757d", fontWeight: 500 }}>
-                    No reports yet
-                  </p>
-                  <small style={{ fontSize: "0.9rem", lineHeight: 1.4, color: "#adb5bd" }}>
-                    Reports will appear here once submitted by citizens.
-                  </small>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                  <EmptyState
+                    icon={<Clipboard />}
+                    title="No reports available"
+                    description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
+                  />
                 </div>
               )}
             </div>
@@ -770,6 +869,8 @@ export default function HomePage() {
           onReportUpdate={handleReportUpdate}
         />
       )}
+
+      <InfoModal open={showInfoModal} onClose={() => setShowInfoModal(false)} />
     </>
   );
 }

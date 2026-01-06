@@ -311,7 +311,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
             className="d-flex align-items-center justify-content-between w-100 flex-wrap"
             style={{ minHeight: "60px", rowGap: "0.5rem" }}
           >
-            <Navbar.Brand className="text-white mb-0">
+            <Navbar.Brand className="text-white mb-0" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "2px" }}
               >
