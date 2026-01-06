@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, XCircle } from "react-bootstrap-icons";
+import { Search } from "react-bootstrap-icons";
 
 interface AddressSearchBarProps {
   onSearch: (address: string, zoom: number) => void;
