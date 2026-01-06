@@ -16,6 +16,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   });
 }
 
+
 export async function logout(req: Request, res: Response): Promise<void> {
   if (!(req.isAuthenticated && req.isAuthenticated()) || !req.session) {
     throw new BadRequestError("Already logged out");
@@ -29,6 +30,7 @@ export async function logout(req: Request, res: Response): Promise<void> {
     });
   });
 }
+
 
 export async function getSessionInfo(req: Request, res: Response): Promise<void> {
   const user = getSession(req);

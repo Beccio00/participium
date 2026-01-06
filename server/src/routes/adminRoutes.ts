@@ -6,7 +6,8 @@ import {
   listMunicipalityUsersController,
   getMunicipalityUserController,
   deleteMunicipalityUserController,
-  listRolesController
+  listRolesController,
+  updateMunicipalityUserController
 } from "../controllers/municipalityController";
 import {
   createExternalCompanyController,
@@ -61,5 +62,8 @@ router.get('/external-maintainers/:id', asyncHandler(getExternalMaintainerContro
 
 // DELETE api/admin/external-maintainers/:id - Delete specific external maintainer
 router.delete('/external-maintainers/:id', asyncHandler(deleteExternalMaintainerController));
+
+// PATCH api/admin/municipality-users/:userId - Update a municipality user
+router.patch('/municipality-users/:userId', asyncHandler(updateMunicipalityUserController));
 
 export default router;

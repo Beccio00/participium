@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Container, Alert, Badge, Nav } from 'react-bootstrap';
-import { useNavigate } from "react-router";
 import { useAuth, useForm, useLoadingState } from "../../hooks";
 import Button from "../../components/ui/Button.tsx";
 import Card, { CardHeader, CardBody } from "../../components/ui/Card.tsx";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import AccessRestricted from "../../components/AccessRestricted";
 import InternalStaffTable from './InternalStaffTable';
 import ExternalMaintainersTable from './ExternalMaintainersTable';
 import CompaniesTable from './CompaniesTable';
@@ -13,6 +14,7 @@ import {
   createMunicipalityUser, 
   listMunicipalityUsers, 
   deleteMunicipalityUser,
+  updateMunicipalityUser,
   createExternalMaintainer,
   getExternalMaintainers,
   getExternalCompanies,
@@ -24,6 +26,7 @@ import type {
   MunicipalityUserRequest, 
   MunicipalityUserResponse 
 } from "../../types";
+import type { MunicipalityUserRoles } from "../../../../shared/MunicipalityUserTypes";
 import type {
   ExternalMaintainerResponse,
   ExternalCompanyResponse,
@@ -40,7 +43,7 @@ interface UnifiedFormState {
   lastName: string;
   email: string;
   password: string;
-  role: string; 
+  role: MunicipalityUserRoles[];
   externalCompanyId: string;
 
   //for external companies
@@ -54,7 +57,7 @@ const INITIAL_FORM_STATE: UnifiedFormState = {
   lastName: "",
   email: "",
   password: "",
-  role: "",
+  role: [],
   externalCompanyId: "",
 
   companyName: "",
@@ -108,7 +111,6 @@ function getTabConfiguration(tab: UserTab): TabConfig {
 }
 
 export default function AdminPanel() {
-  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   
   //data States
@@ -120,17 +122,33 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<UserTab>('internal');
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<MunicipalityUserResponse | null>(null);
   const { loadingState, setLoading, setIdle } = useLoadingState();
+  
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const isAdmin = isAuthenticated && user?.role === Role.ADMINISTRATOR.toString();
+  const isAdmin =
+    isAuthenticated &&
+    (user?.role === Role.ADMINISTRATOR.toString() ||
+      (Array.isArray(user?.role) && user.role.includes(Role.ADMINISTRATOR.toString())));
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate("/", { replace: true });
-      return;
+    if (isAdmin) {
+      loadData();
     }
-    loadData();
-  }, [isAdmin, navigate]);
+  }, [isAdmin]);
+
+  // Check access before rendering
+  if (!isAdmin) {
+    const message = !isAuthenticated
+      ? "You need to be logged in as an administrator to access this page."
+      : "Only administrators can access the admin panel.";
+    
+    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+  }
 
   const loadData = async () => {
     try {
@@ -160,7 +178,7 @@ export default function AdminPanel() {
       lastName: values.lastName,
       email: values.email,
       password: values.password,
-      role: values.role as any,
+      role: values.role,
     };
     await createMunicipalityUser(payload);
   };
@@ -185,30 +203,39 @@ export default function AdminPanel() {
     await createExternalCompany(payload);
   };
 
-  const handleCreate = async (values: UnifiedFormState) => {
+  const handleCreateOrUpdate = async (values: UnifiedFormState) => {
     try {
       if (activeTab === 'internal') {
-        await createInternalUser(values);
+        if (editingUser) {
+          // UPDATE: modifica solo i ruoli
+          await updateMunicipalityUser(editingUser.id, {
+            roles: values.role,
+          });
+        } else {
+          // CREATE
+          await createInternalUser(values);
+        }
       } else if (activeTab === 'external') {
         await createExternalUser(values);
       } else {
         await createCompany(values);
       }
 
+      setEditingUser(null);
       form.resetForm();
       form.setFieldValue('categories', []);
       form.setFieldValue('platformAccess', false);
       setShowForm(false);
       await loadData(); 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user");
+      setError(err instanceof Error ? err.message : "Failed to save user");
       throw err;
     }
   };
 
   const form = useForm<UnifiedFormState>({
     initialValues: INITIAL_FORM_STATE,
-    onSubmit: handleCreate,
+    onSubmit: handleCreateOrUpdate,
   });
 
   const handleCategoryToggle = (category: ReportCategory) => {
@@ -229,27 +256,56 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDelete = async (userId: number) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+  const handleDeleteClick = (userId: number) => {
+    setUserToDelete(userId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (userToDelete === null) return;
 
     try {
-      setLoading();
+      setIsDeleting(true);
       setError("");
-      await deleteByTab(userId);
+      await deleteByTab(userToDelete);
       await loadData();
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user");
     } finally {
-      setIdle();
+      setIsDeleting(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   };
 
   const toggleForm = () => {
     setShowForm(!showForm);
     if (!showForm) {
+      setEditingUser(null);
       form.resetForm();
       setError("");
     }
+  };
+
+  const handleEdit = (user: MunicipalityUserResponse) => {
+    setEditingUser(user);
+    setShowForm(true);
+    form.setValues({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      password: "", // Vuoto per sicurezza
+      role: Array.isArray(user.role) ? user.role : user.role ? [user.role] : [],
+      externalCompanyId: "",
+      companyName: "",
+      platformAccess: false,
+      categories: [],
+    });
   };
 
   const handleTabChange = (tab: UserTab) => {
@@ -284,30 +340,33 @@ export default function AdminPanel() {
         </div>
 
         {/* Navigation tabs */}
-        <Nav variant="tabs" className="mb-3" activeKey={activeTab}>
-          <Nav.Item>
+        <Nav variant="tabs" className="mb-3 flex-wrap" activeKey={activeTab} style={{ overflowX: 'auto', minHeight: '50px' }}>
+          <Nav.Item style={{ minWidth: '200px' }}>
             <Nav.Link 
               eventKey="internal" 
               onClick={() => handleTabChange('internal')}
               className={activeTab === 'internal' ? 'fw-bold text-dark' : 'text-muted'}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <People className="me-2" /> Internal Staff
             </Nav.Link>
           </Nav.Item>
-          <Nav.Item>
+          <Nav.Item style={{ minWidth: '200px' }}>
             <Nav.Link 
               eventKey="external" 
               onClick={() => handleTabChange('external')}
               className={activeTab === 'external' ? 'fw-bold text-dark' : 'text-muted'}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <Briefcase className="me-2" /> External Maintainers
             </Nav.Link>
           </Nav.Item>
-          <Nav.Item>
+          <Nav.Item style={{ minWidth: '180px' }}>
             <Nav.Link 
               eventKey="companies" 
               onClick={() => handleTabChange('companies')}
               className={activeTab === 'companies' ? 'fw-bold text-dark' : 'text-muted'}
+              style={{ whiteSpace: 'nowrap' }}
             >
               <Building className="me-2" /> Partner Companies
             </Nav.Link>
@@ -336,7 +395,7 @@ export default function AdminPanel() {
             {/* Creation form */}
             {showForm && (
               <div className="mb-5 p-4 rounded bg-light border">
-                <h5 className="mb-3 pb-2 border-bottom">Create New {addButtonLabel}</h5>
+                <h5 className="mb-3 pb-2 border-bottom">{editingUser ? "Edit Staff" : `Create New ${addButtonLabel}`}</h5>
                 {activeTab === 'companies' ? (
                   <CompanyForm
                     values={form.values}
@@ -349,11 +408,19 @@ export default function AdminPanel() {
                   />
                 ) : (
                   <UserForm
-                    values={form.values}
+                    values={{
+                      firstName: form.values.firstName,
+                      lastName: form.values.lastName,
+                      email: form.values.email,
+                      password: form.values.password,
+                      role: form.values.role,
+                      externalCompanyId: form.values.externalCompanyId,
+                    }}
                     isSubmitting={form.isSubmitting}
                     isInternal={activeTab === 'internal'}
+                    isEditing={!!editingUser}
+                    editingUser={editingUser}
                     companies={companies}
-                    addButtonLabel={addButtonLabel}
                     onChange={form.handleChange}
                     onSubmit={form.handleSubmit}
                   />
@@ -362,20 +429,36 @@ export default function AdminPanel() {
             )}
 
             {activeTab === 'internal' && (
-              <InternalStaffTable users={internalUsers} onDelete={handleDelete} />
+              <InternalStaffTable users={internalUsers} onDelete={handleDeleteClick} onEdit={handleEdit} />
             )}
             
             {activeTab === 'external' && (
-              <ExternalMaintainersTable users={externalUsers} onDelete={handleDelete} />
+              <ExternalMaintainersTable users={externalUsers} onDelete={handleDeleteClick} />
             )}
 
             {activeTab === 'companies' && (
-              <CompaniesTable companies={companies} onDelete={handleDelete} />
+              <CompaniesTable companies={companies} onDelete={handleDeleteClick} />
             )}
             
           </CardBody>
         </Card>
       </Container>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        show={showDeleteModal}
+        onHide={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Confirmation"
+        message={activeTab === 'companies' 
+          ? "Are you sure you want to delete this company? This action cannot be undone."
+          : "Are you sure you want to delete this user? This action cannot be undone."
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

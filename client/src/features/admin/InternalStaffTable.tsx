@@ -1,24 +1,29 @@
-import { Table, Badge } from 'react-bootstrap';
-import { Trash } from 'react-bootstrap-icons';
-import type { MunicipalityUserResponse } from '../../types';
-import { getRoleLabel } from '../../utils/roles';
+import { Table, Badge } from "react-bootstrap";
+import { Trash } from "react-bootstrap-icons";
+import type { MunicipalityUserResponse } from "../../types";
+import { getRoleLabel } from "../../utils/roles";
 
 interface InternalStaffTableProps {
   users: MunicipalityUserResponse[];
   onDelete: (userId: number) => void;
+  onEdit: (user: MunicipalityUserResponse) => void;
 }
 
-export default function InternalStaffTable({ users, onDelete }: InternalStaffTableProps) {
+export default function InternalStaffTable({
+  users,
+  onDelete,
+  onEdit,
+}: InternalStaffTableProps) {
   if (users.length === 0) {
     return (
       <div className="table-responsive">
-        <Table hover className="align-middle">
-          <thead className="bg-light">
+        <Table hover responsive className="align-middle mb-0">
+        <thead className="bg-light">
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th className="text-end">Actions</th>
+              <th style={{ minWidth: '150px' }}>Name</th>
+              <th style={{ minWidth: '200px' }}>Email</th>
+              <th style={{ minWidth: '150px' }}>Roles</th>
+              <th className="text-end" style={{ minWidth: '120px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -35,29 +40,47 @@ export default function InternalStaffTable({ users, onDelete }: InternalStaffTab
 
   return (
     <div className="table-responsive">
-      <Table hover className="align-middle">
+      <Table hover responsive className="align-middle mb-0">
         <thead className="bg-light">
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th className="text-end">Actions</th>
+            <th style={{ minWidth: '150px' }}>Name</th>
+            <th style={{ minWidth: '200px' }}>Email</th>
+            <th style={{ minWidth: '150px' }}>Roles</th>
+            <th className="text-end" style={{ minWidth: '120px' }}>Actions</th>
           </tr>
         </thead>
+
         <tbody>
           {users.map((user) => (
             <tr key={user.id}>
               <td className="fw-medium">
                 {user.firstName} {user.lastName}
               </td>
+
               <td>{user.email}</td>
+
               <td>
-                <Badge bg="primary">{getRoleLabel(user.role)}</Badge>
+                {user.role.map((role) => (
+                  <Badge key={role} bg="primary" className="me-1">
+                    {getRoleLabel(role)}
+                  </Badge>
+                ))}
               </td>
+
               <td className="text-end">
                 <button
-                  onClick={() => onDelete(user.id)}
+                  type="button"
+                  className="btn btn-sm btn-outline-primary me-2"
+                  onClick={() => onEdit(user)}
+                >
+                  Edit
+                </button>
+
+                <button
+                  type="button"
                   className="btn btn-sm btn-outline-danger border-0"
+                  onClick={() => onDelete(user.id)}
+                  aria-label="Delete user"
                 >
                   <Trash />
                 </button>

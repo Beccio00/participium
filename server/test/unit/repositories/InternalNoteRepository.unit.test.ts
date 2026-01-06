@@ -31,7 +31,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
         content: "Technical note for infrastructure issue",
         reportId: 1,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
       };
 
       const mockCreatedNote = {
@@ -46,7 +46,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
           id: 10,
           first_name: "Tech",
           last_name: "User",
-          role: Role.INFRASTRUCTURES,
+          role: [Role.INFRASTRUCTURES],
         },
       };
 
@@ -74,7 +74,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
         content: "External maintainer note",
         reportId: 5,
         authorId: 20,
-        authorRole: Role.EXTERNAL_MAINTAINER,
+        authorRole: [Role.EXTERNAL_MAINTAINER],
       };
 
       const mockCreatedNote = {
@@ -89,7 +89,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
           id: 20,
           first_name: "External",
           last_name: "Maintainer",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
         },
       };
 
@@ -101,7 +101,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
 
       const result = await internalNoteRepository.create(noteData);
 
-      expect(result.author.role).toBe(Role.EXTERNAL_MAINTAINER);
+      expect(result.author.role).toEqual([Role.EXTERNAL_MAINTAINER]);
     });
 
     it("should handle empty content", async () => {
@@ -109,7 +109,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
         content: "",
         reportId: 1,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
       };
 
       const mockCreatedNote = { id: 3, ...noteData, createdAt: new Date() };
@@ -135,7 +135,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
         content: longContent,
         reportId: 1,
         authorId: 10,
-        authorRole: Role.ROAD_MAINTENANCE,
+        authorRole: [Role.ROAD_MAINTENANCE],
       };
 
       const mockCreatedNote = { id: 4, ...noteData, createdAt: new Date() };
@@ -166,13 +166,13 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
           content: "First note",
           reportId: 1,
           authorId: 10,
-          authorRole: Role.INFRASTRUCTURES,
+          authorRole: [Role.INFRASTRUCTURES],
           createdAt: new Date("2024-01-01T10:00:00"),
           author: {
             id: 10,
             first_name: "Tech",
             last_name: "User",
-            role: Role.INFRASTRUCTURES,
+            role: [Role.INFRASTRUCTURES],
           },
         },
         {
@@ -180,13 +180,13 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
           content: "Second note",
           reportId: 1,
           authorId: 20,
-          authorRole: Role.EXTERNAL_MAINTAINER,
+          authorRole: [Role.EXTERNAL_MAINTAINER],
           createdAt: new Date("2024-01-01T11:00:00"),
           author: {
             id: 20,
             first_name: "External",
             last_name: "User",
-            role: Role.EXTERNAL_MAINTAINER,
+            role: [Role.EXTERNAL_MAINTAINER],
           },
         },
       ];
@@ -235,7 +235,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
             first_name: "Tech",
             last_name: "User",
             email: "tech@example.com",
-            role: Role.WASTE_MANAGEMENT,
+            role: [Role.WASTE_MANAGEMENT],
           },
         },
       ];
@@ -246,7 +246,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
 
       expect(result[0].author).toBeDefined();
       expect(result[0].author.first_name).toBe("Tech");
-      expect(result[0].author.role).toBe(Role.WASTE_MANAGEMENT);
+      expect(result[0].author.role).toEqual([Role.WASTE_MANAGEMENT]);
     });
 
     it("should handle large number of notes", async () => {
@@ -278,13 +278,13 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
         content: "Test note",
         reportId: 5,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
         createdAt: new Date(),
         author: {
           id: 10,
           first_name: "Tech",
           last_name: "User",
-          role: Role.INFRASTRUCTURES,
+          role: [Role.INFRASTRUCTURES],
         },
         report: {
           id: 5,
@@ -332,7 +332,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
           id: 15,
           first_name: "John",
           last_name: "Doe",
-          role: Role.CIVIL_PROTECTION,
+          role: [Role.CIVIL_PROTECTION],
         },
         report: {
           id: 3,
@@ -475,7 +475,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
         content: "Test",
         reportId: 1,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
       };
 
       (mockRepository.create as jest.Mock).mockReturnValue(noteData);
@@ -504,7 +504,7 @@ describe("InternalNoteRepository Unit Tests - PT26", () => {
         content: specialContent,
         reportId: 1,
         authorId: 10,
-        authorRole: Role.INFRASTRUCTURES,
+        authorRole: [Role.INFRASTRUCTURES],
       };
 
       const mockCreatedNote = { id: 1, ...noteData, createdAt: new Date() };

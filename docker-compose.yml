@@ -11,6 +11,8 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Mount init scripts to create test database  
+      - ./server/database/init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     networks:
       - participium-network
@@ -87,7 +89,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-reports-photos}
       SESSION_SECRET: ${SESSION_SECRET:-your-secret-key-change-in-production}
-      AUTO_SEED: ${AUTO_SEED:-true}
+      AUTO_SEED: "true"
       # Database connection settings
       DB_HOST: db
       DB_PORT: 5432

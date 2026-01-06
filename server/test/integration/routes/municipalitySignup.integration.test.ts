@@ -45,7 +45,7 @@ describe("POST /api/admin/municipality-users", () => {
         lastName: "Smith",
         email: newEmail,
         password: "Municipal123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       })
       .expect(201);
 
@@ -54,7 +54,7 @@ describe("POST /api/admin/municipality-users", () => {
     expect(response.body).toHaveProperty("firstName", "Alice");
     expect(response.body).toHaveProperty("lastName", "Smith");
     expect(response.body).toHaveProperty("email", newEmail);
-    expect(response.body).toHaveProperty("role", "PUBLIC_RELATIONS");
+    expect(response.body.role).toEqual(["PUBLIC_RELATIONS"]);
   });
 
   it("should return 401 when not authenticated", async () => {
@@ -63,7 +63,7 @@ describe("POST /api/admin/municipality-users", () => {
       lastName: "Williams",
       email: `bob-${Date.now()}@example.com`,
       password: "Municipal123!",
-      role: "MUNICIPAL_BUILDING_MAINTENANCE",
+      role: ["MUNICIPAL_BUILDING_MAINTENANCE"],
     };
 
     await request(app)
@@ -96,7 +96,7 @@ describe("POST /api/admin/municipality-users", () => {
         lastName: "Adams",
         email: `eve-${Date.now()}@example.com`,
         password: "Municipal123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       })
       .expect(403);
   });
@@ -158,7 +158,7 @@ describe("POST /api/admin/municipality-users", () => {
         lastName: "User",
         email: existingEmail,
         password: "Municipal123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       })
       .expect(409);
 

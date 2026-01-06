@@ -5,6 +5,7 @@ import Button from "../../components/ui/Button.tsx";
 import Input from "../../components/ui/Input.tsx";
 import { LoginValidator } from "../../validators/LoginValidator";
 import type { LoginFormData } from "../../../../shared/LoginTypes";
+import { userHasRole, userHasAnyRole, TECHNICIAN_ROLES } from "../../utils/roles";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,11 +15,15 @@ export default function LoginPage() {
   const handleLogin = async (values: LoginFormData) => {
     setLoading();
     try {
-      const response = await login(values.email, values.password);
-      if (response && response.role === "ADMINISTRATOR") {
-        navigate("/admin", { replace: true });
-      } else if (response && response.role === "TECHNICAL_OFFICE") {
-        navigate("/technician", { replace: true });
+      const user = await login(values.email, values.password);
+    
+      if (user && userHasRole(user, "ADMINISTRATOR")) {
+        navigate("/", { replace: true });
+      } else if (
+        userHasAnyRole(user, TECHNICIAN_ROLES) || 
+        userHasRole(user, "PUBLIC_RELATIONS") || 
+        userHasRole(user, "EXTERNAL_MAINTAINER")) {
+        navigate("/assign-reports", { replace: true });
       } else {
         navigate("/", { replace: true });
       }
@@ -28,7 +33,7 @@ export default function LoginPage() {
         err instanceof Error
           ? err.message
           : "An unknown error occurred during login";
-      // Se l'errore riguarda la mancata verifica dell'email, reindirizza alla pagina di verifica
+      // If the error is about missing email verification, redirect to the verification page
       if (
         errorMessage.toLowerCase().includes("verify your email") ||
         errorMessage.toLowerCase().includes("not verified")

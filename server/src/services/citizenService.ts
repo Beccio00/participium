@@ -24,7 +24,7 @@ export async function verifyCitizenEmail(email: string, code: string): Promise<{
   const user = await userRepository.findByEmail(email);
 
   if (!user) throw new NotFoundError(`User with email ${email} not found`);
-  if (user.role !== Role.CITIZEN) throw new BadRequestError("Only citizens require email verification");
+  if (!user.role.includes(Role.CITIZEN)) throw new BadRequestError("Only citizens require email verification");
   if (user.isVerified) return { alreadyVerified: true };
   if (user.verificationToken !== code) throw new BadRequestError("Invalid verification code");
   if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) throw new BadRequestError("Verification code has expired");
@@ -42,7 +42,7 @@ export async function sendCitizenVerification(email: string): Promise<void> {
   const user = await userRepository.findByEmail(email);
 
   if (!user) throw new NotFoundError(`User with email ${email} not found`);
-  if (user.role !== Role.CITIZEN) throw new BadRequestError("Only citizens require email verification");
+  if (!user.role.includes(Role.CITIZEN)) throw new BadRequestError("Only citizens require email verification");
   if (user.isVerified) throw new BadRequestError("Email already verified");
 
   // Generate new verification code and expiry

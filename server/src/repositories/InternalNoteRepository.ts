@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../utils/AppDataSource";
 import { InternalNote } from "../entities/InternalNote";
+import {Role} from "../../../shared/RoleTypes";
 
 export class InternalNoteRepository {
   private repository: Repository<InternalNote>;
@@ -13,7 +14,7 @@ export class InternalNoteRepository {
     content: string;
     reportId: number;
     authorId: number;
-    authorRole: string;
+    authorRole: Role[];
   }): Promise<InternalNote> {
     const note = this.repository.create(noteData);
     const savedNote = await this.repository.save(note);

@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import axios from "axios";
 import path from "path";
 import { UserRepository } from "../repositories/UserRepository";
+import { ReportRepository } from "../repositories/ReportRepository";
 import { TelegramLinkTokenRepository } from "../repositories/TelegramLinkTokenRepository";
 import { BadRequestError, ConflictError, NotFoundError, UnprocessableEntityError } from "../utils";
 import { createReport } from "./reportService";
@@ -16,9 +17,12 @@ import type {
   TelegramUnlinkResponseDTO,
   TelegramCreateReportRequestDTO,
   TelegramCreateReportResponseDTO,
+  TelegramUserReportsResponseDTO,
+  TelegramReportStatusResponseDTO
 } from "../interfaces/TelegramDTO";
 
 const userRepository = new UserRepository();
+const reportRepository = new ReportRepository();
 const telegramLinkTokenRepository = new TelegramLinkTokenRepository();
 
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || "participium_bot";
@@ -290,3 +294,49 @@ async function downloadAndUploadTelegramPhotos(
 
   return photos;
 }
+
+
+export async function getMyReportsFromTelegram(
+  telegramId: string
+): Promise<TelegramUserReportsResponseDTO> {
+  const user = await userRepository.findByTelegramId(telegramId);
+  if (!user) {
+    throw new NotFoundError("No account linked to this Telegram ID. Please link your account first.");
+  }
+  const reports = await reportRepository.findByUserId(user.id);
+  return reports.map((report) => ({
+    reportId: report.id,
+    title: report.title,
+    address: report.address || "Address not available",
+    status: report.status,
+    createdAt: report.createdAt.toISOString(),
+  }));
+}
+
+export async function getReportStatusFromTelegram(
+  telegramId: string,
+  reportId: number
+): Promise<TelegramReportStatusResponseDTO> {
+  const user = await userRepository.findByTelegramId(telegramId);
+  if (!user) {
+    throw new NotFoundError("No account linked to this Telegram ID. Please link your account first.");
+  }
+  const reports = await reportRepository.findByUserId(user.id);
+  const report = reports.find((r) => r.id === reportId);
+  if (!report) {
+    throw new NotFoundError("Report not found for this user.");
+  }
+  return {
+    reportId: report.id,
+    title: report.title,
+    description: report.description,
+    category: report.category,
+    address: report.address || "Address not available",
+    isAnonymous: report.isAnonymous,
+    photoUrls: report.photos ? report.photos.map((photo) => photo.url) : [],
+    status: report.status,
+    createdAt: report.createdAt.toISOString(),
+    rejectedReason: report.rejectedReason || undefined,
+  };
+}
+
