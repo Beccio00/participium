@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Row, Col, Card, Form, Image, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Form, Image, Alert, Spinner } from 'react-bootstrap';
 import { PersonCircle } from 'react-bootstrap-icons';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -242,32 +242,28 @@ export default function CitizenSettings() {
     <Container className="py-4">
       <Row className="justify-content-center">
         <Col xs={12} md={10} lg={8}>
-          <Card className="shadow-sm">
-            <Card.Body>
-              <div className="d-flex flex-column flex-md-row align-items-center gap-3 mb-3">
-                <div>
-                  <h3 className="mb-0">Account settings</h3>
-                  <small className="text-muted">Manage your profile, notifications and profile photo.</small>
-                </div>
-              </div>
+          <div className="text-center mb-4">
+            <h2 className="fw-bold">Account settings</h2>
+            <p className="text-muted mb-0">Manage your profile, notifications and profile photo.</p>
+          </div>
 
               {successMessage && <Alert variant="success" onClose={() => setSuccessMessage(null)} dismissible>{successMessage}</Alert>}
               {errorMessage && <Alert variant="danger" onClose={() => setErrorMessage(null)} dismissible>{errorMessage}</Alert>}
 
-              <Row className="g-3">
+              <Row className="g-4">
                 {/* Left column: avatar - always visible */}
-                <Col xs={12} md={4} className="d-flex flex-column align-items-center">
+                <Col xs={12} md={4} className="d-flex flex-column align-items-center" style={{ paddingRight: '2rem' }}>
                   <div className="text-center mb-2">
                     {photoPreview ? (
                       <Image src={photoPreview} roundedCircle width={120} height={120} alt="profile" style={{ objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: 120, height: 120, borderRadius: '50%', background: '#f1f3f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6c757d', border: '1px solid #e9ecef' }}>
-                        <PersonCircle size={56} className="text-muted" />
+                      <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(169, 172, 176, 1)' }}>
+                        <PersonCircle size={56} style={{ color: 'rgba(169, 172, 176, 1)' }} />
                       </div>
                     )}
                   </div>
 
-                  <div className="w-100 d-flex flex-column align-items-center">
+                  <div className="mt-2 w-100 d-flex flex-column align-items-center">
                     {editing ? (
                       <>
                         <Form.Control type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} />
@@ -320,7 +316,6 @@ export default function CitizenSettings() {
                             label="First name"
                             value={firstName}
                             onChange={(e: any) => setFirstName(e.target.value)}
-                            helperText="Your given name"
                           />
                         </Col>
                         <Col xs={12} md={6}>
@@ -328,7 +323,6 @@ export default function CitizenSettings() {
                             label="Last name"
                             value={lastName}
                             onChange={(e: any) => setLastName(e.target.value)}
-                            helperText="Your family name"
                           />
                         </Col>
                       </Row>
@@ -369,7 +363,7 @@ export default function CitizenSettings() {
                             type="password"
                             value={newPassword}
                             onChange={(e: any) => setNewPassword(e.target.value)}
-                            helperText="Leave empty to keep your current password"
+                            helperText="Leave empty to keep current"
                           />
                         </Col>
                         <Col xs={12} md={6}>
@@ -383,14 +377,14 @@ export default function CitizenSettings() {
                       </Row>
 
                       {selectedFile ? (
-                        <div className="mb-2">
+                        <div className="mb-1">
                           <small className="text-muted">You must upload or clear the profile picture before saving changes</small>
                         </div>
                       ) : null}
 
                       <div className="d-flex gap-2 align-items-center">
                         <Button type="button" variant="primary" isLoading={saving} onClick={handleSaveConfig} disabled={!!selectedFile || saving}>Save changes</Button>
-                        <Button variant="ghost" onClick={() => {
+                        <Button variant="secondary" onClick={() => {
                           // cancel edits and restore values
                           setSuccessMessage(null);
                           setErrorMessage(null);
@@ -414,8 +408,6 @@ export default function CitizenSettings() {
                   )}
                 </Col>
               </Row>
-            </Card.Body>
-          </Card>
 
           <TelegramModal show={showTelegramModal} onHide={() => setShowTelegramModal(false)} />
         </Col>

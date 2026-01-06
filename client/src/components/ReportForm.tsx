@@ -7,7 +7,6 @@ import {
   Col,
   Alert,
   Form,
-  Card,
 } from "react-bootstrap";
 import {
   GeoAlt,
@@ -50,8 +49,6 @@ import { userHasRole } from "../utils/roles";
 import { Role } from "../../../shared/RoleTypes";
 import AccessRestricted from "./AccessRestricted";
 import {
-  formCardStyle,
-  headerStyle,
   sectionTitleStyle,
   coordinatesStyle,
   mapContainerStyle,
@@ -62,8 +59,6 @@ import {
   photoProgressStyle,
   photoLabelStyle,
   divStyle,
-  h2Style,
-  pStyle,
   cameraStyle,
   imgStyle,
   removeButtonStyle,
@@ -328,26 +323,24 @@ export default function ReportForm() {
 
   return (
     <div style={divStyle} ref={topRef}>
-      <Container>
-        <Card style={formCardStyle}>
-          <Card.Header style={headerStyle}>
-            <h2 style={h2Style}>
-              <FileText /> Create New Report
-            </h2>
-            <p style={pStyle}>Report an issue in your municipality</p>
-          </Card.Header>
+      <Container className="py-4">
+        <div className="text-center mb-4">
+          <h2 style={{ color: "var(--text)", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+            <FileText /> Create New Report
+          </h2>
+          <p className="text-muted">Report an issue in your municipality</p>
+        </div>
 
-          <Card.Body className="p-4 p-md-5">
-            <Form onSubmit={handleSubmit} noValidate>
-              <Row className="justify-content-center">
-                <Col lg={8}>
-                  <div className="mb-4">
+        <Form onSubmit={handleSubmit} noValidate>
+          <Row className="justify-content-center">
+            <Col lg={8}>
+              <div className="mb-4">
 
-                    {serverError && (
-                      <Alert
-                        variant="danger"
-                        dismissible
-                        onClose={() => setServerError(null)}
+                {serverError && (
+                  <Alert
+                    variant="danger"
+                    dismissible
+                    onClose={() => setServerError(null)}
                         className="mb-5"
                       >
                         <Alert.Heading style={{ fontSize: "1rem", fontWeight: 600 }}>
@@ -672,8 +665,6 @@ export default function ReportForm() {
                 </Button>
               </div>
             </Form>
-          </Card.Body>
-        </Card>
       </Container>
     </div>
   );

@@ -543,6 +543,44 @@ export default function TechPanel() {
         </p>
       </div>
 
+      {/* Quick Stats Cards */}
+      <div className="row g-3 mb-4">
+        <div className="col-md-6">
+          <div style={{
+            background: "linear-gradient(135deg, color-mix(in srgb, var(--navbar-accent) 85%, var(--primary) 15%) 0%, color-mix(in srgb, var(--navbar-accent) 60%, var(--stone) 40%) 60%)",
+            borderRadius: "12px",
+            padding: "1.5rem",
+            color: "white",
+            boxShadow: "0 4px 12px rgba(200, 110, 98, 0.2)"
+          }}>
+            <div style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.5rem" }}>
+              {isPublicRelations ? "All Reports" : "Assigned to me"}
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: 700 }}>
+              {isPublicRelations ? otherReports.length : pendingReports.length}
+            </div>
+          </div>
+        </div>
+        {!isExternalMaintainer && (
+          <div className="col-md-6">
+            <div style={{
+              background: "var(--stone)",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              color: "white",
+              boxShadow: "0 4px 12px rgba(133, 122, 116, 0.2)"
+            }}>
+              <div style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.5rem" }}>
+                {isPublicRelations ? "Pending Approval" : "Assigned to External"}
+              </div>
+              <div style={{ fontSize: "2.5rem", fontWeight: 700 }}>
+                {isPublicRelations ? pendingReports.length : otherReports.length}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {error && <div className="alert alert-danger">{error}</div>}
 
       <Accordion className="mb-4">

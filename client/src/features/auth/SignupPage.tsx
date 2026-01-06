@@ -94,25 +94,17 @@ export default function SignupPage() {
       >
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-            padding: "3rem",
-            borderRadius: "24px",
-            boxShadow: "0 8px 32px rgba(34, 49, 63, 0.12)",
             width: "100%",
-            maxWidth: "600px",
+            maxWidth: "550px",
+            padding: "1rem",
           }}
         >
-          <h2
-            className="text-center mb-2"
-            style={{ color: "var(--text)", fontWeight: 700 }}
-          >
-            Citizen Registration
-          </h2>
-          <p className="text-center mb-4" style={{ color: "var(--muted)" }}>
-            Register to access the Participium system and submit reports to your
-            municipality.
-          </p>
+          <div className="text-center mb-4">
+            <h2 style={{ color: "var(--text)", fontWeight: 700 }}>Citizen Registration</h2>
+            <p className="text-muted">
+              Register to access the Participium system and submit reports to your municipality.
+            </p>
+          </div>
 
           <form onSubmit={form.handleSubmit}>
             <Row className="g-3 mb-3">
