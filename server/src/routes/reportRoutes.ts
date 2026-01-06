@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middlewares/errorMiddleware';
-import { requireCitizen, requirePublicRelations, requireTechnicalStaffOnly, requireTechnicalOrExternal, isLoggedIn, requireCitizenAuthorOrTechnicalOrExternal } from '../middlewares/routeProtection';
+import { 
+  requireCitizen, 
+  requirePublicRelations, 
+  requireTechnicalStaffOnly, 
+  requireTechnicalOrExternal, 
+  isLoggedIn, 
+  requireCitizenAuthorOrTechnicalOrExternal 
+} from '../middlewares/routeProtection';
 import { validateTurinBoundaries } from '../middlewares/validateTurinBoundaries';
 import { 
   createReport, 

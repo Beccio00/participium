@@ -38,7 +38,7 @@ export default function ReportDetailsModal({
   report,
   onReportUpdate,
 }: Props) {
-  // Ref per la chat container
+  // Ref for the chat container
   const chatRef = useRef<HTMLDivElement>(null);
 
   // Chat state (dichiarato subito dopo il ref)
@@ -49,14 +49,14 @@ export default function ReportDetailsModal({
   // State for chat visibility
   const [canSeeChat, setCanSeeChat] = useState(false);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Automatically scroll to bottom when new messages arrive
   useEffect(() => {
     if (canSeeChat && chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages, canSeeChat]);
 
-  // Per identificare l'utente corrente
+  // To identify the current user
   const [currentUserId, setCurrentUserId] = useState<string | number | null>(
     null
   );
@@ -120,7 +120,7 @@ export default function ReportDetailsModal({
         );
         if (isMounted) {
           setMessages(msgs);
-          // Scroll in fondo se ci sono nuovi messaggi
+          // Scroll to bottom if there are new messages
           if (chatRef?.current && msgs.length > prevLength) {
             setTimeout(() => {
               if (chatRef.current)
@@ -510,10 +510,10 @@ export default function ReportDetailsModal({
                 Created by:
               </strong>
               <span style={{ marginLeft: "0.5rem", color: "var(--text)" }}>
-                {display.user
-                  ? `${display.user.firstName} ${display.user.lastName}`
-                  : display.isAnonymous
-                  ? "Anonymous user"
+                {display.isAnonymous
+                  ? "Anonymous"
+                  : display.user
+                  ? `${display.user.firstName} ${display.user.lastName}`.trim()
                   : "Unknown"}
               </span>
             </div>

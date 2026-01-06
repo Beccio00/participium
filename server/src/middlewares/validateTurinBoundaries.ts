@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { UnprocessableEntityError } from "../utils";
 import { isPointInTurin } from "../../../shared/TurinBoundaries";
 
+// Export for use in geocoding controller
+export function isWithinTurinBoundaries(lat: number, lng: number): boolean {
+  return isPointInPolygon(lat, lng, TURIN_POLYGON);
+}
+
 export function validateTurinBoundaries(req: Request, res: Response, next: NextFunction) {
   const { latitude, longitude } = req.body;
   

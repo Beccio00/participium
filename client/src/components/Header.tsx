@@ -142,7 +142,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationCount, setNotificationCount] = useState(0);
 
-  // Carica e salva le notifiche lette in localStorage
+  // Load and save read notifications in localStorage
   const [readNotificationIds, setReadNotificationIds] = useState<number[]>(
     () => {
       const saved = localStorage.getItem("readNotificationIds");
@@ -150,7 +150,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     }
   );
 
-  // Salva le notifiche lette in localStorage quando cambiano
+  // Save read notifications in localStorage when they change
   useEffect(() => {
     localStorage.setItem(
       "readNotificationIds",
@@ -158,7 +158,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     );
   }, [readNotificationIds]);
 
-  // Polling per le notifiche
+  // Polling for notifications
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
 
@@ -203,7 +203,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     }
   }, [isAuthenticated, user]);
 
-  // Funzione per aprire il modale report dalla notifica
+  // Function to open the report modal from the notification
   const handleOpenReportFromNotification = async (reportId: number) => {
     setShowNotifications(false);
     markNotificationAsRead(reportId);
