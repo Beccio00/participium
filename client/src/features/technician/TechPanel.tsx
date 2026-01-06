@@ -510,6 +510,7 @@ export default function TechPanel() {
               <Row>
                 {otherReports.map((report) => (
                   <Col key={report.id} lg={4} md={6} className="mb-3">
+                    {/*after many tries, I decided this is the best style option */}
                     <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
                   </Col>
                 ))}

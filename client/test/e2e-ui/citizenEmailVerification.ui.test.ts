@@ -30,6 +30,25 @@ test.describe('Story 27 - Citizen Email Verification (UI)', () => {
   test.beforeEach(async ({ page }) => {
     // Clear cookies and local storage before each test
     await page.context().clearCookies();
+    // Mock signup so UI tests don't require backend
+    await page.route('**/citizen/signup', async (route) => {
+      let post: any = {};
+      try {
+        post = route.request().postDataJSON();
+      } catch (e) {
+        post = {};
+      }
+      const resp = {
+        id: Date.now(),
+        firstName: post.firstName || 'Test',
+        lastName: post.lastName || 'User',
+        email: post.email || 'test@example.com',
+        role: 'CITIZEN',
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+      };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(resp) });
+    });
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
   });
@@ -46,6 +65,7 @@ test.describe('Story 27 - Citizen Email Verification (UI)', () => {
     await page.fill('input[name="lastName"]', 'User');
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
 
     // Step 3: Submit registration
     await page.click('button[type="submit"]');
@@ -76,6 +96,7 @@ test.describe('Story 27 - Citizen Email Verification (UI)', () => {
     await page.fill('input[name="lastName"]', 'User');
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
     await page.click('button[type="submit"]');
 
     // Wait for verification page
@@ -103,6 +124,7 @@ test.describe('Story 27 - Citizen Email Verification (UI)', () => {
     await page.fill('input[name="lastName"]', 'Test');
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
     await page.click('button[type="submit"]');
 
     // Wait for verification page
@@ -124,6 +146,32 @@ test.describe('Story 27 - Citizen Email Verification (UI)', () => {
 });
 
 test.describe('UI Elements Validation', () => {
+  test.beforeEach(async ({ page }) => {
+    // Clear cookies and local storage before each test
+    await page.context().clearCookies();
+    // Mock signup so UI tests don't require backend
+    await page.route('**/citizen/signup', async (route) => {
+      let post: any = {};
+      try {
+        post = route.request().postDataJSON();
+      } catch (e) {
+        post = {};
+      }
+      const resp = {
+        id: Date.now(),
+        firstName: post.firstName || 'Test',
+        lastName: post.lastName || 'User',
+        email: post.email || 'test@example.com',
+        role: 'CITIZEN',
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+      };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(resp) });
+    });
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+  });
+
   test('should display proper styling on verification page', async ({ page }) => {
     const email = `style-${Date.now()}@test.com`;
     const password = 'Test1234!';
@@ -134,6 +182,7 @@ test.describe('UI Elements Validation', () => {
     await page.fill('input[name="lastName"]', 'Test');
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', password);
+    await page.fill('input[name="confirmPassword"]', password);
     await page.click('button[type="submit"]');
 
     await expect(page).toHaveURL('/verify-email');

@@ -70,6 +70,7 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
   return;
 }
 
+
 export async function resendVerificationEmail(req: Request, res: Response): Promise<void> {
   const { email } = req.body;
   
@@ -83,9 +84,10 @@ export async function getCitizenProfile(req: Request, res: Response): Promise<vo
   res.status(200).json(profile);
 }
 
+
 export async function updateCitizenProfile(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
-  const { firstName, lastName, email, password, telegramUsername, emailNotificationsEnabled } = req.body as CitizenConfigRequestDTO;
+  const { firstName, lastName, email, password, emailNotificationsEnabled } = req.body as CitizenConfigRequestDTO;
 
   // Almeno un campo deve essere presente
   if (
@@ -93,7 +95,6 @@ export async function updateCitizenProfile(req: Request, res: Response): Promise
     lastName === undefined &&
     email === undefined &&
     password === undefined &&
-    telegramUsername === undefined &&
     emailNotificationsEnabled === undefined
   ) {
     throw new BadRequestError('At least one field must be provided');
@@ -122,12 +123,12 @@ export async function updateCitizenProfile(req: Request, res: Response): Promise
     email,
     password: hashedPassword,
     salt,
-    telegramUsername,
     emailNotificationsEnabled,
   });
 
   res.status(200).json(updatedProfile);
 }
+
 
 export async function uploadCitizenPhoto(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };
@@ -177,6 +178,7 @@ export async function uploadCitizenPhoto(req: Request, res: Response): Promise<v
 
   res.status(201).json(response);
 }
+
 
 export async function deleteCitizenPhoto(req: Request, res: Response): Promise<void> {
   const user = req.user as { id: number };

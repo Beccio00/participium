@@ -1,3 +1,41 @@
+// Geocoding and report search by bbox
+export async function geocodeAddress(address: string, zoom: number = 16) {
+  // Manual URL encoding to satisfy OpenAPI validator
+  const encodedAddress = encodeURIComponent(address);
+  const res = await fetch(
+    `${API_PREFIX}/geocode?address=${encodedAddress}&zoom=${zoom}`
+  );
+  if (!res.ok) {
+    let data: any = null;
+    try {
+      data = await res.json();
+    } catch (e) {
+      // ignore
+    }
+    // If the backend provides a message about not in Turin or similar, use a friendly message
+    const msg = (data && data.message ? data.message : "").toLowerCase();
+    if (
+      msg.includes("not in turin") ||
+      msg.includes("not in allowed area") ||
+      msg.includes("geocoding error") ||
+      msg.includes("geocoding service error")
+    ) {
+      throw new Error("Invalid address: please enter a location within Turin.");
+    }
+    throw new Error("Invalid address: please enter a location within Turin.");
+  }
+  return res.json();
+}
+
+export async function getReportsByBbox(bbox: string) {
+  const params = new URLSearchParams({ bbox });
+  const res = await fetch(`${API_PREFIX}/reports?${params.toString()}`);
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || "Failed to fetch reports by bbox");
+  }
+  return res.json();
+}
 // Notification API
 export async function getNotifications(): Promise<any[]> {
   const res = await fetch(`${API_PREFIX}/notifications`, {
@@ -25,12 +63,12 @@ import type {
   ExternalCompanyResponse,
   ExternalMaintainerResponse,
 } from "../../../shared/ExternalTypes";
-import type { 
+import type {
   Report,
   CreateReportResponse,
   InternalNote,
   CreateInternalNoteRequest,
-  CreateInternalNoteResponse
+  CreateInternalNoteResponse,
 } from "../types/report.types";
 
 export const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
@@ -448,7 +486,7 @@ export async function createInternalNote(
   return handleResponse<CreateInternalNoteResponse>(res);
 }
 
-export async function getInternalNotes( 
+export async function getInternalNotes(
   reportId: number
 ): Promise<InternalNote[]> {
   const res = await fetch(`${API_PREFIX}/reports/${reportId}/internal-notes`, {
@@ -456,8 +494,7 @@ export async function getInternalNotes(
     credentials: "include",
   });
   return handleResponse<InternalNote[]>(res);
-} 
-
+}
 
 export default {
   getSession,

@@ -33,7 +33,7 @@ export default function LoginPage() {
         err instanceof Error
           ? err.message
           : "An unknown error occurred during login";
-      // Se l'errore riguarda la mancata verifica dell'email, reindirizza alla pagina di verifica
+      // If the error is about missing email verification, redirect to the verification page
       if (
         errorMessage.toLowerCase().includes("verify your email") ||
         errorMessage.toLowerCase().includes("not verified")

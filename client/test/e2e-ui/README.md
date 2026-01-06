@@ -32,8 +32,9 @@ npx playwright show-report
 
 ## 📁 test file
 
-- `citizenEmailVerification.ui.test.ts` - 邮箱验证页面的 UI 测试
-- `externalMaintainerWorkflow.ui.test.ts` - 基本导航和注册测试
-- `helpers/testHelpers.ts` - 可复用的测试辅助函数
+- `citizenEmailVerification.ui.test.ts` - Email verification page UI tests
+- `externalMaintainerWorkflow.ui.test.ts` - Basic navigation and registration tests
+- `unregisteredUserMapView.ui.test.ts` - Unregistered user map view tests
+- `helpers/testHelpers.ts` - Reusable test helper functions
 
 

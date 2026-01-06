@@ -18,6 +18,7 @@ async function register(page: Page, email: string, password: string, firstName: 
   await page.fill('input[name="lastName"]', lastName);
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
+  await page.fill('input[name="confirmPassword"]', password);
   await page.click('button[type="submit"]');
   
   // Wait for redirect to verify-email
@@ -27,7 +28,25 @@ async function register(page: Page, email: string, password: string, firstName: 
 test.describe('External Maintainer Workflow - Basic UI Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.context().clearCookies();
-    // Navigate to a page first to avoid localStorage SecurityError
+    // Mock signup so tests don't require backend
+    await page.route('**/citizen/signup', async (route) => {
+      let post: any = {};
+      try {
+        post = route.request().postDataJSON();
+      } catch (e) {
+        post = {};
+      }
+      const resp = {
+        id: Date.now(),
+        firstName: post.firstName || 'Test',
+        lastName: post.lastName || 'User',
+        email: post.email || 'test@example.com',
+        role: 'CITIZEN',
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+      };
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(resp) });
+    });
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
   });
