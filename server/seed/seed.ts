@@ -449,6 +449,96 @@ const seedDatabase = async () => {
       preferredRole: Role.PUBLIC_RESIDENTIAL_HOUSING,
       status: ReportStatus.IN_PROGRESS,
       photos: ["report20.jpg"]
+    },
+    {
+      // Report 21: Road infrastructure issue
+      title: "Damaged road surface with potholes",
+      description: "Road surface showing significant deterioration with multiple potholes and cracks. Creates hazard for vehicles and cyclists. Needs urgent repair.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.ROAD_MAINTENANCE,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report21.jpg"]
+    },
+    {
+      // Report 22: Public facility damage
+      title: "Damaged public facility requiring maintenance",
+      description: "Public facility showing signs of wear and damage. Structural issues may pose safety concerns for users. Inspection and repair needed.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report22.jpg"]
+    },
+    {
+      // Report 23: Sewer problem problem
+      title: "Sewer problem issue requiring attention",
+      description: "Sewer problem.",
+      category: ReportCategory.SEWER_SYSTEM,
+      preferredRole: Role.INFRASTRUCTURES,
+      status: ReportStatus.IN_PROGRESS,
+      photos: ["report23.jpg"]
+    },
+    {
+      // Report 24: Public space maintenance
+      title: "Public space maintenance issue",
+      description: "Public area requiring maintenance work. Condition may impact usability and safety for residents and visitors. Needs municipal attention.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report24.jpg"]
+    },
+    {
+      // Report 25: Street furniture damage
+      title: "Trash accumulation in the area",
+      description: "Trash accumulation in the area",
+      category: ReportCategory.WASTE,
+      preferredRole: Role.WASTE_MANAGEMENT,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report25.JPG"]
+    },
+    {
+      // Report 26: Public area infrastructure
+      title: "Traffic light malfunction problem",
+      description: "Traffic light malfunction.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.INFRASTRUCTURES,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report26.jpg"]
+    },
+    {
+      // Report 27: Urban maintenance issue
+      title: "Damaged playground equipment",
+      description: "Damaged playground equipment.",
+      category: ReportCategory.PUBLIC_GREEN_AREAS_PLAYGROUNDS,
+      preferredRole: Role.GREENSPACES_AND_ANIMAL_PROTECTION,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report27.jpg"]
+    },
+    {
+      // Report 28: Public infrastructure damage
+      title: "Broken streetlight ",
+      description: "Broken streetlight .",
+      category: ReportCategory.PUBLIC_LIGHTING,
+      preferredRole: Role.LOCAL_PUBLIC_SERVICES,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report28.jpg"]
+    },
+    {
+      // Report 29: Street maintenance issue
+      title: "Street maintenance issue",
+      description: "Street element requiring maintenance or repair. Current condition may impact traffic flow, pedestrian safety, or overall urban quality. Needs attention.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.ROAD_MAINTENANCE,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report29.jpg"]
+    },
+    {
+      // Report 30: Public facility problem
+      title: "Public facility problem requiring repair",
+      description: "Public facility showing issues that require maintenance or repair. May affect public access, safety, or functionality. Municipal intervention needed.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report30.jpg"]
     }
   ];
 
@@ -467,6 +557,29 @@ const seedDatabase = async () => {
     { lat: 45.0842, lng: 7.6796, address: "Via Cigna 45, 10155 Torino" },                       // Report 8: Regio Parco - Broken barrier
     { lat: 45.0645, lng: 7.6732, address: "Corso Vittorio Emanuele II 75, 10128 Torino" },      // Report 8: San Salvario - Traffic light
     { lat: 45.0815, lng: 7.6655, address: "Corso Lecce 33, 10149 Torino" },                     // Report 9: Vallette - Faded crosswalk
+<<<<<<< HEAD
+    { lat: 45.0588, lng: 7.6777, address: "Via San Francesco da Paola 15, 10123 Torino" },      // Report 10: Centro - Damaged sidewalk
+    { lat: 45.0784, lng: 7.6425, address: "Via Venaria 45, 10148 Torino" },                     // Report 11: Parella - Playground
+    { lat: 45.0521, lng: 7.6912, address: "Via Madama Cristina 89, 10125 Torino" },             // Report 12: San Salvario - Water leak
+    { lat: 45.0622, lng: 7.6758, address: "Via Po 25, 10124 Torino" },                          // Report 13: Vanchiglia - Graffiti
+    { lat: 45.0865, lng: 7.7035, address: "Corso Vercelli 230, 10155 Torino" },                 // Report 14: Aurora - Fallen tree
+    { lat: 45.0456, lng: 7.6598, address: "Corso Unità d'Italia 56, 10127 Torino" },            // Report 15: Millefonti - Bus stop
+    { lat: 45.0758, lng: 7.6928, address: "Corso San Maurizio 12, 10124 Torino" },              // Report 16: Borgo Po - Illegal dumping
+    { lat: 45.0692, lng: 7.6645, address: "Via Duchessa Jolanda 15, 10138 Torino" },            // Report 17: Santa Rita - School
+    { lat: 45.0598, lng: 7.7125, address: "Via Plava 78, 10135 Torino" },                       // Report 18: Cenisia - Sports facility
+    { lat: 45.0789, lng: 7.6512, address: "Corso Peschiera 156, 10149 Torino" },                // Report 19: Dora - Public housing
+    { lat: 45.0734, lng: 7.6812, address: "Piazza Solferino 8, 10121 Torino" },                 // Report 20: Centro - Tourist info panel
+    { lat: 45.0658, lng: 7.6598, address: "Corso Marconi 45, 10125 Torino" },                    // Report 21: Santa Rita - Road surface
+    { lat: 45.0715, lng: 7.6885, address: "Via Garibaldi 25, 10122 Torino" },                   // Report 22: Centro - Public facility
+    { lat: 45.0635, lng: 7.6805, address: "Corso Duca degli Abruzzi 42, 10129 Torino" },        // Report 23: San Salvario - Infrastructure
+    { lat: 45.0775, lng: 7.6955, address: "Via Lagrange 15, 10123 Torino" },                    // Report 24: Centro - Public space
+    { lat: 45.0555, lng: 7.6705, address: "Corso Orbassano 120, 10137 Torino" },                // Report 25: Lingotto - Street furniture
+    { lat: 45.0825, lng: 7.7055, address: "Via Bologna 45, 10152 Torino" },                     // Report 26: Barriera - Infrastructure
+    { lat: 45.0685, lng: 7.6755, address: "Via Montebello 20, 10124 Torino" },                  // Report 27: Vanchiglia - Urban maintenance
+    { lat: 45.0745, lng: 7.6905, address: "Via Po 50, 10123 Torino" },                          // Report 28: Centro - Infrastructure
+    { lat: 45.0605, lng: 7.6855, address: "Via Nizza 180, 10126 Torino" },                      // Report 29: Crocetta - Street maintenance
+    { lat: 45.0725, lng: 7.6825, address: "Piazza Carlo Alberto 5, 10123 Torino" },              // Report 30: Centro - Public facility
+=======
     { lat: 45.0660, lng: 7.6872, address: "Via San Francesco da Paola 15, 10123 Torino" },      // Report 10: Centro - Damaged sidewalk
     { lat: 45.1085, lng: 7.6608, address: "Via Venaria 45, 10148 Torino" },                     // Report 11: Parella - Playground
     { lat: 45.0505, lng: 7.6779, address: "Via Madama Cristina 89, 10125 Torino" },             // Report 12: San Salvario - Water leak
@@ -479,6 +592,7 @@ const seedDatabase = async () => {
     { lat: 45.0640, lng: 7.6520, address: "Corso Peschiera 156, 10149 Torino" },                // Report 19: Dora - Public housing
     { lat: 45.0700, lng: 7.6769, address: "Piazza Solferino 8, 10121 Torino" },                 // Report 20: Centro - Tourist info panel
     { lat: 45.0553, lng: 7.6840, address: "Corso Marconi 45, 10125 Torino" },                    // Report 21: Santa Rita - Broken road sign
+>>>>>>> 8c1104465564f6f7625a03f58f6c2cee2f96d95d
   ];
 
   // Create reports with staggered creation dates (from 7 days ago to today)
@@ -511,7 +625,16 @@ const seedDatabase = async () => {
     daysAgo(2),  // Report 18: 2 days ago - Sports facility
     daysAgo(1),  // Report 19: 1 day ago - Public housing
     daysAgo(0),  // Report 20: Today - Tourist info panel
-    daysAgo(3),  // Report 21: 3 days ago - Broken road sign
+    daysAgo(2),  // Report 21: 2 days ago - Road surface
+    daysAgo(1),  // Report 22: 1 day ago - Public facility
+    daysAgo(0),  // Report 23: Today - Infrastructure
+    daysAgo(1),  // Report 24: 1 day ago - Public space
+    daysAgo(2),  // Report 25: 2 days ago - Street furniture
+    daysAgo(0),  // Report 26: Today - Infrastructure
+    daysAgo(1),  // Report 27: 1 day ago - Urban maintenance
+    daysAgo(2),  // Report 28: 2 days ago - Infrastructure
+    daysAgo(0),  // Report 29: Today - Street maintenance
+    daysAgo(1),  // Report 30: 1 day ago - Public facility
   ];
 
   for (let i = 0; i < reportTemplates.length; i++) {
