@@ -362,9 +362,17 @@ export default function MapView({
             fillOpacity: 0.15, // more transparent
             opacity: 0.8, // softer border
             pane: "searchAreaPane", // Use custom pane with higher z-index
+            interactive: false, // Allow clicking through to markers
           }
         ).addTo(mapInstanceRef.current);
       } else if (searchArea.center && searchArea.radiusMeters) {
+        // Create custom pane for circle if not exists
+        const map = mapInstanceRef.current;
+        if (!map.getPane("searchAreaPane")) {
+          const pane = map.createPane("searchAreaPane");
+          pane.style.zIndex = "650";
+          pane.style.pointerEvents = "none";
+        }
         // Draw circle for radius
         areaLayer = L.circle(searchArea.center, {
           radius: searchArea.radiusMeters,
@@ -372,6 +380,8 @@ export default function MapView({
           fillColor: "#007bff",
           fillOpacity: 0.15,
           weight: 2,
+          pane: "searchAreaPane", // Use custom pane with higher z-index
+          interactive: false, // Allow clicking through to markers
         }).addTo(mapInstanceRef.current);
       }
     }
