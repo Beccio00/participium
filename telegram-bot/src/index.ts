@@ -210,7 +210,7 @@ async function showMainMenu(ctx: any) {
       ...Markup.inlineKeyboard([
         [Markup.button.callback("📋 My Reports", "menu_myreports")],
         [Markup.button.callback("📝 New Report", "menu_newreport")],
-        [Markup.button.callback("🆘 Help", "menu_help")],
+        [Markup.button.callback("ℹ️ Help", "menu_help")],
         [Markup.button.callback("❓ FAQ", "menu_faq")],
         [Markup.button.callback("📞 Contact", "menu_contact")],
         [Markup.button.callback("🔗 Link Account", "menu_link_help")],
@@ -520,7 +520,7 @@ bot.action("menu_main", async (ctx) => {
       ...Markup.inlineKeyboard([
         [Markup.button.callback("📋 My Reports", "menu_myreports")],
         [Markup.button.callback("📝 New Report", "menu_newreport")],
-        [Markup.button.callback("🆘 Help", "menu_help")],
+        [Markup.button.callback("ℹ️ Help", "menu_help")],
         [Markup.button.callback("❓ FAQ", "menu_faq")],
         [Markup.button.callback("📞 Contact", "menu_contact")],
         [Markup.button.callback("🔗 Link Account", "menu_link_help")],
@@ -618,10 +618,10 @@ bot.action("menu_newreport", async (ctx) => {
 });
 
 bot.action("menu_help", async (ctx) => {
-  await ctx.answerCbQuery("🆘 Loading help...");
+  await ctx.answerCbQuery("ℹ️ Loading help...");
 
   await ctx.editMessageText(
-    "🆘 Participium Bot Help\n\n" +
+    "ℹ️ Participium Bot Help\n\n" +
       "💡 Tip: Use the buttons below to navigate more easily!\n\n" +
       "Available commands:\n" +
       "/start - Show main menu\n" +
