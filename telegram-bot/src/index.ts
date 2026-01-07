@@ -157,8 +157,7 @@ async function safeEditMessage(
     await ctx.editMessageText(text, options);
   } catch (error: any) {
     if (
-      error.description &&
-      error.description.includes("message is not modified")
+      error.description?.includes("message is not modified")
     ) {
       await ctx.answerCbQuery(fallbackAnswer || "⚠️ Already up to date");
     } else {
@@ -222,7 +221,7 @@ async function showMainMenu(ctx: any) {
 bot.start(async (ctx) => {
   const startPayload = ctx.startPayload;
 
-  if (startPayload && startPayload.startsWith("link_")) {
+  if (startPayload?.startsWith("link_")) {
     const linkToken = startPayload.replace("link_", "");
     const telegramId = ctx.from.id.toString();
     const telegramUsername = ctx.from.username;
@@ -424,7 +423,6 @@ bot.command("cancel", async (ctx) => {
 // Handle main menu buttons
 bot.hears("📝 New Report", async (ctx) => {
   await ctx.deleteMessage().catch(() => {});
-  const chatId = ctx.chat.id;
   const telegramId = ctx.from.id.toString();
   try {
     const status = await checkLinked(telegramId);
@@ -466,7 +464,6 @@ bot.hears("📝 New Report", async (ctx) => {
     const inlineButtons: any[][] = [];
 
     reports.slice(0, 10).forEach((report: any) => {
-      const statusIcon = formatStatus(report.status).split(" ")[0]; //only emoji
       message += `🆔 *#${report.reportId}*\n`;
       message += `📝 ${report.title}\n`;
       message += `📍 ${report.address}\n`;
@@ -1002,7 +999,7 @@ bot.action(/^category_(.+)$/, async (ctx) => {
   const chatId = ctx.chat!.id;
   const session = reportSessions.get(chatId);
 
-  if (!session || session.step !== "category") {
+  if (session?.step !== "category") {
     await ctx.answerCbQuery(
       "⚠️ Session expired. Please start again with /newreport"
     );
@@ -1042,7 +1039,7 @@ bot.action("photos_done", async (ctx) => {
   const chatId = ctx.chat!.id;
   const session = reportSessions.get(chatId);
 
-  if (!session || session.step !== "photos") {
+  if (session?.step !== "photos") {
     await ctx.answerCbQuery(
       "⚠️ Session expired. Please start again with /newreport"
     );
@@ -1080,7 +1077,7 @@ bot.action(/^anonymous_(yes|no)$/, async (ctx) => {
   const chatId = ctx.chat!.id;
   const session = reportSessions.get(chatId);
 
-  if (!session || session.step !== "anonymous") {
+  if (session?.step !== "anonymous") {
     await ctx.answerCbQuery(
       "⚠️ Session expired. Please start again with /newreport"
     );
@@ -1127,7 +1124,7 @@ bot.action("confirm_yes", async (ctx) => {
   const chatId = ctx.chat!.id;
   const session = reportSessions.get(chatId);
 
-  if (!session || session.step !== "confirm") {
+  if (session?.step !== "confirm") {
     await ctx.answerCbQuery(
       "⚠️ Session expired. Please start again with /newreport"
     );
@@ -1215,7 +1212,7 @@ bot.on("photo", async (ctx) => {
   const chatId = ctx.chat.id;
   const session = reportSessions.get(chatId);
 
-  if (!session || session.step !== "photos") {
+  if (session?.step !== "photos") {
     return;
   }
 
@@ -1248,7 +1245,7 @@ bot.on("photo", async (ctx) => {
     pendingPhotoConfirmations.delete(chatId);
 
     const currentSession = reportSessions.get(chatId);
-    if (!currentSession || currentSession.step !== "photos") {
+    if (currentSession?.step !== "photos") {
       return;
     }
 
@@ -1281,7 +1278,7 @@ bot.on("location", async (ctx) => {
   const chatId = ctx.chat.id;
   const session = reportSessions.get(chatId);
 
-  if (!session || session.step !== "location") {
+  if (session?.step !== "location") {
     return;
   }
 
@@ -1371,7 +1368,7 @@ bot.on("text", async (ctx) => {
       );
       break;
 
-    case "description":
+    case "description": {
       if (text.length < 10) {
         await ctx.reply(
           "⚠️ *Description is too short*\n\n" +
@@ -1415,6 +1412,7 @@ bot.on("text", async (ctx) => {
         }
       );
       break;
+    }
 
     case "photos":
       await ctx.reply(
@@ -1469,9 +1467,11 @@ bot.catch((err, ctx) => {
   ctx.reply("An error occurred. Please try again.").catch(console.error);
 });
 
-bot.launch();
-
-console.log("Bot Telegram running");
+// Launch bot
+(async () => {
+  await bot.launch();
+  console.log("Bot Telegram running");
+})();
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));

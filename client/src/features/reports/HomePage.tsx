@@ -400,7 +400,7 @@ export default function HomePage() {
   const filterSidebarReports = (reportsList: Report[]) => {
     return reportsList.filter((report) => {
       const matchesSearch = !sidebarSearchTerm || 
-        (report.title && report.title.toLowerCase().includes(sidebarSearchTerm.toLowerCase()));
+        report.title?.toLowerCase().includes(sidebarSearchTerm.toLowerCase());
       const matchesStatus = !sidebarFilterStatus || report.status === sidebarFilterStatus;
       const matchesCategory = !sidebarFilterCategory || report.category === sidebarFilterCategory;
       return matchesSearch && matchesStatus && matchesCategory;

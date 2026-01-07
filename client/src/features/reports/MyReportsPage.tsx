@@ -41,21 +41,27 @@ export default function MyReportsPage() {
 
   const isCitizen = userHasRole(user, Role.CITIZEN);
 
-  useEffect(() => {
-    // Fetch reports if authenticated and citizen
-    if (isAuthenticated && isCitizen) {
-      fetchMyReports();
-    }
-  }, [isAuthenticated, user, isCitizen]);
-  
-  // Check access before loading
-  if (!isAuthenticated || !isCitizen) {
-    const message = !isAuthenticated
-      ? "You need to be logged in as a citizen to view your reports."
-      : "Only citizens can view their reports.";
-    
-    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
-  }
+  // Filter function
+  const filteredReports = useMemo(() => {
+    return reports.filter((report) => {
+      const matchesSearch = !searchTerm || 
+        report.title?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = !filterStatus || report.status === filterStatus;
+      const matchesCategory = !filterCategory || report.category === filterCategory;
+      return matchesSearch && matchesStatus && matchesCategory;
+    });
+  }, [reports, searchTerm, filterStatus, filterCategory]);
+
+  // Extract available statuses and categories
+  const availableStatuses = useMemo(() => {
+    return Array.from(new Set(reports.map(r => r.status).filter(Boolean)));
+  }, [reports]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(reports.map(r => r.category).filter(Boolean)));
+  }, [reports]);
+
+  const selectedReport = reports.find((r) => r.id === selectedReportId) || null;
 
   const fetchMyReports = async () => {
     try {
@@ -80,6 +86,22 @@ export default function MyReportsPage() {
     }
   };
 
+  useEffect(() => {
+    // Fetch reports if authenticated and citizen
+    if (isAuthenticated && isCitizen) {
+      fetchMyReports();
+    }
+  }, [isAuthenticated, user, isCitizen]);
+  
+  // Check access before loading
+  if (!isAuthenticated || !isCitizen) {
+    const message = !isAuthenticated
+      ? "You need to be logged in as a citizen to view your reports."
+      : "Only citizens can view their reports.";
+    
+    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+  }
+
   const handleReportDetailsClick = (reportId: number) => {
     setSelectedReportId(reportId);
     setShowDetailsModal(true);
@@ -90,28 +112,6 @@ export default function MyReportsPage() {
       prev.map((r) => (r.id === updatedReport.id ? updatedReport : r))
     );
   };
-
-  const selectedReport = reports.find((r) => r.id === selectedReportId) || null;
-
-  // Filter function
-  const filteredReports = useMemo(() => {
-    return reports.filter((report) => {
-      const matchesSearch = !searchTerm || 
-        report.title?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = !filterStatus || report.status === filterStatus;
-      const matchesCategory = !filterCategory || report.category === filterCategory;
-      return matchesSearch && matchesStatus && matchesCategory;
-    });
-  }, [reports, searchTerm, filterStatus, filterCategory]);
-
-  // Extract available statuses and categories
-  const availableStatuses = useMemo(() => {
-    return Array.from(new Set(reports.map(r => r.status).filter(Boolean)));
-  }, [reports]);
-
-  const availableCategories = useMemo(() => {
-    return Array.from(new Set(reports.map(r => r.category).filter(Boolean)));
-  }, [reports]);
 
   if (loading) {
     return (
