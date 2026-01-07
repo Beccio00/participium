@@ -53,6 +53,36 @@ function getUserPhoto(user: any): string | undefined {
   return normalizeMinioUrl(photoRaw) ?? undefined;
 }
 
+// Shared styles for header buttons
+const headerIconButtonStyle = {
+  color: "white",
+  fontSize: "1.25rem",
+  padding: "0.25rem",
+  cursor: "pointer",
+};
+
+// Component: Header Icon Button (reusable)
+function HeaderIconButton({
+  onClick,
+  icon,
+  label,
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="border-0 bg-transparent d-flex align-items-center justify-content-center"
+      style={headerIconButtonStyle}
+      aria-label={label}
+    >
+      {icon}
+    </button>
+  );
+}
+
 // Component: User Avatar
 function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
   const photo = getUserPhoto(user);
@@ -97,12 +127,7 @@ function NotificationButton({
     <button
       onClick={onClick}
       className="border-0 bg-transparent d-flex align-items-center justify-content-center position-relative"
-      style={{
-        color: "white",
-        fontSize: "1.25rem",
-        padding: "0.25rem",
-        cursor: "pointer",
-      }}
+      style={headerIconButtonStyle}
       aria-label="Show notifications"
     >
       <BellFill />
@@ -131,6 +156,48 @@ function NotificationButton({
         </span>
       )}
     </button>
+  );
+}
+
+// Component: User Action Icons (Settings, Telegram, Notifications)
+function UserActionIcons({
+  user,
+  isAuthenticated,
+  notificationCount,
+  onSettingsClick,
+  onTelegramClick,
+  onNotificationsClick,
+}: {
+  user: any;
+  isAuthenticated: boolean;
+  notificationCount: number;
+  onSettingsClick: () => void;
+  onTelegramClick: () => void;
+  onNotificationsClick: () => void;
+}) {
+  return (
+    <>
+      {userHasRole(user, "CITIZEN") && (
+        <HeaderIconButton
+          onClick={onSettingsClick}
+          icon={<GearFill />}
+          label="Account settings"
+        />
+      )}
+      {userHasRole(user, "CITIZEN") && (
+        <HeaderIconButton
+          onClick={onTelegramClick}
+          icon={<Telegram />}
+          label="Telegram settings"
+        />
+      )}
+      {canUserSeeNotifications(user, isAuthenticated) && (
+        <NotificationButton
+          onClick={onNotificationsClick}
+          notificationCount={notificationCount}
+        />
+      )}
+    </>
   );
 }
 
@@ -352,42 +419,14 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                     </div>
                   </div>
                 </div>
-                {userHasRole(user, "CITIZEN") && (
-                  <button
-                    onClick={() => navigate("/me")}
-                    className="border-0 bg-transparent d-flex align-items-center justify-content-center"
-                    style={{
-                      color: "white",
-                      fontSize: "1.25rem",
-                      padding: "0.25rem",
-                      cursor: "pointer",
-                    }}
-                    aria-label="Account settings"
-                  >
-                    <GearFill />
-                  </button>
-                )}
-                {userHasRole(user, "CITIZEN") && (
-                  <button
-                    onClick={() => setShowTelegramModal(true)}
-                    className="border-0 bg-transparent d-flex align-items-center justify-content-center"
-                    style={{
-                      color: "white",
-                      fontSize: "1.25rem",
-                      padding: "0.25rem",
-                      cursor: "pointer",
-                    }}
-                    aria-label="Telegram settings"
-                  >
-                    <Telegram />
-                  </button>
-                )}
-                {canUserSeeNotifications(user, isAuthenticated) && (
-                  <NotificationButton
-                    onClick={() => setShowNotifications(true)}
-                    notificationCount={notificationCount}
-                  />
-                )}
+                <UserActionIcons
+                  user={user}
+                  isAuthenticated={isAuthenticated}
+                  notificationCount={notificationCount}
+                  onSettingsClick={() => navigate("/me")}
+                  onTelegramClick={() => setShowTelegramModal(true)}
+                  onNotificationsClick={() => setShowNotifications(true)}
+                />
               </div>
             )}
 
@@ -432,43 +471,14 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                 {/* Blocco 2: Action icons */}
                 {isAuthenticated && user && (
                   <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-2">
-                    {userHasRole(user, "CITIZEN") && (
-                      <button
-                        onClick={() => navigate("/me")}
-                        className="border-0 bg-transparent d-flex align-items-center justify-content-center"
-                        style={{
-                          color: "white",
-                          fontSize: "1.25rem",
-                          padding: "0.25rem",
-                          cursor: "pointer",
-                        }}
-                        aria-label="Account settings"
-                      >
-                        <GearFill />
-                      </button>
-                    )}
-                    {userHasRole(user, "CITIZEN") && (
-                      <button
-                        onClick={() => setShowTelegramModal(true)}
-                        className="border-0 bg-transparent d-flex align-items-center justify-content-center"
-                        style={{
-                          color: "white",
-                          fontSize: "1.25rem",
-                          padding: "0.25rem",
-                          cursor: "pointer",
-                        }}
-                        aria-label="Telegram settings"
-                      >
-                        <Telegram />
-                      </button>
-                    )}
-                    {/* Campanella notifiche desktop */}
-                    {canUserSeeNotifications(user, isAuthenticated) && (
-                      <NotificationButton
-                        onClick={() => setShowNotifications(true)}
-                        notificationCount={notificationCount}
-                      />
-                    )}
+                    <UserActionIcons
+                      user={user}
+                      isAuthenticated={isAuthenticated}
+                      notificationCount={notificationCount}
+                      onSettingsClick={() => navigate("/me")}
+                      onTelegramClick={() => setShowTelegramModal(true)}
+                      onNotificationsClick={() => setShowNotifications(true)}
+                    />
                   </div>
                 )}
 

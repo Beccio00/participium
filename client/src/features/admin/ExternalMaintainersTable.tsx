@@ -1,5 +1,5 @@
-import { Table } from 'react-bootstrap';
 import { Trash, Building } from 'react-bootstrap-icons';
+import DataTable, { type Column } from '../../components/ui/DataTable';
 import type { ExternalMaintainerResponse } from '../../types';
 
 interface ExternalMaintainersTableProps {
@@ -8,68 +8,52 @@ interface ExternalMaintainersTableProps {
 }
 
 export default function ExternalMaintainersTable({ users, onDelete }: ExternalMaintainersTableProps) {
-  if (users.length === 0) {
-    return (
-      <div className="table-responsive">
-        <Table hover responsive className="align-middle mb-0">
-          <thead className="bg-light">
-            <tr>
-              <th style={{ minWidth: '150px' }}>Name</th>
-              <th style={{ minWidth: '200px' }}>Email</th>
-              <th style={{ minWidth: '180px' }}>Company</th>
-              <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={4} className="text-center py-4 text-muted">
-                No external maintainers found.
-              </td>
-            </tr>
-          </tbody>
-        </Table>
-      </div>
-    );
-  }
+  const columns: Column<ExternalMaintainerResponse>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      minWidth: '150px',
+      render: (user) => (
+        <span className="fw-medium">
+          {user.firstName} {user.lastName}
+        </span>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      minWidth: '200px',
+      render: (user) => user.email,
+    },
+    {
+      key: 'company',
+      header: 'Company',
+      minWidth: '180px',
+      render: (user) => (
+        <div className="d-flex align-items-center gap-2">
+          <Building size={14} className="text-muted" />
+          <span className="fw-semibold text-dark">
+            {user.company?.name || "Unknown Company"}
+          </span>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="table-responsive">
-      <Table hover responsive className="align-middle mb-0">
-        <thead className="bg-light">
-          <tr>
-            <th style={{ minWidth: '150px' }}>Name</th>
-            <th style={{ minWidth: '200px' }}>Email</th>
-            <th style={{ minWidth: '180px' }}>Company</th>
-            <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td className="fw-medium">
-                {user.firstName} {user.lastName}
-              </td>
-              <td>{user.email}</td>
-              <td>
-                <div className="d-flex align-items-center gap-2">
-                  <Building size={14} className="text-muted" />
-                  <span className="fw-semibold text-dark">
-                    {user.company?.name || "Unknown Company"}
-                  </span>
-                </div>
-              </td>
-              <td className="text-end">
-                <button
-                  onClick={() => onDelete(user.id)}
-                  className="btn btn-sm btn-outline-danger border-0"
-                >
-                  <Trash />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+    <DataTable
+      data={users}
+      columns={columns}
+      keyExtractor={(user) => user.id}
+      emptyMessage="No external maintainers found."
+      actions={(user) => (
+        <button
+          onClick={() => onDelete(user.id)}
+          className="btn btn-sm btn-outline-danger border-0"
+        >
+          <Trash />
+        </button>
+      )}
+    />
   );
 }

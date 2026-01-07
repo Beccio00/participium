@@ -1,5 +1,6 @@
-import { Table, Badge } from 'react-bootstrap';
+import { Badge } from 'react-bootstrap';
 import { Trash } from 'react-bootstrap-icons';
+import DataTable, { type Column } from '../../components/ui/DataTable';
 import type { ExternalCompanyResponse } from '../../types';
 
 interface CompaniesTableProps {
@@ -8,74 +9,55 @@ interface CompaniesTableProps {
 }
 
 export default function CompaniesTable({ companies, onDelete }: CompaniesTableProps) {
-  if (companies.length === 0) {
-    return (
-      <div className="table-responsive">
-        <Table hover responsive className="align-middle mb-0">
-          <thead className="bg-light">
-            <tr>
-              <th style={{ minWidth: '180px' }}>Company Name</th>
-              <th style={{ minWidth: '140px' }}>Platform Access</th>
-              <th style={{ minWidth: '200px' }}>Categories</th>
-              <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={4} className="text-center py-4 text-muted">
-                No companies found.
-              </td>
-            </tr>
-          </tbody>
-        </Table>
-      </div>
-    );
-  }
+  const columns: Column<ExternalCompanyResponse>[] = [
+    {
+      key: 'name',
+      header: 'Company Name',
+      minWidth: '180px',
+      render: (company) => <span className="fw-bold">{company.name}</span>,
+    },
+    {
+      key: 'platformAccess',
+      header: 'Platform Access',
+      minWidth: '140px',
+      render: (company) =>
+        company.platformAccess ? (
+          <Badge bg="success">Enabled</Badge>
+        ) : (
+          <Badge bg="secondary">No Access</Badge>
+        ),
+    },
+    {
+      key: 'categories',
+      header: 'Categories',
+      minWidth: '200px',
+      render: (company) => (
+        <div className="d-flex flex-wrap gap-1">
+          {company.categories.map((cat, idx) => (
+            <Badge key={idx} bg="light" text="dark" className="border">
+              {String(cat).toLowerCase().replace(/_/g, ' ')}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="table-responsive">
-      <Table hover responsive className="align-middle mb-0">
-        <thead className="bg-light">
-          <tr>
-            <th style={{ minWidth: '180px' }}>Company Name</th>
-            <th style={{ minWidth: '140px' }}>Platform Access</th>
-            <th style={{ minWidth: '200px' }}>Categories</th>
-            <th className="text-end" style={{ minWidth: '100px' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {companies.map((company) => (
-            <tr key={company.id}>
-              <td className="fw-bold">{company.name}</td>
-              <td>
-                {company.platformAccess ? (
-                  <Badge bg="success">Enabled</Badge>
-                ) : (
-                  <Badge bg="secondary">No Access</Badge>
-                )}
-              </td>
-              <td>
-                <div className="d-flex flex-wrap gap-1">
-                  {company.categories.map((cat, idx) => (
-                    <Badge key={idx} bg="light" text="dark" className="border">
-                      {String(cat).toLowerCase().replace(/_/g, ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </td>
-              <td className="text-end">
-                <button
-                  onClick={() => onDelete(company.id)}
-                  className="btn btn-sm btn-outline-danger border-0"
-                  title="Delete Company"
-                >
-                  <Trash />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+    <DataTable
+      data={companies}
+      columns={columns}
+      keyExtractor={(company) => company.id}
+      emptyMessage="No companies found."
+      actions={(company) => (
+        <button
+          onClick={() => onDelete(company.id)}
+          className="btn btn-sm btn-outline-danger border-0"
+          title="Delete Company"
+        >
+          <Trash />
+        </button>
+      )}
+    />
   );
 }

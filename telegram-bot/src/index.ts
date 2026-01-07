@@ -8,7 +8,7 @@ import {
   getReportStatus,
   checkLinked
 } from "./apiClient";
-import { isPointInTurin } from "./turinBoundaries";
+import { isPointInTurin } from "./turinBoundaries.js";
 
 // Only load dotenv in development (not in Docker)
 if (process.env.NODE_ENV !== "production") {

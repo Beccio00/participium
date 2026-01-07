@@ -11,7 +11,7 @@ const smtpFromAddress = process.env.SMTP_FROM_ADDRESS || smtpUser || "no-reply@p
 
 function buildFrom() {
     if (smtpFromEnv) {
-        const m = smtpFromEnv.match(/^(.*)<([^>]+)>\s*$/);
+        const m = smtpFromEnv.match(/^([^<]*)<([^>]+)>\s*$/);
         if (m) {
             return { name: m[1].trim().replace(/^"|"$/g, ""), address: m[2].trim() };
         }

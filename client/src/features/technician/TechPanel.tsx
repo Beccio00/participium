@@ -147,7 +147,7 @@ export default function TechPanel() {
     reportsToCheck.forEach(report => {
       if (report.category) categories.add(report.category);
     });
-    return Array.from(categories).sort();
+    return Array.from(categories).sort((a, b) => a.localeCompare(b));
   }, [isPublicRelations, otherReports, pendingReports]);
 
   const availableStatusesSection1 = useMemo(() => {
@@ -156,7 +156,7 @@ export default function TechPanel() {
     reportsToCheck.forEach(report => {
       if (report.status) statuses.add(report.status);
     });
-    return Array.from(statuses).sort();
+    return Array.from(statuses).sort((a, b) => a.localeCompare(b));
   }, [isPublicRelations, otherReports, pendingReports]);
 
   const availableCategoriesSection2 = useMemo(() => {
@@ -165,7 +165,7 @@ export default function TechPanel() {
     reportsToCheck.forEach(report => {
       if (report.category) categories.add(report.category);
     });
-    return Array.from(categories).sort();
+    return Array.from(categories).sort((a, b) => a.localeCompare(b));
   }, [isPublicRelations, pendingReports, otherReports]);
 
   const availableStatusesSection2 = useMemo(() => {
@@ -174,7 +174,7 @@ export default function TechPanel() {
     reportsToCheck.forEach(report => {
       if (report.status) statuses.add(report.status);
     });
-    return Array.from(statuses).sort();
+    return Array.from(statuses).sort((a, b) => a.localeCompare(b));
   }, [isPublicRelations, pendingReports, otherReports]);
 
   // Filtered reports for each section

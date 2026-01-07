@@ -271,7 +271,7 @@ async function downloadAndUploadTelegramPhotos(
 
     const buffer = Buffer.from(fileResponse.data);
     
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = Date.now() + "-" + randomBytes(4).readUInt32BE(0);
     const filename = `telegram-${uniqueSuffix}${fileExtension}`;
 
     const contentType = fileExtension === ".png" ? "image/png" : "image/jpeg";
