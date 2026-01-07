@@ -69,6 +69,7 @@
     "test:verbose": "jest --verbose",
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",
-    "test:e2e": "jest --testPathPattern=e2e"
+    "test:e2e": "jest --testPathPattern=e2e",
+    "test:e2e:silent": "jest  --reporters=jest-silent-reporter --testPathPattern=e2e"
   }
 }
