@@ -51,6 +51,139 @@ function normalizeReports(data: any[]): Report[] {
   }));
 }
 
+// Helper: Render reports list content based on state
+function renderReportsList(
+  loadingReports: boolean,
+  reportsError: string | null,
+  recentReports: Report[],
+  allReports: Report[],
+  selectedReportId: number | null,
+  isAuthenticated: boolean,
+  user: any,
+  handleReportCardClick: (id: number) => void,
+  handleReportDetailsClick: (id: number) => void
+) {
+  if (loadingReports) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+        Loading reports...
+      </div>
+    );
+  }
+
+  if (reportsError) {
+    return (
+      <div style={{ color: "var(--danger)", padding: "1rem" }}>
+        Error loading reports: {reportsError}
+      </div>
+    );
+  }
+
+  if (recentReports.length > 0) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {recentReports.map((report) => {
+          const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
+          return (
+            <div key={report.id} style={{ position: "relative" }}>
+              {isOwnReport && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    background: "#e0f7fa",
+                    color: "#00796b",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    padding: "2px 8px",
+                    borderRadius: "0 0 0.5rem 0",
+                    zIndex: 2,
+                  }}
+                >
+                  Your report
+                </div>
+              )}
+              <ReportCard
+                report={report}
+                isSelected={selectedReportId === report.id}
+                onClick={() => handleReportCardClick(report.id)}
+                onOpenDetails={handleReportDetailsClick}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (allReports.length > 0) {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <EmptyState
+          icon={<Clipboard />}
+          title="No matching reports"
+          description="Try adjusting your search or filter criteria."
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <EmptyState
+        icon={<Clipboard />}
+        title="No reports available"
+        description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
+      />
+    </div>
+  );
+}
+
+// Helper: Render action buttons based on user role
+function renderActionButtons(
+  isPublicRelations: boolean,
+  isTechnicalOfficer: boolean,
+  isCitizen: boolean,
+  navigate: any,
+  handleAddReport: () => void
+) {
+  if (isPublicRelations) {
+    return (
+      <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
+        <Pencil className="me-2" />
+        Manage reports
+      </Button>
+    );
+  }
+
+  if (isTechnicalOfficer) {
+    return (
+      <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
+        <Pencil className="me-2" />
+        My Reports
+      </Button>
+    );
+  }
+
+  if (isCitizen) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
+          <FileEarmarkText className="me-2" />
+          My Reports
+        </Button>
+        <Button onClick={handleAddReport} variant="primary" fullWidth>
+          <Pencil className="me-2" />
+          Select a location
+        </Button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 // --------------------------------------------------------------------------
 
 export default function HomePage() {
@@ -286,6 +419,158 @@ export default function HomePage() {
   };
 
   // Helper functions for conditional rendering
+  
+  // Helper for sidebar header
+  const renderSidebarHeader = () => {
+    const title = searchCenter ? "Reports in Selected Area" : "Recent Reports";
+    const subtitle = searchCenter 
+      ? "Showing reports in the searched location" 
+      : "Showing the 10 most recent reports";
+    
+    return (
+      <div>
+        <h3 style={{ color: "var(--text)", margin: 0, fontSize: "1.3rem", fontWeight: 700 }}>
+          {title}
+        </h3>
+        <small style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}>
+          {subtitle}
+        </small>
+      </div>
+    );
+  };
+
+  // Helper for sidebar reports content
+  const renderSidebarReportsContent = () => {
+    if (loadingReports) {
+      return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+          Loading reports...
+        </div>
+      );
+    }
+
+    if (reportsError) {
+      return (
+        <div style={{ color: "var(--danger)", padding: "1rem" }}>
+          Error loading reports: {reportsError}
+        </div>
+      );
+    }
+
+    if (recentReports.length > 0) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {recentReports.map((report) => {
+            const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
+            return (
+              <div key={report.id} style={{ position: "relative" }}>
+                {isOwnReport && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      background: "#e0f7fa",
+                      color: "#00796b",
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      padding: "2px 8px",
+                      borderRadius: "0 0 0.5rem 0",
+                      zIndex: 2,
+                    }}
+                  >
+                    Your report
+                  </div>
+                )}
+                <ReportCard
+                  report={report}
+                  isSelected={selectedReportId === report.id}
+                  onClick={() => handleReportCardClick(report.id)}
+                  onOpenDetails={handleReportDetailsClick}
+                />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (reports.length > 0) {
+      return (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            padding: "3rem 2rem",
+            background: "var(--surface)",
+            borderRadius: "0.75rem",
+            border: "2px dashed #dee2e6",
+          }}
+        >
+          <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5, color: "#6c757d" }}>
+            <Clipboard />
+          </div>
+          <p style={{ fontSize: "1.1rem", margin: "0 0 0.5rem 0", color: "#6c757d", fontWeight: 500 }}>
+            No matching reports
+          </p>
+          <small style={{ fontSize: "0.95rem", color: "#adb5bd" }}>
+            Try adjusting your search or filter criteria.
+          </small>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <EmptyState
+          icon={<Clipboard />}
+          title="No reports available"
+          description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
+        />
+      </div>
+    );
+  };
+
+  // Helper for sidebar action buttons
+  const renderSidebarActionButtons = () => {
+    if (isPublicRelations) {
+      return (
+        <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
+          <Pencil className="me-2" />
+          Manage reports
+        </Button>
+      );
+    }
+
+    if (isTechnicalOfficer) {
+      return (
+        <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
+          <Pencil className="me-2" />
+          My Reports
+        </Button>
+      );
+    }
+
+    if (isCitizen) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
+            <FileEarmarkText className="me-2" />
+            My Reports
+          </Button>
+          <Button onClick={handleAddReport} variant="primary" fullWidth>
+            <Pencil className="me-2" />
+            Select a location
+          </Button>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   // Sidebar content riusabile
   const ReportsSidebarContent = () => (
@@ -300,16 +585,7 @@ export default function HomePage() {
           background: "#fdfdfd",
         }}
       >
-        <div>
-          <h3 style={{ color: "var(--text)", margin: 0, fontSize: "1.3rem", fontWeight: 700 }}>
-            {searchCenter ? "Reports in Selected Area" : "Recent Reports"}
-          </h3>
-          <small style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}>
-            {searchCenter 
-              ? "Showing reports in the searched location" 
-              : "Showing the 10 most recent reports"}
-          </small>
-        </div>
+        {renderSidebarHeader()}
       </div>
 
       {/* Search and Filter Bar */}
@@ -338,100 +614,7 @@ export default function HomePage() {
           scrollbarColor: "#d1d5db #f9fafb",
         }}
       >
-        {loadingReports ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-            Loading reports...
-          </div>
-        ) : reportsError ? (
-          <div style={{ color: "var(--danger)", padding: "1rem" }}>
-            Error loading reports: {reportsError}
-          </div>
-        ) : recentReports.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {recentReports.map((report) => {
-              const isOwnReport = isUserOwnReport(
-                report,
-                isAuthenticated,
-                user
-              );
-              return (
-                <div key={report.id} style={{ position: "relative" }}>
-                  {isOwnReport && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        background: "#e0f7fa",
-                        color: "#00796b",
-                        fontWeight: 700,
-                        fontSize: "0.85rem",
-                        padding: "2px 8px",
-                        borderRadius: "0 0 0.5rem 0",
-                        zIndex: 2,
-                      }}
-                    >
-                      Your report
-                    </div>
-                  )}
-
-                  <ReportCard
-                    report={report}
-                    isSelected={selectedReportId === report.id}
-                    onClick={() => handleReportCardClick(report.id)}
-                    onOpenDetails={handleReportDetailsClick}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ) : reports.length > 0 ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              padding: "3rem 2rem",
-              background: "var(--surface)",
-              borderRadius: "0.75rem",
-              border: "2px dashed #dee2e6",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "3rem",
-                marginBottom: "1rem",
-                opacity: 0.5,
-                color: "#6c757d",
-              }}
-            >
-              <Clipboard />
-            </div>
-            <p
-              style={{
-                fontSize: "1.1rem",
-                margin: "0 0 0.5rem 0",
-                color: "#6c757d",
-                fontWeight: 500,
-              }}
-            >
-              No matching reports
-            </p>
-            <small style={{ fontSize: "0.95rem", color: "#adb5bd" }}>
-              Try adjusting your search or filter criteria.
-            </small>
-          </div>
-        ) : (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <EmptyState
-              icon={<Clipboard />}
-              title="No reports available"
-              description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
-            />
-          </div>
-        )}
+        {renderSidebarReportsContent()}
       </div>
 
       <div
@@ -441,36 +624,7 @@ export default function HomePage() {
           background: "#fdfdfd",
         }}
       >
-        {isPublicRelations ? (
-          <Button
-            onClick={() => navigate("/assign-reports")}
-            variant="primary"
-            fullWidth
-          >
-            <Pencil className="me-2" />
-            Manage reports
-          </Button>
-        ) : isTechnicalOfficer ? (
-          <Button
-            onClick={() => navigate("/assign-reports")}
-            variant="primary"
-            fullWidth
-          >
-            <Pencil className="me-2" />
-            My Reports
-          </Button>
-        ) : isCitizen && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
-              <FileEarmarkText className="me-2" />
-              My Reports
-            </Button>
-            <Button onClick={handleAddReport} variant="primary" fullWidth>
-              <Pencil className="me-2" />
-              Select a location
-            </Button>
-          </div>
-        )}
+        {renderSidebarActionButtons()}
 
         {!isAuthenticated && (
           <div
@@ -479,6 +633,7 @@ export default function HomePage() {
               border: "1px solid #e0e7ff",
               borderRadius: "0.5rem",
               padding: "1rem",
+              marginTop: "0.75rem",
               textAlign: "center",
             }}
           >
@@ -693,65 +848,16 @@ export default function HomePage() {
                 scrollbarColor: "#d1d5db #f9fafb",
               }}
             >
-              {loadingReports ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-                  Loading reports...
-                </div>
-              ) : reportsError ? (
-                <div style={{ color: "var(--danger)", padding: "1rem" }}>
-                  Error loading reports: {reportsError}
-                </div>
-              ) : recentReports.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  {recentReports.map((report) => {
-                    const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
-                    return (
-                      <div key={report.id} style={{ position: "relative" }}>
-                        {isOwnReport && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              background: "#e0f7fa",
-                              color: "#00796b",
-                              fontWeight: 700,
-                              fontSize: "0.85rem",
-                              padding: "2px 8px",
-                              borderRadius: "0 0 0.5rem 0",
-                              zIndex: 2,
-                            }}
-                          >
-                            Your report
-                          </div>
-                        )}
-
-                        <ReportCard
-                          report={report}
-                          isSelected={selectedReportId === report.id}
-                          onClick={() => handleReportCardClick(report.id)}
-                          onOpenDetails={handleReportDetailsClick}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : reports.length > 0 ? (
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                  <EmptyState
-                    icon={<Clipboard />}
-                    title="No matching reports"
-                    description="Try adjusting your search or filter criteria."
-                  />
-                </div>
-              ) : (
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                  <EmptyState
-                    icon={<Clipboard />}
-                    title="No reports available"
-                    description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
-                  />
-                </div>
+              {renderReportsList(
+                loadingReports,
+                reportsError,
+                recentReports,
+                reports,
+                selectedReportId,
+                isAuthenticated,
+                user,
+                handleReportCardClick,
+                handleReportDetailsClick
               )}
             </div>
 
@@ -763,35 +869,12 @@ export default function HomePage() {
                 background: "#fdfdfd",
               }}
             >
-              {isPublicRelations ? (
-                <Button
-                  onClick={() => navigate("/assign-reports")}
-                  variant="primary"
-                  fullWidth
-                >
-                  <Pencil className="me-2" />
-                  Manage reports
-                </Button>
-              ) : isTechnicalOfficer ? (
-                <Button
-                  onClick={() => navigate("/assign-reports")}
-                  variant="primary"
-                  fullWidth
-                >
-                  <Pencil className="me-2" />
-                  My Reports
-                </Button>
-              ) : isCitizen && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
-                    <FileEarmarkText className="me-2" />
-                    My Reports
-                  </Button>
-                  <Button onClick={handleAddReport} variant="primary" fullWidth>
-                    <Pencil className="me-2" />
-                    Select a location
-                  </Button>
-                </div>
+              {renderActionButtons(
+                isPublicRelations,
+                isTechnicalOfficer,
+                isCitizen,
+                navigate,
+                handleAddReport
               )}
 
               {!isAuthenticated && (

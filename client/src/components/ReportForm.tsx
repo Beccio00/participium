@@ -69,6 +69,111 @@ import {
 } from "../styles/ReportFormStyles";
 import { fetchAddressFromCoordinates } from "../utils/address";
 
+// Helper: Build field style based on focus and error state
+const getFieldStyle = (focusedField: string | null, fieldName: string, hasError: boolean) => ({
+  ...formControlStyle,
+  boxShadow: focusedField === fieldName ? "0 6px 18px rgba(27,83,175,0.08)" : undefined,
+  transform: focusedField === fieldName ? "translateY(-1px)" : undefined,
+  borderColor: hasError ? "#dc3545" : undefined,
+});
+
+// Helper: Build validation errors object
+const buildValidationErrors = (data: { title: string; description: string; category: string | ReportCategory }, fileCount: number, hasLocation: boolean) => {
+  const errors: Record<string, string> = {};
+  
+  if (!data.title.trim()) errors.title = "The title is required";
+  if (!data.description.trim()) errors.description = "The description is required";
+  else if (data.description.trim().length < 10) errors.description = "Description is too short. Please provide at least 10 characters";
+  if (!data.category) errors.category = "Please select a category";
+  if (fileCount === 0) errors.photos = "Upload at least 1 photo (max 3)";
+  if (!hasLocation) errors.location = "Click on the map to select a location";
+  
+  return errors;
+};
+
+// Helper: Check if user can create reports
+const canCreateReport = (user: any, isAuthenticated: boolean): boolean => {
+  return isAuthenticated && !!user && userHasRole(user, Role.CITIZEN);
+};
+
+// Component: Form field with consistent error styling
+interface FormFieldProps {
+  label: string;
+  name: string;
+  value: string;
+  error?: string;
+  touched?: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onBlur: (fieldName: string) => void;
+  onFocus: (fieldName: string) => void;
+  focusedInput: string | null;
+  placeholder?: string;
+  type?: "text" | "textarea" | "select";
+  children?: React.ReactNode;
+}
+
+function FormField({ 
+  label, name, value, error, touched, onChange, onBlur, onFocus, focusedInput, 
+  placeholder, type = "text", children 
+}: FormFieldProps) {
+  const hasError = !!(touched && error);
+  const style = getFieldStyle(focusedInput, name, hasError);
+  
+  return (
+    <Form.Group className="mb-3">
+      <Form.Label className="fw-semibold">{label}</Form.Label>
+      {type === "textarea" && (
+        <Form.Control
+          as="textarea"
+          rows={4}
+          name={name}
+          value={value}
+          onChange={onChange}
+          onBlur={() => onBlur(name)}
+          placeholder={placeholder}
+          required
+          isInvalid={hasError}
+          style={style}
+          onFocus={() => onFocus(name)}
+        />
+      )}
+      {type === "select" && (
+        <Form.Select
+          name={name}
+          value={value}
+          onChange={onChange}
+          onBlur={() => onBlur(name)}
+          required
+          isInvalid={hasError}
+          style={style}
+          onFocus={() => onFocus(name)}
+        >
+          {children}
+        </Form.Select>
+      )}
+      {type === "text" && (
+        <Form.Control
+          type="text"
+          name={name}
+          value={value}
+          onChange={onChange}
+          onBlur={() => onBlur(name)}
+          placeholder={placeholder}
+          required
+          isInvalid={hasError}
+          style={style}
+          onFocus={() => onFocus(name)}
+        />
+      )}
+      {hasError && (
+        <Form.Control.Feedback type="invalid" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <ExclamationCircleFill size={14} /> {error}
+        </Form.Control.Feedback>
+      )}
+    </Form.Group>
+  );
+}
+
 export default function ReportForm() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -255,25 +360,7 @@ export default function ReportForm() {
       location: true,
     });
 
-    const errors: typeof fieldErrors = {};
-    
-    if (!formData.title.trim()) {
-      errors.title = "The title is required";
-    }
-    if (!formData.description.trim()) {
-      errors.description = "The description is required";
-    } else if (formData.description.trim().length < 10) {
-      errors.description = "Description is too short. Please provide at least 10 characters";
-    }
-    if (!formData.category) {
-      errors.category = "Please select a category";
-    }
-    if (files.length === 0) {
-      errors.photos = "Upload at least 1 photo (max 3)";
-    }
-    if (!selectedLocation) {
-      errors.location = "Click on the map to select a location";
-    }
+    const errors = buildValidationErrors(formData, files.length, !!selectedLocation);
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -292,9 +379,7 @@ export default function ReportForm() {
       dataToSend.append("category", formData.category);
       dataToSend.append("latitude", formData.latitude.toString());
       dataToSend.append("longitude", formData.longitude.toString());
-      // send isAnonymous as boolean (true/false)
       dataToSend.append("isAnonymous", String(formData.isAnonymous));
-      // address remains unchanged (string)
       dataToSend.append("address", typeof address === "string" ? address : "");
       files.forEach((file) => {
         dataToSend.append("photos", file);
@@ -313,7 +398,7 @@ export default function ReportForm() {
 
 
   // Se l'utente non è autenticato o non è un cittadino, mostra messaggio
-  if (!isAuthenticated || (user && !userHasRole(user, Role.CITIZEN))) {
+  if (!canCreateReport(user, isAuthenticated)) {
     const message = !isAuthenticated
       ? "You need to be logged in as a citizen to create a report."
       : "Only citizens can create reports.";
@@ -355,122 +440,66 @@ export default function ReportForm() {
                       <Tag /> Report Details
                     </h3>
 
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Title</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleInputChange}
-                        onBlur={() => handleBlur('title')}
-                        placeholder="Brief title for your report"
-                        required
-                        isInvalid={touched.title && !!fieldErrors.title}
-                        style={{
-                          ...formControlStyle,
-                          boxShadow:
-                            focusedInput === "title"
-                              ? "0 6px 18px rgba(27,83,175,0.08)"
-                              : undefined,
-                          transform:
-                            focusedInput === "title"
-                              ? "translateY(-1px)"
-                              : undefined,
-                          borderColor: touched.title && fieldErrors.title ? "#dc3545" : undefined,
-                        }}
-                        onFocus={() => setFocusedInput("title")}
-                      />
-                      {touched.title && fieldErrors.title && (
-                        <Form.Control.Feedback type="invalid" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <ExclamationCircleFill size={14} /> {fieldErrors.title}
-                        </Form.Control.Feedback>
-                      )}
-                    </Form.Group>
+                    <FormField
+                      label="Title"
+                      name="title"
+                      value={formData.title}
+                      error={fieldErrors.title}
+                      touched={touched.title}
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      onFocus={setFocusedInput}
+                      focusedInput={focusedInput}
+                      placeholder="Brief title for your report"
+                      type="text"
+                    />
 
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">
-                        Description
-                      </Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={4}
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        onBlur={() => handleBlur('description')}
-                        placeholder="Describe the issue in detail..."
-                        required
-                        isInvalid={touched.description && !!fieldErrors.description}
-                        style={{
-                          ...formControlStyle,
-                          boxShadow:
-                            focusedInput === "description"
-                              ? "0 6px 18px rgba(27,83,175,0.08)"
-                              : undefined,
-                          transform:
-                            focusedInput === "description"
-                              ? "translateY(-1px)"
-                              : undefined,
-                          borderColor: touched.description && fieldErrors.description ? "#dc3545" : undefined,
-                        }}
-                        onFocus={() => setFocusedInput("description")}
-                      />
-                      {touched.description && fieldErrors.description && (
-                        <Form.Control.Feedback type="invalid" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <ExclamationCircleFill size={14} /> {fieldErrors.description}
-                        </Form.Control.Feedback>
-                      )}
-                    </Form.Group>
+                    <FormField
+                      label="Description"
+                      name="description"
+                      value={formData.description}
+                      error={fieldErrors.description}
+                      touched={touched.description}
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      onFocus={setFocusedInput}
+                      focusedInput={focusedInput}
+                      placeholder="Describe the issue in detail..."
+                      type="textarea"
+                    />
 
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Category</Form.Label>
-                      <Form.Select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        onBlur={() => handleBlur('category')}
-                        required
-                        isInvalid={touched.category && !!fieldErrors.category}
-                        style={{
-                          ...formControlStyle,
-                          boxShadow:
-                            focusedInput === "category"
-                              ? "0 6px 18px rgba(27,83,175,0.08)"
-                              : undefined,
-                          transform:
-                            focusedInput === "category"
-                              ? "translateY(-1px)"
-                              : undefined,
-                          borderColor: touched.category && fieldErrors.category ? "#dc3545" : undefined,
-                        }}
-                        onFocus={() => setFocusedInput("category")}
-                      >
-                        <option value="">Select a category</option>
-                        {[
-                          "WATER_SUPPLY_DRINKING_WATER",
-                          "ARCHITECTURAL_BARRIERS",
-                          "SEWER_SYSTEM",
-                          "PUBLIC_LIGHTING",
-                          "WASTE",
-                          "ROAD_SIGNS_TRAFFIC_LIGHTS",
-                          "ROADS_URBAN_FURNISHINGS",
-                          "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
-                          "OTHER",
-                        ].map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat
-                              .replace(/_/g, " ")
-                              .toLowerCase()
-                              .replace(/\b\w/g, (l) => l.toUpperCase())}
-                          </option>
-                        ))}
-                      </Form.Select>
-                      {touched.category && fieldErrors.category && (
-                        <Form.Control.Feedback type="invalid" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <ExclamationCircleFill size={14} /> {fieldErrors.category}
-                        </Form.Control.Feedback>
-                      )}
-                    </Form.Group>
+                    <FormField
+                      label="Category"
+                      name="category"
+                      value={formData.category}
+                      error={fieldErrors.category}
+                      touched={touched.category}
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      onFocus={setFocusedInput}
+                      focusedInput={focusedInput}
+                      type="select"
+                    >
+                      <option value="">Select a category</option>
+                      {[
+                        "WATER_SUPPLY_DRINKING_WATER",
+                        "ARCHITECTURAL_BARRIERS",
+                        "SEWER_SYSTEM",
+                        "PUBLIC_LIGHTING",
+                        "WASTE",
+                        "ROAD_SIGNS_TRAFFIC_LIGHTS",
+                        "ROADS_URBAN_FURNISHINGS",
+                        "PUBLIC_GREEN_AREAS_PLAYGROUNDS",
+                        "OTHER",
+                      ].map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat
+                            .replace(/_/g, " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </option>
+                      ))}
+                    </FormField>
                     <Form.Group className="mb-4 mt-4">
                       <Form.Label className="fw-semibold">
                         Foto (Min 1, Max 3)
@@ -615,8 +644,8 @@ export default function ReportForm() {
                         height: "clamp(400px, 60vh, 600px)",
                         ...mapContainerStyle,
                         position: "relative",
-                        borderColor: touched.location && fieldErrors.location ? "#dc3545" : mapContainerStyle.borderColor,
-                        borderWidth: touched.location && fieldErrors.location ? "2px" : mapContainerStyle.borderWidth,
+                        borderColor: (touched.location && fieldErrors.location) ? "#dc3545" : mapContainerStyle.borderColor,
+                        borderWidth: (touched.location && fieldErrors.location) ? "2px" : mapContainerStyle.borderWidth,
                       }}
                     >
                       {/* MapView con marker custom */}
@@ -644,13 +673,7 @@ export default function ReportForm() {
                           </div>
                           {/*address*/}
                           <div style={mapDivStyle}>
-                            {loadingAddress ? (
-                              <span>Loading address...</span>
-                            ) : (
-                              <span>
-                                <MapIcon /> {address || "No address available"}
-                              </span>
-                            )}
+                            <MapIcon /> {loadingAddress ? "Loading address..." : address || "No address available"}
                           </div>
                         </div>
                       </div>

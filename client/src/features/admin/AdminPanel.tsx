@@ -110,6 +110,26 @@ function getTabConfiguration(tab: UserTab): TabConfig {
   };
 }
 
+// Helper: Check if user has admin role
+function hasAdminRole(user: any, isAuthenticated: boolean): boolean {
+  if (!isAuthenticated || !user) return false;
+  
+  const adminRole = Role.ADMINISTRATOR.toString();
+  return user.role === adminRole || (Array.isArray(user.role) && user.role.includes(adminRole));
+}
+
+// Helper: Get item count for current tab
+function getTabItemCount(tab: UserTab, internalCount: number, externalCount: number, companyCount: number): number {
+  if (tab === 'internal') return internalCount;
+  if (tab === 'external') return externalCount;
+  return companyCount;
+}
+
+// Helper: Get nav link class name
+function getNavLinkClass(isActive: boolean): string {
+  return isActive ? 'fw-bold text-dark' : 'text-muted';
+}
+
 export default function AdminPanel() {
   const { user, isAuthenticated } = useAuth();
   
@@ -130,10 +150,7 @@ export default function AdminPanel() {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isAdmin =
-    isAuthenticated &&
-    (user?.role === Role.ADMINISTRATOR.toString() ||
-      (Array.isArray(user?.role) && user.role.includes(Role.ADMINISTRATOR.toString())));
+  const isAdmin = hasAdminRole(user, isAuthenticated);
 
   useEffect(() => {
     if (isAdmin) {
@@ -332,7 +349,7 @@ export default function AdminPanel() {
           </div>
           <Button 
             onClick={toggleForm} 
-            variant={showForm ? "secondary" :  "primary" } 
+            variant={showForm ? "secondary" : "primary"} 
             disabled={isLoading}
           >
             {showForm ? "← Back" : <><PersonPlus className="me-2" /> Add {addButtonLabel}</>}
@@ -345,7 +362,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="internal" 
               onClick={() => handleTabChange('internal')}
-              className={activeTab === 'internal' ? 'fw-bold text-dark' : 'text-muted'}
+              className={getNavLinkClass(activeTab === 'internal')}
               style={{ whiteSpace: 'nowrap' }}
             >
               <People className="me-2" /> Internal Staff
@@ -355,7 +372,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="external" 
               onClick={() => handleTabChange('external')}
-              className={activeTab === 'external' ? 'fw-bold text-dark' : 'text-muted'}
+              className={getNavLinkClass(activeTab === 'external')}
               style={{ whiteSpace: 'nowrap' }}
             >
               <Briefcase className="me-2" /> External Maintainers
@@ -365,7 +382,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="companies" 
               onClick={() => handleTabChange('companies')}
-              className={activeTab === 'companies' ? 'fw-bold text-dark' : 'text-muted'}
+              className={getNavLinkClass(activeTab === 'companies')}
               style={{ whiteSpace: 'nowrap' }}
             >
               <Building className="me-2" /> Partner Companies
@@ -379,8 +396,7 @@ export default function AdminPanel() {
               <TabIcon size={24} style={{ color: tabColor }} />
               <h5 className="mb-0 fw-bold">{tabTitle}</h5>
               <Badge bg="light" text="dark" className="border ms-2">
-                {activeTab === 'internal' ? internalUsers.length : 
-                activeTab === 'external' ? externalUsers.length : companies.length} items
+                {getTabItemCount(activeTab, internalUsers.length, externalUsers.length, companies.length)} items
               </Badge>
             </div>
           </CardHeader>
@@ -396,7 +412,7 @@ export default function AdminPanel() {
             {showForm && (
               <div className="mb-5 p-4 rounded bg-light border">
                 <h5 className="mb-3 pb-2 border-bottom">{editingUser ? "Edit Staff" : `Create New ${addButtonLabel}`}</h5>
-                {activeTab === 'companies' ? (
+                {activeTab === 'companies' && (
                   <CompanyForm
                     values={form.values}
                     isSubmitting={form.isSubmitting}
@@ -406,7 +422,8 @@ export default function AdminPanel() {
                     onPlatformAccessChange={(value) => form.setFieldValue('platformAccess', value)}
                     onSubmit={form.handleSubmit}
                   />
-                ) : (
+                )}
+                {activeTab !== 'companies' && (
                   <UserForm
                     values={{
                       firstName: form.values.firstName,

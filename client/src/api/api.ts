@@ -73,7 +73,7 @@ import type {
 
 export const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
-async function handleResponse<T>(res: Response): Promise<T> {
+export async function handleResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   let data: any = null;
   try {

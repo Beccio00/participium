@@ -93,9 +93,58 @@ export async function listRolesController(req: Request, res: Response): Promise<
   res.status(200).json(MUNICIPALITY_ROLES);
 }
 
+// Helper function to validate roles array
+function validateRolesArray(roles: string[]): void {
+  if (roles.length === 0) {
+    throw new BadRequestError("Roles array cannot be empty");
+  }
+  
+  for (const r of roles) {
+    if (!isValidRole(r) || !MUNICIPALITY_ROLES.includes(r as Role)) {
+      throw new BadRequestError("Invalid role. Must be one of the municipality roles");
+    }
+  }
+}
+
+// Helper function to check email uniqueness
+async function checkEmailUniqueness(email: string, userId: number): Promise<void> {
+  const existingUser = await findByEmail(email);
+  if (existingUser && existingUser.id !== userId) {
+    throw new ConflictError("Email already in use");
+  }
+}
+
+// Helper function to build update data object
+async function buildUpdateData(
+  firstName?: string,
+  lastName?: string,
+  email?: string,
+  password?: string,
+  roles?: string[]
+): Promise<any> {
+  const updateData: any = {};
+  
+  if (firstName) updateData.first_name = firstName;
+  if (lastName) updateData.last_name = lastName;
+  if (email) updateData.email = email;
+  
+  if (password) {
+    const { hashedPassword, salt } = await hashPassword(password);
+    updateData.password = hashedPassword;
+    updateData.salt = salt;
+  }
+  
+  if (roles && Array.isArray(roles)) {
+    validateRolesArray(roles);
+    updateData.role = roles.map((r: string) => r as Role);
+  }
+  
+  return updateData;
+}
+
 export async function updateMunicipalityUserController(req: Request, res: Response): Promise<void> {
   const userId = parseInt(req.params.userId);
-  const { firstName, lastName, email, password, roles } = req.body; // Aggiunto roles
+  const { firstName, lastName, email, password, roles } = req.body;
 
   if (isNaN(userId)) {
     throw new BadRequestError("Invalid user ID format");
@@ -106,42 +155,12 @@ export async function updateMunicipalityUserController(req: Request, res: Respon
     throw new BadRequestError("At least one field must be provided: firstName, lastName, email, password, roles");
   }
 
-  const updateData: any = {};
+  // Build update data with validation
+  const updateData = await buildUpdateData(firstName, lastName, email, password, roles);
   
-  // Gestisci dati base
-  if (firstName) updateData.first_name = firstName;
-  if (lastName) updateData.last_name = lastName;
-  if (email) updateData.email = email;
-  
-  // Gestisci password
-  if (password) {
-    const { hashedPassword, salt } = await hashPassword(password);
-    updateData.password = hashedPassword;
-    updateData.salt = salt;
-  }
-
-  // Gestisci ruoli
-  if (roles && Array.isArray(roles)) {
-    if (roles.length === 0) {
-      throw new BadRequestError("Roles array cannot be empty");
-    }
-    
-    // Valida tutti i ruoli
-    for (const r of roles) {
-      if (!isValidRole(r) || !MUNICIPALITY_ROLES.includes(r as Role)) {
-        throw new BadRequestError("Invalid role. Must be one of the municipality roles");
-      }
-    }
-    
-    updateData.role = roles.map((r: string) => r as Role);
-  }
-
-  // Controlla email duplicata se viene aggiornata
+  // Check email uniqueness if email is being updated
   if (email) {
-    const existingUser = await findByEmail(email);
-    if (existingUser && existingUser.id !== userId) {
-      throw new ConflictError("Email already in use");
-    }
+    await checkEmailUniqueness(email, userId);
   }
 
   const updated = await updateMunicipalityUser(userId, updateData);
