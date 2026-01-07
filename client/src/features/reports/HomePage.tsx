@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Clipboard, Pencil, List, FileEarmarkText } from "react-bootstrap-icons";
+import { Clipboard, Pencil, List, FileEarmarkText, Search, FunnelFill } from "react-bootstrap-icons";
 import { Offcanvas } from "react-bootstrap";
 
 import { useAuth } from "../../hooks";
@@ -8,7 +8,6 @@ import Button from "../../components/ui/Button.tsx";
 import ReportCard from "./ReportCard.tsx";
 import MapView from "../../components/MapView";
 import AddressSearchBar from "../../components/AddressSearchBar";
-import SearchAndFilterBar from "../../components/ui/SearchAndFilterBar";
 import InfoModal from "../../components/InfoModal";
 import { geocodeAddress, getReportsByBbox } from "../../api/api";
 import ReportDetailsModal from "./ReportDetailsModal";
@@ -49,153 +48,6 @@ function normalizeReports(data: any[]): Report[] {
     latitude: Number(r.latitude),
     longitude: Number(r.longitude),
   }));
-}
-
-// Helper: Render reports list content based on state
-interface ReportsListProps {
-  loadingReports: boolean;
-  reportsError: string | null;
-  recentReports: Report[];
-  allReports: Report[];
-  selectedReportId: number | null;
-  isAuthenticated: boolean;
-  user: any;
-  onReportCardClick: (id: number) => void;
-  onReportDetailsClick: (id: number) => void;
-}
-
-function renderReportsList(props: ReportsListProps) {
-  const {
-    loadingReports,
-    reportsError,
-    recentReports,
-    allReports,
-    selectedReportId,
-    isAuthenticated,
-    user,
-    onReportCardClick,
-    onReportDetailsClick,
-  } = props;
-
-  if (loadingReports) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-        Loading reports...
-      </div>
-    );
-  }
-
-  if (reportsError) {
-    return (
-      <div style={{ color: "var(--danger)", padding: "1rem" }}>
-        Error loading reports: {reportsError}
-      </div>
-    );
-  }
-
-  if (recentReports.length > 0) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-        {recentReports.map((report) => {
-          const isOwnReport = isUserOwnReport(report, isAuthenticated, user);
-          return (
-            <div key={report.id} style={{ position: "relative" }}>
-              {isOwnReport && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    background: "#e0f7fa",
-                    color: "#00796b",
-                    fontWeight: 700,
-                    fontSize: "0.85rem",
-                    padding: "2px 8px",
-                    borderRadius: "0 0 0.5rem 0",
-                    zIndex: 2,
-                  }}
-                >
-                  Your report
-                </div>
-              )}
-              <ReportCard
-                report={report}
-                isSelected={selectedReportId === report.id}
-                onClick={() => onReportCardClick(report.id)}
-                onOpenDetails={onReportDetailsClick}
-              />
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  if (allReports.length > 0) {
-    return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <EmptyState
-          icon={<Clipboard />}
-          title="No matching reports"
-          description="Try adjusting your search or filter criteria."
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-      <EmptyState
-        icon={<Clipboard />}
-        title="No reports available"
-        description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
-      />
-    </div>
-  );
-}
-
-// Helper: Render action buttons based on user role
-function renderActionButtons(
-  isPublicRelations: boolean,
-  isTechnicalOfficer: boolean,
-  isCitizen: boolean,
-  navigate: any,
-  handleAddReport: () => void
-) {
-  if (isPublicRelations) {
-    return (
-      <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
-        <Pencil className="me-2" />
-        Manage reports
-      </Button>
-    );
-  }
-
-  if (isTechnicalOfficer) {
-    return (
-      <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
-        <Pencil className="me-2" />
-        My Reports
-      </Button>
-    );
-  }
-
-  if (isCitizen) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
-          <FileEarmarkText className="me-2" />
-          My Reports
-        </Button>
-        <Button onClick={handleAddReport} variant="primary" fullWidth>
-          <Pencil className="me-2" />
-          Select a location
-        </Button>
-      </div>
-    );
-  }
-
-  return null;
 }
 
 // --------------------------------------------------------------------------
@@ -239,6 +91,12 @@ export default function HomePage() {
   const [sidebarFilterStatus, setSidebarFilterStatus] = useState("");
   const [sidebarFilterCategory, setSidebarFilterCategory] = useState("");
 
+  // Active filters (actually applied)
+  const [sidebarActiveSearchTerm, setSidebarActiveSearchTerm] = useState("");
+  const [sidebarActiveFilterStatus, setSidebarActiveFilterStatus] = useState("");
+  const [sidebarActiveFilterCategory, setSidebarActiveFilterCategory] = useState("");
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
   // Memoize sidebar handlers
   const handleSidebarSearchChange = useCallback((term: string) => {
     setSidebarSearchTerm(term);
@@ -251,6 +109,26 @@ export default function HomePage() {
   const handleSidebarCategoryChange = useCallback((category: string) => {
     setSidebarFilterCategory(category);
   }, []);
+
+  // Handle search button click
+  const handleSearchToggle = useCallback(() => {
+    if (isSearchActive) {
+      // Cancel - clear everything
+      setSidebarActiveSearchTerm("");
+      setSidebarActiveFilterStatus("");
+      setSidebarActiveFilterCategory("");
+      setSidebarSearchTerm("");
+      setSidebarFilterStatus("");
+      setSidebarFilterCategory("");
+      setIsSearchActive(false);
+    } else {
+      // Apply search - copy current inputs to active filters
+      setSidebarActiveSearchTerm(sidebarSearchTerm);
+      setSidebarActiveFilterStatus(sidebarFilterStatus);
+      setSidebarActiveFilterCategory(sidebarFilterCategory);
+      setIsSearchActive(true);
+    }
+  }, [isSearchActive, sidebarSearchTerm, sidebarFilterStatus, sidebarFilterCategory]);
 
   // Address search handler
   const handleAddressSearch = useCallback(async (address: string, zoom: number) => {
@@ -409,21 +287,21 @@ export default function HomePage() {
 
   // --- Derived data --------------------------------------------------------
 
-  // Filter function for sidebar
+  // Filter function for sidebar - uses active filters only
   const filterSidebarReports = useCallback((reportsList: Report[]) => {
     return reportsList.filter((report) => {
-      const matchesSearch = !sidebarSearchTerm || 
-        report.title?.toLowerCase().includes(sidebarSearchTerm.toLowerCase());
-      const matchesStatus = !sidebarFilterStatus || report.status === sidebarFilterStatus;
-      const matchesCategory = !sidebarFilterCategory || report.category === sidebarFilterCategory;
+      const matchesSearch = !sidebarActiveSearchTerm || 
+        report.title?.toLowerCase().includes(sidebarActiveSearchTerm.toLowerCase());
+      const matchesStatus = !sidebarActiveFilterStatus || report.status === sidebarActiveFilterStatus;
+      const matchesCategory = !sidebarActiveFilterCategory || report.category === sidebarActiveFilterCategory;
       return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [sidebarSearchTerm, sidebarFilterStatus, sidebarFilterCategory]);
+  }, [sidebarActiveSearchTerm, sidebarActiveFilterStatus, sidebarActiveFilterCategory]);
 
   const recentReports = useMemo(() => {
     const recent = getRecentReports(reports);
     return filterSidebarReports(recent);
-  }, [reports, sidebarSearchTerm, sidebarFilterStatus, sidebarFilterCategory]);
+  }, [reports, sidebarActiveSearchTerm, sidebarActiveFilterStatus, sidebarActiveFilterCategory]);
 
   // Extract available statuses and categories from reports
   const availableStatuses = useMemo(() => {
@@ -447,8 +325,8 @@ export default function HomePage() {
 
   // Helper functions for conditional rendering
   
-  // Helper for sidebar header
-  const renderSidebarHeader = () => {
+  // Memoize helper functions to prevent re-renders
+  const renderSidebarHeader = useCallback(() => {
     const title = searchCenter ? "Reports in Selected Area" : "Recent Reports";
     const subtitle = searchCenter 
       ? "Showing reports in the searched location" 
@@ -464,10 +342,10 @@ export default function HomePage() {
         </small>
       </div>
     );
-  };
+  }, [searchCenter]);
 
-  // Helper for sidebar reports content
-  const renderSidebarReportsContent = () => {
+  // Memoize sidebar reports content  
+  const renderSidebarReportsContent = useCallback(() => {
     if (loadingReports) {
       return (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
@@ -559,10 +437,10 @@ export default function HomePage() {
         />
       </div>
     );
-  };
+  }, [loadingReports, reportsError, recentReports, reports.length, searchCenter, isAuthenticated, user, selectedReportId, handleReportCardClick, handleReportDetailsClick]);
 
-  // Helper for sidebar action buttons
-  const renderSidebarActionButtons = () => {
+  // Memoize sidebar action buttons
+  const renderSidebarActionButtons = useCallback(() => {
     if (isPublicRelations) {
       return (
         <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
@@ -597,10 +475,10 @@ export default function HomePage() {
     }
 
     return null;
-  };
+  }, [isPublicRelations, isTechnicalOfficer, isCitizen, navigate, handleAddReport]);
 
   // Sidebar content riusabile
-  const ReportsSidebarContent = () => (
+  const sidebarContent = (
     <>
       <div
         style={{
@@ -617,17 +495,72 @@ export default function HomePage() {
 
       {/* Search and Filter Bar */}
       <div style={{ padding: "0 1.5rem", paddingTop: "1rem" }}>
-        <SearchAndFilterBar
-          searchTerm={sidebarSearchTerm}
-          onSearchChange={handleSidebarSearchChange}
-          filterStatus={sidebarFilterStatus}
-          onStatusChange={handleSidebarStatusChange}
-          filterCategory={sidebarFilterCategory}
-          onCategoryChange={handleSidebarCategoryChange}
-          availableStatuses={availableStatuses}
-          availableCategories={availableCategories}
-          compact={true}
-        />
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          {/* Search input */}
+          <div style={{ flex: 1 }}>
+            <div className="input-group input-group-sm">
+              <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                <Search size={14} />
+              </span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by title..."
+                value={sidebarSearchTerm}
+                onChange={(e) => handleSidebarSearchChange(e.target.value)}
+                style={{ fontSize: '0.875rem' }}
+              />
+            </div>
+          </div>
+          {/* Search/Cancel button */}
+          <button
+            className={`btn btn-sm ${isSearchActive ? 'btn-secondary' : 'btn-primary'}`}
+            onClick={handleSearchToggle}
+            style={{ minWidth: '70px', fontSize: '0.8rem' }}
+          >
+            {isSearchActive ? 'Cancel' : 'Search'}
+          </button>
+        </div>
+        
+        {/* Filter dropdowns */}
+        <div className="row g-2">
+          <div className="col-6">
+            <div className="input-group input-group-sm">
+              <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                <FunnelFill size={12} />
+              </span>
+              <select
+                className="form-select"
+                value={sidebarFilterStatus}
+                onChange={(e) => handleSidebarStatusChange(e.target.value)}
+                style={{ fontSize: '0.8rem' }}
+              >
+                <option value="">All Statuses</option>
+                {availableStatuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="col-6">
+            <div className="input-group input-group-sm">
+              <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                <FunnelFill size={12} />
+              </span>
+              <select
+                className="form-select"
+                value={sidebarFilterCategory}
+                onChange={(e) => handleSidebarCategoryChange(e.target.value)}
+                style={{ fontSize: '0.8rem' }}
+              >
+                <option value="">All Categories</option>
+                {availableCategories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div
@@ -832,7 +765,7 @@ export default function HomePage() {
               boxShadow: "-2px 0 16px rgba(34, 49, 63, 0.04)",
             }}
           >
-            <ReportsSidebarContent />
+            {sidebarContent}
           </div>
         </main>
 
@@ -851,17 +784,72 @@ export default function HomePage() {
 
           {/* Search and Filter Bar */}
           <div style={{ padding: "1rem 1.5rem 0.5rem 1.5rem" }}>
-            <SearchAndFilterBar
-              searchTerm={sidebarSearchTerm}
-              onSearchChange={handleSidebarSearchChange}
-              filterStatus={sidebarFilterStatus}
-              onStatusChange={handleSidebarStatusChange}
-              filterCategory={sidebarFilterCategory}
-              onCategoryChange={handleSidebarCategoryChange}
-              availableStatuses={availableStatuses}
-              availableCategories={availableCategories}
-              compact={true}
-            />
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+              {/* Search input */}
+              <div style={{ flex: 1 }}>
+                <div className="input-group input-group-sm">
+                  <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                    <Search size={14} />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search by title..."
+                    value={sidebarSearchTerm}
+                    onChange={(e) => handleSidebarSearchChange(e.target.value)}
+                    style={{ fontSize: '0.875rem' }}
+                  />
+                </div>
+              </div>
+              {/* Search/Cancel button */}
+              <button
+                className={`btn btn-sm ${isSearchActive ? 'btn-secondary' : 'btn-primary'}`}
+                onClick={handleSearchToggle}
+                style={{ minWidth: '70px', fontSize: '0.8rem' }}
+              >
+                {isSearchActive ? 'Cancel' : 'Search'}
+              </button>
+            </div>
+            
+            {/* Filter dropdowns */}
+            <div className="row g-2">
+              <div className="col-6">
+                <div className="input-group input-group-sm">
+                  <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                    <FunnelFill size={12} />
+                  </span>
+                  <select
+                    className="form-select"
+                    value={sidebarFilterStatus}
+                    onChange={(e) => handleSidebarStatusChange(e.target.value)}
+                    style={{ fontSize: '0.8rem' }}
+                  >
+                    <option value="">All Statuses</option>
+                    {availableStatuses.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="col-6">
+                <div className="input-group input-group-sm">
+                  <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                    <FunnelFill size={12} />
+                  </span>
+                  <select
+                    className="form-select"
+                    value={sidebarFilterCategory}
+                    onChange={(e) => handleSidebarCategoryChange(e.target.value)}
+                    style={{ fontSize: '0.8rem' }}
+                  >
+                    <option value="">All Categories</option>
+                    {availableCategories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
           
           <Offcanvas.Body style={{ padding: 0, display: "flex", flexDirection: "column" }}>
@@ -875,17 +863,7 @@ export default function HomePage() {
                 scrollbarColor: "#d1d5db #f9fafb",
               }}
             >
-              {renderReportsList({
-                loadingReports,
-                reportsError,
-                recentReports,
-                allReports: reports,
-                selectedReportId,
-                isAuthenticated,
-                user,
-                onReportCardClick: handleReportCardClick,
-                onReportDetailsClick: handleReportDetailsClick,
-              })}
+              {renderSidebarReportsContent()}
             </div>
 
             {/* Add Report Button in Offcanvas */}
@@ -896,13 +874,7 @@ export default function HomePage() {
                 background: "#fdfdfd",
               }}
             >
-              {renderActionButtons(
-                isPublicRelations,
-                isTechnicalOfficer,
-                isCitizen,
-                navigate,
-                handleAddReport
-              )}
+              {renderSidebarActionButtons()}
 
               {!isAuthenticated && (
                 <div
