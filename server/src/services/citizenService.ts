@@ -24,7 +24,7 @@ export async function verifyCitizenEmail(email: string, code: string): Promise<{
   const user = await userRepository.findByEmail(email);
 
   if (!user) throw new NotFoundError(`User with email ${email} not found`);
-  if (user.role !== Role.CITIZEN) throw new BadRequestError("Only citizens require email verification");
+  if (!user.role.includes(Role.CITIZEN)) throw new BadRequestError("Only citizens require email verification");
   if (user.isVerified) return { alreadyVerified: true };
   if (user.verificationToken !== code) throw new BadRequestError("Invalid verification code");
   if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) throw new BadRequestError("Verification code has expired");
@@ -42,7 +42,7 @@ export async function sendCitizenVerification(email: string): Promise<void> {
   const user = await userRepository.findByEmail(email);
 
   if (!user) throw new NotFoundError(`User with email ${email} not found`);
-  if (user.role !== Role.CITIZEN) throw new BadRequestError("Only citizens require email verification");
+  if (!user.role.includes(Role.CITIZEN)) throw new BadRequestError("Only citizens require email verification");
   if (user.isVerified) throw new BadRequestError("Email already verified");
 
   // Generate new verification code and expiry
@@ -72,7 +72,6 @@ export async function updateCitizenProfile(
     email?: string;
     password?: string;
     salt?: string;
-    telegramUsername?: string | null;
     emailNotificationsEnabled?: boolean;
   }
 ): Promise<CitizenProfileDTO> {
@@ -82,7 +81,6 @@ export async function updateCitizenProfile(
   if (data.email) updateData.email = data.email;
   if (data.password) updateData.password = data.password;
   if (data.salt) updateData.salt = data.salt;
-  if (data.telegramUsername !== undefined) updateData.telegram_username = data.telegramUsername;
   if (data.emailNotificationsEnabled !== undefined) updateData.email_notifications_enabled = data.emailNotificationsEnabled;
 
   const updatedUser = await userRepository.update(userId, updateData);

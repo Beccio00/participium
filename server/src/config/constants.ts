@@ -23,6 +23,7 @@ export const CONFIG = {
     ADMIN: "/api/admin",
     REPORTS: "/api/reports",
     NOTIFICATIONS: "/api/notifications",
+    TELEGRAM: "/api/telegram",
     SWAGGER: "/api-docs",
   },
 

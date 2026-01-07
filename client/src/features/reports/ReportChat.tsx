@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { getRoleLabel } from "../../utils/roles";
+import { getChatRoleLabel } from "../../utils/roles";
 import { Button, InputGroup, Form } from "react-bootstrap";
 import "./ReportChat.css";
 
@@ -50,7 +50,7 @@ export default function ReportChat({
             if (
               display?.user && 
               currentUserId === display.user.id &&
-              display.user.role === "CITIZEN"
+              display.user.role == "CITIZEN"
             ) {
               return "Chat with Participium Support";
             }
@@ -82,8 +82,8 @@ export default function ReportChat({
                     currentUserId != null &&
                     senderId != null &&
                     String(senderId) === String(currentUserId);
-                  const roleKey = msg.senderRole ?? msg.sender?.role;
-                  const roleLabel = roleKey ? getRoleLabel(roleKey) : undefined;
+                  const roleKey = msg.senderRoles ?? msg.senderRole ?? msg.sender?.role;
+                  const roleLabel = roleKey ? getChatRoleLabel(roleKey) : undefined;
                 return (
                   <div
                     key={msg.id || idx}

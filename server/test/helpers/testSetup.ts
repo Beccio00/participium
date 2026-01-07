@@ -8,6 +8,7 @@ import { ReportMessage } from "../../src/entities/ReportMessage";
 import { Notification } from "../../src/entities/Notification";
 import { ExternalCompany } from "../../src/entities/ExternalCompany";
 import { InternalNote } from "../../src/entities/InternalNote";
+import { createTestDatabaseIfNotExists } from "./databaseUtils";
 
 // Use the application's AppDataSource directly
 export { AppDataSource };
@@ -92,6 +93,9 @@ export const prisma: any = {
  * Initialize test database connection
  */
 export async function setupTestDatabase() {
+  // First, ensure the test database exists
+  await createTestDatabaseIfNotExists();
+  
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize();
   }

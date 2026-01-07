@@ -7,8 +7,8 @@ import Input from "../../components/ui/Input.tsx";
 import { SignupValidator } from "../../validators/SignupValidator";
 import type { SignupFormData } from "../../../../shared/SignupTypes";
 
-interface ExtendedSignupFormData extends SignupFormData{
-    confirmPassword: string,
+interface ExtendedSignupFormData extends SignupFormData {
+  confirmPassword: string;
 }
 
 export default function SignupPage() {
@@ -19,9 +19,9 @@ export default function SignupPage() {
 
   const handleSignup = async (values: ExtendedSignupFormData) => {
     try {
-      const { confirmPassword, ...apiData} = values;
+      const { confirmPassword, ...apiData } = values;
       await signup(apiData);
-      // Dopo la registrazione, reindirizza alla pagina di verifica email
+      // After registration, redirect to the email verification page
       navigate("/verify-email", { state: { email: values.email } });
       form.resetForm();
     } catch (err) {
@@ -57,9 +57,14 @@ export default function SignupPage() {
     },
     validate: (values) => {
       const result = SignupValidator.validate(values as SignupFormData);
-      const errors: Partial<Record<keyof ExtendedSignupFormData,string>> = result.isValid ? {} : (result.errors as Partial<Record<keyof ExtendedSignupFormData,string>>)
+      const errors: Partial<Record<keyof ExtendedSignupFormData, string>> =
+        result.isValid
+          ? {}
+          : (result.errors as Partial<
+              Record<keyof ExtendedSignupFormData, string>
+            >);
 
-      if(values.confirmPassword && values.password != values.confirmPassword){
+      if (values.confirmPassword && values.password != values.confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
       return errors;
@@ -89,25 +94,17 @@ export default function SignupPage() {
       >
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-            padding: "3rem",
-            borderRadius: "24px",
-            boxShadow: "0 8px 32px rgba(34, 49, 63, 0.12)",
             width: "100%",
-            maxWidth: "600px",
+            maxWidth: "550px",
+            padding: "1rem",
           }}
         >
-          <h2
-            className="text-center mb-2"
-            style={{ color: "var(--text)", fontWeight: 700 }}
-          >
-            Citizen Registration
-          </h2>
-          <p className="text-center mb-4" style={{ color: "var(--muted)" }}>
-            Register to access the Participium system and submit reports to your
-            municipality.
-          </p>
+          <div className="text-center mb-4">
+            <h2 style={{ color: "var(--text)", fontWeight: 700 }}>Citizen Registration</h2>
+            <p className="text-muted">
+              Register to access the Participium system and submit reports to your municipality.
+            </p>
+          </div>
 
           <form onSubmit={form.handleSubmit}>
             <Row className="g-3 mb-3">
@@ -178,7 +175,7 @@ export default function SignupPage() {
               }
               className="mb-4"
             />
-             <Input
+            <Input
               type="password"
               id="confirmPassword"
               name="confirmPassword"
@@ -187,7 +184,9 @@ export default function SignupPage() {
               onChange={form.handleChange}
               onFocus={() => setShowPasswordRequirements(true)}
               onBlur={() =>
-                setShowPasswordRequirements(form.values.confirmPassword.length > 0)
+                setShowPasswordRequirements(
+                  form.values.confirmPassword.length > 0
+                )
               }
               error={form.errors.confirmPassword}
               disabled={form.isSubmitting}

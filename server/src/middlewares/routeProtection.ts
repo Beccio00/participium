@@ -29,7 +29,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || authReq.user.role !== Role.ADMINISTRATOR) {
+  if (!authReq.user?.role.includes(Role.ADMINISTRATOR)) {
     throw new ForbiddenError("Administrator privileges required");
   }
 
@@ -50,7 +50,7 @@ export function requireCitizen(
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || authReq.user.role !== Role.CITIZEN) {
+  if (!authReq.user?.role.includes(Role.CITIZEN)) {
     throw new ForbiddenError("Only citizens can create reports");
   }
 
@@ -71,7 +71,7 @@ export function requirePublicRelations(
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || authReq.user.role !== "PUBLIC_RELATIONS") {
+  if (!authReq.user || !authReq.user.role.includes(Role.PUBLIC_RELATIONS)) {
     throw new ForbiddenError("Public relations officer privileges required");
   }
 
@@ -96,7 +96,8 @@ export function requireTechnicalStaffOnly(
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!TECHNICAL_ROLES.includes(authReq.user.role)) {
+  const user = authReq.user;
+  if (!TECHNICAL_ROLES.some(role => user.role.includes(role))) {
     throw new ForbiddenError(
       "Municipality technical staff privileges required"
     );
@@ -116,7 +117,8 @@ export function requireTechnicalOrExternal(req: Request, res: Response, next: Ne
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
+  const user = authReq.user;
+  if (!TECHNICAL_AND_EXTERNAL_ROLES.some(role => user.role.includes(role))) {
     throw new ForbiddenError("Technical staff or external maintainer privileges required");
   }
   
@@ -137,7 +139,7 @@ export function requireExternalMaintainer(
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || authReq.user.role !== Role.EXTERNAL_MAINTAINER) {
+  if (!authReq.user?.role.includes(Role.EXTERNAL_MAINTAINER)) {
     throw new ForbiddenError("External maintainer privileges required");
   }
 
@@ -162,9 +164,10 @@ export function requireCitizenOrTechnicalOrExternal(
     throw new UnauthorizedError("Authentication required");
   }
 
+  const user = authReq.user;
   if (
-    authReq.user.role !== Role.CITIZEN &&
-    !TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)
+    !user.role.includes(Role.CITIZEN) &&
+    !TECHNICAL_AND_EXTERNAL_ROLES.some(role => user.role.includes(role))
   ) {
     throw new ForbiddenError(
       "Citizen, technical staff, or external maintainer privileges required"
@@ -192,8 +195,15 @@ export async function requireCitizenAuthorOrTechnicalOrExternal(
     throw new UnauthorizedError("Authentication required");
   }
 
-  // allows citizens to send messages only for reports they authored
-  if (authReq.user.role === Role.CITIZEN) {
+  const role = authReq.user.role;
+  
+  // Technical staff and external maintainers can always send messages
+  if (TECHNICAL_AND_EXTERNAL_ROLES.some(r => role.includes(r))) {
+    return next();
+  }
+  
+  // Citizens can only send messages for reports they authored
+  if (role.includes(Role.CITIZEN)) {
     const reportId = req.params.reportId;
     const repo = new ReportRepository();
     try {
@@ -211,10 +221,8 @@ export async function requireCitizenAuthorOrTechnicalOrExternal(
       );
     }
   }
-  if (!TECHNICAL_AND_EXTERNAL_ROLES.includes(authReq.user.role)) {
-    throw new ForbiddenError(
-        "Technical staff or external maintainer privileges required"
-      );
-  }
-  return next();
+  
+  throw new ForbiddenError(
+      "Technical staff, external maintainer, or report author privileges required"
+    );
 }

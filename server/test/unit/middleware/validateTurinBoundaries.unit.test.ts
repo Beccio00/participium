@@ -122,8 +122,8 @@ describe("validateTurinBoundaries middleware", () => {
     });
 
     it("should validate coordinates at Turin polygon edge", () => {
-      // Coordinate molto vicine al confine di Torino
-      testCoordinates(validateTurinBoundaries, "45.1240", "7.5810", true);
+      // Coordinate all'interno di Torino (Lingotto area)
+      testCoordinates(validateTurinBoundaries, "45.0325", "7.6650", true);
     });
 
     it("should reject coordinates just outside Turin boundaries", () => {

@@ -19,11 +19,29 @@ export async function registerUser(
   firstName: string,
   lastName: string
 ): Promise<void> {
+  // Mock signup network call BEFORE navigating so it intercepts the request
+  await page.route('**/citizen/signup', async (route) => {
+    const response = {
+      id: 1,
+      firstName,
+      lastName,
+      email,
+      role: 'CITIZEN',
+      telegramUsername: null,
+      emailNotificationsEnabled: false,
+    };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    });
+  });
   await page.goto('/signup');
   await page.fill('input[name="firstName"]', firstName);
   await page.fill('input[name="lastName"]', lastName);
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
+  await page.fill('input[name="confirmPassword"]', password);
   await page.click('button[type="submit"]');
   
   // Wait for registration success - now redirects to verify-email

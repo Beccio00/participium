@@ -11,7 +11,8 @@ interface UseFormReturn<T> {
   errors: Partial<Record<keyof T, string>>;
   isSubmitting: boolean;
   handleChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  handleSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>;
+  handleSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>; 
+  setValues: React.Dispatch<React.SetStateAction<T>>;
   setFieldValue: (field: keyof T, value: any) => void;
   setFieldError: (field: keyof T, error: string) => void;
   resetForm: () => void;
@@ -100,5 +101,6 @@ export function useForm<T extends Record<string, any>>({
     setFieldValue,
     setFieldError,
     resetForm,
+    setValues,
   };
 }

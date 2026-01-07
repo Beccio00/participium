@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { verifyEmailCode, resendVerificationCode } from "../api/api";
-import { Container } from "react-bootstrap";
 
 interface EmailVerificationProps {
   email?: string;
@@ -56,17 +55,20 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
 
   if (!email) {
     return (
-      <Container
-        className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: "100vh" }}
-      >
+      <div style={{ 
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        padding: "1rem"
+      }}>
         <div
           className="text-center"
           style={{
-            background: "rgba(255,255,255,0.95)",
-            padding: "2.5rem",
-            borderRadius: "24px",
-            boxShadow: "0 8px 32px rgba(34,49,63,0.12)",
             maxWidth: "400px",
             width: "100%",
           }}
@@ -77,29 +79,31 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
           >
             Email not found
           </h2>
-          <p style={{ color: "var(--muted)" }}>Return to sign up.</p>
+          <p className="text-muted">Return to sign up.</p>
         </div>
-      </Container>
-    );
-  }
+      </div>
+        );
+    };
 
   return (
-    <div className="email-verification-fullscreen">
-      <Container
-        className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: "100vh" }}
+    <div style={{ 
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      display: "flex", 
+      alignItems: "center", 
+      justifyContent: "center",
+      padding: "1rem"
+    }}>
+      <div
+        className="text-center"
+        style={{
+          maxWidth: "400px",
+          width: "100%",
+        }}
       >
-        <div
-          className="text-center"
-          style={{
-            background: "rgba(255,255,255,0.95)",
-            padding: "2.5rem",
-            borderRadius: "24px",
-            boxShadow: "0 8px 32px rgba(34,49,63,0.12)",
-            maxWidth: "400px",
-            width: "100%",
-          }}
-        >
           <h2
             className="mb-3"
             style={{ color: "var(--text)", fontWeight: 700 }}
@@ -187,8 +191,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
               {success}
             </div>
           )}
-        </div>
-      </Container>
+      </div>
     </div>
   );
 };

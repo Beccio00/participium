@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router";
-import { Container, Row, Col, Modal, Form, Toast, ToastContainer, Alert } from "react-bootstrap";
-import { CheckCircle, XCircle, Tools, FileText } from "react-bootstrap-icons";
+import { Container, Accordion } from "react-bootstrap";
+import { FileText, Clipboard, BoxSeam } from "react-bootstrap-icons";
 import { useAuth } from "../../hooks";
-import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import AccessRestricted from "../../components/AccessRestricted";
+import SearchAndFilterBar from "../../components/ui/SearchAndFilterBar";
+import EmptyState from "../../components/ui/EmptyState";
+import ReportsList from "./ReportsList";
+import TechPanelModals from "./TechPanelModals";
 import {
   getReports,
   getPendingReports,
@@ -18,52 +21,16 @@ import {
   createInternalNote,
   getInternalNotes,
 } from "../../api/api";
+import { 
+  MUNICIPALITY_AND_EXTERNAL_ROLES, 
+  TECHNICIAN_ROLES, 
+  userHasRole,
+  userHasAnyRole 
+} from "../../utils/roles";
 import type { Report as AppReport, InternalNote } from "../../types/report.types";
-import ReportCard from "../reports/ReportCard";
-import ReportDetailsModal from "../reports/ReportDetailsModal";
-import { MUNICIPALITY_AND_EXTERNAL_ROLES,  TECHNICIAN_ROLES, getRoleLabel } from "../../utils/roles";
 import { Role } from "../../../../shared/RoleTypes";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import "../../styles/TechPanelstyle.css";
-
-// Helper component for assign to external button
-interface AssignToExternalButtonProps {
-  report: AppReport;
-  processingId: number | null;
-  showAssignModal: boolean;
-  onOpenAssignModal: (id: number) => void;
-}
-
-function AssignToExternalButton({
-  report,
-  processingId,
-  showAssignModal,
-  onOpenAssignModal,
-}: AssignToExternalButtonProps) {
-  const disabledByStatus = report.status !== "ASSIGNED";
-  const assignDisabled = processingId === report.id || disabledByStatus;
-  const tooltip = disabledByStatus
-    ? "A report can be assigned to an external company only when its status is ASSIGNED. Once it moves to IN_PROGRESS it can no longer be assigned externally."
-    : "";
-
-  return (
-    <div
-      title={assignDisabled && tooltip ? tooltip : undefined}
-      style={{ width: "100%" }}
-    >
-      <Button
-        variant="primary"
-        className="w-100 d-flex align-items-center justify-content-center"
-        onClick={() => onOpenAssignModal(report.id)}
-        disabled={assignDisabled}
-        isLoading={processingId === report.id && showAssignModal}
-      >
-        <CheckCircle className="me-2" />
-        Assign to external
-      </Button>
-    </div>
-  );
-}
 
 // Helper functions
 function normalizeReports(reports: any[]): AppReport[] {
@@ -96,7 +63,6 @@ function filterExternalAssignedReports(reports: any[]): any[] {
 
 export default function TechPanel() {
   const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   const [pendingReports, setPendingReports] = useState<AppReport[]>([]);
   const [otherReports, setOtherReports] = useState<AppReport[]>([]);
@@ -133,8 +99,17 @@ export default function TechPanel() {
 
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  const isPublicRelations = user?.role === Role.PUBLIC_RELATIONS.toString();
-  const isExternalMaintainer = user?.role === Role.EXTERNAL_MAINTAINER.toString();
+  // Search and filter states - separate for each accordion section
+  const [searchTermSection1, setSearchTermSection1] = useState("");
+  const [filterStatusSection1, setFilterStatusSection1] = useState<string>("");
+  const [filterCategorySection1, setFilterCategorySection1] = useState<string>("");
+  
+  const [searchTermSection2, setSearchTermSection2] = useState("");
+  const [filterStatusSection2, setFilterStatusSection2] = useState<string>("");
+  const [filterCategorySection2, setFilterCategorySection2] = useState<string>("");
+
+  const isPublicRelations = userHasRole(user, Role.PUBLIC_RELATIONS);
+  const isExternalMaintainer = userHasRole(user, Role.EXTERNAL_MAINTAINER);
 
   const [noteModalError, setNoteModalError] = useState<string | null>(null);
   const [toast, setToast] = useState({show: false, message: "", variant: "success" });
@@ -147,6 +122,75 @@ export default function TechPanel() {
     { value: ReportStatus.RESOLVED.toString(), label: "Resolved" },
     { value: ReportStatus.SUSPENDED.toString(), label: "Work suspended" },
   ];
+
+  // Filter function
+  const filterReports = (reports: AppReport[], searchTerm: string, filterStatus: string, filterCategory: string) => {
+    return reports.filter(report => {
+      // Search by title
+      const matchesSearch = searchTerm === "" || 
+        report.title?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Filter by status
+      const matchesStatus = filterStatus === "" || report.status === filterStatus;
+      
+      // Filter by category
+      const matchesCategory = filterCategory === "" || report.category === filterCategory;
+      
+      return matchesSearch && matchesStatus && matchesCategory;
+    });
+  };
+
+  // Get unique categories and statuses for each section
+  const availableCategoriesSection1 = useMemo(() => {
+    const categories = new Set<string>();
+    const reportsToCheck = isPublicRelations ? otherReports : pendingReports;
+    reportsToCheck.forEach(report => {
+      if (report.category) categories.add(report.category);
+    });
+    return Array.from(categories).sort((a, b) => a.localeCompare(b));
+  }, [isPublicRelations, otherReports, pendingReports]);
+
+  const availableStatusesSection1 = useMemo(() => {
+    const statuses = new Set<string>();
+    const reportsToCheck = isPublicRelations ? otherReports : pendingReports;
+    reportsToCheck.forEach(report => {
+      if (report.status) statuses.add(report.status);
+    });
+    return Array.from(statuses).sort((a, b) => a.localeCompare(b));
+  }, [isPublicRelations, otherReports, pendingReports]);
+
+  const availableCategoriesSection2 = useMemo(() => {
+    const categories = new Set<string>();
+    const reportsToCheck = isPublicRelations ? pendingReports : otherReports;
+    reportsToCheck.forEach(report => {
+      if (report.category) categories.add(report.category);
+    });
+    return Array.from(categories).sort((a, b) => a.localeCompare(b));
+  }, [isPublicRelations, pendingReports, otherReports]);
+
+  const availableStatusesSection2 = useMemo(() => {
+    const statuses = new Set<string>();
+    const reportsToCheck = isPublicRelations ? pendingReports : otherReports;
+    reportsToCheck.forEach(report => {
+      if (report.status) statuses.add(report.status);
+    });
+    return Array.from(statuses).sort((a, b) => a.localeCompare(b));
+  }, [isPublicRelations, pendingReports, otherReports]);
+
+  // Filtered reports for each section
+  const filteredSection1Reports = useMemo(() => 
+    isPublicRelations 
+      ? filterReports(otherReports, searchTermSection1, filterStatusSection1, filterCategorySection1)
+      : filterReports(pendingReports, searchTermSection1, filterStatusSection1, filterCategorySection1),
+    [isPublicRelations, otherReports, pendingReports, searchTermSection1, filterStatusSection1, filterCategorySection1]
+  );
+  
+  const filteredSection2Reports = useMemo(() => 
+    isPublicRelations
+      ? filterReports(pendingReports, searchTermSection2, filterStatusSection2, filterCategorySection2)
+      : filterReports(otherReports, searchTermSection2, filterStatusSection2, filterCategorySection2),
+    [isPublicRelations, pendingReports, otherReports, searchTermSection2, filterStatusSection2, filterCategorySection2]
+  );
 
   // Computed values with useMemo for performance and correct reactivity
   const allReports = useMemo(
@@ -171,15 +215,22 @@ export default function TechPanel() {
     [assignableExternals, selectedExternalId]
   );
 
+  const hasAccess = isAuthenticated && user && userHasAnyRole(user, MUNICIPALITY_AND_EXTERNAL_ROLES);
+
   useEffect(() => {
-    if (
-      !isAuthenticated ||
-      (user?.role && !MUNICIPALITY_AND_EXTERNAL_ROLES.includes(user.role))
-    ) {
-      navigate("/");
+    if (hasAccess) {
+      fetchReports();
     }
-    fetchReports();
-  }, [isAuthenticated, user, navigate]);
+  }, [hasAccess]);
+
+  // Check access before rendering
+  if (!hasAccess) {
+    const message = !isAuthenticated
+      ? "You need to be logged in to access this page."
+      : "You don't have permission to access the reports management panel.";
+    
+    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+  }
 
   const fetchReportsForPublicRelations = async () => {
     const pendingData = (await getPendingReports()) as AppReport[];
@@ -236,7 +287,7 @@ export default function TechPanel() {
       let technicals = [];
       let externals = [];
 
-      if (user && user.role === Role.PUBLIC_RELATIONS.toString()) {
+      if (user && userHasRole(user,Role.PUBLIC_RELATIONS)) {
         try {
           technicals = await getAssignableTechnicals(id);
         } catch (err) {
@@ -248,7 +299,7 @@ export default function TechPanel() {
           setProcessingId(null);
           return;
         }
-      } else if (user && TECHNICIAN_ROLES.includes(user.role)) {
+      } else if (user && userHasAnyRole(user, TECHNICIAN_ROLES)) {
         try {
           externals = await getAssignableExternals(id);
         } catch (err) {
@@ -315,7 +366,7 @@ export default function TechPanel() {
       setProcessingId(selectedReportId);
       let updatedReport = null;
 
-      if (user && user.role === Role.PUBLIC_RELATIONS.toString() && selectedTechnicalId) {
+      if (user && userHasRole(user, Role.PUBLIC_RELATIONS) && selectedTechnicalId) {
         updatedReport = await assignToPublicRelations(selectedReportId, selectedTechnicalId);
       } else if (user && selectedExternalId) {
         const selectedCompany = assignableExternals.find(
@@ -485,421 +536,241 @@ export default function TechPanel() {
 
   return (
     <Container className="py-4 tech-panel-container">
-      <div className="mb-4">
-        <h2 className="tech-panel-title">Reports Management</h2>
+      <div className="mb-4 text-center">
+        <h2 style={{ color: "var(--text)", fontWeight: 700 }}>Reports Management</h2>
+        <p className="text-muted">
+          View and manage reports assigned to you
+        </p>
+      </div>
+
+      {/* Quick Stats Cards */}
+      <div className="row g-3 mb-4">
+        <div className="col-md-6">
+          <div style={{
+            background: "linear-gradient(135deg, color-mix(in srgb, var(--navbar-accent) 85%, var(--primary) 15%) 0%, color-mix(in srgb, var(--navbar-accent) 60%, var(--stone) 40%) 60%)",
+            borderRadius: "12px",
+            padding: "1.5rem",
+            color: "white",
+            boxShadow: "0 4px 12px rgba(200, 110, 98, 0.2)"
+          }}>
+            <div style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.5rem" }}>
+              {isPublicRelations ? "All Reports" : "Assigned to me"}
+            </div>
+            <div style={{ fontSize: "2.5rem", fontWeight: 700 }}>
+              {isPublicRelations ? otherReports.length : pendingReports.length}
+            </div>
+          </div>
+        </div>
+        {!isExternalMaintainer && (
+          <div className="col-md-6">
+            <div style={{
+              background: "var(--stone)",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              color: "white",
+              boxShadow: "0 4px 12px rgba(133, 122, 116, 0.2)"
+            }}>
+              <div style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.5rem" }}>
+                {isPublicRelations ? "Pending Approval" : "Assigned to External"}
+              </div>
+              <div style={{ fontSize: "2.5rem", fontWeight: 700 }}>
+                {isPublicRelations ? pendingReports.length : otherReports.length}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {isPublicRelations ? (
-        <>
-          {/* --- PUBLIC RELATIONS VIEW --- */}
+      <Accordion className="mb-4">
+        {isPublicRelations ? (
+          <>
+            {/* --- PUBLIC RELATIONS VIEW --- */}
 
-          {/* Top: all non-pending reports */}
-          <div className="mb-4">
-            <h4>All Reports</h4>
-            {otherReports.length === 0 ? (
-              <p className="text-muted">No non-pending reports available.</p>
-            ) : (
-              <Row>
-                {otherReports.map((report) => (
-                  <Col key={report.id} lg={4} md={6} className="mb-3">
-                    {/*after many tries, I decided this is the best style option */}
-                    <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
-                  </Col>
-                ))}
-              </Row>
+            {/* Accordion Item 1: All Reports */}
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>All Reports ({otherReports.length})</Accordion.Header>
+              <Accordion.Body>
+                <SearchAndFilterBar
+                  searchTerm={searchTermSection1}
+                  onSearchChange={setSearchTermSection1}
+                  filterStatus={filterStatusSection1}
+                  onStatusChange={setFilterStatusSection1}
+                  filterCategory={filterCategorySection1}
+                  onCategoryChange={setFilterCategorySection1}
+                  availableStatuses={availableStatusesSection1}
+                  availableCategories={availableCategoriesSection1}
+                />
+                {filteredSection1Reports.length === 0 ? (
+                  <EmptyState
+                    icon={<FileText size={64} />}
+                    title={otherReports.length === 0 ? "No non-pending reports available" : "No reports match your search criteria"}
+                    description={otherReports.length === 0 ? "Reports will appear here once they are processed." : "Try adjusting your filters or search term."}
+                  />
+                ) : (
+                  <ReportsList
+                    reports={filteredSection1Reports}
+                    variant="public-relations-all"
+                    processingId={processingId}
+                    onOpenDetails={handleReportDetailsClick}
+                  />
+                )}
+              </Accordion.Body>
+            </Accordion.Item>
+
+            {/* Accordion Item 2: Pending Reports */}
+            <Accordion.Item eventKey="1">
+              <Accordion.Header>Pending Reports ({pendingReports.length})</Accordion.Header>
+              <Accordion.Body>
+                <SearchAndFilterBar
+                  searchTerm={searchTermSection2}
+                  onSearchChange={setSearchTermSection2}
+                  filterStatus={filterStatusSection2}
+                  onStatusChange={setFilterStatusSection2}
+                  filterCategory={filterCategorySection2}
+                  onCategoryChange={setFilterCategorySection2}
+                  availableStatuses={availableStatusesSection2}
+                  availableCategories={availableCategoriesSection2}
+                  lockedStatus="PENDING_APPROVAL"
+                />
+                {filteredSection2Reports.length === 0 ? (
+                  <EmptyState
+                    icon={<Clipboard size={64} />}
+                    title={pendingReports.length === 0 ? "No pending reports" : "No reports match your search criteria"}
+                    description={pendingReports.length === 0 ? "New reports awaiting approval will appear here." : "Try adjusting your filters or search term."}
+                  />
+                ) : (
+                  <ReportsList
+                    reports={filteredSection2Reports}
+                    variant="public-relations-pending"
+                    processingId={processingId}
+                    onOpenDetails={handleReportDetailsClick}
+                    onReject={openRejectModal}
+                    onAssign={openAssignModal}
+                  />
+                )}
+              </Accordion.Body>
+            </Accordion.Item>
+          </>
+        ) : (
+          <>
+            {/* --- TECHNICAL OFFICE & EXTERNAL VIEW --- */}
+
+            {/* Accordion Item 1: Assigned to me */}
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>Assigned to me ({pendingReports.length})</Accordion.Header>
+              <Accordion.Body>
+                <SearchAndFilterBar
+                  searchTerm={searchTermSection1}
+                  onSearchChange={setSearchTermSection1}
+                  filterStatus={filterStatusSection1}
+                  onStatusChange={setFilterStatusSection1}
+                  filterCategory={filterCategorySection1}
+                  onCategoryChange={setFilterCategorySection1}
+                  availableStatuses={availableStatusesSection1}
+                  availableCategories={availableCategoriesSection1}
+                />
+                {filteredSection1Reports.length === 0 ? (
+                  <EmptyState
+                    icon={<Clipboard size={64} />}
+                    title={pendingReports.length === 0 ? "No reports assigned to you" : "No reports match your search criteria"}
+                    description={pendingReports.length === 0 ? "Reports will appear here once assigned by public relations." : "Try adjusting your filters or search term."}
+                  />
+                ) : (
+                  <ReportsList
+                    reports={filteredSection1Reports}
+                    variant="technical-assigned"
+                    processingId={processingId}
+                    onOpenDetails={handleReportDetailsClick}
+                    onStatusUpdate={openStatusModal}
+                    onAssign={openAssignModal}
+                    onOpenNotes={openNoteModal}
+                    isExternalMaintainer={isExternalMaintainer}
+                    showAssignModal={showAssignModal}
+                  />
+                )}
+              </Accordion.Body>
+            </Accordion.Item>
+
+            {/* Accordion Item 2: Assigned by me to External (only for Technical Office) */}
+            {!isExternalMaintainer && (
+              <Accordion.Item eventKey="1">
+                <Accordion.Header>Assigned by me to External ({otherReports.length})</Accordion.Header>
+                <Accordion.Body>
+                  <SearchAndFilterBar
+                    searchTerm={searchTermSection2}
+                    onSearchChange={setSearchTermSection2}
+                    filterStatus={filterStatusSection2}
+                    onStatusChange={setFilterStatusSection2}
+                    filterCategory={filterCategorySection2}
+                    onCategoryChange={setFilterCategorySection2}
+                    availableStatuses={availableStatusesSection2}
+                    availableCategories={availableCategoriesSection2}
+                  />
+                  {filteredSection2Reports.length === 0 ? (
+                    <EmptyState
+                      icon={<BoxSeam size={64} />}
+                      title={otherReports.length === 0 ? "No reports assigned to externals yet" : "No reports match your search criteria"}
+                      description={otherReports.length === 0 ? "External assignments will appear here when you delegate reports." : "Try adjusting your filters or search term."}
+                    />
+                  ) : (
+                    <ReportsList
+                      reports={filteredSection2Reports}
+                      variant="technical-external"
+                      processingId={processingId}
+                      onOpenDetails={handleReportDetailsClick}
+                      onOpenNotes={openNoteModal}
+                    />
+                  )}
+                </Accordion.Body>
+              </Accordion.Item>
             )}
-          </div>
+          </>
+        )}
+      </Accordion>
 
-          {/* Bottom: pending reports with Approve/Reject actions */}
-          <div>
-            <h4>Pending Reports</h4>
-            {pendingReports.length === 0 ? (
-              <p className="text-muted">No pending reports.</p>
-            ) : (
-                <Row>
-                  {pendingReports.map((report) => (
-                    <Col key={report.id} lg={6} xl={4} className="mb-4">
-                      <div className="h-100 shadow-sm report-card d-flex flex-column">
-                        <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
-                        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #f3f4f6', marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
-                          <Button variant="danger" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openRejectModal(report.id)} disabled={processingId === report.id}><XCircle className="me-2" /> Reject</Button>
-                          <Button variant="primary" className="flex-fill d-flex align-items-center justify-content-center" onClick={() => openAssignModal(report.id)} disabled={processingId === report.id} isLoading={processingId === report.id}><CheckCircle className="me-2" /> Accept</Button>
-                        </div>
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          {/* --- TECHNICAL OFFICE & EXTERNAL VIEW --- */}
-
-          <div>
-            <h4>Assigned to me</h4>
-            {pendingReports.length === 0 ? (
-              <p className="text-muted">No reports assigned to you.</p>
-            ) : (
-              <Row>
-                {pendingReports.map((report) => (
-                  <Col key={report.id} lg={6} xl={4} className="mb-4">
-                    <div className="h-100 shadow-sm report-card d-flex flex-column">
-                      <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
-
-                      {/* Show actions for both Technical Office and Externals */}
-                      <div
-                        style={{
-                          padding: "0.75rem 1rem",
-                          borderTop: "1px solid #f3f4f6",
-                          marginTop: "auto",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        {/* UPDATE STATUS: Visible for both */}
-                        <Button
-                          variant="primary"
-                          className="w-100 d-flex align-items-center justify-content-center"
-                          onClick={() => openStatusModal(report.id)}
-                          disabled={processingId === report.id}
-                        >
-                          <Tools className="me-2" />
-                          Update Status
-                        </Button>
-
-                        {/* ASSIGN TO EXTERNAL: Visible ONLY for Technical Office (NOT External Maintainers) */}
-                        {!isExternalMaintainer && (
-                          <AssignToExternalButton
-                            report={report}
-                            processingId={processingId}
-                            showAssignModal={showAssignModal}
-                            onOpenAssignModal={openAssignModal}
-                          />
-                        )}
-                        {/* INTERNAL NOTES BUTTON (not for Public Relations) */}
-                        {!isPublicRelations && (
-                        <Button 
-                          variant="primary" 
-                          className="w-100 d-flex align-items-center justify-content-center"
-                          onClick={() => openNoteModal(report.id)}
-                          disabled={processingId === report.id}
-                          >
-                          <FileText className="me-2" /> Internal Notes
-                      </Button>
-                        )}
-                      </div>
-                    </div>
-                  </Col>
-                ))}
-              </Row>
-            )}
-          </div>
-
-          {/* Show 'Assigned to External' only for technical office */}
-          {!isExternalMaintainer && (
-            <div className="mt-5">
-              <h4>Assigned by me to External</h4>
-              {otherReports.length === 0 ? (
-                <p className="text-muted">
-                  No reports assigned to externals yet.
-                </p>
-              ) : (
-                <Row>
-                        {otherReports.map((report) => (
-                    <Col key={report.id} lg={6} xl={4} className="mb-4">
-                      <div className="h-100 shadow-sm report-card d-flex flex-column">
-                          <ReportCard report={report} onOpenDetails={handleReportDetailsClick} />
-
-                          <div style={{ padding: "0.75rem 1rem", borderTop: "1px solid #f3f4f6", marginTop: "auto", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                            <Button 
-                              variant="primary" 
-                              className="w-100 d-flex align-items-center justify-content-center"
-                              onClick={() => openNoteModal(report.id)}
-                              disabled={processingId === report.id}
-                              >
-                              <FileText className="me-2" /> Internal Notes
-                            </Button>
-                          </div>
-                        </div>
-                    </Col>
-                  ))}
-                </Row>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* --- MODALS --- */}
-
-      {/* 1. REJECT MODAL */}
-      <Modal
-        show={showRejectModal}
-        onHide={() => setShowRejectModal(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Reject Report</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>
-            Please provide a reason for rejecting this report. This will be
-            visible to the citizen.
-          </p>
-          <Form.Group>
-            <Form.Label>Reason for Rejection *</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="E.g., Duplicate report, private property, insufficient information..."
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRejectModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={handleRejectConfirm}
-            disabled={!rejectionReason.trim() || processingId !== null}
-            isLoading={processingId === selectedReportId}
-          >
-            Confirm Rejection
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* 2. ASSIGN MODAL */}
-      <Modal
-        show={showAssignModal}
-        onHide={() => setShowAssignModal(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Assign Report</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {/* Technical office: select company and optionally technician */}
-          {!isPublicRelations && user && (
-            <>
-              <p>Select an external company:</p>
-              {assignableExternals.length === 0 ? (
-                <div className="text-muted">
-                  No external companies available for this category.
-                </div>
-              ) : (
-                <Form.Group className="mb-3">
-                  <Form.Select
-                    value={selectedExternalId ?? ""}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setSelectedExternalId(val);
-                      setSelectedTechnicalId(null);
-                    }}
-                  >
-                    <option value="">-- Select company --</option>
-                    {assignableExternals.map((ext) => (
-                      <option key={ext.id} value={ext.id}>
-                        {ext.name || ext.first_name + " " + ext.last_name}
-                        {ext.company_name ? ` (${ext.company_name})` : ""}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              )}
-
-              {/* Se la compagnia ha dipendenti, select dei tecnici */}
-              {selectedCompany && selectedCompany.hasPlatformAccess && 
-               Array.isArray(selectedCompany.users) && selectedCompany.users.length > 0 && (
-                <Form.Group className="mb-3">
-                  <Form.Label>
-                    Select a company technician:
-                  </Form.Label>
-                  <Form.Select
-                    value={selectedTechnicalId ?? ""}
-                    onChange={(e) =>
-                      setSelectedTechnicalId(Number(e.target.value))
-                    }
-                  >
-                    <option value="">-- Select technical --</option>
-                    {selectedCompany.users.map((tech: any) => (
-                      <option key={tech.id} value={tech.id}>
-                        {tech.firstName} {tech.lastName} ({tech.email})
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              )}
-            </>
-          )}
-
-          {/* Public Relations: select technical user */}
-          {isPublicRelations && (
-            <>
-              <p>Select a technical user to assign this report to:</p>
-              <Form.Group>
-                <Form.Select
-                  value={selectedTechnicalId ?? ""}
-                  onChange={(e) =>
-                    setSelectedTechnicalId(Number(e.target.value))
-                  }
-                >
-                  <option value="">-- Select technical --</option>
-                  {assignableTechnicals.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.first_name} {t.last_name} ({t.role})
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAssignModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleConfirmAssign}
-            disabled={
-              !isPublicRelations
-                ? !selectedExternalId
-                : !selectedTechnicalId
-            }
-            isLoading={processingId !== null}
-          >
-            Confirm Assignment
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* 3. STATUS UPDATE MODAL (New) */}
-      <Modal
-        show={showStatusModal}
-        onHide={() => setShowStatusModal(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Update Report Status</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Select the new status for this report:</p>
-          <Form.Group>
-            <Form.Label>Status</Form.Label>
-            <Form.Select
-              value={targetStatus}
-              onChange={(e) => setTargetStatus(e.target.value)}
-            >
-              <option value="">-- Select Status --</option>
-              {availableStatusOptions.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowStatusModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleStatusConfirm}
-            disabled={!targetStatus || processingId === selectedReportId}
-            isLoading={processingId === selectedReportId}
-          >
-            Update Status
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      {selectedReport && (
-        <ReportDetailsModal
-          show={showDetailsModal}
-          onHide={() => setShowDetailsModal(false)}
-          report={selectedReport}
-        />
-      )}
-
-
-      {/* internal note modal */}
-      <Modal show={showInternalNoteModal} onHide={() => setShowInternalNoteModal(false)} centered size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Internal Notes</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {noteModalError && (
-            <Alert variant="danger" onClose={() => setNoteModalError(null)} dismissible>
-              {noteModalError}
-            </Alert>
-          )}
-          <div className="mb-4">
-            <h6 className="mb-3">History</h6>
-            {loadingNotes ? (
-              <div className="text-center py-3"><LoadingSpinner /></div>
-            ) : internalNotes.length === 0 ? (
-              <p className="text-muted small fst-italic">No internal notes found for this report.</p>
-            ) : (
-              <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px', backgroundColor: '#f8f9fa' }}>
-                {internalNotes.map((note) => (
-                  <div key={note.id} className="mb-3 pb-3 border-bottom last-child-no-border">
-                    <div className="d-flex justify-content-between align-items-start mb-1">
-                      <strong>{note.authorName} <span className="text-muted" style={{ fontSize: '0.85em', fontWeight: 'normal' }}>({getRoleLabel(note.authorRole)})</span></strong>
-                      <span className="text-muted small" style={{ fontSize: '0.8em' }}>{formatDate(note.createdAt)}</span>
-                    </div>
-                    <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{note.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <hr />
-
-          <h6 className="mb-3">Add New Note</h6>
-          <p className="text-muted small">
-            This note will be visible to other technicians and admins, but <strong>not</strong> to the citizen.
-          </p>
-          <Form.Group>
-            <Form.Label>Note Content *</Form.Label>
-            <Form.Control 
-              as="textarea"
-              rows={3}
-              value={internalNoteContent}
-              onChange={(e) => setInternalNoteContent(e.target.value)}
-              placeholder="Enter internal note content here..."
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowInternalNoteModal(false)}>Close</Button>
-          <Button variant="primary" onClick={handleInternalNoteSubmit} disabled={!internalNoteContent.trim() || processingId !== null} isLoading={processingId !== null}>
-            Save Note
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      <ToastContainer position="top-center" className="p-3" style={{ zIndex: 9999, position: 'fixed' }}>
-        <Toast 
-          onClose={() => setToast({ ...toast, show: false })} 
-          show={toast.show} 
-          delay={3000} 
-          autohide 
-          bg={toast.variant}
-        >
-          <Toast.Body className={toast.variant === 'dark' || toast.variant === 'danger' || toast.variant === 'success' ? 'text-white' : ''}>
-            {toast.message}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
+      <TechPanelModals
+        showRejectModal={showRejectModal}
+        onCloseRejectModal={() => setShowRejectModal(false)}
+        rejectionReason={rejectionReason}
+        onRejectionReasonChange={setRejectionReason}
+        onConfirmReject={handleRejectConfirm}
+        showAssignModal={showAssignModal}
+        onCloseAssignModal={() => setShowAssignModal(false)}
+        isPublicRelations={isPublicRelations}
+        assignableExternals={assignableExternals}
+        assignableTechnicals={assignableTechnicals}
+        selectedExternalId={selectedExternalId}
+        onExternalIdChange={setSelectedExternalId}
+        selectedTechnicalId={selectedTechnicalId}
+        onTechnicalIdChange={setSelectedTechnicalId}
+        selectedCompany={selectedCompany}
+        onConfirmAssign={handleConfirmAssign}
+        showStatusModal={showStatusModal}
+        onCloseStatusModal={() => setShowStatusModal(false)}
+        targetStatus={targetStatus}
+        onTargetStatusChange={setTargetStatus}
+        availableStatusOptions={availableStatusOptions}
+        onConfirmStatus={handleStatusConfirm}
+        showInternalNoteModal={showInternalNoteModal}
+        onCloseInternalNoteModal={() => setShowInternalNoteModal(false)}
+        internalNoteContent={internalNoteContent}
+        onInternalNoteContentChange={setInternalNoteContent}
+        internalNotes={internalNotes}
+        loadingNotes={loadingNotes}
+        noteModalError={noteModalError}
+        onCloseNoteModalError={() => setNoteModalError(null)}
+        onSubmitInternalNote={handleInternalNoteSubmit}
+        formatDate={formatDate}
+        showDetailsModal={showDetailsModal}
+        onCloseDetailsModal={() => setShowDetailsModal(false)}
+        selectedReport={selectedReport}
+        toast={toast}
+        onCloseToast={() => setToast({ ...toast, show: false })}
+        processingId={processingId}
+        selectedReportId={selectedReportId}
+      />
     </Container>
   );
-
 }

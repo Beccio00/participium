@@ -173,6 +173,7 @@ export async function createExternalMaintainer(data: CreateExternalMaintainerDat
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(data.password, saltRounds);
   const salt = await bcrypt.genSalt(saltRounds);
+  const role = [Role.EXTERNAL_MAINTAINER];
 
   // Create external maintainer user
   const userData = {
@@ -181,7 +182,7 @@ export async function createExternalMaintainer(data: CreateExternalMaintainerDat
     last_name: data.lastName,
     password: hashedPassword,
     salt,
-    role: Role.EXTERNAL_MAINTAINER,
+    role: role,
     telegram_username: null,
     email_notifications_enabled: true,
     externalCompany: company,
@@ -226,7 +227,7 @@ export async function getExternalMaintainerById(id: number): Promise<ExternalMai
  */
 export async function deleteExternalMaintainer(id: number): Promise<boolean> {
   const maintainer = await userRepository.findById(id);
-  if (!maintainer || maintainer.role !== Role.EXTERNAL_MAINTAINER) {
+  if (!maintainer?.role.includes(Role.EXTERNAL_MAINTAINER)) {
     return false;
   }
 
@@ -294,7 +295,7 @@ async function validateAndGetMaintainer(
   const maintainer = await userRepository.findById(externalMaintainerId);
   if (!maintainer) throw new NotFoundError("User not found");
   
-  if (maintainer.role !== "EXTERNAL_MAINTAINER") {
+  if (!maintainer.role.includes(Role.EXTERNAL_MAINTAINER)) {
     throw new BadRequestError("User is not an external maintainer");
   }
   

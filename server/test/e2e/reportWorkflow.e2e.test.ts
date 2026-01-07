@@ -42,7 +42,7 @@ describe('Report Workflow (Tecnico & PR)', () => {
       .post('/api/citizen/signup')
       .send({ firstName: 'PR', lastName: 'Test', email: prEmail, password })
       .expect(201);
-    await AppDataSource.getRepository(User).update({ email: prEmail }, { role: 'PUBLIC_RELATIONS' as any, isVerified: true });
+    await AppDataSource.getRepository(User).update({ email: prEmail }, { role: ['PUBLIC_RELATIONS'] as any, isVerified: true });
     await prAgent
       .post('/api/session')
       .send({ email: prEmail, password })
@@ -54,7 +54,7 @@ describe('Report Workflow (Tecnico & PR)', () => {
       .post('/api/citizen/signup')
       .send({ firstName: 'Tech', lastName: 'Test', email: techEmail, password })
       .expect(201);
-    await AppDataSource.getRepository(User).update({ email: techEmail }, { role: 'LOCAL_PUBLIC_SERVICES' as any, isVerified: true });
+    await AppDataSource.getRepository(User).update({ email: techEmail }, { role: ['LOCAL_PUBLIC_SERVICES'] as any, isVerified: true });
     await techAgent
       .post('/api/session')
       .send({ email: techEmail, password })

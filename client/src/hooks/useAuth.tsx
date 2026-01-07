@@ -24,7 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await api.getSession();
       if (data.authenticated && data.user) {
         // if the user is a citizen, fetch the full citizen profile (includes photoUrl)
-        if ((data.user as any).role === 'CITIZEN') {
+        const userRole = (data.user as any).role;
+        const isCitizen = Array.isArray(userRole) 
+          ? userRole.includes('CITIZEN') 
+          : userRole === 'CITIZEN';
+        if (isCitizen) {
           try {
             const profile = await api.getCitizenProfile();
             const u = (profile.user || profile) as any;
@@ -56,7 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<AuthUser> => {
     const data = await api.login(email, password);
     // enrich citizen user with profile data (photoUrl)
-    if ((data.user as any).role === 'CITIZEN') {
+    const userRole = (data.user as any).role;
+    const isCitizen = Array.isArray(userRole) 
+      ? userRole.includes('CITIZEN') 
+      : userRole === 'CITIZEN';
+    if (isCitizen) {
       try {
         const profile = await api.getCitizenProfile();
         const u = (profile.user || profile) as any;

@@ -13,6 +13,7 @@ import {
   createReport, 
   getReports, 
   getReportById,
+  getMyReports,
   getPendingReports, 
   approveReport, 
   rejectReport,
@@ -43,6 +44,9 @@ router.post(
 
 // GET /api/reports
 router.get("/", ApiValidationMiddleware, asyncHandler(getReports));
+
+// GET /api/reports/mine - Get all reports created by the authenticated citizen (including anonymous)
+router.get("/mine", requireCitizen, ApiValidationMiddleware, asyncHandler(getMyReports));
 
 // GET /api/reports/assigned - Get reports assigned to the authenticated technical officer or external maintainer
 router.get("/assigned", requireTechnicalOrExternal, ApiValidationMiddleware, asyncHandler(getAssignedReports));

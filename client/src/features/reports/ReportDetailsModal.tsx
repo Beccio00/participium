@@ -2,7 +2,11 @@ import { Modal, Badge, Carousel } from "react-bootstrap";
 import { useEffect, useState, useRef } from "react";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import type { Report } from "../../types/report.types";
+import { userHasRole, TECHNICIAN_ROLES } from "../../utils/roles";
 import ReportChat from "./ReportChat";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { getSession, getReportById, getReports, getReportMessages, sendReportMessage } from "../../api/api";
 
 interface Props {
   show: boolean;
@@ -38,25 +42,29 @@ export default function ReportDetailsModal({
   report,
   onReportUpdate,
 }: Props) {
-  // Ref per la chat container
+  // Ref for the chat container
   const chatRef = useRef<HTMLDivElement>(null);
+  
+  // Ref per la mini mappa
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
 
   // Chat state (dichiarato subito dopo il ref)
   const [messages, setMessages] = useState<any[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesError, setMessagesError] = useState("");
 
-  // Stato per la visibilità della chat
+  // State for chat visibility
   const [canSeeChat, setCanSeeChat] = useState(false);
 
-  // Scroll automatico in fondo ogni volta che arrivano nuovi messaggi
+  // Automatically scroll to bottom when new messages arrive
   useEffect(() => {
     if (canSeeChat && chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages, canSeeChat]);
 
-  // Per identificare l'utente corrente
+  // To identify the current user
   const [currentUserId, setCurrentUserId] = useState<string | number | null>(
     null
   );
@@ -64,9 +72,7 @@ export default function ReportDetailsModal({
     let ignore = false;
     async function getUser() {
       try {
-        const session = await import("../../api/api").then((api) =>
-          api.getSession()
-        );
+        const session = await getSession();
         if (!ignore) {
           const user = session?.user as { id?: string | number };
           setCurrentUserId(
@@ -88,14 +94,21 @@ export default function ReportDetailsModal({
     let mounted = true;
     async function fetchUpdatedReport() {
       try {
-        const allReports = await import("../../api/api").then((api) =>
-          api.getReports()
-        );
-        const updated = allReports.find((r) => r.id === report.id);
+        // Use getReportById for authenticated users to get full data (not masked)
+        const updated = await getReportById(report.id);
         if (updated && onReportUpdate && mounted) {
           onReportUpdate(updated);
         }
-      } catch {}
+      } catch {
+        // Fallback: if getReportById fails (e.g. not authorized), try public API
+        try {
+          const allReports = await getReports();
+          const updated = allReports.find((r) => r.id === report.id);
+          if (updated && onReportUpdate && mounted) {
+            onReportUpdate(updated);
+          }
+        } catch {}
+      }
     }
     if (show && report?.id) {
       fetchUpdatedReport();
@@ -111,16 +124,16 @@ export default function ReportDetailsModal({
     let isMounted = true;
     let prevLength = 0;
     async function fetchMessages(showLoading = false) {
+      // Skip if user is not authorized to see chat
+      if (!canSeeChat) return;
+      
       if (showLoading) setMessagesLoading(true);
       setMessagesError("");
       try {
-        // @ts-ignore
-        const msgs = await import("../../api/api").then((api) =>
-          api.getReportMessages(report.id)
-        );
+        const msgs = await getReportMessages(report.id);
         if (isMounted) {
           setMessages(msgs);
-          // Scroll in fondo se ci sono nuovi messaggi
+          // Scroll to bottom if there are new messages
           if (chatRef?.current && msgs.length > prevLength) {
             setTimeout(() => {
               if (chatRef.current)
@@ -136,7 +149,7 @@ export default function ReportDetailsModal({
         if (isMounted && showLoading) setMessagesLoading(false);
       }
     }
-    if (show && report?.id) {
+    if (show && report?.id && canSeeChat) {
       fetchMessages(true);
       interval = setInterval(() => fetchMessages(false), 5000);
     }
@@ -144,7 +157,7 @@ export default function ReportDetailsModal({
       isMounted = false;
       if (interval) clearInterval(interval);
     };
-  }, [show, report?.id]);
+  }, [show, report?.id, canSeeChat]);
 
   // Aggiorna chat dopo invio messaggio
   async function handleSendMessage() {
@@ -152,16 +165,11 @@ export default function ReportDetailsModal({
     setMessageLoading(true);
     setMessageError("");
     try {
-      // @ts-ignore
-      await import("../../api/api").then((api) =>
-        api.sendReportMessage(display.id, messageText)
-      );
+      await sendReportMessage(display.id, messageText);
       setMessageText("");
       // Ricarica messaggi
       setMessagesLoading(true);
-      const msgs = await import("../../api/api").then((api) =>
-        api.getReportMessages(display.id)
-      );
+      const msgs = await getReportMessages(display.id);
       setMessages(msgs);
     } catch (err: any) {
       setMessageError(err?.message || "Errore invio messaggio");
@@ -194,9 +202,7 @@ export default function ReportDetailsModal({
   useEffect(() => {
     async function checkAuth() {
       try {
-        const session = await import("../../api/api").then((api) =>
-          api.getSession()
-        );
+        const session = await getSession();
         const user = session?.user;
         // Cittadino autore
         if (
@@ -205,7 +211,7 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === display.user.id &&
-          user.role === "CITIZEN"
+          userHasRole(user, "CITIZEN")
         ) {
           setCanSeeChat(true);
           return;
@@ -220,7 +226,7 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === extId &&
-          user.role === "EXTERNAL_MAINTAINER"
+          userHasRole(user, "EXTERNAL_MAINTAINER")
         ) {
           setCanSeeChat(true);
           return;
@@ -231,8 +237,9 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === display.assignedOfficer.id &&
-          user.role &&
-          user.role.startsWith("MUNICIPAL")
+          user.role && (Array.isArray(user.role) 
+              ? user.role.some((r: string) => r.startsWith("MUNICIPAL") || TECHNICIAN_ROLES.includes(r))
+              : (user.role as string).startsWith("MUNICIPAL") || TECHNICIAN_ROLES.includes(user.role as string))
         ) {
           setCanSeeChat(true);
           return;
@@ -250,6 +257,81 @@ export default function ReportDetailsModal({
     display?.externalMaintainer?.id,
     display?.assignedOfficer?.id,
   ]);
+
+  // Inizializza la mini mappa quando il modale si apre
+  useEffect(() => {
+    if (!show || !mapRef.current || !display?.latitude || !display?.longitude) {
+      return;
+    }
+
+    // Cleanup della mappa precedente
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+
+    // Pulisci il container completamente
+    if (mapRef.current) {
+      mapRef.current.innerHTML = '';
+      // Rimuovi eventuali classi aggiunte da Leaflet
+      mapRef.current.className = '';
+    }
+
+    // Aspetta un po' per essere sicuri che il DOM sia pronto
+    const timeoutId = setTimeout(() => {
+      if (!mapRef.current) return;
+
+      try {
+        const map = L.map(mapRef.current, {
+          center: [display.latitude, display.longitude],
+          zoom: 16,
+          zoomControl: true,
+          dragging: true,
+          scrollWheelZoom: false,
+        });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(map);
+
+        // Aggiungi marker alla posizione
+        L.marker([display.latitude, display.longitude], {
+          icon: L.icon({
+            iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+            iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          }),
+        }).addTo(map);
+
+        mapInstanceRef.current = map;
+
+        // Forza il resize dopo che la mappa è stata aggiunta
+        setTimeout(() => {
+          if (map) {
+            map.invalidateSize();
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Error initializing map:", error);
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+      // Pulisci anche il container al cleanup
+      if (mapRef.current) {
+        mapRef.current.innerHTML = '';
+      }
+    };
+  }, [show, display?.latitude, display?.longitude, display?.id]);
 
   // Resolve assignee: prefer full objects (assignedOfficer, externalMaintainer, externalCompany)
   function resolveExternalUserName(user: any): string | null {
@@ -272,15 +354,15 @@ export default function ReportDetailsModal({
 
   function resolveExternalHandler(handler: any): string | null {
     if (!handler) return null;
-    
+
     if (handler.type === "user") {
       return resolveExternalUserName(handler.user);
     }
-    
+
     if (handler.type === "company") {
       return resolveExternalCompanyName(handler.company);
     }
-    
+
     return null;
   }
 
@@ -291,7 +373,10 @@ export default function ReportDetailsModal({
   }
 
   function resolveAssignee(r: any): string | null {
-    return resolveExternalHandler(r.externalHandler) || resolveAssignedOfficer(r.assignedOfficer);
+    return (
+      resolveExternalHandler(r.externalHandler) ||
+      resolveAssignedOfficer(r.assignedOfficer)
+    );
   }
 
   const assigneeLabel = resolveAssignee(display as any);
@@ -510,8 +595,8 @@ export default function ReportDetailsModal({
                 {display.isAnonymous
                   ? "Anonymous"
                   : display.user
-                    ? `${display.user.firstName} ${display.user.lastName}`.trim()
-                    : "Unknown"}
+                  ? `${display.user.firstName} ${display.user.lastName}`.trim()
+                  : "Unknown"}
               </span>
             </div>
 
@@ -572,6 +657,22 @@ export default function ReportDetailsModal({
             </div>
           </div>
 
+          {/* Mini Map */}
+          {display.latitude && display.longitude && (
+            <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
+              <div
+                ref={mapRef}
+                style={{
+                  width: "100%",
+                  height: "200px",
+                  borderRadius: "0.5rem",
+                  border: "1px solid var(--muted)",
+                  overflow: "hidden",
+                }}
+              />
+            </div>
+          )}
+
           <ReportChat
             canSeeChat={canSeeChat}
             messages={messages}
@@ -585,7 +686,6 @@ export default function ReportDetailsModal({
             messageError={messageError}
             onSend={handleSendMessage}
           />
-          
         </div>
       </Modal.Body>
     </Modal>

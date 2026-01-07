@@ -11,6 +11,7 @@ import {
 } from "../interfaces/ReportDTO";
 import { ReportPhoto as SharedReportPhoto } from "../../../shared/ReportTypes";
 import { Role } from "../interfaces/UserDTO";
+import { BoundingBox } from "./geocodingService";
 
 // Repositories
 import { ReportRepository } from "../repositories/ReportRepository";
@@ -190,18 +191,29 @@ export async function getReportById(
  * Restituisce tutti i report approvati (assegnati, in corso, risolti)
  */
 export async function getApprovedReports(
-  category?: ReportCategory
+  category?: ReportCategory,
+  bbox?: BoundingBox
 ): Promise<ReportDTO[]> {
-  const reports = await reportRepository.findByStatusAndCategory(
+  const reports = await reportRepository.findByStatusCategoryAndBounds(
     [
       ReportStatus.ASSIGNED,
       ReportStatus.EXTERNAL_ASSIGNED,
       ReportStatus.IN_PROGRESS,
       ReportStatus.RESOLVED,
     ],
-    category
+    category,
+    bbox
   );
 
+  return reports.map(toReportDTO);
+}
+
+/**
+ * Get all reports created by a specific user (includes anonymous reports)
+ * This endpoint is used for the "My Reports" page
+ */
+export async function getReportsByUserId(userId: number): Promise<ReportDTO[]> {
+  const reports = await reportRepository.findByUserId(userId);
   return reports.map(toReportDTO);
 }
 
@@ -263,7 +275,13 @@ export async function approveReport(
   );
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
   const assignedTechnical = await userRepository.findById(assignedTechnicalId);
-  if (!assignedTechnical || !validRoles.includes(assignedTechnical.role)) {
+  
+  // Controlla se l'utente ha almeno uno dei ruoli validi (role è un array)
+  const hasValidRole = assignedTechnical?.role?.some(userRole => 
+    validRoles.includes(userRole)
+  );
+  
+  if (!assignedTechnical || !hasValidRole) {
     throw new UnprocessableEntityError(
       "Assigned technical is not valid for this report category"
     );

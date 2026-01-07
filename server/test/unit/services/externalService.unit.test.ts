@@ -40,7 +40,9 @@ const mockReportMessageRepo = {
 
 // 2. Mock the repositories
 jest.mock("../../../src/repositories/ExternalCompanyRepository", () => ({
-  ExternalCompanyRepository: jest.fn().mockImplementation(() => mockExternalCompanyRepo),
+  ExternalCompanyRepository: jest
+    .fn()
+    .mockImplementation(() => mockExternalCompanyRepo),
 }));
 
 jest.mock("../../../src/repositories/UserRepository", () => ({
@@ -52,7 +54,9 @@ jest.mock("../../../src/repositories/ReportRepository", () => ({
 }));
 
 jest.mock("../../../src/repositories/ReportMessageRepository", () => ({
-  ReportMessageRepository: jest.fn().mockImplementation(() => mockReportMessageRepo),
+  ReportMessageRepository: jest
+    .fn()
+    .mockImplementation(() => mockReportMessageRepo),
 }));
 
 // 3. Mock notification service
@@ -121,9 +125,9 @@ describe("External Service Unit Tests - PT25", () => {
         platformAccess: true,
       };
 
-      await expect(externalService.createExternalCompany(companyData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalCompany(companyData)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if categories array is empty", async () => {
@@ -133,9 +137,9 @@ describe("External Service Unit Tests - PT25", () => {
         platformAccess: true,
       };
 
-      await expect(externalService.createExternalCompany(companyData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalCompany(companyData)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if more than 2 categories", async () => {
@@ -149,9 +153,9 @@ describe("External Service Unit Tests - PT25", () => {
         platformAccess: true,
       };
 
-      await expect(externalService.createExternalCompany(companyData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalCompany(companyData)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if invalid category", async () => {
@@ -161,9 +165,9 @@ describe("External Service Unit Tests - PT25", () => {
         platformAccess: true,
       };
 
-      await expect(externalService.createExternalCompany(companyData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalCompany(companyData)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if platformAccess is not boolean", async () => {
@@ -173,9 +177,9 @@ describe("External Service Unit Tests - PT25", () => {
         platformAccess: "true" as any,
       };
 
-      await expect(externalService.createExternalCompany(companyData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalCompany(companyData)
+      ).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -203,7 +207,7 @@ describe("External Service Unit Tests - PT25", () => {
         first_name: "Marco",
         last_name: "Bianchi",
         email: "marco.bianchi@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         externalCompanyId: 1,
       };
 
@@ -211,17 +215,21 @@ describe("External Service Unit Tests - PT25", () => {
       mockUserRepo.findByEmail.mockResolvedValue(null);
       mockUserRepo.create.mockResolvedValue(mockUser);
 
-      const result = await externalService.createExternalMaintainer(maintainerData);
+      const result = await externalService.createExternalMaintainer(
+        maintainerData
+      );
 
       expect(mockExternalCompanyRepo.findById).toHaveBeenCalledWith(1);
-      expect(mockUserRepo.findByEmail).toHaveBeenCalledWith("marco.bianchi@enelx.com");
+      expect(mockUserRepo.findByEmail).toHaveBeenCalledWith(
+        "marco.bianchi@enelx.com"
+      );
       expect(mockUserRepo.create).toHaveBeenCalled();
       expect(result).toMatchObject({
         id: 501,
         firstName: "Marco",
         lastName: "Bianchi",
         email: "marco.bianchi@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
       });
     });
 
@@ -236,9 +244,9 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockExternalCompanyRepo.findById.mockResolvedValue(null);
 
-      await expect(externalService.createExternalMaintainer(maintainerData))
-        .rejects
-        .toThrow(NotFoundError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData)
+      ).rejects.toThrow(NotFoundError);
     });
 
     it("should throw error if company does not have platform access", async () => {
@@ -258,9 +266,9 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
 
-      await expect(externalService.createExternalMaintainer(maintainerData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if email already exists", async () => {
@@ -286,9 +294,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockUserRepo.findByEmail.mockResolvedValue(existingUser);
 
-      await expect(externalService.createExternalMaintainer(maintainerData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if firstName is missing", async () => {
@@ -300,9 +308,9 @@ describe("External Service Unit Tests - PT25", () => {
         externalCompanyId: "1",
       };
 
-      await expect(externalService.createExternalMaintainer(maintainerData as any))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData as any)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if lastName is missing", async () => {
@@ -314,9 +322,9 @@ describe("External Service Unit Tests - PT25", () => {
         externalCompanyId: "1",
       };
 
-      await expect(externalService.createExternalMaintainer(maintainerData as any))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData as any)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if email is missing", async () => {
@@ -328,9 +336,9 @@ describe("External Service Unit Tests - PT25", () => {
         externalCompanyId: "1",
       };
 
-      await expect(externalService.createExternalMaintainer(maintainerData as any))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData as any)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if password is too short", async () => {
@@ -342,9 +350,9 @@ describe("External Service Unit Tests - PT25", () => {
         externalCompanyId: "1",
       };
 
-      await expect(externalService.createExternalMaintainer(maintainerData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if externalCompanyId is invalid", async () => {
@@ -356,9 +364,9 @@ describe("External Service Unit Tests - PT25", () => {
         externalCompanyId: "invalid",
       };
 
-      await expect(externalService.createExternalMaintainer(maintainerData))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.createExternalMaintainer(maintainerData)
+      ).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -386,7 +394,7 @@ describe("External Service Unit Tests - PT25", () => {
               first_name: "Marco",
               last_name: "Bianchi",
               email: "marco@enelx.com",
-              role: Role.EXTERNAL_MAINTAINER,
+              role: [Role.EXTERNAL_MAINTAINER],
             },
           ],
         },
@@ -398,7 +406,9 @@ describe("External Service Unit Tests - PT25", () => {
       const result = await externalService.getAssignableExternals(1, 2);
 
       expect(mockReportRepo.findByIdWithRelations).toHaveBeenCalledWith(1);
-      expect(mockExternalCompanyRepo.findByCategory).toHaveBeenCalledWith(ReportCategory.PUBLIC_LIGHTING);
+      expect(mockExternalCompanyRepo.findByCategory).toHaveBeenCalledWith(
+        ReportCategory.PUBLIC_LIGHTING
+      );
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe("Enel X");
       expect(result[0].users).toHaveLength(1);
@@ -470,9 +480,9 @@ describe("External Service Unit Tests - PT25", () => {
     it("should throw error if report not found", async () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue(null);
 
-      await expect(externalService.getAssignableExternals(999, 2))
-        .rejects
-        .toThrow(NotFoundError);
+      await expect(
+        externalService.getAssignableExternals(999, 2)
+      ).rejects.toThrow(NotFoundError);
     });
 
     it("should throw error if user not assigned to report", async () => {
@@ -485,9 +495,9 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
 
-      await expect(externalService.getAssignableExternals(1, 2))
-        .rejects
-        .toThrow(ForbiddenError);
+      await expect(
+        externalService.getAssignableExternals(1, 2)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -520,21 +530,20 @@ describe("External Service Unit Tests - PT25", () => {
         id: 501,
         first_name: "Marco",
         last_name: "Bianchi",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         externalCompanyId: 1,
       };
 
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockUserRepo.findById.mockResolvedValue(mockMaintainer);
-      mockReportRepo.update.mockResolvedValue({ ...mockReport, externalCompanyId: 1, externalMaintainerId: 501 });
+      mockReportRepo.update.mockResolvedValue({
+        ...mockReport,
+        externalCompanyId: 1,
+        externalMaintainerId: 501,
+      });
 
-      const result = await externalService.assignReportToExternal(
-        1,
-        2,
-        1,
-        501
-      );
+      const result = await externalService.assignReportToExternal(1, 2, 1, 501);
 
       expect(mockReportRepo.findByIdWithRelations).toHaveBeenCalledWith(1);
       expect(mockExternalCompanyRepo.findById).toHaveBeenCalledWith(1);
@@ -566,7 +575,10 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
-      mockReportRepo.update.mockResolvedValue({ ...mockReport, externalCompanyId: 2 });
+      mockReportRepo.update.mockResolvedValue({
+        ...mockReport,
+        externalCompanyId: 2,
+      });
 
       const result = await externalService.assignReportToExternal(
         1,
@@ -583,9 +595,9 @@ describe("External Service Unit Tests - PT25", () => {
     it("should throw error if report not found", async () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue(null);
 
-      await expect(externalService.assignReportToExternal(999, 2, 1, 501))
-        .rejects
-        .toThrow(NotFoundError);
+      await expect(
+        externalService.assignReportToExternal(999, 2, 1, 501)
+      ).rejects.toThrow(NotFoundError);
     });
 
     it("should throw error if user not assigned to report", async () => {
@@ -597,9 +609,9 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
 
-      await expect(externalService.assignReportToExternal(1, 2, 1, 501))
-        .rejects
-        .toThrow(ForbiddenError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 1, 501)
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it("should throw error if company not found", async () => {
@@ -612,9 +624,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
       mockExternalCompanyRepo.findById.mockResolvedValue(null);
 
-      await expect(externalService.assignReportToExternal(1, 2, 999, 501))
-        .rejects
-        .toThrow(NotFoundError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 999, 501)
+      ).rejects.toThrow(NotFoundError);
     });
 
     it("should throw error if maintainer required but not provided", async () => {
@@ -636,9 +648,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
 
-      await expect(externalService.assignReportToExternal(1, 2, 1, null))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 1, null)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if maintainer provided but company has no platform access", async () => {
@@ -658,9 +670,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
 
-      await expect(externalService.assignReportToExternal(1, 2, 2, 501))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 2, 501)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if report status is not ASSIGNED", async () => {
@@ -672,9 +684,9 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
 
-      await expect(externalService.assignReportToExternal(1, 2, 1, 501))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 1, 501)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if report already assigned to external", async () => {
@@ -688,9 +700,9 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockReportRepo.findByIdWithRelations.mockResolvedValue(mockReport);
 
-      await expect(externalService.assignReportToExternal(1, 2, 1, 501))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 1, 501)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if maintainer not found", async () => {
@@ -712,9 +724,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockUserRepo.findById.mockResolvedValue(null);
 
-      await expect(externalService.assignReportToExternal(1, 2, 1, 501))
-        .rejects
-        .toThrow(NotFoundError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 1, 501)
+      ).rejects.toThrow(NotFoundError);
     });
 
     it("should throw error if user is not external maintainer", async () => {
@@ -734,7 +746,7 @@ describe("External Service Unit Tests - PT25", () => {
 
       const mockUser = {
         id: 501,
-        role: Role.ADMINISTRATOR,
+        role: [Role.ADMINISTRATOR],
         externalCompanyId: 1,
       };
 
@@ -742,9 +754,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockUserRepo.findById.mockResolvedValue(mockUser);
 
-      await expect(externalService.assignReportToExternal(1, 2, 1, 501))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 1, 501)
+      ).rejects.toThrow(BadRequestError);
     });
 
     it("should throw error if maintainer does not belong to company", async () => {
@@ -764,7 +776,7 @@ describe("External Service Unit Tests - PT25", () => {
 
       const mockMaintainer = {
         id: 501,
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         externalCompanyId: 2,
       };
 
@@ -772,9 +784,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockUserRepo.findById.mockResolvedValue(mockMaintainer);
 
-      await expect(externalService.assignReportToExternal(1, 2, 1, 501))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.assignReportToExternal(1, 2, 1, 501)
+      ).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -795,7 +807,7 @@ describe("External Service Unit Tests - PT25", () => {
               first_name: "Marco",
               last_name: "Bianchi",
               email: "marco@enelx.com",
-              role: Role.EXTERNAL_MAINTAINER,
+              role: [Role.EXTERNAL_MAINTAINER],
             },
           ],
         },
@@ -856,17 +868,21 @@ describe("External Service Unit Tests - PT25", () => {
               first_name: "Marco",
               last_name: "Bianchi",
               email: "marco@enelx.com",
-              role: Role.EXTERNAL_MAINTAINER,
+              role: [Role.EXTERNAL_MAINTAINER],
             },
           ],
         },
       ];
 
-      mockExternalCompanyRepo.findByPlatformAccess.mockResolvedValue(mockCompanies);
+      mockExternalCompanyRepo.findByPlatformAccess.mockResolvedValue(
+        mockCompanies
+      );
 
       const result = await externalService.getExternalCompaniesWithAccess();
 
-      expect(mockExternalCompanyRepo.findByPlatformAccess).toHaveBeenCalledWith(true);
+      expect(mockExternalCompanyRepo.findByPlatformAccess).toHaveBeenCalledWith(
+        true
+      );
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe("Enel X");
       expect(result[0].platformAccess).toBe(true);
@@ -892,7 +908,9 @@ describe("External Service Unit Tests - PT25", () => {
         },
       ];
 
-      mockExternalCompanyRepo.findByPlatformAccess.mockResolvedValue(mockCompanies);
+      mockExternalCompanyRepo.findByPlatformAccess.mockResolvedValue(
+        mockCompanies
+      );
 
       const result = await externalService.getExternalCompaniesWithAccess();
 
@@ -911,7 +929,7 @@ describe("External Service Unit Tests - PT25", () => {
           first_name: "Marco",
           last_name: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: {
             id: 1,
             name: "Enel X",
@@ -924,7 +942,7 @@ describe("External Service Unit Tests - PT25", () => {
           first_name: "Laura",
           last_name: "Rossi",
           email: "laura@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: {
             id: 1,
             name: "Enel X",
@@ -934,11 +952,15 @@ describe("External Service Unit Tests - PT25", () => {
         },
       ];
 
-      mockUserRepo.findExternalMaintainersWithCompany.mockResolvedValue(mockMaintainers);
+      mockUserRepo.findExternalMaintainersWithCompany.mockResolvedValue(
+        mockMaintainers
+      );
 
       const result = await externalService.getAllExternalMaintainers();
 
-      expect(mockUserRepo.findExternalMaintainersWithCompany).toHaveBeenCalled();
+      expect(
+        mockUserRepo.findExternalMaintainersWithCompany
+      ).toHaveBeenCalled();
       expect(result).toHaveLength(2);
       expect(result[0].firstName).toBe("Marco");
       expect(result[1].firstName).toBe("Laura");
@@ -951,7 +973,7 @@ describe("External Service Unit Tests - PT25", () => {
           first_name: "Marco",
           last_name: "Bianchi",
           email: "marco@enelx.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: {
             id: 1,
             name: "Enel X",
@@ -964,12 +986,14 @@ describe("External Service Unit Tests - PT25", () => {
           first_name: "Invalid",
           last_name: "User",
           email: "invalid@test.com",
-          role: Role.EXTERNAL_MAINTAINER,
+          role: [Role.EXTERNAL_MAINTAINER],
           externalCompany: null,
         },
       ];
 
-      mockUserRepo.findExternalMaintainersWithCompany.mockResolvedValue(mockMaintainers);
+      mockUserRepo.findExternalMaintainersWithCompany.mockResolvedValue(
+        mockMaintainers
+      );
 
       const result = await externalService.getAllExternalMaintainers();
 
@@ -988,7 +1012,7 @@ describe("External Service Unit Tests - PT25", () => {
         first_name: "Marco",
         last_name: "Bianchi",
         email: "marco@enelx.com",
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
         externalCompany: {
           id: 1,
           name: "Enel X",
@@ -997,17 +1021,23 @@ describe("External Service Unit Tests - PT25", () => {
         },
       };
 
-      mockUserRepo.findExternalMaintainerByIdWithCompany.mockResolvedValue(mockMaintainer);
+      mockUserRepo.findExternalMaintainerByIdWithCompany.mockResolvedValue(
+        mockMaintainer
+      );
 
       const result = await externalService.getExternalMaintainerById(501);
 
-      expect(mockUserRepo.findExternalMaintainerByIdWithCompany).toHaveBeenCalledWith(501);
+      expect(
+        mockUserRepo.findExternalMaintainerByIdWithCompany
+      ).toHaveBeenCalledWith(501);
       expect(result).not.toBeNull();
       expect(result?.firstName).toBe("Marco");
     });
 
     it("should return null if maintainer not found", async () => {
-      mockUserRepo.findExternalMaintainerByIdWithCompany.mockResolvedValue(null);
+      mockUserRepo.findExternalMaintainerByIdWithCompany.mockResolvedValue(
+        null
+      );
 
       const result = await externalService.getExternalMaintainerById(999);
 
@@ -1022,7 +1052,7 @@ describe("External Service Unit Tests - PT25", () => {
     it("should delete external maintainer successfully", async () => {
       const mockMaintainer = {
         id: 501,
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
       };
 
       mockUserRepo.findById.mockResolvedValue(mockMaintainer);
@@ -1052,7 +1082,7 @@ describe("External Service Unit Tests - PT25", () => {
     it("should return false if user is not an external maintainer", async () => {
       const mockUser = {
         id: 2,
-        role: Role.ADMINISTRATOR,
+        role: [Role.ADMINISTRATOR],
       };
 
       mockUserRepo.findById.mockResolvedValue(mockUser);
@@ -1065,7 +1095,7 @@ describe("External Service Unit Tests - PT25", () => {
     it("should throw error if maintainer has assigned reports", async () => {
       const mockMaintainer = {
         id: 501,
-        role: Role.EXTERNAL_MAINTAINER,
+        role: [Role.EXTERNAL_MAINTAINER],
       };
 
       const mockReports = [
@@ -1076,9 +1106,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockUserRepo.findById.mockResolvedValue(mockMaintainer);
       mockReportRepo.findAssignedToUser.mockResolvedValue(mockReports);
 
-      await expect(externalService.deleteExternalMaintainer(501))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(
+        externalService.deleteExternalMaintainer(501)
+      ).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -1105,9 +1135,9 @@ describe("External Service Unit Tests - PT25", () => {
     it("should throw error if company not found", async () => {
       mockExternalCompanyRepo.findById.mockResolvedValue(null);
 
-      await expect(externalService.deleteExternalCompany(999))
-        .rejects
-        .toThrow(NotFoundError);
+      await expect(externalService.deleteExternalCompany(999)).rejects.toThrow(
+        NotFoundError
+      );
     });
 
     it("should throw error if company has maintainers", async () => {
@@ -1125,9 +1155,9 @@ describe("External Service Unit Tests - PT25", () => {
 
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
 
-      await expect(externalService.deleteExternalCompany(1))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(externalService.deleteExternalCompany(1)).rejects.toThrow(
+        BadRequestError
+      );
     });
 
     it("should throw error if delete operation fails", async () => {
@@ -1140,9 +1170,9 @@ describe("External Service Unit Tests - PT25", () => {
       mockExternalCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockExternalCompanyRepo.deleteById.mockResolvedValue(false);
 
-      await expect(externalService.deleteExternalCompany(1))
-        .rejects
-        .toThrow(BadRequestError);
+      await expect(externalService.deleteExternalCompany(1)).rejects.toThrow(
+        BadRequestError
+      );
     });
   });
 });

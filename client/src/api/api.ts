@@ -1,3 +1,41 @@
+// Geocoding and report search by bbox
+export async function geocodeAddress(address: string, zoom: number = 16) {
+  // Manual URL encoding to satisfy OpenAPI validator
+  const encodedAddress = encodeURIComponent(address);
+  const res = await fetch(
+    `${API_PREFIX}/geocode?address=${encodedAddress}&zoom=${zoom}`
+  );
+  if (!res.ok) {
+    let data: any = null;
+    try {
+      data = await res.json();
+    } catch (e) {
+      // ignore
+    }
+    // If the backend provides a message about not in Turin or similar, use a friendly message
+    const msg = (data?.message ?? "").toLowerCase();
+    if (
+      msg.includes("not in turin") ||
+      msg.includes("not in allowed area") ||
+      msg.includes("geocoding error") ||
+      msg.includes("geocoding service error")
+    ) {
+      throw new Error("Invalid address: please enter a location within Turin.");
+    }
+    throw new Error("Invalid address: please enter a location within Turin.");
+  }
+  return res.json();
+}
+
+export async function getReportsByBbox(bbox: string) {
+  const params = new URLSearchParams({ bbox });
+  const res = await fetch(`${API_PREFIX}/reports?${params.toString()}`);
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || "Failed to fetch reports by bbox");
+  }
+  return res.json();
+}
 // Notification API
 export async function getNotifications(): Promise<any[]> {
   const res = await fetch(`${API_PREFIX}/notifications`, {
@@ -25,17 +63,17 @@ import type {
   ExternalCompanyResponse,
   ExternalMaintainerResponse,
 } from "../../../shared/ExternalTypes";
-import type { 
+import type {
   Report,
   CreateReportResponse,
   InternalNote,
   CreateInternalNoteRequest,
-  CreateInternalNoteResponse
+  CreateInternalNoteResponse,
 } from "../types/report.types";
 
 export const API_PREFIX = import.meta.env.VITE_API_URL || "/api";
 
-async function handleResponse<T>(res: Response): Promise<T> {
+export async function handleResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   let data: any = null;
   try {
@@ -123,6 +161,25 @@ export async function deleteMunicipalityUser(userId: number): Promise<void> {
     credentials: "include",
   });
   await handleResponse<unknown>(res);
+}
+
+export async function updateMunicipalityUser(
+  userId: number,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    roles?: string[];
+  }
+): Promise<MunicipalityUserResponse> {
+  const res = await fetch(`${API_PREFIX}/admin/municipality-users/${userId}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<MunicipalityUserResponse>(res);
 }
 
 // ADMINISTRATION API -(external company)
@@ -248,6 +305,22 @@ export async function getReports(): Promise<Report[]> {
     credentials: "include",
   });
   return handleResponse<Report[]>(res);
+}
+
+export async function getMyReports(): Promise<Report[]> {
+  const res = await fetch(`${API_PREFIX}/reports/mine`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<Report[]>(res);
+}
+
+export async function getReportById(reportId: number): Promise<Report> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<Report>(res);
 }
 
 // CITIZEN PROFILE API
@@ -429,7 +502,7 @@ export async function createInternalNote(
   return handleResponse<CreateInternalNoteResponse>(res);
 }
 
-export async function getInternalNotes( 
+export async function getInternalNotes(
   reportId: number
 ): Promise<InternalNote[]> {
   const res = await fetch(`${API_PREFIX}/reports/${reportId}/internal-notes`, {
@@ -437,8 +510,7 @@ export async function getInternalNotes(
     credentials: "include",
   });
   return handleResponse<InternalNote[]>(res);
-} 
-
+}
 
 export default {
   getSession,
@@ -449,6 +521,7 @@ export default {
   listMunicipalityUsers,
   createReport,
   getReports,
+  getMyReports,
   getPendingReports,
   getAssignableTechnicals,
   approveReport,
@@ -459,4 +532,5 @@ export default {
   deleteCitizenPhoto,
   deleteMunicipalityUser,
   getNotifications,
+  updateMunicipalityUser,
 };

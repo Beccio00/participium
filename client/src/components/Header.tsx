@@ -1,16 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Navbar, Container, Nav, Button, Badge, Image } from "react-bootstrap";
 import { useAuth } from "../hooks/useAuth";
-import { MUNICIPALITY_AND_EXTERNAL_ROLES, getRoleLabel, TECHNICIAN_ROLES } from "../utils/roles";
+import { 
+  MUNICIPALITY_AND_EXTERNAL_ROLES, 
+  getRoleLabel, 
+  TECHNICIAN_ROLES,
+  userHasRole,
+  userHasAnyRole,
+} from "../utils/roles";
 import {
   PersonCircle,
-  ArrowLeft,
   GearFill,
   BellFill,
+  Telegram,
 } from "react-bootstrap-icons";
 import { getNotifications } from "../api/api";
 import NotificationModal from "./NotificationModal";
+import TelegramModal from "./TelegramModal";
 import ReportDetailsModal from "../features/reports/ReportDetailsModal";
 import { getReports } from "../api/api";
 
@@ -22,9 +29,9 @@ interface HeaderProps {
 function canUserSeeNotifications(user: any, isAuthenticated: boolean): boolean {
   if (!isAuthenticated || !user) return false;
   return (
-    user.role === "CITIZEN" ||
-    TECHNICIAN_ROLES.includes(user.role) ||
-    user.role === "EXTERNAL_MAINTAINER"
+    userHasRole(user, "CITIZEN") ||
+    userHasAnyRole(user, TECHNICIAN_ROLES) ||
+    userHasRole(user, "EXTERNAL_MAINTAINER")
   );
 }
 
@@ -47,6 +54,36 @@ function getUserPhoto(user: any): string | undefined {
   return normalizeMinioUrl(photoRaw) ?? undefined;
 }
 
+// Shared styles for header buttons
+const headerIconButtonStyle = {
+  color: "white",
+  fontSize: "1.25rem",
+  padding: "0.25rem",
+  cursor: "pointer",
+};
+
+// Component: Header Icon Button (reusable)
+function HeaderIconButton({
+  onClick,
+  icon,
+  label,
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="border-0 bg-transparent d-flex align-items-center justify-content-center"
+      style={headerIconButtonStyle}
+      aria-label={label}
+    >
+      {icon}
+    </button>
+  );
+}
+
 // Component: User Avatar
 function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
   const photo = getUserPhoto(user);
@@ -65,7 +102,13 @@ function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
   return (
     <div style={avatarStyle}>
       {photo ? (
-        <Image src={photo} roundedCircle width={size} height={size} alt="avatar" />
+        <Image
+          src={photo}
+          roundedCircle
+          width={size}
+          height={size}
+          alt="avatar"
+        />
       ) : (
         <PersonCircle />
       )}
@@ -77,23 +120,15 @@ function UserAvatar({ user, size = 40 }: { user: any; size?: number }) {
 function NotificationButton({
   onClick,
   notificationCount,
-  isMobile = false,
 }: {
   onClick: () => void;
   notificationCount: number;
-  isMobile?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       className="border-0 bg-transparent d-flex align-items-center justify-content-center position-relative"
-      style={{
-        color: "white",
-        fontSize: "1.25rem",
-        padding: "0.25rem",
-        marginLeft: isMobile ? "0" : "0.5rem",
-        cursor: "pointer",
-      }}
+      style={headerIconButtonStyle}
       aria-label="Show notifications"
     >
       <BellFill />
@@ -125,12 +160,54 @@ function NotificationButton({
   );
 }
 
+// Component: User Action Icons (Settings, Telegram, Notifications)
+function UserActionIcons({
+  user,
+  isAuthenticated,
+  notificationCount,
+  onSettingsClick,
+  onTelegramClick,
+  onNotificationsClick,
+}: {
+  user: any;
+  isAuthenticated: boolean;
+  notificationCount: number;
+  onSettingsClick: () => void;
+  onTelegramClick: () => void;
+  onNotificationsClick: () => void;
+}) {
+  return (
+    <>
+      {userHasRole(user, "CITIZEN") && (
+        <HeaderIconButton
+          onClick={onSettingsClick}
+          icon={<GearFill />}
+          label="Account settings"
+        />
+      )}
+      {userHasRole(user, "CITIZEN") && (
+        <HeaderIconButton
+          onClick={onTelegramClick}
+          icon={<Telegram />}
+          label="Telegram settings"
+        />
+      )}
+      {canUserSeeNotifications(user, isAuthenticated) && (
+        <NotificationButton
+          onClick={onNotificationsClick}
+          notificationCount={notificationCount}
+        />
+      )}
+    </>
+  );
+}
+
 export default function Header({ showBackToHome = false }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationCount, setNotificationCount] = useState(0);
 
-  // Carica e salva le notifiche lette in localStorage
+  // Load and save read notifications in localStorage
   const [readNotificationIds, setReadNotificationIds] = useState<number[]>(
     () => {
       const saved = localStorage.getItem("readNotificationIds");
@@ -138,7 +215,13 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     }
   );
 
-  // Salva le notifiche lette in localStorage quando cambiano
+  // Use ref to avoid re-creating interval when readNotificationIds changes
+  const readNotificationIdsRef = useRef(readNotificationIds);
+  useEffect(() => {
+    readNotificationIdsRef.current = readNotificationIds;
+  }, [readNotificationIds]);
+
+  // Save read notifications in localStorage when they change
   useEffect(() => {
     localStorage.setItem(
       "readNotificationIds",
@@ -146,49 +229,74 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     );
   }, [readNotificationIds]);
 
-  // Polling per le notifiche
+  // Polling function as a callback to avoid recreating on each render
+  const pollNotifications = useCallback(async () => {
+    if (!canUserSeeNotifications(user, isAuthenticated)) {
+      setNotifications([]);
+      setNotificationCount(0);
+      return;
+    }
+
+    try {
+      const notifs = await getNotifications();
+      
+      // Clean up orphan IDs from localStorage (IDs that no longer exist in server)
+      const serverIds = notifs.map((n) => n.id);
+      const currentReadIds = readNotificationIdsRef.current;
+      const validReadIds = currentReadIds.filter((id) => serverIds.includes(id));
+      if (validReadIds.length !== currentReadIds.length) {
+        setReadNotificationIds(validReadIds);
+      }
+      
+      // Filter out already read notifications
+      const unread = notifs.filter(
+        (n) => !validReadIds.includes(n.id)
+      );
+      setNotifications(unread);
+      setNotificationCount(unread.length);
+    } catch {
+      setNotifications([]);
+      setNotificationCount(0);
+    }
+  }, [isAuthenticated, user]);
+
+  // Polling for notifications - only depends on pollNotifications callback
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
-    
-    async function pollNotifications() {
-      if (!canUserSeeNotifications(user, isAuthenticated)) {
-        setNotifications([]);
-        setNotificationCount(0);
-        return;
-      }
 
-      try {
-        const notifs = await getNotifications();
-        const unread = notifs.filter((n) => !readNotificationIds.includes(n.id));
-        setNotifications(unread);
-        setNotificationCount(unread.length);
-      } catch {
-        setNotifications([]);
-        setNotificationCount(0);
-      }
-    }
-    
     pollNotifications();
     interval = setInterval(pollNotifications, 10000); // ogni 10s
+    
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isAuthenticated, user, readNotificationIds]);
-  
+  }, [pollNotifications]);
+
+  // Re-filter notifications when readNotificationIds changes (without refetching)
+  useEffect(() => {
+    setNotifications((prev) => {
+      const filtered = prev.filter((n) => !readNotificationIds.includes(n.id));
+      setNotificationCount(filtered.length);
+      return filtered;
+    });
+  }, [readNotificationIds]);
+
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
+
   useEffect(() => {
     // Carica i report solo se il cittadino è loggato
-    if (isAuthenticated && user?.role === "CITIZEN") {
+    if (isAuthenticated && userHasRole(user, "CITIZEN")) {
       getReports()
         .then(setReports)
         .catch(() => {});
     }
   }, [isAuthenticated, user]);
 
-  // Funzione per aprire il modale report dalla notifica
+  // Function to open the report modal from the notification
   const handleOpenReportFromNotification = async (reportId: number) => {
     setShowNotifications(false);
     markNotificationAsRead(reportId);
@@ -200,7 +308,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
   const markNotificationAsRead = (reportId: number) => {
     const notif = notifications.find((n) => n.reportId === reportId);
     if (!notif) return;
-    
+
     setReadNotificationIds((prev) => [...prev, notif.id]);
     setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
     setNotificationCount((prev) => Math.max(0, prev - 1));
@@ -219,7 +327,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     } catch {
       // fallback: usa lo stato locale se la fetch fallisce
     }
-    
+
     const report = reports.find((r) => r.id === reportId);
     if (report) {
       setSelectedReport(report);
@@ -249,14 +357,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
 
   const handleGoToLogin = () => navigate("/login");
   const handleGoToSignup = () => navigate("/signup");
-  const handleBackHome = () => {
-    const shouldLogout = user?.role === "ADMINISTRATOR" || user?.role === "TECHNICAL_OFFICE";
-    if (shouldLogout) {
-      handleLogout();
-      return;
-    }
-    navigate("/");
-  };
+  const handleBackHome = () => navigate("/");
 
   const navbarStyle = {
     background:
@@ -298,14 +399,14 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
       >
         <Container
           fluid
-          className="px-3 px-md-4"
+          className="px-2 px-sm-3 px-md-4"
           style={{ maxWidth: "1200px" }}
         >
           <div
-            className="d-flex align-items-center justify-content-between w-100"
-            style={{ minHeight: "60px" }}
+            className="d-flex align-items-center justify-content-between w-100 flex-wrap"
+            style={{ minHeight: "60px", rowGap: "0.5rem" }}
           >
-            <Navbar.Brand className="text-white mb-0">
+            <Navbar.Brand className="text-white mb-0" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "2px" }}
               >
@@ -334,7 +435,7 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
 
             {/* User info visible always on desktop and mobile, outside the burger */}
             {isAuthenticated && user && !showBackToHome && (
-              <div className="d-flex align-items-center gap-2 d-lg-none">
+              <div className="d-flex align-items-center gap-1 gap-md-2 d-lg-none">
                 <div className="d-flex align-items-center gap-2">
                   <UserAvatar user={user} size={32} />
                   <div className="d-flex flex-column">
@@ -346,95 +447,36 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                     </div>
                   </div>
                 </div>
-                {user.role === "CITIZEN" && (
-                  <button
-                    onClick={() => navigate("/me")}
-                    className="border-0 bg-transparent d-flex align-items-center justify-content-center"
-                    style={{
-                      color: "white",
-                      fontSize: "1.25rem",
-                      padding: "0.25rem",
-                      cursor: "pointer",
-                    }}
-                    aria-label="Account settings"
-                  >
-                    <GearFill />
-                  </button>
-                )}
-                {canUserSeeNotifications(user, isAuthenticated) && (
-                  <NotificationButton
-                    onClick={() => setShowNotifications(true)}
-                    notificationCount={notificationCount}
-                    isMobile={true}
-                  />
-                )}
+                <UserActionIcons
+                  user={user}
+                  isAuthenticated={isAuthenticated}
+                  notificationCount={notificationCount}
+                  onSettingsClick={() => navigate("/me")}
+                  onTelegramClick={() => setShowTelegramModal(true)}
+                  onNotificationsClick={() => setShowNotifications(true)}
+                />
               </div>
             )}
 
-            {showBackToHome && location.pathname !== "/admin" ? (
-              <button
-                onClick={handleBackHome}
-                disabled={loading}
-                className="d-lg-none border-0 bg-transparent d-flex align-items-center justify-content-center"
-                style={{
-                  color: "white",
-                  fontSize: "1.5rem",
-                  padding: "0.5rem",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.6 : 1,
-                }}
+            <Navbar.Toggle
+              aria-controls="navbar-nav"
+              className="d-lg-none border-0 d-flex align-items-center justify-content-center"
+              style={{ color: "white", padding: "0.5rem" }}
+            >
+              <span
+                style={{ color: "white", fontSize: "1.5rem", lineHeight: 1 }}
               >
-                <ArrowLeft size={24} />
-              </button>
-            ) : (
-              <Navbar.Toggle
-                aria-controls="navbar-nav"
-                className="d-lg-none border-0 d-flex align-items-center justify-content-center"
-                style={{ color: "white", padding: "0.5rem" }}
-              >
-                <span
-                  style={{ color: "white", fontSize: "1.5rem", lineHeight: 1 }}
-                >
-                  ☰
-                </span>
-              </Navbar.Toggle>
-            )}
+                ☰
+              </span>
+            </Navbar.Toggle>
           </div>
 
           <Navbar.Collapse id="navbar-nav">
-            <Nav className="ms-auto align-items-lg-center mt-3 mt-lg-0">
-              {showBackToHome && user?.role === "ADMINISTRATOR" ? (
-                <>
-                  {/* Logout button for admin both mobile and desktop */}
-                  <Button
-                    onClick={handleLogout}
-                    disabled={loading}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    {loading ? "Logging out..." : "Logout"}
-                  </Button>
-                </>
-              ) : showBackToHome ? (
-                <Button
-                  onClick={handleBackHome}
-                  disabled={loading}
-                  variant="light"
-                  size="sm"
-                  className="fw-semibold d-none d-lg-block"
-                  style={{ ...buttonStyle, color: "var(--primary)" }}
-                >
-                  {user?.role == "ADMINISTRATOR" ||
-                  user?.role == "TECHNICAL_OFFICE"
-                    ? "Logout"
-                    : "← Back to Home"}
-                </Button>
-              ) : isAuthenticated && user ? (
-                <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2">
-                  {/* User info only on desktop in the collapse */}
-                  <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-3">
+            <Nav className="ms-auto align-items-lg-center mt-2 mt-lg-0">
+              <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 gap-lg-4">
+                {/* Blocco 1: User info - always visible when logged in */}
+                {isAuthenticated && user && (
+                  <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-2">
                     {MUNICIPALITY_AND_EXTERNAL_ROLES.includes(user.role) && (
                       <Badge
                         bg="dark"
@@ -451,65 +493,88 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
                         <div style={userSurnameStyle}>{user.lastName}</div>
                       </div>
                     </div>
-                    {user.role === "CITIZEN" && (
-                      <button
-                        onClick={() => navigate("/me")}
-                        className="border-0 bg-transparent d-flex align-items-center justify-content-center"
-                        style={{
-                          color: "white",
-                          fontSize: "1.25rem",
-                          padding: "0.25rem",
-                          marginLeft: "0.5rem",
-                          cursor: "pointer",
-                        }}
-                        aria-label="Account settings"
+                  </div>
+                )}
+
+                {/* Blocco 2: Action icons */}
+                {isAuthenticated && user && (
+                  <div className="d-none d-lg-flex flex-lg-row align-items-lg-center gap-2">
+                    <UserActionIcons
+                      user={user}
+                      isAuthenticated={isAuthenticated}
+                      notificationCount={notificationCount}
+                      onSettingsClick={() => navigate("/me")}
+                      onTelegramClick={() => setShowTelegramModal(true)}
+                      onNotificationsClick={() => setShowNotifications(true)}
+                    />
+                  </div>
+                )}
+
+                {/* Blocco 3: Buttons on the right */}
+                {isAuthenticated && user ? (
+                  <div className="d-flex gap-2 w-100 d-lg-auto">
+                    {showBackToHome && (
+                      <Button
+                        onClick={handleBackHome}
+                        disabled={loading}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
                       >
-                        <GearFill />
-                      </button>
+                        Home
+                      </Button>
                     )}
-                    {/* Campanella notifiche desktop */}
-                    {canUserSeeNotifications(user, isAuthenticated) && (
-                      <NotificationButton
-                        onClick={() => setShowNotifications(true)}
-                        notificationCount={notificationCount}
-                        isMobile={false}
-                      />
+                    <Button
+                      onClick={handleLogout}
+                      disabled={loading}
+                      variant="light"
+                      size="sm"
+                      className="fw-semibold"
+                      style={{ ...buttonStyle, color: "var(--primary)" }}
+                    >
+                      {loading ? "Logging out..." : "Logout"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="d-flex gap-2 w-100 d-lg-auto">
+                    {showBackToHome && (
+                      <Button
+                        onClick={handleBackHome}
+                        disabled={loading}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Home
+                      </Button>
+                    )}
+                    {location.pathname !== "/login" && location.pathname !== "/verify-email" && (
+                      <Button
+                        onClick={handleGoToLogin}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Login
+                      </Button>
+                    )}
+                    {location.pathname !== "/signup" && location.pathname !== "/verify-email" && (
+                      <Button
+                        onClick={handleGoToSignup}
+                        variant="light"
+                        size="sm"
+                        className="fw-semibold"
+                        style={{ ...buttonStyle, color: "var(--primary)" }}
+                      >
+                        Sign Up
+                      </Button>
                     )}
                   </div>
-                  {/* Logout button */}
-                  <Button
-                    onClick={handleLogout}
-                    disabled={loading}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold ms-lg-3"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    {loading ? "Logging out..." : "Logout"}
-                  </Button>
-                </div>
-              ) : (
-                <div className="d-flex flex-column flex-sm-row gap-2">
-                  <Button
-                    onClick={handleGoToLogin}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    Login
-                  </Button>
-                  <Button
-                    onClick={handleGoToSignup}
-                    variant="light"
-                    size="sm"
-                    className="fw-semibold"
-                    style={{ ...buttonStyle, color: "var(--primary)" }}
-                  >
-                    Sign Up
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </Nav>
           </Navbar.Collapse>
         </Container>
@@ -519,6 +584,10 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
         onHide={() => setShowNotifications(false)}
         onOpenReport={handleOpenReportFromNotification}
         notifications={notifications}
+      />
+      <TelegramModal
+        show={showTelegramModal}
+        onHide={() => setShowTelegramModal(false)}
       />
       {selectedReport && (
         <ReportDetailsModal

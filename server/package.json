@@ -58,7 +58,7 @@
     "build": "tsc",
     "start": "node dist/app/src/index.js",
     "dev": "nodemon src/index.ts",
-    "seed": "node dist/seed/seed.js",
+    "seed": "node dist/app/seed/seed.js",
     "db:sync": "typeorm schema:sync -d src/utils/AppDataSource.ts",
     "db:migration:generate": "typeorm migration:generate -d src/utils/AppDataSource.ts",
     "db:migration:run": "typeorm migration:run -d src/utils/AppDataSource.ts",
@@ -69,6 +69,7 @@
     "test:verbose": "jest --verbose",
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",
-    "test:e2e": "jest --testPathPattern=e2e"
+    "test:e2e": "jest --testPathPattern=e2e",
+    "test:e2e:silent": "jest  --reporters=jest-silent-reporter --testPathPattern=e2e"
   }
 }

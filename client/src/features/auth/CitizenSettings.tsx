@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, Form, Image, Alert, Spinner } from 'react-bootstrap';
+import React, { useEffect, useState, useRef } from 'react';
+import { Container, Row, Col, Form, Image, Alert, Spinner } from 'react-bootstrap';
 import { PersonCircle } from 'react-bootstrap-icons';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth } from '../../hooks/useAuth';
-import AuthRequiredModal from './AuthRequiredModal';
+import AccessRestricted from '../../components/AccessRestricted';
+import TelegramModal from '../../components/TelegramModal';
 import * as api from '../../api/api';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -30,11 +31,10 @@ export default function CitizenSettings() {
   const { isAuthenticated, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any | null>(null);
-  const [telegramUsername, setTelegramUsername] = useState('');
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -44,11 +44,10 @@ export default function CitizenSettings() {
   const [editing, setEditing] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setShowAuthModal(true);
-      setLoading(false);
       return;
     }
 
@@ -61,7 +60,6 @@ export default function CitizenSettings() {
         setFirstName(u.firstName || '');
         setLastName(u.lastName || '');
         setEmail(u.email || '');
-        setTelegramUsername(u.telegramUsername || '');
         setEmailNotificationsEnabled(!!u.emailNotificationsEnabled);
         setPhotoPreview(normalizeMinioUrl(u.photoUrl || u.photo || null));
       } catch (err) {
@@ -107,6 +105,10 @@ export default function CitizenSettings() {
       fd.append('photo', selectedFile);
       const res = await api.uploadCitizenPhoto(fd);
       setSelectedFile(null);
+      // Svuota il file input per sbloccare Save Changes
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       // backend returns { message, photo: { id, url, filename } }
       const photoUrl = res?.photo?.url || res?.url || res?.photoUrl || (res && (res.photoUrl || res.photo?.url)) || null;
       if (photoUrl) {
@@ -128,12 +130,31 @@ export default function CitizenSettings() {
     }
   };
 
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    // Ripristina preview alla foto del profilo o null
+    if (profile) {
+      setPhotoPreview(normalizeMinioUrl(profile.photoUrl || profile.photo || null));
+    } else {
+      setPhotoPreview(null);
+    }
+  };
+
   const handleDeletePhoto = async () => {
     clearMessages();
+    // Elimina solo se c'è una foto già sul server
+    if (!profile?.photoUrl && !profile?.photo) {
+      setErrorMessage('No photo to delete.');
+      return;
+    }
     try {
       setSaving(true);
       await api.deleteCitizenPhoto();
       setPhotoPreview(null);
+      setProfile((prev: any) => ({ ...(prev || {}), photo: null, photoUrl: null }));
       setSuccessMessage('Profile photo removed.');
       try { await refreshUser(); } catch (e) { /* ignore */ }
     } catch (err) {
@@ -162,7 +183,6 @@ export default function CitizenSettings() {
         firstName,
         lastName,
         email,
-        telegramUsername,
         emailNotificationsEnabled,
       };
       if (newPassword) payload.password = newPassword;
@@ -171,12 +191,12 @@ export default function CitizenSettings() {
       // If backend returned the updated user, use it to update local copy
       if (res && typeof res === 'object') {
         const updatedUser = (res.user || res);
-        setProfile((prev: any) => ({ ...(prev || {}), ...(updatedUser || {}), firstName, lastName, email, telegramUsername, emailNotificationsEnabled }));
+        setProfile((prev: any) => ({ ...(prev || {}), ...(updatedUser || {}), firstName, lastName, email, emailNotificationsEnabled }));
         // if response contains photo info, update preview
         const photoUrl = (updatedUser && (updatedUser.photoUrl || updatedUser.photo)) || null;
         if (photoUrl) setPhotoPreview(normalizeMinioUrl(photoUrl));
       } else {
-        setProfile((prev: any) => ({ ...(prev || {}), firstName, lastName, email, telegramUsername, emailNotificationsEnabled }));
+        setProfile((prev: any) => ({ ...(prev || {}), firstName, lastName, email, emailNotificationsEnabled }));
       }
       // refresh auth user so header reflects updates
       try { await refreshUser(); } catch (e) { /* ignore */ }
@@ -200,7 +220,6 @@ export default function CitizenSettings() {
       setFirstName(profile.firstName || '');
       setLastName(profile.lastName || '');
       setEmail(profile.email || '');
-      setTelegramUsername(profile.telegramUsername || '');
       setEmailNotificationsEnabled(!!profile.emailNotificationsEnabled);
       setPhotoPreview(normalizeMinioUrl(profile.photoUrl || profile.photo || null));
     }
@@ -215,42 +234,45 @@ export default function CitizenSettings() {
     </div>
   );
 
+  if (!isAuthenticated) {
+    return <AccessRestricted message="You need to be logged in as a citizen to access your settings." showLoginButton={true} />;
+  }
+
   return (
     <Container className="py-4">
       <Row className="justify-content-center">
         <Col xs={12} md={10} lg={8}>
-          <Card className="shadow-sm">
-            <Card.Body>
-              <div className="d-flex flex-column flex-md-row align-items-center gap-3 mb-3">
-                <div>
-                  <h3 className="mb-0">Account settings</h3>
-                  <small className="text-muted">Manage your profile, notifications and profile photo.</small>
-                </div>
-              </div>
+          <div className="text-center mb-4">
+            <h2 className="fw-bold">Account settings</h2>
+            <p className="text-muted mb-0">Manage your profile, notifications and profile photo.</p>
+          </div>
 
               {successMessage && <Alert variant="success" onClose={() => setSuccessMessage(null)} dismissible>{successMessage}</Alert>}
               {errorMessage && <Alert variant="danger" onClose={() => setErrorMessage(null)} dismissible>{errorMessage}</Alert>}
 
-              <Row className="g-3">
+              <Row className="g-4">
                 {/* Left column: avatar - always visible */}
-                <Col xs={12} md={4} className="d-flex flex-column align-items-center">
+                <Col xs={12} md={4} className="d-flex flex-column align-items-center" style={{ paddingRight: '2rem' }}>
                   <div className="text-center mb-2">
                     {photoPreview ? (
                       <Image src={photoPreview} roundedCircle width={120} height={120} alt="profile" style={{ objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: 120, height: 120, borderRadius: '50%', background: '#f1f3f5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6c757d', border: '1px solid #e9ecef' }}>
-                        <PersonCircle size={56} className="text-muted" />
+                      <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(169, 172, 176, 1)' }}>
+                        <PersonCircle size={56} style={{ color: 'rgba(169, 172, 176, 1)' }} />
                       </div>
                     )}
                   </div>
 
-                  <div className="w-100 d-flex flex-column align-items-center">
+                  <div className="mt-2 w-100 d-flex flex-column align-items-center">
                     {editing ? (
                       <>
-                        <Form.Control type="file" accept="image/*" onChange={handleFileChange} />
-                        <div className="d-flex gap-2 mt-2 w-100">
+                        <Form.Control type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} />
+                        <div className="d-flex w-100 mt-2">
                           <Button variant="primary" onClick={handleUpload} disabled={!selectedFile || saving} className="flex-fill">{saving ? 'Uploading...' : 'Upload'}</Button>
-                          <Button variant="danger" onClick={handleDeletePhoto} disabled={!photoPreview || saving}>Delete</Button>
+                        </div>
+                        <div className="d-flex gap-2 mt-2 w-100">
+                          <Button variant="secondary" onClick={handleClearFile} disabled={!selectedFile || saving} className="flex-fill">Clear</Button>
+                          <Button variant="danger" onClick={handleDeletePhoto} disabled={(!profile?.photoUrl && !profile?.photo) || !!selectedFile || saving} className="flex-fill">Delete</Button>
                         </div>
                         <small className="text-muted mt-2">Max size: 5 MB. Allowed: JPG, PNG.</small>
                       </>
@@ -263,38 +285,37 @@ export default function CitizenSettings() {
                   {!editing ? (
                     <div className="mb-3">
                       <Row className="mb-2">
-                        <Col xs={12} md={4}><strong>First name</strong></Col>
+                        <Col xs={12} md={4} className="text-muted">First name</Col>
                         <Col xs={12} md={8}>{firstName || <span className="text-muted">—</span>}</Col>
                       </Row>
                       <Row className="mb-2">
-                        <Col xs={12} md={4}><strong>Last name</strong></Col>
+                        <Col xs={12} md={4} className="text-muted">Last name</Col>
                         <Col xs={12} md={8}>{lastName || <span className="text-muted">—</span>}</Col>
                       </Row>
                       <Row className="mb-2">
-                        <Col xs={12} md={4}><strong>Email</strong></Col>
+                        <Col xs={12} md={4} className="text-muted">Email</Col>
                         <Col xs={12} md={8}>{email || <span className="text-muted">—</span>}</Col>
                       </Row>
                       <Row className="mb-2">
-                        <Col xs={12} md={4}><strong>Password</strong></Col>
+                        <Col xs={12} md={4} className="text-muted">Password</Col>
                         <Col xs={12} md={8}><span aria-hidden>••••••••</span></Col>
                       </Row>
                       <Row className="mb-2">
-                        <Col xs={12} md={4}><strong>Telegram</strong></Col>
-                        <Col xs={12} md={8}>{telegramUsername || <span className="text-muted">Not set</span>}</Col>
+                        <Col xs={12} md={4} className="text-muted">Telegram</Col>
+                        <Col xs={12} md={8}>{profile?.telegramUsername ? ('@' + profile.telegramUsername) : <span className="text-muted">Not connected</span>}</Col>
                       </Row>
-                      <div className="mt-3">
+                      <div className="mt-4">
                         <Button variant="primary" onClick={enterEditMode}>Modify</Button>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <Row>
+                      <Row className="mb-4">
                         <Col xs={12} md={6}>
                           <Input
                             label="First name"
                             value={firstName}
                             onChange={(e: any) => setFirstName(e.target.value)}
-                            helperText="Your given name"
                           />
                         </Col>
                         <Col xs={12} md={6}>
@@ -302,27 +323,29 @@ export default function CitizenSettings() {
                             label="Last name"
                             value={lastName}
                             onChange={(e: any) => setLastName(e.target.value)}
-                            helperText="Your family name"
                           />
                         </Col>
                       </Row>
 
-                      <Input
-                        label="Email address"
-                        type="email"
-                        value={email}
-                        onChange={(e: any) => setEmail(e.target.value)}
-                        helperText="Your email is used for notifications and login"
-                      />
+                      <div className="mb-4">
+                        <Input
+                          label="Email address"
+                          type="email"
+                          value={email}
+                          onChange={(e: any) => setEmail(e.target.value)}
+                          helperText="Your email is used for notifications and login"
+                        />
+                      </div>
 
-                      <Input
-                        label="Telegram username"
-                        value={telegramUsername}
-                        onChange={(e: any) => setTelegramUsername(e.target.value)}
-                        helperText="Your Telegram username (without @). Used for bot notifications."
-                      />
+                      <Form.Group className="mb-4">
+                        <div className="form-label">Telegram</div>
+                        <div className="d-flex align-items-center gap-3">
+                          <span className="text-muted">{profile?.telegramUsername ? ('@' + profile.telegramUsername) : 'Not connected'}</span>
+                          <Button className="outline-primary" size="sm" onClick={() => setShowTelegramModal(true)}>Manage</Button>
+                        </div>
+                      </Form.Group>
 
-                      <Form.Group className="mb-3">
+                      <Form.Group className="mb-4">
                         <Form.Check
                           type="switch"
                           id="email-notifications-switch"
@@ -330,17 +353,17 @@ export default function CitizenSettings() {
                           checked={emailNotificationsEnabled}
                           onChange={(e: any) => setEmailNotificationsEnabled(e.target.checked)}
                         />
-                        <Form.Text className="text-muted">Enable or disable email notifications for report updates.</Form.Text>
+                        <Form.Text className="text-muted d-block mt-2">Enable or disable email notifications for report updates.</Form.Text>
                       </Form.Group>
 
-                      <Row className="mb-3">
+                      <Row className="mb-4">
                         <Col xs={12} md={6}>
                           <Input
                             label="New password"
                             type="password"
                             value={newPassword}
                             onChange={(e: any) => setNewPassword(e.target.value)}
-                            helperText="Leave empty to keep your current password"
+                            helperText="Leave empty to keep current"
                           />
                         </Col>
                         <Col xs={12} md={6}>
@@ -353,17 +376,26 @@ export default function CitizenSettings() {
                         </Col>
                       </Row>
 
-                      <div className="d-flex gap-2">
-                        <Button type="button" variant="primary" isLoading={saving} onClick={handleSaveConfig}>Save changes</Button>
-                          <Button variant="ghost" onClick={() => {
+                      {selectedFile ? (
+                        <div className="mb-1">
+                          <small className="text-muted">You must upload or clear the profile picture before saving changes</small>
+                        </div>
+                      ) : null}
+
+                      <div className="d-flex gap-2 align-items-center">
+                        <Button type="button" variant="primary" isLoading={saving} onClick={handleSaveConfig} disabled={!!selectedFile || saving}>Save changes</Button>
+                        <Button variant="secondary" onClick={() => {
                           // cancel edits and restore values
                           setSuccessMessage(null);
                           setErrorMessage(null);
+                          setSelectedFile(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
                           if (profile) {
                             setFirstName(profile.firstName || '');
                             setLastName(profile.lastName || '');
                             setEmail(profile.email || '');
-                            setTelegramUsername(profile.telegramUsername || '');
                             setEmailNotificationsEnabled(!!profile.emailNotificationsEnabled);
                             setPhotoPreview(normalizeMinioUrl(profile.photoUrl || profile.photo || null));
                           }
@@ -376,10 +408,8 @@ export default function CitizenSettings() {
                   )}
                 </Col>
               </Row>
-            </Card.Body>
-          </Card>
 
-          <AuthRequiredModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+          <TelegramModal show={showTelegramModal} onHide={() => setShowTelegramModal(false)} />
         </Col>
       </Row>
     </Container>

@@ -1,5 +1,7 @@
-import { Table, Badge } from 'react-bootstrap';
+import { useCallback } from 'react';
+import { Badge } from 'react-bootstrap';
 import { Trash } from 'react-bootstrap-icons';
+import DataTable, { type Column } from '../../components/ui/DataTable';
 import type { ExternalCompanyResponse } from '../../types';
 
 interface CompaniesTableProps {
@@ -7,75 +9,76 @@ interface CompaniesTableProps {
   onDelete: (companyId: number) => void;
 }
 
+// Nested component: Platform access badge
+function PlatformAccessBadge({ platformAccess }: { platformAccess: boolean }) {
+  return platformAccess ? (
+    <Badge bg="success">Enabled</Badge>
+  ) : (
+    <Badge bg="secondary">No Access</Badge>
+  );
+}
+
+// Nested component: Categories display
+function CategoriesList({ categories }: { categories: string[] }) {
+  return (
+    <div className="d-flex flex-wrap gap-1">
+      {categories.map((cat, idx) => (
+        <Badge key={idx} bg="light" text="dark" className="border">
+          {String(cat).toLowerCase().replace(/_/g, ' ')}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
+// Column definitions
+const columns: Column<ExternalCompanyResponse>[] = [
+  {
+    key: 'name',
+    header: 'Company Name',
+    minWidth: '180px',
+    render: (company) => <span className="fw-bold">{company.name}</span>,
+  },
+  {
+    key: 'platformAccess',
+    header: 'Platform Access',
+    minWidth: '140px',
+    render: (company) => <PlatformAccessBadge platformAccess={company.platformAccess} />,
+  },
+  {
+    key: 'categories',
+    header: 'Categories',
+    minWidth: '200px',
+    render: (company) => <CategoriesList categories={company.categories} />,
+  },
+];
+
+// Delete button component
+function DeleteButton({ companyId, onDelete }: { companyId: number; onDelete: (id: number) => void }) {
+  return (
+    <button
+      onClick={() => onDelete(companyId)}
+      className="btn btn-sm btn-outline-danger border-0"
+      title="Delete Company"
+    >
+      <Trash />
+    </button>
+  );
+}
+
 export default function CompaniesTable({ companies, onDelete }: CompaniesTableProps) {
-  if (companies.length === 0) {
-    return (
-      <div className="table-responsive">
-        <Table hover className="align-middle">
-          <thead className="bg-light">
-            <tr>
-              <th>Company Name</th>
-              <th>Platform Access</th>
-              <th>Categories</th>
-              <th className="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={4} className="text-center py-4 text-muted">
-                No companies found.
-              </td>
-            </tr>
-          </tbody>
-        </Table>
-      </div>
-    );
-  }
+  const renderActions = useCallback(
+    (company: ExternalCompanyResponse) => <DeleteButton companyId={company.id} onDelete={onDelete} />,
+    [onDelete]
+  );
 
   return (
-    <div className="table-responsive">
-      <Table hover className="align-middle">
-        <thead className="bg-light">
-          <tr>
-            <th>Company Name</th>
-            <th>Platform Access</th>
-            <th>Categories</th>
-            <th className="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {companies.map((company) => (
-            <tr key={company.id}>
-              <td className="fw-bold">{company.name}</td>
-              <td>
-                {company.platformAccess ? (
-                  <Badge bg="success">Enabled</Badge>
-                ) : (
-                  <Badge bg="secondary">No Access</Badge>
-                )}
-              </td>
-              <td>
-                <div className="d-flex flex-wrap gap-1">
-                  {company.categories.map((cat, idx) => (
-                    <Badge key={idx} bg="light" text="dark" className="border">
-                      {String(cat).toLowerCase().replace(/_/g, ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </td>
-              <td className="text-end">
-                <button
-                  onClick={() => onDelete(company.id)}
-                  className="btn btn-sm btn-outline-danger border-0"
-                  title="Delete Company"
-                >
-                  <Trash />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+    <DataTable
+      data={companies}
+      columns={columns}
+      keyExtractor={(company) => company.id}
+      emptyMessage="No companies found."
+      actions={renderActions}
+    />
   );
 }

@@ -1,71 +1,109 @@
-import { Table, Badge } from 'react-bootstrap';
-import { Trash } from 'react-bootstrap-icons';
-import type { MunicipalityUserResponse } from '../../types';
-import { getRoleLabel } from '../../utils/roles';
+import { useCallback } from 'react';
+import { Badge } from "react-bootstrap";
+import { Trash } from "react-bootstrap-icons";
+import DataTable, { type Column } from "../../components/ui/DataTable";
+import type { MunicipalityUserResponse } from "../../types";
+import { getRoleLabel } from "../../utils/roles";
 
 interface InternalStaffTableProps {
   users: MunicipalityUserResponse[];
   onDelete: (userId: number) => void;
+  onEdit: (user: MunicipalityUserResponse) => void;
 }
 
-export default function InternalStaffTable({ users, onDelete }: InternalStaffTableProps) {
-  if (users.length === 0) {
-    return (
-      <div className="table-responsive">
-        <Table hover className="align-middle">
-          <thead className="bg-light">
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th className="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={4} className="text-center py-4 text-muted">
-                No staff found.
-              </td>
-            </tr>
-          </tbody>
-        </Table>
-      </div>
-    );
-  }
+// Name display component
+function NameDisplay({ firstName, lastName }: { firstName: string; lastName: string }) {
+  return (
+    <span className="fw-medium">
+      {firstName} {lastName}
+    </span>
+  );
+}
+
+// Roles display component
+function RolesBadges({ roles }: { roles: string[] }) {
+  return (
+    <>
+      {roles.map((role) => (
+        <Badge key={role} bg="primary" className="me-1">
+          {getRoleLabel(role)}
+        </Badge>
+      ))}
+    </>
+  );
+}
+
+// Action buttons component
+function ActionButtons({
+  user,
+  onEdit,
+  onDelete,
+}: {
+  user: MunicipalityUserResponse;
+  onEdit: (user: MunicipalityUserResponse) => void;
+  onDelete: (userId: number) => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-primary me-2"
+        onClick={() => onEdit(user)}
+        title="Edit user"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger border-0"
+        onClick={() => onDelete(user.id)}
+        aria-label="Delete user"
+      >
+        <Trash />
+      </button>
+    </>
+  );
+}
+
+// Column definitions
+const columns: Column<MunicipalityUserResponse>[] = [
+  {
+    key: "name",
+    header: "Name",
+    minWidth: "150px",
+    render: (user) => <NameDisplay firstName={user.firstName} lastName={user.lastName} />,
+  },
+  {
+    key: "email",
+    header: "Email",
+    minWidth: "200px",
+    render: (user) => user.email,
+  },
+  {
+    key: "roles",
+    header: "Roles",
+    minWidth: "150px",
+    render: (user) => <RolesBadges roles={user.role} />,
+  },
+];
+
+export default function InternalStaffTable({
+  users,
+  onDelete,
+  onEdit,
+}: InternalStaffTableProps) {
+  const renderActions = useCallback(
+    (user: MunicipalityUserResponse) => <ActionButtons user={user} onEdit={onEdit} onDelete={onDelete} />,
+    [onEdit, onDelete]
+  );
 
   return (
-    <div className="table-responsive">
-      <Table hover className="align-middle">
-        <thead className="bg-light">
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th className="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td className="fw-medium">
-                {user.firstName} {user.lastName}
-              </td>
-              <td>{user.email}</td>
-              <td>
-                <Badge bg="primary">{getRoleLabel(user.role)}</Badge>
-              </td>
-              <td className="text-end">
-                <button
-                  onClick={() => onDelete(user.id)}
-                  className="btn btn-sm btn-outline-danger border-0"
-                >
-                  <Trash />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+    <DataTable
+      data={users}
+      columns={columns}
+      keyExtractor={(user) => user.id}
+      emptyMessage="No staff found."
+      actions={renderActions}
+    />
   );
 }

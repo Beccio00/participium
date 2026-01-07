@@ -30,7 +30,8 @@ jest.mock("../../../src/repositories/ReportRepository", () => ({
     findPending: mockReportFindPending,
     update: mockReportUpdate,
     findAssignedToUser: mockReportFindAssignedToUser, // Added
-    findAssignedToExternalMaintainer: mockReportFindAssignedToExternalMaintainer, // Added
+    findAssignedToExternalMaintainer:
+      mockReportFindAssignedToExternalMaintainer, // Added
   })),
 }));
 
@@ -71,12 +72,10 @@ import {
   approveReport,
   rejectReport,
   getAssignableTechnicalsForReport,
-  getReportById,
-  getAssignedReportsService,
-  getAssignedReportsForExternalMaintainer,
   updateReportStatus,
   TechnicalType,
 } from "../../../src/services/reportService";
+import * as notificationService from "../../../src/services/notificationService";
 
 describe("reportService", () => {
   let reportService: any;
@@ -216,12 +215,8 @@ describe("reportService", () => {
     });
 
     it("should throw UnprocessableEntityError if technical has wrong role", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(
-        createMockReportEntity({
-          category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
-        })
-      );
-      mockUserFindById.mockResolvedValue({ id: 99, role: "WRONG_ROLE" });
+      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity({ category: ReportCategory.WATER_SUPPLY_DRINKING_WATER }));
+      mockUserFindById.mockResolvedValue({ id: 99, role: ["WRONG_ROLE"] });
 
       await expect(approveReport(1, 2, 99)).rejects.toThrow(
         UnprocessableEntityError
@@ -236,7 +231,7 @@ describe("reportService", () => {
       });
       mockUserFindById.mockResolvedValue({
         id: 99,
-        role: TechnicalType.WASTE_MANAGEMENT,
+        role: [TechnicalType.WASTE_MANAGEMENT],
       });
 
       await expect(approveReport(1, 2, 99)).rejects.toThrow(
@@ -245,19 +240,12 @@ describe("reportService", () => {
     });
 
     it("should succeed, update status, and notify", async () => {
-      mockReportFindByIdWithRelations.mockResolvedValue(
-        createMockReportEntity()
-      );
-      mockUserFindById.mockResolvedValue({
-        id: 99,
-        role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
-      });
-      mockReportUpdate.mockResolvedValue(
-        createMockReportEntity({
-          status: ReportStatus.ASSIGNED,
-          assignedOfficerId: 99,
-        })
-      );
+      mockReportFindByIdWithRelations.mockResolvedValue(createMockReportEntity());
+      mockUserFindById.mockResolvedValue({ id: 99, role: [TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE] });
+      mockReportUpdate.mockResolvedValue(createMockReportEntity({ 
+        status: ReportStatus.ASSIGNED, 
+        assignedOfficerId: 99 
+      }));
 
       const res = await approveReport(1, 2, 99);
       expect(mockReportUpdate).toHaveBeenCalledWith(1, {
@@ -394,7 +382,7 @@ describe("reportService", () => {
       mockReportFindByIdWithRelations.mockResolvedValue(complexReport);
 
       const res = await getReportById(1, 1);
-      
+
       expect(res.externalHandler).toBeDefined();
       expect(res.externalHandler?.type).toBe("user");
       // @ts-ignore
@@ -476,7 +464,7 @@ describe("reportService", () => {
     });
   });
 
-  // --- 8. Update Report Status 
+  // --- 8. Update Report Status
   describe("updateReportStatus", () => {
     it("should throw NotFoundError if report missing", async () => {
       mockReportFindByIdWithRelations.mockResolvedValue(null);
@@ -973,6 +961,583 @@ describe("reportService", () => {
         // Public anonymity flag set
         expect(result.isAnonymous).toBe(true);
       });
+    });
+  });
+
+  // =========================
+  // getApprovedReports tests
+  // =========================
+  describe("getApprovedReports", () => {
+    const mockFindByStatusCategoryAndBounds = jest.fn();
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      // Mock the repository method
+      const ReportRepository =
+        require("../../../src/repositories/ReportRepository")
+          .ReportRepository as jest.MockedClass<any>;
+      ReportRepository.prototype.findByStatusCategoryAndBounds =
+        mockFindByStatusCategoryAndBounds;
+    });
+
+    it("should return all approved reports without filters", async () => {
+      const mockReports = [
+        {
+          id: 1,
+          title: "Report 1",
+          category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
+          status: ReportStatus.ASSIGNED,
+          latitude: 45.0731,
+          longitude: 7.686,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        },
+        {
+          id: 2,
+          title: "Report 2",
+          category: ReportCategory.WASTE_MANAGEMENT,
+          status: ReportStatus.IN_PROGRESS,
+          latitude: 45.0745,
+          longitude: 7.6875,
+          user: { id: 2 },
+          photos: [],
+          messages: [],
+        },
+      ];
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      const result = await getApprovedReports();
+
+      expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
+        [
+          ReportStatus.ASSIGNED,
+          ReportStatus.EXTERNAL_ASSIGNED,
+          ReportStatus.IN_PROGRESS,
+          ReportStatus.RESOLVED,
+        ],
+        undefined,
+        undefined
+      );
+      expect(result).toHaveLength(2);
+      expect(result[0].title).toBe("Report 1");
+      expect(result[1].title).toBe("Report 2");
+    });
+
+    it("should filter approved reports by category only", async () => {
+      const mockReports = [
+        {
+          id: 1,
+          title: "Water issue",
+          category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
+          status: ReportStatus.ASSIGNED,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        },
+      ];
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      const result = await getApprovedReports(
+        ReportCategory.WATER_SUPPLY_DRINKING_WATER
+      );
+
+      expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
+        expect.any(Array),
+        ReportCategory.WATER_SUPPLY_DRINKING_WATER,
+        undefined
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].category).toBe(
+        ReportCategory.WATER_SUPPLY_DRINKING_WATER
+      );
+    });
+
+    it("should filter approved reports by bounding box only", async () => {
+      const bbox = {
+        minLon: 7.5,
+        minLat: 45.0,
+        maxLon: 7.8,
+        maxLat: 45.2,
+      };
+
+      const mockReports = [
+        {
+          id: 1,
+          title: "Report in area",
+          latitude: 45.1,
+          longitude: 7.65,
+          status: ReportStatus.ASSIGNED,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        },
+      ];
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      const result = await getApprovedReports(undefined, bbox);
+
+      expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
+        expect.any(Array),
+        undefined,
+        bbox
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].latitude).toBe(45.1);
+      expect(result[0].longitude).toBe(7.65);
+    });
+
+    it("should filter approved reports by both category and bounding box", async () => {
+      const bbox = {
+        minLon: 7.5,
+        minLat: 45.0,
+        maxLon: 7.8,
+        maxLat: 45.2,
+      };
+
+      const mockReports = [
+        {
+          id: 1,
+          title: "Road maintenance issue",
+          category: ReportCategory.ROAD_MAINTENANCE,
+          latitude: 45.1,
+          longitude: 7.65,
+          status: ReportStatus.IN_PROGRESS,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        },
+      ];
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      const result = await getApprovedReports(
+        ReportCategory.ROAD_MAINTENANCE,
+        bbox
+      );
+
+      expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
+        expect.any(Array),
+        ReportCategory.ROAD_MAINTENANCE,
+        bbox
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].category).toBe(ReportCategory.ROAD_MAINTENANCE);
+      expect(result[0].latitude).toBe(45.1);
+    });
+
+    it("should return empty array when no reports match filters", async () => {
+      mockFindByStatusCategoryAndBounds.mockResolvedValue([]);
+
+      const result = await getApprovedReports(ReportCategory.WASTE_MANAGEMENT);
+
+      expect(result).toEqual([]);
+      expect(result).toHaveLength(0);
+    });
+
+    it("should only return reports with approved statuses", async () => {
+      const mockReports = [
+        {
+          id: 1,
+          title: "Assigned report",
+          status: ReportStatus.ASSIGNED,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        },
+        {
+          id: 2,
+          title: "External assigned report",
+          status: ReportStatus.EXTERNAL_ASSIGNED,
+          user: { id: 2 },
+          photos: [],
+          messages: [],
+        },
+        {
+          id: 3,
+          title: "In progress report",
+          status: ReportStatus.IN_PROGRESS,
+          user: { id: 3 },
+          photos: [],
+          messages: [],
+        },
+        {
+          id: 4,
+          title: "Resolved report",
+          status: ReportStatus.RESOLVED,
+          user: { id: 4 },
+          photos: [],
+          messages: [],
+        },
+      ];
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      await getApprovedReports();
+
+      // Verify that only these statuses are requested
+      const callArgs = mockFindByStatusCategoryAndBounds.mock.calls[0];
+      const statusesArg = callArgs[0];
+      expect(statusesArg).toContain(ReportStatus.ASSIGNED);
+      expect(statusesArg).toContain(ReportStatus.EXTERNAL_ASSIGNED);
+      expect(statusesArg).toContain(ReportStatus.IN_PROGRESS);
+      expect(statusesArg).toContain(ReportStatus.RESOLVED);
+      expect(statusesArg).not.toContain(ReportStatus.PENDING_APPROVAL);
+      expect(statusesArg).not.toContain(ReportStatus.REJECTED);
+    });
+
+    it("should handle bounding box with decimal coordinates", async () => {
+      const bbox = {
+        minLon: 7.654321,
+        minLat: 45.0123456,
+        maxLon: 7.7654321,
+        maxLat: 45.1234567,
+      };
+
+      const mockReports = [];
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      await getApprovedReports(undefined, bbox);
+
+      expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
+        expect.any(Array),
+        undefined,
+        bbox
+      );
+    });
+
+    it("should handle bounding box with negative coordinates", async () => {
+      const bbox = {
+        minLon: -0.5,
+        minLat: -45.0,
+        maxLon: 0.8,
+        maxLat: 45.2,
+      };
+
+      const mockReports = [];
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      await getApprovedReports(undefined, bbox);
+
+      expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
+        expect.any(Array),
+        undefined,
+        bbox
+      );
+    });
+
+    it("should return multiple reports from different areas in same bounding box", async () => {
+      const bbox = {
+        minLon: 7.5,
+        minLat: 45.0,
+        maxLon: 7.8,
+        maxLat: 45.2,
+      };
+
+      const mockReports = [
+        {
+          id: 1,
+          title: "Report in north area",
+          latitude: 45.15,
+          longitude: 7.7,
+          status: ReportStatus.ASSIGNED,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        },
+        {
+          id: 2,
+          title: "Report in south area",
+          latitude: 45.05,
+          longitude: 7.6,
+          status: ReportStatus.IN_PROGRESS,
+          user: { id: 2 },
+          photos: [],
+          messages: [],
+        },
+      ];
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      const result = await getApprovedReports(undefined, bbox);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].latitude).toBe(45.15);
+      expect(result[1].latitude).toBe(45.05);
+    });
+
+    it("should convert reports from entity format to DTO format", async () => {
+      const mockEntity = {
+        id: 1,
+        title: "Test Report",
+        category: ReportCategory.PUBLIC_LIGHTING,
+        status: ReportStatus.ASSIGNED,
+        user: { id: 1, email: "user@test.com" },
+        photos: [{ id: 1, filename: "test.jpg", url: "http://test.com" }],
+        messages: [{ id: 1, content: "Test message" }],
+      };
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue([mockEntity]);
+
+      const result = await getApprovedReports();
+
+      // Result should be converted to DTO (toReportDTO)
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(1);
+      expect(result[0].title).toBe("Test Report");
+    });
+
+    it("should handle category filter for each report category", async () => {
+      const categories = Object.values(ReportCategory);
+
+      for (const category of categories.slice(0, 3)) {
+        // Test first 3 categories
+        const mockReports = [
+          {
+            id: 1,
+            title: "Test",
+            category: category,
+            status: ReportStatus.ASSIGNED,
+            user: { id: 1 },
+            photos: [],
+            messages: [],
+          },
+        ];
+
+        mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+        const result = await getApprovedReports(category);
+
+        expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
+          expect.any(Array),
+          category,
+          undefined
+        );
+        expect(result[0].category).toBe(category);
+      }
+    });
+
+    it("should handle very small bounding boxes (zoom level 18+)", async () => {
+      const smallBbox = {
+        minLon: 7.686,
+        minLat: 45.0731,
+        maxLon: 7.687,
+        maxLat: 45.0741,
+      };
+
+      const mockReports = [
+        {
+          id: 1,
+          title: "Report in small area",
+          latitude: 45.0736,
+          longitude: 7.6865,
+          status: ReportStatus.ASSIGNED,
+          user: { id: 1 },
+          photos: [],
+          messages: [],
+        },
+      ];
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      const result = await getApprovedReports(undefined, smallBbox);
+
+      expect(result).toHaveLength(1);
+    });
+
+    it("should handle large bounding boxes (zoom level 12)", async () => {
+      const largeBbox = {
+        minLon: 7.0,
+        minLat: 44.5,
+        maxLon: 8.5,
+        maxLat: 45.5,
+      };
+
+      const mockReports = Array.from({ length: 10 }, (_, i) => ({
+        id: i + 1,
+        title: `Report ${i + 1}`,
+        latitude: 44.5 + (i % 5) * 0.2,
+        longitude: 7.0 + Math.floor(i / 5) * 0.75,
+        status: ReportStatus.ASSIGNED,
+        user: { id: i + 1 },
+        photos: [],
+        messages: [],
+      }));
+
+      mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
+
+      const result = await getApprovedReports(undefined, largeBbox);
+
+      expect(result).toHaveLength(10);
+    });
+  });
+
+  // --- 6. Update Report Status (Technical/External Staff) ---
+  describe("updateReportStatus", () => {
+    const mockNotifyStatusChange =
+      notificationService.notifyReportStatusChange as jest.MockedFunction<
+        typeof notificationService.notifyReportStatusChange
+      >;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should throw NotFoundError if report not found", async () => {
+      mockReportFindByIdWithRelations.mockResolvedValue(null);
+      await expect(
+        updateReportStatus(1, 50, ReportStatus.IN_PROGRESS)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should throw ForbiddenError if user is not assigned to report", async () => {
+      const report = createMockReportEntity({
+        assignedOfficerId: 100,
+        externalMaintainerId: null,
+      });
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+
+      await expect(
+        updateReportStatus(1, 50, ReportStatus.IN_PROGRESS)
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    it("should successfully update status when user is assigned internal technical", async () => {
+      const oldStatus = ReportStatus.ASSIGNED;
+      const newStatus = ReportStatus.IN_PROGRESS;
+      const report = createMockReportEntity({
+        id: 10,
+        status: oldStatus,
+        assignedOfficerId: 50,
+        userId: 100,
+      });
+
+      const updatedReport = { ...report, status: newStatus };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      const result = await updateReportStatus(10, 50, newStatus);
+
+      expect(mockReportUpdate).toHaveBeenCalledWith(10, { status: newStatus });
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        10,
+        100,
+        oldStatus,
+        newStatus
+      );
+      expect(result.status).toBe(newStatus);
+    });
+
+    it("should successfully update status when user is assigned external maintainer", async () => {
+      const oldStatus = ReportStatus.EXTERNAL_ASSIGNED;
+      const newStatus = ReportStatus.IN_PROGRESS;
+      const report = createMockReportEntity({
+        id: 15,
+        status: oldStatus,
+        assignedOfficerId: null,
+        externalMaintainerId: 60,
+        userId: 105,
+      });
+
+      const updatedReport = { ...report, status: newStatus };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      const result = await updateReportStatus(15, 60, newStatus);
+
+      expect(mockReportUpdate).toHaveBeenCalledWith(15, { status: newStatus });
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        15,
+        105,
+        oldStatus,
+        newStatus
+      );
+      expect(result.status).toBe(newStatus);
+    });
+
+    it("should update status to SUSPENDED and notify citizen", async () => {
+      const report = createMockReportEntity({
+        id: 20,
+        status: ReportStatus.IN_PROGRESS,
+        assignedOfficerId: 50,
+        userId: 110,
+      });
+
+      const updatedReport = { ...report, status: ReportStatus.SUSPENDED };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      await updateReportStatus(20, 50, ReportStatus.SUSPENDED);
+
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        20,
+        110,
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.SUSPENDED
+      );
+    });
+
+    it("should update status to RESOLVED and notify citizen", async () => {
+      const report = createMockReportEntity({
+        id: 25,
+        status: ReportStatus.IN_PROGRESS,
+        assignedOfficerId: 50,
+        userId: 115,
+      });
+
+      const updatedReport = { ...report, status: ReportStatus.RESOLVED };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      await updateReportStatus(25, 50, ReportStatus.RESOLVED);
+
+      expect(mockReportUpdate).toHaveBeenCalledWith(25, {
+        status: ReportStatus.RESOLVED,
+      });
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        25,
+        115,
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.RESOLVED
+      );
+    });
+
+    it("should throw NotFoundError if report not found after update", async () => {
+      const report = createMockReportEntity({
+        assignedOfficerId: 50,
+      });
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(null);
+
+      await expect(
+        updateReportStatus(1, 50, ReportStatus.IN_PROGRESS)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should track old status correctly for notification", async () => {
+      const report = createMockReportEntity({
+        id: 30,
+        status: ReportStatus.SUSPENDED,
+        assignedOfficerId: 50,
+        userId: 120,
+      });
+
+      const updatedReport = { ...report, status: ReportStatus.IN_PROGRESS };
+      mockReportFindByIdWithRelations.mockResolvedValue(report);
+      mockReportUpdate.mockResolvedValue(updatedReport);
+
+      await updateReportStatus(30, 50, ReportStatus.IN_PROGRESS);
+
+      // Verify the old status is passed correctly
+      expect(mockNotifyStatusChange).toHaveBeenCalledWith(
+        30,
+        120,
+        ReportStatus.SUSPENDED, // old status
+        ReportStatus.IN_PROGRESS // new status
+      );
     });
   });
 });

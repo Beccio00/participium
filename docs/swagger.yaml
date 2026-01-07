@@ -2,39 +2,32 @@ openapi: 3.0.3
 info:
   title: Participium API - Citizen Registration & Municipality Administration
   description: |
-    API for citizen registration, authentication (PT01), municipality user management (PT02) and municipality users role assignment (PT03).
-    Uses session-based authentication with HTTP-only cookies.
+    The Participium platform enables citizens to report issues in their city and allows municipality staff to manage and respond to these reports.
 
-    ## Municipality User Management
-    System administrators can create, update and delete internal municipality user accounts.
-    The system must have at least one administrator account pre-configured in the database.
+    ### Roles
+    - **ADMINISTRATOR**: System administrator with full privileges
+    - **PUBLIC_RELATIONS**: Public relations officer (only role that can approve/reject reports)
+    - **CULTURE_EVENTS_TOURISM_SPORTS**: Culture, events, tourism and sports
+    - **LOCAL_PUBLIC_SERVICES**: Local public services
+    - **EDUCATION_SERVICES**: Education services
+    - **PUBLIC_RESIDENTIAL_HOUSING**: Public/residential housing services
+    - **INFORMATION_SYSTEMS**: Information systems/IT
+    - **MUNICIPAL_BUILDING_MAINTENANCE**: Municipal building maintenance
+    - **PRIVATE_BUILDINGS**: Private buildings oversight
+    - **INFRASTRUCTURES**: Road, bridges and general infrastructures
+    - **GREENSPACES_AND_ANIMAL_PROTECTION**: Parks, green areas and animal protection
+    - **WASTE_MANAGEMENT**: Waste collection and management
+    - **ROAD_MAINTENANCE**: Road maintenance
+    - **CIVIL_PROTECTION**: Civil protection and emergency coordination
+    - **EXTERNAL_MAINTAINER**: External company maintainer with platform access for specialized interventions
 
-    **Role Categories:**
 
-    **MUNICIPALITY_ROLES** (all internal municipality staff):
-    - ADMINISTRATOR: System administrator with full privileges
-    - PUBLIC_RELATIONS: Public relations officer (only role that can approve/reject reports)
-    - CULTURE_EVENTS_TOURISM_SPORTS: Culture, events, tourism and sports
-    - LOCAL_PUBLIC_SERVICES: Local public services
-    - EDUCATION_SERVICES: Education services
-    - PUBLIC_RESIDENTIAL_HOUSING: Public/residential housing services
-    - INFORMATION_SYSTEMS: Information systems/IT
-    - MUNICIPAL_BUILDING_MAINTENANCE: Municipal building maintenance
-    - PRIVATE_BUILDINGS: Private buildings oversight
-    - INFRASTRUCTURES: Road, bridges and general infrastructures
-    - GREENSPACES_AND_ANIMAL_PROTECTION: Parks, green areas and animal protection
-    - WASTE_MANAGEMENT: Waste collection and management
-    - ROAD_MAINTENANCE: Road maintenance
-    - CIVIL_PROTECTION: Civil protection and emergency coordination
+    ### Roles Categories
 
-    **TECHNICAL_ROLES** (municipality technical staff only, subset of MUNICIPALITY_ROLES):
-    - CULTURE_EVENTS_TOURISM_SPORTS through CIVIL_PROTECTION (excludes ADMINISTRATOR and PUBLIC_RELATIONS)
+    - **MUNICIPALITY_ROLES** (all internal municipality staff): ADMINISTRATOR through CIVIL_PROTECTION (excludes EXTERNAL_MAINTAINER)
+    - **TECHNICAL_ROLES** (municipality technical staff only):CULTURE_EVENTS_TOURISM_SPORTS through CIVIL_PROTECTION (excludes ADMINISTRATOR, PUBLIC_RELATIONS and EXTERNAL_MAINTAINER)
+    - **TECHNICAL_AND_EXTERNAL_ROLES**: All TECHNICAL_ROLES + EXTERNAL_MAINTAINER
 
-    **TECHNICAL_AND_EXTERNAL_ROLES** (technical staff + external maintainers):
-    - All TECHNICAL_ROLES + EXTERNAL_MAINTAINER (for shared operations like viewing assigned reports)
-
-    **External roles:**
-    - EXTERNAL_MAINTAINER: External company maintainer with platform access for specialized interventions
   version: 1.1.0
   contact:
     name: Municipality of Turin
@@ -51,10 +44,14 @@ tags:
     description: Login, logout and session management operations
   - name: Citizens
     description: Citizen registration operations
+  - name: Telegram
+    description: Telegram bot integration and account linking operations
   - name: Administration
     description: Municipality user management operations (create, update, delete)
   - name: Reports
     description: Create and retrieve geolocated reports submitted by citizens
+  - name: Notifications
+    description: User notifications (read, list, mark as read)
 
 paths:
   /session:
@@ -123,9 +120,6 @@ paths:
                 error: "InternalServerError"
                 message: "An unexpected error occurred"
 
-
-  
-
   /session/current:
     get:
       tags:
@@ -150,7 +144,7 @@ paths:
                   firstName: Mario
                   lastName: Rossi
                   email: mario.rossi@example.com
-                  role: CITIZEN
+                  roles: CITIZEN
                   telegramUsername: null
                   emailNotificationsEnabled: true
         "401":
@@ -205,8 +199,7 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Logout failed"
-  
-  
+
   /citizen/signup:
     post:
       tags:
@@ -389,31 +382,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/CitizenConfigResponse"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "An unexpected error occurred"
+          $ref: "#/components/responses/InternalServerError"
 
     patch:
       tags:
         - Citizens
       summary: Update citizen profile configuration
-      description: Update name, surname, email, password, Telegram username and email notification preference. At least one field must be provided.
+      description: Update name, surname, email, password and email notification preference. At least one field must be provided.
       operationId: updateCitizenConfig
       security:
         - SessionAuth: []
@@ -443,15 +420,7 @@ paths:
                 error: "BadRequest"
                 message: "At least one field must be provided"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "409":
           description: Email already in use
           content:
@@ -504,7 +473,7 @@ paths:
                   format: binary
             encoding:
               photo:
-                contentType: image/jpeg, image/png
+                contentType: image/*
       responses:
         "201":
           description: Photo uploaded successfully
@@ -594,6 +563,473 @@ paths:
                 error: "InternalServerError"
                 message: "An unexpected error occurred"
 
+  /telegram/generate-token:
+    post:
+      tags:
+        - Telegram
+      summary: Generate a deep link to connect Telegram account
+      description: |
+        Generate a unique temporary token (valid for 15 minutes) and a Telegram deep link that the user can click to automatically link their account.
+        
+        **Flow:**
+        1. User clicks "Connect Telegram" button on the web app
+        2. API generates token and returns deep link (e.g., `https://t.me/participium_bot?start=link_8F3K9A`)
+        3. User clicks the deep link, which opens Telegram and sends `/start link_8F3K9A` to the bot
+        4. Bot validates the token and calls `/telegram/link` API to complete the linking
+        5. User receives confirmation in both Telegram and web app
+        
+        The token is stored in database with user_id and expiration, marked as used once the bot completes the linking.
+      operationId: generateTelegramLinkToken
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramTokenResponse"
+              example:
+                token: "8F3K9A"
+                expiresAt: "2025-12-23T13:05:00Z"
+                deepLink: "https://t.me/participium_bot?start=link_8F3K9A"
+                message: "Click the link to connect your Telegram account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only citizens can link Telegram accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can access this resource"
+        "409":
+          description: Telegram account already linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Telegram account already linked to this user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/link:
+    post:
+      tags:
+        - Telegram
+      summary: Link Telegram account using token (called by bot)
+      description: |
+        Link a Telegram account to a Participium user account using a previously generated token.
+        
+        **This endpoint is called internally by the Telegram bot**, not by the web app directly.
+        
+        **Flow:**
+        1. User clicks deep link from web app (e.g., `https://t.me/participium_bot?start=link_8F3K9A`)
+        2. Telegram opens and sends `/start link_8F3K9A` to the bot
+        3. Bot extracts token from the command and calls this API endpoint
+        4. API validates token, links telegram_user_id to user account, and marks token as used
+        5. Bot sends confirmation message to user
+        
+        The token must be valid and not expired (15 minutes validity).
+      operationId: linkTelegramAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramLinkRequest"
+            example:
+              token: "8F3K9A"
+              telegramId: "123456789"
+              telegramUsername: "mario_rossi"
+      responses:
+        "200":
+          description: Telegram account linked successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramLinkResponse"
+              example:
+                success: true
+                message: "Telegram account linked successfully"
+                user:
+                  id: 201
+                  firstName: "Mario"
+                  lastName: "Rossi"
+                  email: "mario.rossi@example.com"
+        "400":
+          description: Bad request - missing parameters or token expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingToken:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Token is required"
+                missingTelegramId:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Telegram ID is required"
+                tokenExpired:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Token has expired"
+        "404":
+          description: Invalid token - token does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "Invalid token"
+        "409":
+          description: Conflict - token already used or Telegram account already linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                tokenUsed:
+                  value:
+                    code: 409
+                    error: "Conflict"
+                    message: "Token has already been used"
+                telegramLinked:
+                  value:
+                    code: 409
+                    error: "Conflict"
+                    message: "This Telegram account is already linked to another user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/status:
+    get:
+      tags:
+        - Telegram
+      summary: Get Telegram linking status
+      description: |
+        Check if the authenticated user has a Telegram account linked.
+        Returns the Telegram username if linked, or null if not linked.
+      operationId: getTelegramStatus
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Telegram status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramStatusResponse"
+              examples:
+                linked:
+                  value:
+                    linked: true
+                    telegramUsername: "mario_rossi"
+                    telegramId: "123456789"
+                notLinked:
+                  value:
+                    linked: false
+                    telegramUsername: null
+                    telegramId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only citizens can check Telegram status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can access this resource"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/check-linked:
+    post:
+      tags:
+        - Telegram
+      summary: Check if a Telegram ID is linked to a user
+      description: |
+        Check whether a given Telegram ID is already linked to a Participium user account.
+        This endpoint is intended to be called by the Telegram bot before starting interactive flows.
+      operationId: checkTelegramLinked
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                telegramId:
+                  type: string
+              required:
+                - telegramId
+            example:
+              telegramId: "123456789"
+      responses:
+        "200":
+          description: Telegram linkage status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  linked:
+                    type: boolean
+              example:
+                linked: true
+        "400":
+          description: Bad request - missing telegramId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/unlink:
+    delete:
+      tags:
+        - Telegram
+      summary: Unlink Telegram account
+      description: |
+        Remove the Telegram account link from the authenticated user's account.
+        After unlinking, the user will need to generate a new token to link again.
+      operationId: unlinkTelegramAccount
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: Telegram account unlinked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Telegram account unlinked successfully"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only citizens can unlink Telegram accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Only citizens can access this resource"
+        "404":
+          description: No Telegram account linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No Telegram account linked to this user"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/reports:
+    post:
+      tags:
+        - Telegram
+      summary: Create a report via Telegram bot
+      description: |
+        Create a new civic report via the Telegram bot.
+        The user is authenticated via their Telegram ID which must be linked to a Participium account.
+        This endpoint is called by the Telegram bot, not directly by users.
+      operationId: createReportFromTelegram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramCreateReportRequest"
+            example:
+              telegramId: "123456789"
+              title: "Broken streetlight"
+              description: "The streetlight on Via Roma 123 is not working since last week"
+              category: "PUBLIC_LIGHTING"
+              latitude: 45.0703
+              longitude: 7.6869
+              isAnonymous: false
+      responses:
+        "201":
+          description: Report created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Report created successfully"
+                  reportId:
+                    type: integer
+                    example: 42
+        "400":
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingTitle:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Title is required"
+                invalidCategory:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Invalid category: INVALID_CATEGORY"
+                missingLocation:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Valid latitude and longitude are required"
+        "404":
+          description: Telegram account not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No account linked to this Telegram ID. Please link your account first."
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/{telegramId}/reports:
+    get:
+      tags:
+        - Telegram
+      summary: Get list of reports for a Telegram user
+      description: |
+        Retrieve the list of reports submitted by the user associated with the provided Telegram ID.
+        Used by the Telegram bot for the `/myreports` command.
+      operationId: getTelegramUserReports
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+      responses:
+        "200":
+          description: List of reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSummary"
+        "404":
+          description: User not found or Telegram account not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: "NotFound"
+                message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /telegram/{telegramId}/reports/{reportId}:
+    get:
+      tags:
+        - Telegram
+      summary: Get report details for a Telegram user
+      description: |
+        Retrieve detailed status of a specific report for a Telegram user.
+        Used by the Telegram bot for the `/reportstatus {id}` command.
+        The backend verifies that the report belongs to the user linked to the telegramId.
+      operationId: getTelegramReportDetails
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          description: Telegram user ID (numeric string)
+          schema:
+            type: string
+          example: "123456789"
+        - name: reportId
+          in: path
+          required: true
+          description: ID of the report to retrieve
+          schema:
+            type: integer
+            format: int64
+          example: 1024
+      responses:
+        "200":
+          description: Report details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+        "403":
+          description: Not authorized to view this report (report belongs to another user)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "You do not have permission to view this report"
+        "404":
+          description: Report not found or User not linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                reportNotFound:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Report not found"
+                userNotLinked:
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "No account linked to this Telegram ID"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /admin/municipality-users:
     post:
       tags:
@@ -616,7 +1052,7 @@ paths:
               lastName: Verdi
               email: giuseppe.verdi@comune.torino.it
               password: AdminPass123!
-              role: LOCAL_PUBLIC_SERVICES
+              roles: LOCAL_PUBLIC_SERVICES
       responses:
         "201":
           description: Municipality user created successfully
@@ -625,15 +1061,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/MunicipalityUserResponse"
         "400":
-          description: Missing required fields or invalid data
+          description: Missing required fields, invalid data, or invalid role combination
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Missing required fields: firstName, lastName, email, password, role"
+              examples:
+                missingFields:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Missing required fields: firstName, lastName, email, password, role"
+                invalidMultipleRoles:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Multiple roles can only be assigned if all are technical officer roles"
         "401":
           description: Not authenticated
           content:
@@ -704,47 +1147,23 @@ paths:
                   firstName: "Giuseppe"
                   lastName: "Verdi"
                   email: "giuseppe.verdi@comune.torino.it"
-                  role: "LOCAL_PUBLIC_SERVICES"
+                  roles: "LOCAL_PUBLIC_SERVICES"
                 - id: 456
                   firstName: "Maria"
                   lastName: "Rossi"
                   email: "maria.rossi@comune.torino.it"
-                  role: "ADMINISTRATOR"
+                  roles: "ADMINISTRATOR"
                 - id: 789
                   firstName: "Franco"
                   lastName: "Bianchi"
                   email: "franco.bianchi@comune.torino.it"
-                  role: "ROAD_MAINTENANCE"
+                  roles: "ROAD_MAINTENANCE"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "500":
-          description: Unable to retrieve users
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve users"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/municipality-users/{userId}:
     get:
@@ -773,55 +1192,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/MunicipalityUserResponse"
         "400":
-          description: Invalid user ID parameter
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Invalid user ID format"
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 404
-                error: "NotFound"
-                message: "Municipality user not found"
+          $ref: "#/components/responses/NotFound"
         "500":
-          description: Unable to retrieve user details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve user"
+          $ref: "#/components/responses/InternalServerError"
 
     delete:
       tags:
@@ -845,15 +1224,91 @@ paths:
         "204":
           description: Municipality user deleted successfully
         "400":
-          description: Invalid user ID parameter
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      tags:
+        - Administration
+      summary: Update municipality user
+      description: |
+        Update municipality user data including basic information and roles.
+        At least one field must be provided for update.
+      operationId: updateMunicipalityUser
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the municipality user
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  description: First name of the user
+                lastName:
+                  type: string
+                  description: Last name of the user
+                email:
+                  type: string
+                  format: email
+                  description: Email address of the user
+                password:
+                  type: string
+                  minLength: 8
+                  description: New password for the user
+                roles:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/MunicipalityRole"
+                  description: List of roles for the user
+              additionalProperties: false
+            example:
+              firstName: "Mario"
+              lastName: "Rossi"
+              email: "mario.rossi@comune.torino.it"
+              roles: ["PUBLIC_RELATIONS", "ADMINISTRATOR"]
+      responses:
+        "200":
+          description: Municipality user updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MunicipalityUserResponse"
+        "400":
+          description: Missing required fields, invalid data, or invalid role combination
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 400
-                error: "BadRequest"
-                message: "Invalid user ID format"
+              examples:
+                missingFields:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "At least one field must be provided: firstName, lastName, email, password, roles"
+                invalidMultipleRoles:
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Multiple roles can only be assigned if all are technical officer roles"
         "401":
           description: Not authenticated
           content:
@@ -875,7 +1330,7 @@ paths:
                 error: "Forbidden"
                 message: "Administrator privileges required"
         "404":
-          description: User not found
+          description: Municipality user not found
           content:
             application/json:
               schema:
@@ -884,8 +1339,18 @@ paths:
                 code: 404
                 error: "NotFound"
                 message: "Municipality user not found"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: "Conflict"
+                message: "Email already in use"
         "500":
-          description: Unable to delete user
+          description: Unable to update user
           content:
             application/json:
               schema:
@@ -893,7 +1358,7 @@ paths:
               example:
                 code: 500
                 error: "InternalServerError"
-                message: "Failed to delete user"
+                message: "Unable to update municipality user"
 
   /admin/roles:
     get:
@@ -931,35 +1396,11 @@ paths:
                 - CIVIL_PROTECTION
 
         "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 401
-                error: "Unauthorized"
-                message: "Authentication required"
+          $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 403
-                error: "Forbidden"
-                message: "Administrator privileges required"
+          $ref: "#/components/responses/Forbidden"
         "500":
-          description: Unable to retrieve roles
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                code: 500
-                error: "InternalServerError"
-                message: "Failed to retrieve roles"
+          $ref: "#/components/responses/InternalServerError"
 
   /admin/external-companies:
     post:
@@ -1102,7 +1543,7 @@ paths:
                             type: string
                           email:
                             type: string
-                          role:
+                          roles:
                             type: string
               example:
                 - id: 1
@@ -1114,7 +1555,7 @@ paths:
                       firstName: "Mario"
                       lastName: "Rossi"
                       email: "mario.rossi@greentech.com"
-                      role: "EXTERNAL_MAINTAINER"
+                      roles: "EXTERNAL_MAINTAINER"
         "401":
           description: Not authenticated
           content:
@@ -1256,7 +1697,7 @@ paths:
                             type: string
                           email:
                             type: string
-                          role:
+                          roles:
                             type: string
                             enum: ["EXTERNAL_MAINTAINER"]
               example:
@@ -1269,7 +1710,7 @@ paths:
                       firstName: "Giuseppe"
                       lastName: "Bianchi"
                       email: "giuseppe.bianchi@greentech.com"
-                      role: "EXTERNAL_MAINTAINER"
+                      roles: "EXTERNAL_MAINTAINER"
                 - id: 2
                   name: "Tech Services Inc"
                   categories: ["INFRASTRUCTURE"]
@@ -1338,7 +1779,7 @@ paths:
                     type: string
                   email:
                     type: string
-                  role:
+                  roles:
                     type: string
                   company:
                     type: object
@@ -1358,7 +1799,7 @@ paths:
                 firstName: "Mario"
                 lastName: "Rossi"
                 email: "mario.rossi@greentech.com"
-                role: "EXTERNAL_MAINTAINER"
+                roles: "EXTERNAL_MAINTAINER"
                 company:
                   id: 1
                   name: "Green Tech Solutions"
@@ -1429,7 +1870,7 @@ paths:
                       type: string
                     email:
                       type: string
-                    role:
+                    roles:
                       type: string
                     company:
                       type: object
@@ -1449,7 +1890,7 @@ paths:
                   firstName: "Mario"
                   lastName: "Rossi"
                   email: "mario.rossi@greentech.com"
-                  role: "EXTERNAL_MAINTAINER"
+                  roles: "EXTERNAL_MAINTAINER"
                   company:
                     id: 1
                     name: "Green Tech Solutions"
@@ -1459,7 +1900,7 @@ paths:
                   firstName: "Laura"
                   lastName: "Bianchi"
                   email: "laura.bianchi@aquafix.com"
-                  role: "EXTERNAL_MAINTAINER"
+                  roles: "EXTERNAL_MAINTAINER"
                   company:
                     id: 2
                     name: "Aqua Fix Srl"
@@ -1521,7 +1962,7 @@ paths:
                     type: string
                   email:
                     type: string
-                  role:
+                  roles:
                     type: string
                   company:
                     type: object
@@ -1541,7 +1982,7 @@ paths:
                 firstName: "Mario"
                 lastName: "Rossi"
                 email: "mario.rossi@greentech.com"
-                role: "EXTERNAL_MAINTAINER"
+                roles: "EXTERNAL_MAINTAINER"
                 company:
                   id: 1
                   name: "Green Tech Solutions"
@@ -1667,7 +2108,7 @@ paths:
               $ref: "#/components/schemas/ReportRequest"
             encoding:
               photos:
-                contentType: image/jpeg, image/png
+                contentType: image/*
       responses:
         "201":
           description: Report created successfully
@@ -1696,7 +2137,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -1841,7 +2282,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -1849,7 +2290,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -1867,7 +2308,7 @@ paths:
                       url: "https://cdn.example.com/reports/1024/photo1.jpg"
                       filename: "photo1.jpg"
                   createdAt: "2025-11-11T10:12:34Z"
-                  updatedAt: "2025-11-11T10:12:34Z"
+                  updatedAt: "2025-11-11T11:15:00Z"
 
                 - id: 1025
                   title: "Broken street light"
@@ -1890,7 +2331,7 @@ paths:
                     firstName: Paolo
                     lastName: Neri
                     email: paolo.neri@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages: []
                   rejectedReason: null
                   photos: []
@@ -1953,7 +2394,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -2036,12 +2477,12 @@ paths:
                   firstName: Luca
                   lastName: Verdi
                   email: luca.verdi@municipality.com
-                  role: MUNICIPAL_BUILDING_MAINTENANCE
+                  roles: MUNICIPAL_BUILDING_MAINTENANCE
                 - id: 306
                   firstName: Paolo
                   lastName: Neri
                   email: paolo.neri@municipality.com
-                  role: ROAD_MAINTENANCE
+                  roles: ROAD_MAINTENANCE
         "401":
           description: Not authenticated
           content:
@@ -2129,12 +2570,12 @@ paths:
                       firstName: Marco
                       lastName: Bianchi
                       email: marco.bianchi@enelx.com
-                      role: EXTERNAL_MAINTAINER
+                      roles: EXTERNAL_MAINTAINER
                     - id: 502
                       firstName: Giulia
                       lastName: Ferrari
                       email: giulia.ferrari@enelx.com
-                      role: EXTERNAL_MAINTAINER
+                      roles: EXTERNAL_MAINTAINER
                 - id: 11
                   name: AMIAT Torino
                   categories:
@@ -2147,7 +2588,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                               $ref: "#/components/schemas/ErrorResponse"
               example:
                 code: 401
                 error: "Unauthorized"
@@ -2199,7 +2640,7 @@ paths:
       summary: Assign a report to an external maintainer or company
       description: |
         Assign a report to an external entity for specialized intervention.
-        Only technical office staff members can perform this operation.
+        Only technical office members can perform this operation.
         The report status changes from PENDING_APPROVAL or ASSIGNED to EXTERNAL_ASSIGNED when assigned to external entities.
         External assignment creates a specialized workflow for external company maintenance.
 
@@ -2276,7 +2717,7 @@ paths:
                         firstName: Mario
                         lastName: Rossi
                         email: mario.rossi@example.com
-                        role: CITIZEN
+                        roles: CITIZEN
                         telegramUsername: null
                         emailNotificationsEnabled: true
                       assignedOfficer:
@@ -2284,7 +2725,7 @@ paths:
                         firstName: Luca
                         lastName: Verdi
                         email: luca.verdi@municipality.com
-                        role: MUNICIPAL_BUILDING_MAINTENANCE
+                        roles: MUNICIPAL_BUILDING_MAINTENANCE
                       externalHandler:
                         type: user
                         user:
@@ -2292,7 +2733,7 @@ paths:
                           firstName: Marco
                           lastName: Bianchi
                           email: marco.bianchi@enelx.com
-                          role: EXTERNAL_MAINTAINER
+                          roles: EXTERNAL_MAINTAINER
                           company:
                             id: 10
                             name: Enel X
@@ -2317,7 +2758,7 @@ paths:
                         firstName: Maria
                         lastName: Bianchi
                         email: maria.bianchi@example.com
-                        role: CITIZEN
+                        roles: CITIZEN
                         telegramUsername: null
                         emailNotificationsEnabled: true
                       assignedOfficer:
@@ -2325,7 +2766,7 @@ paths:
                         firstName: Paolo
                         lastName: Neri
                         email: paolo.neri@municipality.com
-                        role: MUNICIPAL_BUILDING_MAINTENANCE
+                        roles: MUNICIPAL_BUILDING_MAINTENANCE
                       externalHandler:
                         type: company
                         company:
@@ -2497,7 +2938,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2505,7 +2946,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: MUNICIPAL_BUILDING_MAINTENANCE
+                    roles: MUNICIPAL_BUILDING_MAINTENANCE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
@@ -2513,7 +2954,7 @@ paths:
                       senderId: 201
                       senderRole: CITIZEN
                     - id: 2
-                      content: "Report approved and assigned by public relations officer"
+                      content: "Report approved by public relations officer"
                       createdAt: "2025-11-11T11:15:00Z"
                       senderId: 123
                       senderRole: PUBLIC_RELATIONS
@@ -2575,6 +3016,16 @@ paths:
                 code: 409
                 error: "Conflict"
                 message: "Report has already been processed"
+        "422":
+          description: Unprocessable Entity - Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: "UnprocessableEntity"
+                message: "Assigned technical is not valid for this report category"
         "500":
           description: Unable to approve report
           content:
@@ -2641,7 +3092,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer: null
@@ -2733,6 +3184,97 @@ paths:
                 error: "InternalServerError"
                 message: "Failed to reject report"
 
+  /reports/mine:
+    get:
+      tags:
+        - Reports
+      summary: Get all reports created by the authenticated citizen
+      description: |
+        Retrieve all reports created by the authenticated citizen, including anonymous reports.
+        This endpoint returns the full report data without masking, allowing citizens to see
+        and manage all their own reports regardless of the anonymous flag.
+        
+        Only available for users with CITIZEN role.
+        Reports are sorted by creation date (newest first).
+      operationId: getMyReports
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: List of user's reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportResponse"
+              example:
+                - id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing"
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  status: ASSIGNED
+                  isAnonymous: false
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    roles: CITIZEN
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                - id: 1025
+                  title: "Anonymous report"
+                  description: "Issue reported anonymously"
+                  category: PUBLIC_LIGHTING
+                  latitude: 45.071
+                  longitude: 7.6875
+                  status: PENDING_APPROVAL
+                  isAnonymous: true
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    roles: CITIZEN
+                  photos: []
+                  createdAt: "2025-11-10T09:00:00Z"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (Citizen role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Citizen privileges required"
+        "500":
+          description: Unable to retrieve reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to retrieve reports"
+
   /reports/assigned:
     get:
       tags:
@@ -2806,7 +3348,7 @@ paths:
                     firstName: Mario
                     lastName: Rossi
                     email: mario.rossi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2814,12 +3356,13 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 1
                       content: "Initial report created by user"
                       createdAt: "2025-11-11T10:12:34Z"
                       senderId: 201
+                      senderRole: CITIZEN
                     - id: 2
                       content: "Report assigned to technical staff"
                       createdAt: "2025-11-12T09:00:00Z"
@@ -2844,7 +3387,7 @@ paths:
                     firstName: Maria
                     lastName: Bianchi
                     email: maria.bianchi@example.com
-                    role: CITIZEN
+                    roles: CITIZEN
                     telegramUsername: null
                     emailNotificationsEnabled: true
                   assignedOfficer:
@@ -2852,7 +3395,7 @@ paths:
                     firstName: Luca
                     lastName: Verdi
                     email: luca.verdi@municipality.com
-                    role: TECHNICAL_OFFICE
+                    roles: TECHNICAL_OFFICE
                   messages:
                     - id: 3
                       content: "Initial report created by user"
@@ -3564,6 +4107,160 @@ paths:
                 code: 500
                 error: "InternalServerError"
                 message: "Unable to retrieve report"
+  # Story #30
+  /geocode:
+    get:
+      tags:
+        - Reports
+      summary: Convert address to geographic coordinates and bounding box
+      description: |
+        Convert a human-readable address to geographic coordinates and bounding box for report searching.
+        This endpoint enables citizens and unregistered users to search for reports by typing an address 
+        instead of manually selecting coordinates on a map (Story #30).
+
+        The endpoint uses a geocoding service to convert the address to coordinates and calculates 
+        a bounding box based on the provided zoom level. The zoom level determines the size of the 
+        search area around the geocoded location.
+
+        **Available zoom levels and search radius:**
+        - 19: Street level (~100m radius)
+        - 16: Neighborhood level (~500m radius)  
+        - 14: District level (~2km radius)
+        - 12: City area level (~5km radius)
+
+        The returned bounding box can be used with the `/reports?bbox=` endpoint to retrieve 
+        reports within that specific area. This allows users to easily explore and analyze 
+        existing reports in a specific geographic area by typing an address.
+
+        **Workflow:**
+        1. User types an address (e.g., "Via Roma, Torino")
+        2. User selects zoom level (determines search area size)
+        3. Frontend calls `/geocode?address=Via+Roma,+Torino&zoom=16`
+        4. Backend returns coordinates and bounding box
+        5. Frontend calls `/reports?bbox=<returned_bbox>` to get reports in that area
+        6. Frontend displays reports on map centered at the geocoded location
+
+        This endpoint does not require authentication and can be used by unregistered users.
+      operationId: geocodeAddress
+      parameters:
+        - name: address
+          in: query
+          required: true
+          description: |
+            Address to geocode. Can be a street name, district, landmark, or any location within Turin.
+            Examples: "Via Roma, Torino", "Piazza Castello", "Porta Nuova", "Corso Vittorio Emanuele II 53"
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 200
+          example: "Via Roma, Torino"
+        - name: zoom
+          in: query
+          required: false
+          description: |
+            Map zoom level (12-19) to determine the size of the search area. 
+            Higher zoom = smaller area. Default is 16 (neighborhood level).
+          schema:
+            type: integer
+            minimum: 12
+            maximum: 19
+            default: 16
+          example: 16
+      responses:
+        "200":
+          description: Address successfully geocoded
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - address
+                  - latitude
+                  - longitude
+                  - bbox
+                  - zoom
+                properties:
+                  address:
+                    type: string
+                    description: Formatted address returned by the geocoding service
+                    example: "Via Roma, 10123 Torino TO, Italy"
+                  latitude:
+                    type: number
+                    format: double
+                    description: Latitude of the geocoded location in decimal degrees (WGS84)
+                    example: 45.070312
+                  longitude:
+                    type: number
+                    format: double
+                    description: Longitude of the geocoded location in decimal degrees (WGS84)
+                    example: 7.686856
+                  bbox:
+                    type: string
+                    description: |
+                      Bounding box for the search area in format "minLon,minLat,maxLon,maxLat".
+                      This can be directly used with the `/reports?bbox=` parameter.
+                    pattern: '^-?([0-9]*\.?[0-9]+),-?([0-9]*\.?[0-9]+),-?([0-9]*\.?[0-9]+),-?([0-9]*\.?[0-9]+)$'
+                    example: "7.681,45.065,7.692,45.075"
+                  zoom:
+                    type: integer
+                    description: Zoom level used for calculating the bounding box
+                    minimum: 12
+                    maximum: 19
+                    example: 16
+              example:
+                address: "Via Roma, 10123 Torino TO, Italy"
+                latitude: 45.070312
+                longitude: 7.686856
+                bbox: "7.681,45.065,7.692,45.075"
+                zoom: 16
+        "400":
+          description: Invalid address format or zoom level
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidAddress:
+                  summary: Invalid address format
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Address must be between 3 and 200 characters"
+                invalidZoom:
+                  summary: Invalid zoom level
+                  value:
+                    code: 400
+                    error: "BadRequest"
+                    message: "Zoom level must be between 12 and 19"
+        "404":
+          description: Address not found or not within Turin municipality boundaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                notFound:
+                  summary: Address not found
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Address not found by geocoding service"
+                outsideBoundaries:
+                  summary: Outside Turin boundaries
+                  value:
+                    code: 404
+                    error: "NotFound"
+                    message: "Address is outside Turin municipality boundaries"
+        "500":
+          description: Geocoding service error or temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Geocoding service temporarily unavailable"
 
 components:
   securitySchemes:
@@ -3575,6 +4272,72 @@ components:
         Session-based authentication using HTTP-only cookies with Passport.js.
         The session cookie is automatically sent by the browser with each request.
         Frontend must use 'credentials: include' in fetch/axios requests.
+
+  parameters:
+    reportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the report
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the user
+    maintainerId:
+      name: maintainerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the external maintainer
+    notificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: ID of the notification
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
     CitizenRegistrationRequest:
@@ -3687,8 +4450,13 @@ components:
         email:
           type: string
           example: mario.rossi@example.com
-        role:
-          $ref: "#/components/schemas/UserRole"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
+          description: |
+            List of roles assigned to the user.
+            Municipality users may have multiple roles simultaneously."
         telegramUsername:
           type: string
           nullable: true
@@ -3755,8 +4523,12 @@ components:
           format: password
           description: Password (minimum 8 characters)
           example: AdminPass123!
-        role:
-          $ref: "#/components/schemas/MunicipalityRole"
+        roles:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
+          description: Initial roles assigned to the user
 
     MunicipalityUserResponse:
       type: object
@@ -3775,8 +4547,10 @@ components:
         email:
           type: string
           example: giuseppe.verdi@comune.torino.it
-        role:
-          $ref: "#/components/schemas/MunicipalityRole"
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/MunicipalityRole"
 
     ExternalMaintainerResponse:
       type: object
@@ -3799,10 +4573,12 @@ components:
           format: email
           description: External maintainer's email address
           example: marco.bianchi@enelx.com
-        role:
-          type: string
-          enum:
-            - EXTERNAL_MAINTAINER
+        roles:
+          type: array                
+          items:                     
+            type: string
+            enum:
+              - EXTERNAL_MAINTAINER
           description: Role is always EXTERNAL_MAINTAINER
           example: EXTERNAL_MAINTAINER
         company:
@@ -3953,6 +4729,8 @@ components:
         description:
           type: string
           description: Detailed description of the issue
+          minLength: 10
+          maxLength: 1000
           example: "Large pothole near the pedestrian crossing, causing risk for cyclists."
         category:
           $ref: "#/components/schemas/ReportCategory"
@@ -4033,7 +4811,9 @@ components:
           format: int64
           example: 201
         senderRole:
-          $ref: "#/components/schemas/UserRole"
+          type: array
+          items:
+            $ref: "#/components/schemas/UserRole"
           description: Role of the user who sent the message
           example: CITIZEN
 
@@ -4063,27 +4843,7 @@ components:
           description: Whether this report is anonymous
           example: false
         user:
-          oneOf:
-            - $ref: "#/components/schemas/UserInfo"
-            - type: object
-              properties:
-                id:
-                  type: integer
-                  description: User ID (always present for internal tracking)
-                firstName:
-                  type: string
-                  enum: ["anonymous"]
-                lastName:
-                  type: string
-                  enum: [""]
-                email:
-                  type: string
-                  enum: [""]
-                role:
-                  type: string
-                  enum: ["CITIZEN"]
-              description: For anonymous reports, personal info is hidden
-          description: User information (personal data hidden if report is anonymous)
+          $ref: "#/components/schemas/UserInfo"
         assignedOfficer:
           oneOf:
             - $ref: "#/components/schemas/MunicipalityUserResponse"
@@ -4173,13 +4933,7 @@ components:
           format: password
           description: New password (minimum 8 characters)
           example: NewSecurePass123!
-        telegramUsername:
-          type: string
-          nullable: true
-          minLength: 0
-          maxLength: 32
-          description: Telegram username (without @)
-          example: mario_rossi
+        
         emailNotificationsEnabled:
           type: boolean
           description: Toggle for email notifications
@@ -4331,7 +5085,9 @@ components:
           description: Full name of the author (first name + last name)
           example: "Marco Bianchi"
         authorRole:
-          type: string
+          type: array
+          items:
+            type: string
           description: Role of the technical staff member who wrote the note
           example: "INFRASTRUCTURES"
         createdAt:
@@ -4344,3 +5100,179 @@ components:
           format: date-time
           description: When the note was last updated (ISO 8601 format)
           example: "2025-12-03T09:15:00Z"
+
+    TelegramTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 6
+          maxLength: 16
+          description: Unique temporary token to link Telegram account (valid for 15 minutes)
+          example: "8F3K9A"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiration timestamp (ISO 8601 format)
+          example: "2025-12-23T13:05:00Z"
+        deepLink:
+          type: string
+          format: uri
+          description: Telegram deep link that user can click to open bot and auto-link account
+          example: "https://t.me/participium_bot?start=link_8F3K9A"
+        message:
+          type: string
+          description: User-friendly instructions
+          example: "Click the link to connect your Telegram account"
+      required:
+        - token
+        - expiresAt
+        - deepLink
+        - message
+
+    TelegramLinkRequest:
+      type: object
+      required:
+        - token
+        - telegramId
+      properties:
+        token:
+          type: string
+          minLength: 6
+          maxLength: 16
+          description: Token extracted by bot from /start command (originally from POST /telegram/generate-token)
+          example: "8F3K9A"
+        telegramId:
+          type: string
+          description: Telegram user ID (numeric string provided by Telegram API)
+          example: "123456789"
+        telegramUsername:
+          type: string
+          nullable: true
+          minLength: 5
+          maxLength: 32
+          description: Telegram username without @ (optional, may be null if user has no username)
+          example: "mario_rossi"
+
+    TelegramLinkResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Telegram account linked successfully"
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 201
+            firstName:
+              type: string
+              example: "Mario"
+            lastName:
+              type: string
+              example: "Rossi"
+            email:
+              type: string
+              format: email
+              example: "mario.rossi@example.com"
+          description: Basic user information for confirmation
+      required:
+        - success
+        - message
+        - user
+
+    TelegramStatusResponse:
+      type: object
+      properties:
+        linked:
+          type: boolean
+          description: Whether the user has a Telegram account linked
+          example: true
+        telegramUsername:
+          type: string
+          nullable: true
+          description: Telegram username if linked, or null if not linked
+          example: "mario_rossi"
+        telegramId:
+          type: string
+          nullable: true
+          description: Telegram user ID if linked, or null if not linked
+          example: "123456789"
+      required:
+        - linked
+        - telegramUsername
+        - telegramId
+
+    TelegramCreateReportRequest:
+      type: object
+      required:
+        - telegramId
+        - title
+        - description
+        - category
+        - latitude
+        - longitude
+        - photoFileIds
+      properties:
+        telegramId:
+          type: string
+          description: Telegram user ID (numeric string provided by Telegram API)
+          example: "123456789"
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+          description: Brief title for the report
+          example: "Broken streetlight"
+        description:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Detailed description of the issue
+          example: "The streetlight on Via Roma 123 is not working since last week"
+        category:
+          type: string
+          enum:
+            - WATER_SUPPLY_DRINKING_WATER
+            - ARCHITECTURAL_BARRIERS
+            - SEWER_SYSTEM
+            - PUBLIC_LIGHTING
+            - WASTE
+            - ROAD_SIGNS_TRAFFIC_LIGHTS
+            - ROADS_URBAN_FURNISHINGS
+            - PUBLIC_GREEN_AREAS_PLAYGROUNDS
+            - OTHER
+          description: Category of the report
+          example: "PUBLIC_LIGHTING"
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Latitude of the issue location (must be within Turin boundaries)
+          example: 45.0703
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Longitude of the issue location (must be within Turin boundaries)
+          example: 7.6869
+        photoFileIds:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 3
+          description: Telegram file IDs for photos (minimum 1, maximum 3)
+          example: ["AgACAgIAAxkBAAIBZ2abc123", "AgACAgIAAxkBAAIBZ2def456"]
+        isAnonymous:
+          type: boolean
+          default: false
+          description: Whether to submit the report anonymously
+          example: false

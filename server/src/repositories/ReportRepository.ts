@@ -2,6 +2,7 @@ import { Repository, In } from "typeorm";
 import { AppDataSource } from "../utils/AppDataSource";
 import { Report } from "../entities/Report";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
+import { BoundingBox } from "../services/geocodingService";
 
 export class ReportRepository {
   private repository: Repository<Report>;
@@ -69,6 +70,42 @@ export class ReportRepository {
     });
   }
 
+  async findByStatusCategoryAndBounds(
+    statuses: ReportStatus[], 
+    category?: ReportCategory,
+    bbox?: BoundingBox
+  ): Promise<Report[]> {
+    let query = this.repository.createQueryBuilder("report")
+      .leftJoinAndSelect("report.user", "user")
+      .leftJoinAndSelect("report.photos", "photos")
+      .leftJoinAndSelect("report.messages", "messages")
+      .leftJoinAndSelect("messages.user", "messageUser")
+      .leftJoinAndSelect("report.assignedOfficer", "assignedOfficer")
+      .leftJoinAndSelect("report.externalMaintainer", "externalMaintainer")
+      .leftJoinAndSelect("externalMaintainer.externalCompany", "externalCompany")
+      .leftJoinAndSelect("report.externalCompany", "directExternalCompany")
+      .where("report.status IN (:...statuses)", { statuses })
+      .orderBy("report.createdAt", "DESC");
+
+    if (category) {
+      query = query.andWhere("report.category = :category", { category });
+    }
+
+    if (bbox) {
+      query = query.andWhere(
+        "report.latitude BETWEEN :minLat AND :maxLat AND report.longitude BETWEEN :minLon AND :maxLon",
+        {
+          minLat: bbox.minLat,
+          maxLat: bbox.maxLat,
+          minLon: bbox.minLon,
+          maxLon: bbox.maxLon
+        }
+      );
+    }
+
+    return await query.getMany();
+  }
+
   async findAssignedToUser(userId: number, statuses: ReportStatus[]): Promise<Report[]> {
     return await this.repository.find({
       where: {
@@ -131,6 +168,23 @@ export class ReportRepository {
     return await this.repository.findOne({
       where: { category },
       select: ["category"]
+    });
+  }
+
+  async findByUserId(userId: number): Promise<Report[]> {
+    return await this.repository.find({
+      where: { userId }, 
+      relations: [
+        "user",
+        "assignedOfficer",
+        "photos",
+        "messages",
+        "messages.user",
+        "externalMaintainer",
+        "externalMaintainer.externalCompany",
+        "externalCompany"
+      ],
+      order: { createdAt: "DESC" } 
     });
   }
 }

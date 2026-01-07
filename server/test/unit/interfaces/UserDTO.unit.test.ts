@@ -18,7 +18,7 @@ function createMockUser(overrides: Partial<User> = {}): User {
     last_name: "User",
     password: "hashed",
     salt: "salt",
-    role: Role.CITIZEN,
+    role: [Role.CITIZEN],
     telegram_username: null,
     email_notifications_enabled: true,
     reports: [],
@@ -38,7 +38,7 @@ describe("UserDTO", () => {
         first_name: "John",
         last_name: "Doe",
         email: "j@d.com",
-        role: Role.PUBLIC_RELATIONS,
+        role: [Role.PUBLIC_RELATIONS],
       });
       const dto = toMunicipalityUserDTO(user);
       expect(dto).toMatchObject({
@@ -46,7 +46,7 @@ describe("UserDTO", () => {
         firstName: "John",
         lastName: "Doe",
         email: "j@d.com",
-        role: Role.PUBLIC_RELATIONS,
+        role: [Role.PUBLIC_RELATIONS],
       });
     });
 
@@ -54,12 +54,12 @@ describe("UserDTO", () => {
       const user = createMockUser({
         id: 6,
         email: "x@y.com",
-        role: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+        role: [Role.MUNICIPAL_BUILDING_MAINTENANCE],
       });
       const dto = toMunicipalityUserDTO(user);
       expect(dto.id).toBe(6);
       expect(dto.email).toBe("x@y.com");
-      expect(dto.role).toBe(Role.MUNICIPAL_BUILDING_MAINTENANCE);
+      expect(dto.role).toEqual([Role.MUNICIPAL_BUILDING_MAINTENANCE]);
     });
 
     it("handles invalid role in municipality DTO", () => {
@@ -71,7 +71,7 @@ describe("UserDTO", () => {
         role: "INVALID_ROLE" as any,
       });
       const dto = toMunicipalityUserDTO(user);
-      expect(dto.role).toBe("INVALID_ROLE");
+      expect(dto.role).toEqual(["INVALID_ROLE"]);
     });
   });
 
@@ -82,7 +82,7 @@ describe("UserDTO", () => {
         email: "test@example.com",
         first_name: "Test",
         last_name: "User",
-        role: Role.CITIZEN,
+        role: [Role.CITIZEN],
         telegram_username: "telegram",
         email_notifications_enabled: false,
       });
@@ -94,7 +94,7 @@ describe("UserDTO", () => {
         firstName: "Test",
         lastName: "User",
         email: "test@example.com",
-        role: Role.CITIZEN,
+        role: [Role.CITIZEN],
         isVerified: false,
         telegramUsername: "telegram",
         emailNotificationsEnabled: false,
@@ -123,12 +123,12 @@ describe("UserDTO", () => {
 
     it("should convert role correctly", () => {
       const user = createMockUser({
-        role: Role.ADMINISTRATOR,
+        role: [Role.ADMINISTRATOR],
       });
 
       const result = toUserDTO(user);
 
-      expect(result.role).toBe(Role.ADMINISTRATOR);
+      expect(result.role).toEqual([Role.ADMINISTRATOR]);
     });
 
     it("should handle invalid role in UserDTO", () => {
@@ -138,7 +138,7 @@ describe("UserDTO", () => {
 
       const result = toUserDTO(user);
 
-      expect(result.role).toBe("INVALID_ROLE");
+      expect(result.role).toEqual(["INVALID_ROLE"]);
     });
 
     it("should handle edge cases with empty strings", () => {
@@ -160,21 +160,17 @@ describe("UserDTO", () => {
     });
 
     it("should handle all valid roles", () => {
-      const roles = [
-        Role.CITIZEN,
-        Role.ADMINISTRATOR,
-        Role.PUBLIC_RELATIONS,
-      ];
+      const roles = [Role.CITIZEN, Role.ADMINISTRATOR, Role.PUBLIC_RELATIONS];
 
       roles.forEach((role, index) => {
         const user = createMockUser({
           id: index + 10,
           email: `test${index}@example.com`,
-          role: role,
+          role: [role],
         });
 
         const result = toUserDTO(user);
-        expect(result.role).toBe(role);
+        expect(result.role).toEqual([role]);
       });
     });
   });
