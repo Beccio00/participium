@@ -457,28 +457,28 @@ const seedDatabase = async () => {
   // Different coordinates for each report across Turin with real street addresses
   // Well distributed across different neighborhoods for better map visibility
   const turinCoordinates = [
-    { lat: 45.0703, lng: 7.6869, address: "Piazza Castello, 10121 Torino" },                    // Report 1: Centro storico - Fountain
-    { lat: 45.0612, lng: 7.6858, address: "Via Nizza 230, 10126 Torino" },                      // Report 2: Crocetta - Stairs
-    { lat: 45.0837, lng: 7.6744, address: "Corso Giulio Cesare 45, 10152 Torino" },             // Report 3: Madonna di Campagna - Sewer
-    { lat: 45.0542, lng: 7.6628, address: "Via Nizza 350, 10127 Torino" },                      // Report 4: Lingotto - Streetlight
-    { lat: 45.0892, lng: 7.6982, address: "Corso Vercelli 112, 10155 Torino" },                 // Report 5: Barriera di Milano - Waste
-    { lat: 45.0668, lng: 7.7012, address: "Via Roma 156, 10141 Torino" },                       // Report 6: Cit Turin - Road potholes
-    { lat: 45.0755, lng: 7.6585, address: "Corso Francia 88, 10143 Torino" },                   // Report 7: Pozzo Strada - Damaged sidewalk
-    { lat: 45.0925, lng: 7.7125, address: "Via Cigna 45, 10155 Torino" },                       // Report 8: Regio Parco - Broken barrier
-    { lat: 45.0645, lng: 7.6925, address: "Corso Vittorio Emanuele II 75, 10128 Torino" },      // Report 8: San Salvario - Traffic light
+    { lat: 45.0716, lng: 7.6850, address: "Piazza Castello, 10121 Torino" },                    // Report 1: Centro storico - Fountain
+    { lat: 45.0346, lng: 7.6669, address: "Via Nizza 230, 10126 Torino" },                      // Report 2: Crocetta - Stairs
+    { lat: 45.0855, lng: 7.6887, address: "Corso Giulio Cesare 45, 10152 Torino" },             // Report 3: Madonna di Campagna - Sewer
+    { lat: 45.0223, lng: 7.6632, address: "Via Nizza 350, 10127 Torino" },                      // Report 4: Lingotto - Streetlight
+    { lat: 45.0948, lng: 7.6913, address: "Corso Vercelli 112, 10155 Torino" },                 // Report 5: Barriera di Milano - Waste
+    { lat: 45.0670, lng: 7.6817, address: "Via Roma 156, 10141 Torino" },                       // Report 6: Cit Turin - Road potholes
+    { lat: 45.0762, lng: 7.6524, address: "Corso Francia 88, 10143 Torino" },                   // Report 7: Pozzo Strada - Damaged sidewalk
+    { lat: 45.0842, lng: 7.6796, address: "Via Cigna 45, 10155 Torino" },                       // Report 8: Regio Parco - Broken barrier
+    { lat: 45.0645, lng: 7.6732, address: "Corso Vittorio Emanuele II 75, 10128 Torino" },      // Report 8: San Salvario - Traffic light
     { lat: 45.0815, lng: 7.6655, address: "Corso Lecce 33, 10149 Torino" },                     // Report 9: Vallette - Faded crosswalk
-    { lat: 45.0588, lng: 7.6777, address: "Via San Francesco da Paola 15, 10123 Torino" },      // Report 10: Centro - Damaged sidewalk
-    { lat: 45.0784, lng: 7.6425, address: "Via Venaria 45, 10148 Torino" },                     // Report 11: Parella - Playground
-    { lat: 45.0521, lng: 7.6912, address: "Via Madama Cristina 89, 10125 Torino" },             // Report 12: San Salvario - Water leak
-    { lat: 45.0622, lng: 7.6758, address: "Via Po 25, 10124 Torino" },                          // Report 13: Vanchiglia - Graffiti
-    { lat: 45.0865, lng: 7.7035, address: "Corso Vercelli 230, 10155 Torino" },                 // Report 14: Aurora - Fallen tree
-    { lat: 45.0456, lng: 7.6598, address: "Corso Unità d'Italia 56, 10127 Torino" },            // Report 15: Millefonti - Bus stop
-    { lat: 45.0758, lng: 7.6928, address: "Corso San Maurizio 12, 10124 Torino" },              // Report 16: Borgo Po - Illegal dumping
-    { lat: 45.0692, lng: 7.6645, address: "Via Duchessa Jolanda 15, 10138 Torino" },            // Report 17: Santa Rita - School
-    { lat: 45.0598, lng: 7.7125, address: "Via Plava 78, 10135 Torino" },                       // Report 18: Cenisia - Sports facility
-    { lat: 45.0789, lng: 7.6512, address: "Corso Peschiera 156, 10149 Torino" },                // Report 19: Dora - Public housing
-    { lat: 45.0734, lng: 7.6812, address: "Piazza Solferino 8, 10121 Torino" },                 // Report 20: Centro - Tourist info panel
-    { lat: 45.0658, lng: 7.6598, address: "Corso Marconi 45, 10125 Torino" },                    // Report 21: Santa Rita - Broken road sign
+    { lat: 45.0660, lng: 7.6872, address: "Via San Francesco da Paola 15, 10123 Torino" },      // Report 10: Centro - Damaged sidewalk
+    { lat: 45.1085, lng: 7.6608, address: "Via Venaria 45, 10148 Torino" },                     // Report 11: Parella - Playground
+    { lat: 45.0505, lng: 7.6779, address: "Via Madama Cristina 89, 10125 Torino" },             // Report 12: San Salvario - Water leak
+    { lat: 45.0687, lng: 7.6896, address: "Via Po 25, 10124 Torino" },                          // Report 13: Vanchiglia - Graffiti
+    { lat: 45.1074, lng: 7.6972, address: "Corso Vercelli 230, 10155 Torino" },                 // Report 14: Aurora - Fallen tree
+    { lat: 45.0307, lng: 7.6733, address: "Corso Unità d'Italia 56, 10127 Torino" },            // Report 15: Millefonti - Bus stop
+    { lat: 45.0705, lng: 7.6934, address: "Corso San Maurizio 12, 10124 Torino" },              // Report 16: Borgo Po - Illegal dumping
+    { lat: 45.0737, lng: 7.6626, address: "Via Duchessa Jolanda 15, 10138 Torino" },            // Report 17: Santa Rita - School
+    { lat: 45.0208, lng: 7.6145, address: "Via Plava 78, 10135 Torino" },                       // Report 18: Cenisia - Sports facility
+    { lat: 45.0640, lng: 7.6520, address: "Corso Peschiera 156, 10149 Torino" },                // Report 19: Dora - Public housing
+    { lat: 45.0700, lng: 7.6769, address: "Piazza Solferino 8, 10121 Torino" },                 // Report 20: Centro - Tourist info panel
+    { lat: 45.0553, lng: 7.6840, address: "Corso Marconi 45, 10125 Torino" },                    // Report 21: Santa Rita - Broken road sign
   ];
 
   // Create reports with staggered creation dates (from 7 days ago to today)
