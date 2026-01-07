@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Container, Alert, Badge, Nav } from 'react-bootstrap';
 import { useAuth, useForm, useLoadingState } from "../../hooks";
 import Button from "../../components/ui/Button.tsx";
@@ -148,6 +148,9 @@ export default function AdminPanel() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Form ref for auto-scroll/focus on edit
+  const formRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = hasAdminRole(user, isAuthenticated);
 
@@ -330,6 +333,12 @@ export default function AdminPanel() {
       platformAccess: false,
       categories: [],
     });
+    
+    // Scroll to form and focus after a short delay to ensure DOM update
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      formRef.current?.focus();
+    }, 100);
   };
 
   const handleTabChange = (tab: UserTab) => {
@@ -417,7 +426,7 @@ export default function AdminPanel() {
 
             {/* Creation form */}
             {showForm && (
-              <div className="mb-5 p-4 rounded bg-light border">
+              <div ref={formRef} tabIndex={-1} className="mb-5 p-4 rounded bg-light border" style={{ outline: 'none' }}>
                 <h5 className="mb-3 pb-2 border-bottom">{editingUser ? "Edit Staff" : `Create New ${addButtonLabel}`}</h5>
                 {activeTab === 'companies' && (
                   <CompanyForm

@@ -3,6 +3,7 @@ import {
   toMunicipalityUserDTO,
   isValidRole,
   MUNICIPALITY_ROLES,
+  TECHNICAL_ROLES,
   Role,
 } from "../interfaces/UserDTO";
 import { 
@@ -23,12 +24,8 @@ export async function createMunicipalityUserController(req: Request, res: Respon
     throw new BadRequestError("Missing required fields: firstName, lastName, email, password, role (must be a non-empty array)");
   }
 
-  // Verifica che tutti i ruoli siano validi
-  for (const r of role) {
-    if (!isValidRole(r) || !MUNICIPALITY_ROLES.includes(r as Role)) {
-      throw new BadRequestError("Invalid role. Must be one of the municipality roles");
-    }
-  }
+  // Validate all roles
+  validateRolesArray(role);
 
   const existingUser = await findByEmail(email);
   if (existingUser) {
@@ -102,6 +99,16 @@ function validateRolesArray(roles: string[]): void {
   for (const r of roles) {
     if (!isValidRole(r) || !MUNICIPALITY_ROLES.includes(r as Role)) {
       throw new BadRequestError("Invalid role. Must be one of the municipality roles");
+    }
+  }
+
+  // Multiple roles are only allowed if all of them are technical roles
+  // This also prevents PUBLIC_RELATIONS from being combined with other roles
+  // since PUBLIC_RELATIONS is not a technical role
+  if (roles.length > 1) {
+    const allAreTechnicalRoles = roles.every(r => TECHNICAL_ROLES.includes(r as Role));
+    if (!allAreTechnicalRoles) {
+      throw new BadRequestError("Multiple roles can only be assigned if all are technical officer roles");
     }
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Navbar, Container, Nav, Button, Badge, Image } from "react-bootstrap";
 import { useAuth } from "../hooks/useAuth";
@@ -7,6 +7,7 @@ import {
   getRoleLabel, 
   TECHNICIAN_ROLES,
   userHasRole,
+  userHasAnyRole,
 } from "../utils/roles";
 import {
   PersonCircle,
@@ -29,7 +30,7 @@ function canUserSeeNotifications(user: any, isAuthenticated: boolean): boolean {
   if (!isAuthenticated || !user) return false;
   return (
     userHasRole(user, "CITIZEN") ||
-    TECHNICIAN_ROLES.includes(user.role) ||
+    userHasAnyRole(user, TECHNICIAN_ROLES) ||
     userHasRole(user, "EXTERNAL_MAINTAINER")
   );
 }
@@ -214,6 +215,12 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     }
   );
 
+  // Use ref to avoid re-creating interval when readNotificationIds changes
+  const readNotificationIdsRef = useRef(readNotificationIds);
+  useEffect(() => {
+    readNotificationIdsRef.current = readNotificationIds;
+  }, [readNotificationIds]);
+
   // Save read notifications in localStorage when they change
   useEffect(() => {
     localStorage.setItem(
@@ -222,36 +229,57 @@ export default function Header({ showBackToHome = false }: HeaderProps) {
     );
   }, [readNotificationIds]);
 
-  // Polling for notifications
+  // Polling function as a callback to avoid recreating on each render
+  const pollNotifications = useCallback(async () => {
+    if (!canUserSeeNotifications(user, isAuthenticated)) {
+      setNotifications([]);
+      setNotificationCount(0);
+      return;
+    }
+
+    try {
+      const notifs = await getNotifications();
+      
+      // Clean up orphan IDs from localStorage (IDs that no longer exist in server)
+      const serverIds = notifs.map((n) => n.id);
+      const currentReadIds = readNotificationIdsRef.current;
+      const validReadIds = currentReadIds.filter((id) => serverIds.includes(id));
+      if (validReadIds.length !== currentReadIds.length) {
+        setReadNotificationIds(validReadIds);
+      }
+      
+      // Filter out already read notifications
+      const unread = notifs.filter(
+        (n) => !validReadIds.includes(n.id)
+      );
+      setNotifications(unread);
+      setNotificationCount(unread.length);
+    } catch {
+      setNotifications([]);
+      setNotificationCount(0);
+    }
+  }, [isAuthenticated, user]);
+
+  // Polling for notifications - only depends on pollNotifications callback
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
 
-    async function pollNotifications() {
-      if (!canUserSeeNotifications(user, isAuthenticated)) {
-        setNotifications([]);
-        setNotificationCount(0);
-        return;
-      }
-
-      try {
-        const notifs = await getNotifications();
-        const unread = notifs.filter(
-          (n) => !readNotificationIds.includes(n.id)
-        );
-        setNotifications(unread);
-        setNotificationCount(unread.length);
-      } catch {
-        setNotifications([]);
-        setNotificationCount(0);
-      }
-    }
-
     pollNotifications();
     interval = setInterval(pollNotifications, 10000); // ogni 10s
+    
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isAuthenticated, user, readNotificationIds]);
+  }, [pollNotifications]);
+
+  // Re-filter notifications when readNotificationIds changes (without refetching)
+  useEffect(() => {
+    setNotifications((prev) => {
+      const filtered = prev.filter((n) => !readNotificationIds.includes(n.id));
+      setNotificationCount(filtered.length);
+      return filtered;
+    });
+  }, [readNotificationIds]);
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showTelegramModal, setShowTelegramModal] = useState(false);

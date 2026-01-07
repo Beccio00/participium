@@ -3,7 +3,7 @@ import { Form } from "react-bootstrap";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import type { ExternalCompanyResponse, MunicipalityUserResponse } from "../../types";
-import { MUNICIPALITY_ROLES, getRoleLabel } from "../../utils/roles";
+import { MUNICIPALITY_ROLES, getRoleLabel, validateRoleCombination } from "../../utils/roles";
 import type { MunicipalityUserRoles } from "../../../../shared/MunicipalityUserTypes";
 
 interface UserFormFields {
@@ -70,6 +70,15 @@ export default function UserForm({
     if (isInternal && (!values.role || values.role.length === 0)) {
       setValidationError("Please select at least one role for this user.");
       return;
+    }
+
+    // Validate role combinations
+    if (isInternal && values.role && values.role.length > 0) {
+      const validation = validateRoleCombination(values.role);
+      if (!validation.valid) {
+        setValidationError(validation.error || "Invalid role combination");
+        return;
+      }
     }
 
     onSubmit(e);
