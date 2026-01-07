@@ -125,10 +125,9 @@ function getTabItemCount(tab: UserTab, internalCount: number, externalCount: num
   return companyCount;
 }
 
-// Helper: Get nav link class name
-function getNavLinkClass(isActive: boolean): string {
-  return isActive ? 'fw-bold text-dark' : 'text-muted';
-}
+// Helper: Get nav link class names for active/inactive states
+const getActiveNavLinkClass = (): string => 'fw-bold text-dark';
+const getInactiveNavLinkClass = (): string => 'text-muted';
 
 export default function AdminPanel() {
   const { user, isAuthenticated } = useAuth();
@@ -151,21 +150,6 @@ export default function AdminPanel() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isAdmin = hasAdminRole(user, isAuthenticated);
-
-  useEffect(() => {
-    if (isAdmin) {
-      loadData();
-    }
-  }, [isAdmin]);
-
-  // Check access before rendering
-  if (!isAdmin) {
-    const message = !isAuthenticated
-      ? "You need to be logged in as an administrator to access this page."
-      : "Only administrators can access the admin panel.";
-    
-    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
-  }
 
   const loadData = async () => {
     try {
@@ -250,10 +234,26 @@ export default function AdminPanel() {
     }
   };
 
+  // Initialize form hook unconditionally at the top level
   const form = useForm<UnifiedFormState>({
     initialValues: INITIAL_FORM_STATE,
     onSubmit: handleCreateOrUpdate,
   });
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadData();
+    }
+  }, [isAdmin]);
+
+  // Check access before rendering
+  if (!isAdmin) {
+    const message = !isAuthenticated
+      ? "You need to be logged in as an administrator to access this page."
+      : "Only administrators can access the admin panel.";
+    
+    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+  }
 
   const handleCategoryToggle = (category: ReportCategory) => {
     const currentCategories = form.values.categories;
@@ -309,6 +309,13 @@ export default function AdminPanel() {
     }
   };
 
+  // Helper: Normalize user role to array format
+  const normalizeUserRole = (role: any): MunicipalityUserRoles[] => {
+    if (Array.isArray(role)) return role;
+    if (role) return [role];
+    return [];
+  };
+
   const handleEdit = (user: MunicipalityUserResponse) => {
     setEditingUser(user);
     setShowForm(true);
@@ -317,7 +324,7 @@ export default function AdminPanel() {
       lastName: user.lastName,
       email: user.email,
       password: "", // Vuoto per sicurezza
-      role: Array.isArray(user.role) ? user.role : user.role ? [user.role] : [],
+      role: normalizeUserRole(user.role),
       externalCompanyId: "",
       companyName: "",
       platformAccess: false,
@@ -362,7 +369,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="internal" 
               onClick={() => handleTabChange('internal')}
-              className={getNavLinkClass(activeTab === 'internal')}
+              className={activeTab === 'internal' ? getActiveNavLinkClass() : getInactiveNavLinkClass()}
               style={{ whiteSpace: 'nowrap' }}
             >
               <People className="me-2" /> Internal Staff
@@ -372,7 +379,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="external" 
               onClick={() => handleTabChange('external')}
-              className={getNavLinkClass(activeTab === 'external')}
+              className={activeTab === 'external' ? getActiveNavLinkClass() : getInactiveNavLinkClass()}
               style={{ whiteSpace: 'nowrap' }}
             >
               <Briefcase className="me-2" /> External Maintainers
@@ -382,7 +389,7 @@ export default function AdminPanel() {
             <Nav.Link 
               eventKey="companies" 
               onClick={() => handleTabChange('companies')}
-              className={getNavLinkClass(activeTab === 'companies')}
+              className={activeTab === 'companies' ? getActiveNavLinkClass() : getInactiveNavLinkClass()}
               style={{ whiteSpace: 'nowrap' }}
             >
               <Building className="me-2" /> Partner Companies

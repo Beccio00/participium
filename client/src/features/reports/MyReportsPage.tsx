@@ -65,7 +65,7 @@ export default function MyReportsPage() {
       const myReports = (await getMyReports()) as AppReport[];
       
       // Sort by creation date (newest first)
-      const sorted = myReports.sort((a, b) => {
+      const sorted = myReports.toSorted((a, b) => {
         const ta = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
         const tb = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
         return tb - ta;
@@ -97,7 +97,7 @@ export default function MyReportsPage() {
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
       const matchesSearch = !searchTerm || 
-        (report.title && report.title.toLowerCase().includes(searchTerm.toLowerCase()));
+        report.title?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = !filterStatus || report.status === filterStatus;
       const matchesCategory = !filterCategory || report.category === filterCategory;
       return matchesSearch && matchesStatus && matchesCategory;

@@ -19,6 +19,12 @@ const sizeStyles: Record<string, CSSProperties> = {
   lg: { fontSize: "1.5rem", padding: "0.375rem" },
 };
 
+const variantClasses: Record<string, string> = {
+  default: "",
+  danger: "btn btn-sm btn-outline-danger border-0",
+  primary: "btn btn-sm btn-outline-primary border-0",
+};
+
 export default function IconButton({
   icon,
   variant = "default",
@@ -40,12 +46,7 @@ export default function IconButton({
     ...style,
   };
 
-  const variantClass =
-    variant === "danger"
-      ? "btn btn-sm btn-outline-danger border-0"
-      : variant === "primary"
-        ? "btn btn-sm btn-outline-primary border-0"
-        : "";
+  const variantClass = variantClasses[variant];
 
   return (
     <button

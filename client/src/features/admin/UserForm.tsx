@@ -57,6 +57,11 @@ export default function UserForm({
     ? "Saving..."
     : "Save";
 
+  const getButtonLabel = (): string => {
+    if (!isEditing) return submitLabel;
+    return isSubmitting ? "Updating Roles..." : "Update Roles";
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setValidationError("");
@@ -81,16 +86,16 @@ export default function UserForm({
         <div className="mb-4">
           <div className="row mb-3">
             <div className="col-md-6">
-              <label className="form-label fw-semibold">First Name</label>
+              <div className="form-label fw-semibold">First Name</div>
               <p className="form-control-plaintext">{editingUser.firstName}</p>
             </div>
             <div className="col-md-6">
-              <label className="form-label fw-semibold">Last Name</label>
+              <div className="form-label fw-semibold">Last Name</div>
               <p className="form-control-plaintext">{editingUser.lastName}</p>
             </div>
           </div>
           <div className="mb-3">
-            <label className="form-label fw-semibold">Email Address</label>
+            <div className="form-label fw-semibold">Email Address</div>
             <p className="form-control-plaintext">{editingUser.email}</p>
           </div>
         </div>
@@ -238,7 +243,7 @@ export default function UserForm({
           disabled={isSubmitting}
           isLoading={isSubmitting}
         >
-          {isEditing ? (isSubmitting ? "Updating Roles..." : "Update Roles") : submitLabel}
+          {getButtonLabel()}
         </Button>
       </div>
     </form>

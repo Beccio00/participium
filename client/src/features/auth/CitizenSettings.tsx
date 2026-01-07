@@ -338,7 +338,7 @@ export default function CitizenSettings() {
                       </div>
 
                       <Form.Group className="mb-4">
-                        <label className="form-label">Telegram</label>
+                        <div className="form-label">Telegram</div>
                         <div className="d-flex align-items-center gap-3">
                           <span className="text-muted">{profile?.telegramUsername ? ('@' + profile.telegramUsername) : 'Not connected'}</span>
                           <Button className="outline-primary" size="sm" onClick={() => setShowTelegramModal(true)}>Manage</Button>

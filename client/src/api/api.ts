@@ -13,7 +13,7 @@ export async function geocodeAddress(address: string, zoom: number = 16) {
       // ignore
     }
     // If the backend provides a message about not in Turin or similar, use a friendly message
-    const msg = (data && data.message ? data.message : "").toLowerCase();
+    const msg = (data?.message ?? "").toLowerCase();
     if (
       msg.includes("not in turin") ||
       msg.includes("not in allowed area") ||

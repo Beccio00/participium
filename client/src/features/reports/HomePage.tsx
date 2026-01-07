@@ -52,17 +52,31 @@ function normalizeReports(data: any[]): Report[] {
 }
 
 // Helper: Render reports list content based on state
-function renderReportsList(
-  loadingReports: boolean,
-  reportsError: string | null,
-  recentReports: Report[],
-  allReports: Report[],
-  selectedReportId: number | null,
-  isAuthenticated: boolean,
-  user: any,
-  handleReportCardClick: (id: number) => void,
-  handleReportDetailsClick: (id: number) => void
-) {
+interface ReportsListProps {
+  loadingReports: boolean;
+  reportsError: string | null;
+  recentReports: Report[];
+  allReports: Report[];
+  selectedReportId: number | null;
+  isAuthenticated: boolean;
+  user: any;
+  onReportCardClick: (id: number) => void;
+  onReportDetailsClick: (id: number) => void;
+}
+
+function renderReportsList(props: ReportsListProps) {
+  const {
+    loadingReports,
+    reportsError,
+    recentReports,
+    allReports,
+    selectedReportId,
+    isAuthenticated,
+    user,
+    onReportCardClick,
+    onReportDetailsClick,
+  } = props;
+
   if (loadingReports) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
@@ -107,8 +121,8 @@ function renderReportsList(
               <ReportCard
                 report={report}
                 isSelected={selectedReportId === report.id}
-                onClick={() => handleReportCardClick(report.id)}
-                onOpenDetails={handleReportDetailsClick}
+                onClick={() => onReportCardClick(report.id)}
+                onOpenDetails={onReportDetailsClick}
               />
             </div>
           );
@@ -848,17 +862,17 @@ export default function HomePage() {
                 scrollbarColor: "#d1d5db #f9fafb",
               }}
             >
-              {renderReportsList(
+              {renderReportsList({
                 loadingReports,
                 reportsError,
                 recentReports,
-                reports,
+                allReports: reports,
                 selectedReportId,
                 isAuthenticated,
                 user,
-                handleReportCardClick,
-                handleReportDetailsClick
-              )}
+                onReportCardClick: handleReportCardClick,
+                onReportDetailsClick: handleReportDetailsClick,
+              })}
             </div>
 
             {/* Add Report Button in Offcanvas */}
