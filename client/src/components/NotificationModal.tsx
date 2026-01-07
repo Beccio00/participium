@@ -37,6 +37,8 @@ export default function NotificationModal({
             {notifications.map((n) => (
               <div
                 key={n.id}
+                role="button"
+                tabIndex={0}
                 style={{
                   background: "#f8fafc",
                   borderRadius: 8,
@@ -49,6 +51,7 @@ export default function NotificationModal({
                   justifyContent: "space-between",
                 }}
                 onClick={() => onOpenReport(n.reportId)}
+                onKeyDown={(e) => e.key === "Enter" && onOpenReport(n.reportId)}
               >
                 <div>
                   <div style={{ fontWeight: 600, color: "#00796b" }}>

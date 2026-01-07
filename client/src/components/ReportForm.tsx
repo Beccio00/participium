@@ -507,10 +507,13 @@ export default function ReportForm() {
 
                       {/*D&D*/}
                       <div
+                        role="button"
+                        tabIndex={0}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
+                        onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
                         style={{
                           ...dndStyle(isDragging),
                           borderColor: touched.photos && fieldErrors.photos ? "#dc3545" : dndStyle(isDragging).borderColor,
@@ -564,6 +567,8 @@ export default function ReportForm() {
                           {files.map((file, index) => (
                             <div
                               key={index}
+                              role="group"
+                              aria-label={`Photo ${index + 1} preview`}
                               style={{
                                 ...photoPreviewStyle,
                                 transform:

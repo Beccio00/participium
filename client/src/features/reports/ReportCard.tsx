@@ -43,7 +43,10 @@ export default function ReportCard({
   return (
     <div
       data-report-id={report.id}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined}
       style={{
         cursor: onClick ? "pointer" : "default",
         padding: "1rem",

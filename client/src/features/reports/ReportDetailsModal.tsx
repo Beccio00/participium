@@ -457,7 +457,7 @@ export default function ReportDetailsModal({
                       >
                         <img
                           src={photo.url}
-                          alt={`${display.title} - Photo ${idx + 1}`}
+                          alt={`${display.title} - ${idx + 1}`}
                           loading="lazy"
                           style={{
                             maxWidth: "100%",
@@ -493,8 +493,8 @@ export default function ReportDetailsModal({
                   <i
                     className="bi bi-camera"
                     style={{ marginRight: "0.5rem" }}
-                    aria-hidden
-                  ></i>
+                    aria-hidden="true"
+                  />{" "}
                   No images available
                 </span>
               </div>
@@ -587,8 +587,8 @@ export default function ReportDetailsModal({
                 <i
                   className="bi bi-person-fill"
                   style={{ marginRight: "0.35rem" }}
-                  aria-hidden
-                ></i>
+                  aria-hidden="true"
+                />{" "}
                 Created by:
               </strong>
               <span style={{ marginLeft: "0.5rem", color: "var(--text)" }}>
@@ -605,8 +605,8 @@ export default function ReportDetailsModal({
                 <i
                   className="bi bi-person-badge"
                   style={{ marginRight: "0.35rem" }}
-                  aria-hidden
-                ></i>
+                  aria-hidden="true"
+                />{" "}
                 {isResolved ? "Resolved by:" : "Assigned to:"}
               </strong>
               <span style={{ marginLeft: "0.5rem", color: "var(--text)" }}>
@@ -619,8 +619,8 @@ export default function ReportDetailsModal({
                 <i
                   className="bi bi-calendar3"
                   style={{ marginRight: "0.35rem" }}
-                  aria-hidden
-                ></i>
+                  aria-hidden="true"
+                />{" "}
                 Created at:
               </strong>
               <span style={{ marginLeft: "0.5rem", color: "var(--text)" }}>
@@ -641,8 +641,8 @@ export default function ReportDetailsModal({
                 <i
                   className="bi bi-geo-alt"
                   style={{ marginRight: "0.35rem" }}
-                  aria-hidden
-                ></i>
+                  aria-hidden="true"
+                />{" "}
                 Address:
               </strong>
               <span

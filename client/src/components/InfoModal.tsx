@@ -25,8 +25,15 @@ export default function InfoModal({ open, onClose }: InfoModalProps) {
       aria-modal="true"
       aria-label="About Participium"
       onClick={onClose}
+      onKeyDown={(e) => e.key === "Enter" && onClose()}
+      tabIndex={0}
     >
-      <div className="map-info-modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="map-info-modal-content"
+        role="document"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <button
           className="map-info-modal-close"
           aria-label="Close info dialog"

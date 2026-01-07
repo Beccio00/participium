@@ -64,7 +64,8 @@ export default function SignupPage() {
               Record<keyof ExtendedSignupFormData, string>
             >);
 
-      if (values.confirmPassword && values.password != values.confirmPassword) {
+      // NOSONAR - This is password field comparison, not a hard-coded password
+      if (values.confirmPassword && values.password !== values.confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
       return errors;
