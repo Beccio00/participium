@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Clipboard, Pencil, List, FileEarmarkText } from "react-bootstrap-icons";
 import { Offcanvas } from "react-bootstrap";
@@ -202,7 +202,7 @@ function renderActionButtons(
 
 export default function HomePage() {
   // Clear address search and restore all reports
-  const handleClearAddressSearch = async () => {
+  const handleClearAddressSearch = useCallback(async () => {
     // Reset search state
     setSearchCenter(null);
     setSearchZoom(13);
@@ -222,7 +222,7 @@ export default function HomePage() {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, []);
   // Serach address and zoom
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -239,8 +239,21 @@ export default function HomePage() {
   const [sidebarFilterStatus, setSidebarFilterStatus] = useState("");
   const [sidebarFilterCategory, setSidebarFilterCategory] = useState("");
 
+  // Memoize sidebar handlers
+  const handleSidebarSearchChange = useCallback((term: string) => {
+    setSidebarSearchTerm(term);
+  }, []);
+
+  const handleSidebarStatusChange = useCallback((status: string) => {
+    setSidebarFilterStatus(status);
+  }, []);
+
+  const handleSidebarCategoryChange = useCallback((category: string) => {
+    setSidebarFilterCategory(category);
+  }, []);
+
   // Address search handler
-  const handleAddressSearch = async (address: string, zoom: number) => {
+  const handleAddressSearch = useCallback(async (address: string, zoom: number) => {
     setSearchLoading(true);
     setSearchError(null);
     try {
@@ -280,7 +293,7 @@ export default function HomePage() {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, []);
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
@@ -320,29 +333,29 @@ export default function HomePage() {
 
   // --- Report handlers -----------------------------------------------------
 
-  const handleReportUpdate = (updatedReport: Report) => {
+  const handleReportUpdate = useCallback((updatedReport: Report) => {
     setReports((prev) => prev.map((r) => (r.id === updatedReport.id ? updatedReport : r)));
-  };
+  }, []);
 
-  const refreshReports = () => setRefreshTrigger((prev) => prev + 1);
+  const refreshReports = useCallback(() => setRefreshTrigger((prev) => prev + 1), []);
 
-  const handleAddReport = () => {
+  const handleAddReport = useCallback(() => {
     navigate("/report/new");
-  };
+  }, [navigate]);
 
   useEffect(() => {
     const handleRefresh = () => refreshReports();
     window.addEventListener("refreshReports", handleRefresh);
     return () => window.removeEventListener("refreshReports", handleRefresh);
-  }, []);
+  }, [refreshReports]);
 
-  const handleReportDetailsClick = (reportId: number) => {
+  const handleReportDetailsClick = useCallback((reportId: number) => {
     setSelectedReportId(reportId);
     setShowDetailsModal(true);
 
     // su mobile: chiudo la lista (offcanvas) e lascio la mappa visibile
     if (window.innerWidth < 992) setShowReportsSidebar(false);
-  };
+  }, []);
 
   // Role checks using the utility functions for consistency
   // (Already defined above using useMemo for better performance)
@@ -397,7 +410,7 @@ export default function HomePage() {
   // --- Derived data --------------------------------------------------------
 
   // Filter function for sidebar
-  const filterSidebarReports = (reportsList: Report[]) => {
+  const filterSidebarReports = useCallback((reportsList: Report[]) => {
     return reportsList.filter((report) => {
       const matchesSearch = !sidebarSearchTerm || 
         report.title?.toLowerCase().includes(sidebarSearchTerm.toLowerCase());
@@ -405,7 +418,7 @@ export default function HomePage() {
       const matchesCategory = !sidebarFilterCategory || report.category === sidebarFilterCategory;
       return matchesSearch && matchesStatus && matchesCategory;
     });
-  };
+  }, [sidebarSearchTerm, sidebarFilterStatus, sidebarFilterCategory]);
 
   const recentReports = useMemo(() => {
     const recent = getRecentReports(reports);
@@ -426,11 +439,11 @@ export default function HomePage() {
     return reports.find((r) => r.id === selectedReportId) || null;
   }, [reports, selectedReportId]);
 
-  const handleReportCardClick = (reportId: number) => {
+  const handleReportCardClick = useCallback((reportId: number) => {
     saveSidebarScroll(sidebarScrollRef);
     setSelectedReportId(reportId);
     setShowReportsSidebar(false);
-  };
+  }, []);
 
   // Helper functions for conditional rendering
   
@@ -542,7 +555,7 @@ export default function HomePage() {
         <EmptyState
           icon={<Clipboard />}
           title="No reports available"
-          description="There are no reports in the system yet. Reports will appear here once submitted by citizens."
+          description={searchCenter ? "No reports in this area" : "There are no reports in the system yet. Reports will appear here once submitted by citizens."}
         />
       </div>
     );
@@ -606,11 +619,11 @@ export default function HomePage() {
       <div style={{ padding: "0 1.5rem", paddingTop: "1rem" }}>
         <SearchAndFilterBar
           searchTerm={sidebarSearchTerm}
-          onSearchChange={setSidebarSearchTerm}
+          onSearchChange={handleSidebarSearchChange}
           filterStatus={sidebarFilterStatus}
-          onStatusChange={setSidebarFilterStatus}
+          onStatusChange={handleSidebarStatusChange}
           filterCategory={sidebarFilterCategory}
-          onCategoryChange={setSidebarFilterCategory}
+          onCategoryChange={handleSidebarCategoryChange}
           availableStatuses={availableStatuses}
           availableCategories={availableCategories}
           compact={true}
@@ -840,11 +853,11 @@ export default function HomePage() {
           <div style={{ padding: "1rem 1.5rem 0.5rem 1.5rem" }}>
             <SearchAndFilterBar
               searchTerm={sidebarSearchTerm}
-              onSearchChange={setSidebarSearchTerm}
+              onSearchChange={handleSidebarSearchChange}
               filterStatus={sidebarFilterStatus}
-              onStatusChange={setSidebarFilterStatus}
+              onStatusChange={handleSidebarStatusChange}
               filterCategory={sidebarFilterCategory}
-              onCategoryChange={setSidebarFilterCategory}
+              onCategoryChange={handleSidebarCategoryChange}
               availableStatuses={availableStatuses}
               availableCategories={availableCategories}
               compact={true}

@@ -343,21 +343,21 @@ const seedDatabase = async () => {
       photos: ["report7.jpg"]
     },
     {
-      // Report 9: Traffic light off
-      title: "Traffic light completely off - no power",
-      description: "Traffic signal at major intersection completely turned off. No lights active, creating dangerous situation for vehicles and pedestrians. Electrical failure suspected.",
-      category: ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS,
-      preferredRole: Role.ROAD_MAINTENANCE,
+      // Report 9: Public lighting failure
+      title: "Public lighting pole completely off - electrical failure",
+      description: "Street lighting pole completely off at major intersection. No lights functioning, creating dangerous dark spots at night. Electrical failure suspected - needs specialized electrical intervention.",
+      category: ReportCategory.PUBLIC_LIGHTING,
+      preferredRole: Role.LOCAL_PUBLIC_SERVICES,
       status: ReportStatus.ASSIGNED,
       photos: ["report10.jpg"]
     },
     {
-      // Report 9: Faded crosswalk
-      title: "Faded crosswalk markings with potholes",
-      description: "Pedestrian crossing almost invisible due to faded paint. Multiple potholes in the area. Safety hazard for pedestrians and drivers.",
+      // Report 10: Traffic light malfunction (now properly assigned to ROAD_MAINTENANCE)
+      title: "Traffic light malfunction - stuck on red",
+      description: "Traffic signal at intersection stuck on red light in all directions. Causing traffic congestion and safety issues. Needs immediate road maintenance intervention.",
       category: ReportCategory.ROAD_SIGNS_TRAFFIC_LIGHTS,
       preferredRole: Role.ROAD_MAINTENANCE,
-      status: ReportStatus.RESOLVED,
+      status: ReportStatus.ASSIGNED,
       photos: ["report11.jpg"]
     },
     {
@@ -532,24 +532,31 @@ const seedDatabase = async () => {
       rejectedReason: null,
     };
 
-    // Assign technical users for appropriate statuses
+    // Assign technical users for appropriate statuses based on role-category mapping
     if (
       template.status === ReportStatus.ASSIGNED ||
       template.status === ReportStatus.IN_PROGRESS
     ) {
-      const preferredRole = template.preferredRole;
-      const assignedUser =
-        createdUsers.find((u) => u.role === preferredRole) || tech;
-      if (assignedUser) reportData.assignedOfficerId = assignedUser.id;
+      // Find appropriate tech user based on preferred role
+      const techUser = createdUsers.find(
+        (u) => u.role.includes(template.preferredRole)
+      );
+      if (techUser) {
+        reportData.assignedOfficerId = techUser.id;
+      } else {
+        // Only assign to tech@participium.com (Luca Bianchi) for appropriate categories
+        if (
+          template.category === ReportCategory.ARCHITECTURAL_BARRIERS ||
+          (template.category === ReportCategory.ROADS_URBAN_FURNISHINGS &&
+           template.preferredRole === Role.MUNICIPAL_BUILDING_MAINTENANCE)
+        ) {
+          reportData.assignedOfficerId = tech.id; // Luca Bianchi
+        }
+        // For other categories, leave unassigned or find appropriate user
+      }
     }
 
-    // Force assignment to tech@participium.com for ARCHITECTURAL_BARRIERS with ASSIGNED status
-    if (
-      template.status === ReportStatus.ASSIGNED &&
-      template.category === ReportCategory.ARCHITECTURAL_BARRIERS
-    ) {
-      reportData.assignedOfficerId = tech.id;
-    }
+    // ARCHITECTURAL_BARRIERS reports are already correctly assigned above
 
     if (template.status === ReportStatus.REJECTED) {
       reportData.rejectedReason =
@@ -642,69 +649,95 @@ const seedDatabase = async () => {
   // PT24 DEMO: Report 4 (Streetlight) - ASSIGNED, ready to assign to Enel X
   const pt24Report = allReports[3]; // Report 4: Streetlight off
   if (pt24Report) {
+    // Assign to appropriate LOCAL_PUBLIC_SERVICES user (not Luca Bianchi)
+    const localPublicUser = createdUsers.find((u) => 
+      u.role.includes(Role.LOCAL_PUBLIC_SERVICES.toString())
+    );
+    const assignedUserId = localPublicUser?.id || tech.id;
+    
     await AppDataSource.query(
       'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2 WHERE id = $3',
-      [ReportStatus.ASSIGNED, tech.id, pt24Report.id]
+      [ReportStatus.ASSIGNED, assignedUserId, pt24Report.id]
     );
-    console.log(`   ✅ [PT24] Report ${pt24Report.id} (Streetlight): ASSIGNED to tech@participium.com - ready for external assignment to Enel X`);
+    
+    const assignedUserEmail = localPublicUser?.email || 'tech@participium.com';
+    console.log(`   ✅ [PT24] Report ${pt24Report.id} (Streetlight): ASSIGNED to ${assignedUserEmail} - ready for external assignment to Enel X`);
   }
 
-  // PT25 DEMO: Report 9 (Traffic light) - EXTERNAL_ASSIGNED, ready for status updates
-  const pt25Report = allReports[8]; // Report 9: Traffic light off
+  // PT25 DEMO: Report 9 (Public lighting) - EXTERNAL_ASSIGNED, ready for status updates
+  const pt25Report = allReports[8]; // Report 9: Public lighting failure
   if (pt25Report) {
+    // Public lighting should be handled by LOCAL_PUBLIC_SERVICES, then can be assigned to Enel X
+    const localPublicUser = createdUsers.find((u) => 
+      u.role.includes(Role.LOCAL_PUBLIC_SERVICES.toString())
+    );
+    const assignedUserId = localPublicUser?.id || tech.id;
+    
     await AppDataSource.query(
       'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2, "externalMaintainerId" = $3, "externalCompanyId" = $4 WHERE id = $5',
-      [ReportStatus.EXTERNAL_ASSIGNED, tech.id, externalMaintainer.id, enelXId, pt25Report.id]
+      [ReportStatus.EXTERNAL_ASSIGNED, assignedUserId, externalMaintainer.id, enelXId, pt25Report.id]
     );
     
-    // Add message about external assignment
+    // Add message about external assignment to Enel X (correct for public lighting)
     await reportMessageRepository.create({
-      content: "Report assigned to Enel X for maintenance intervention. External team will handle this case.",
+      content: "Report assigned to Enel X for electrical maintenance intervention. External team will handle this lighting issue.",
       reportId: pt25Report.id,
-      senderId: tech.id,
+      senderId: assignedUserId,
     });
     
-    console.log(`   ✅ [PT25] Report ${pt25Report.id} (Traffic light): EXTERNAL_ASSIGNED to external@enelx.com - can update status`);
+    const assignedUserEmail = localPublicUser?.email || 'tech@participium.com';
+    console.log(`   ✅ [PT25] Report ${pt25Report.id} (Public lighting): EXTERNAL_ASSIGNED to external@enelx.com via ${assignedUserEmail} (LOCAL_PUBLIC_SERVICES) - can update status`);
   }
 
   // PT26 DEMO: Report 2 (Stairs) - IN_PROGRESS with internal notes
-  const pt26Report = allReports[1]; // Report 2: Stairs without ramp
+  const pt26Report = allReports[1]; // Report 2: Stairs without ramp  
   if (pt26Report) {
+    // This is correct - ARCHITECTURAL_BARRIERS should be assigned to MUNICIPAL_BUILDING_MAINTENANCE (Luca Bianchi)
     await AppDataSource.query(
-      'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2, "externalMaintainerId" = $3, "externalCompanyId" = $4, category = $5 WHERE id = $6',
-      [ReportStatus.IN_PROGRESS, tech.id, externalMaintainer.id, enelXId, ReportCategory.PUBLIC_LIGHTING, pt26Report.id]
+      'UPDATE "Report" SET status = $1, "assignedOfficerId" = $2 WHERE id = $3',
+      [ReportStatus.IN_PROGRESS, tech.id, pt26Report.id]
     );
     
-    // Add messages about external assignment
+    // Add internal notes for architectural barriers discussion
     await reportMessageRepository.create({
-      content: "Report assigned to Enel X technical team. Inspection and intervention scheduled.",
+      content: "Started assessment of accessibility requirements for the staircase. Need to evaluate space for ramp installation.",
       reportId: pt26Report.id,
       senderId: tech.id,
     });
     
     await reportMessageRepository.create({
-      content: "Our team has started the inspection. Will provide updates on progress.",
+      content: "Measured the area. Ramp installation is feasible but requires coordination with urban planning office.",
       reportId: pt26Report.id,
-      senderId: externalMaintainer.id,
+      senderId: tech.id,
     });
     
-    // Add internal notes (coordination between tech and external)
+    await reportMessageRepository.create({
+      content: "Approved design for accessibility ramp. Construction will start next week.",
+      reportId: pt26Report.id,
+      senderId: tech.id,
+    });
+    
+    // Add internal notes (coordination for architectural barriers)
     await AppDataSource.query(
       'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
       [
-        "Initial inspection completed. The work requires specialized equipment. Estimated cost: €3,200. Waiting for municipality approval before proceeding.",
+        "Initial inspection completed. Need specialized equipment for ramp installation. Estimated cost: €3,200. Waiting for municipality approval before proceeding.",
         pt26Report.id,
-        externalMaintainer.id,
+        tech.id,
         new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
       ]
     );
 
+    // Get PR user for internal note response
+    const prUser = createdUsers.find((u) => u.role.includes(Role.PUBLIC_RELATIONS.toString()));
+    const responseUserId = prUser?.id || tech.id;
+
     await AppDataSource.query(
       'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
       [
-        "Approved. Please proceed with the intervention. Budget allocated. Expected completion by end of week.",
+        "Approved. Please proceed with the ramp installation. Budget allocated. Expected completion by end of week.",
         pt26Report.id,
-        tech.id,
+        responseUserId,
         new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
       ]
     );
@@ -712,9 +745,9 @@ const seedDatabase = async () => {
     await AppDataSource.query(
       'INSERT INTO "InternalNote" (content, "reportId", "authorId", "createdAt") VALUES ($1, $2, $3, $4)',
       [
-        "Equipment delivered. Intervention scheduled for tomorrow at 8 AM. Expected completion: 5 PM. Will update status when finished.",
+        "Construction materials delivered. Ramp installation scheduled for tomorrow at 8 AM. Expected completion: 5 PM. Will update status when finished.",
         pt26Report.id,
-        externalMaintainer.id,
+        tech.id,
         new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
       ]
     );
@@ -746,9 +779,25 @@ const seedDatabase = async () => {
 
   console.log("\n✅ Reports adapted for PT24/PT25/PT26 demo!");
   console.log("=" .repeat(80));
+  
+  // Summary of role-appropriate assignments for verification
+  console.log("\n🔍 Final Report Assignment Verification:");
+  console.log("Luca Bianchi (MUNICIPAL_BUILDING_MAINTENANCE) should only have:")
+  console.log("  → ARCHITECTURAL_BARRIERS reports")
+  console.log("  → Some ROADS_URBAN_FURNISHINGS reports (when specified)")
+  console.log("LOCAL_PUBLIC_SERVICES should have:")
+  console.log("  → PUBLIC_LIGHTING reports")
+  console.log("  → WATER_SUPPLY_DRINKING_WATER reports")
+  console.log("ROAD_MAINTENANCE should have:")
+  console.log("  → ROAD_SIGNS_TRAFFIC_LIGHTS reports")
+  console.log("  → Most ROADS_URBAN_FURNISHINGS reports")
+  console.log("External assignments:")
+  console.log("  → Enel X (PUBLIC_LIGHTING only)")
+  console.log("  → IREN (WASTE only, no platform access)")
+  console.log("  → AMIAT (ROADS_URBAN_FURNISHINGS only, no platform access)");
   console.log("\n📋 Demo Test Plan:");
   console.log(`   PT24 - Assign to External:`);
-  console.log(`      → Login as tech@participium.com / techpass`);
+  console.log(`      → Login as localpublic@participium.com / techpass (LOCAL_PUBLIC_SERVICES for lighting)`);
   console.log(`      → Navigate to "My Reports"`);
   console.log(`      → Find Report #${pt24Report?.id || 'N/A'} (Streetlight - ASSIGNED)`);
   console.log(`      → Click "Assign to external" → Select "Enel X"`);
@@ -758,12 +807,12 @@ const seedDatabase = async () => {
   console.log(`   PT25 - Update Status:`);
   console.log(`      → Login as external@enelx.com / externalpass`);
   console.log(`      → Navigate to "My Reports"`);
-  console.log(`      → Find Report #${pt25Report?.id || 'N/A'} (Traffic light - EXTERNAL_ASSIGNED)`);
+  console.log(`      → Find Report #${pt25Report?.id || 'N/A'} (Public lighting - EXTERNAL_ASSIGNED via LOCAL_PUBLIC_SERVICES)`);
   console.log(`      → Click "Update Status" → Change to IN_PROGRESS/SUSPENDED/RESOLVED`);
   console.log(`      → Citizens see updated status in real-time`);
   console.log(`   PT26 - Internal Notes:`);
-  console.log(`      → Login as tech@participium.com or external@enelx.com`);
-  console.log(`      → Navigate to "My Reports"`);
+  console.log(`      → Login as tech@participium.com (Luca Bianchi - MUNICIPAL_BUILDING_MAINTENANCE)`);
+  console.log(`      → Navigate to "My Reports" (only ARCHITECTURAL_BARRIERS and some ROADS_URBAN_FURNISHINGS)`);
   console.log(`      → Find Report #${pt26Report?.id || 'N/A'} (Stairs - IN_PROGRESS, already has 3 notes)`);
   console.log(`      → Click "Internal Notes" → View existing conversation`);
   console.log(`      → Add new note → Other user receives notification (badge on button)`);

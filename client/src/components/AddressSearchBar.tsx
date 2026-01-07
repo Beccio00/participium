@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Search } from "react-bootstrap-icons";
 
 interface AddressSearchBarProps {
@@ -17,7 +17,7 @@ const ZOOM_LABELS: Record<number, string> = {
   12: "City area (~5km radius)",
 };
 
-export default function AddressSearchBar({
+function AddressSearchBar({
   onSearch,
   loading,
   onClear,
@@ -28,7 +28,7 @@ export default function AddressSearchBar({
   const [zoom, setZoom] = useState(19);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (address.trim().length < 3) {
       setError("Insert at least 3 characters to search.");
@@ -36,7 +36,20 @@ export default function AddressSearchBar({
     }
     setError(null);
     onSearch(address, zoom);
-  };
+  }, [address, zoom, onSearch]);
+
+  const handleAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddress(e.target.value);
+  }, []);
+
+  const handleZoomChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setZoom(Number(e.target.value));
+  }, []);
+
+  const handleClear = useCallback(() => {
+    setAddress("");
+    if (onClear) onClear();
+  }, [onClear]);
 
   return (
     <div
@@ -77,7 +90,7 @@ export default function AddressSearchBar({
             className="form-control"
             placeholder="Search for an address"
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            onChange={handleAddressChange}
             style={{
               width: "100%",
               fontSize: 15,
@@ -91,7 +104,7 @@ export default function AddressSearchBar({
         <select
           className="form-select"
           value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
+          onChange={handleZoomChange}
           style={{
             flex: "0 1 220px",
             minWidth: 180,
@@ -127,10 +140,7 @@ export default function AddressSearchBar({
           <button
             type="button"
             aria-label="Clear search"
-            onClick={() => {
-              setAddress("");
-              if (onClear) onClear();
-            }}
+            onClick={handleClear}
             className="btn btn-secondary"
             style={{
               fontSize: 14,
@@ -172,3 +182,5 @@ export default function AddressSearchBar({
     </div>
   );
 }
+
+export default React.memo(AddressSearchBar);

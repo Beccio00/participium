@@ -1,3 +1,4 @@
+import React from "react";
 import { Row, Col, InputGroup, Form } from "react-bootstrap";
 import { Search, FunnelFill } from "react-bootstrap-icons";
 
@@ -14,7 +15,7 @@ interface SearchAndFilterBarProps {
   compact?: boolean;
 }
 
-export default function SearchAndFilterBar({
+function SearchAndFilterBar({
   searchTerm,
   onSearchChange,
   filterStatus,
@@ -139,3 +140,5 @@ export default function SearchAndFilterBar({
     </div>
   );
 }
+
+export default React.memo(SearchAndFilterBar);
