@@ -366,7 +366,7 @@ bot.command("faq", (ctx) => {
       "5. I need help, who can I contact?\n" +
       "Use the /contact command to get support.",
     {
-      parse_mode: "MarkdownV2",
+      parse_mode: "HTML",
       ...Markup.inlineKeyboard([
         [Markup.button.callback("🏠 Main Menu", "menu_main")],
       ]),
@@ -400,6 +400,45 @@ bot.command("status", async (ctx) => {
     await ctx.reply(
       "An error occurred while checking your account status. Please try again."
     );
+  }
+});
+
+bot.command("myreports", async (ctx) => {
+  const telegramId = ctx.from.id.toString();
+
+  try{
+    const reports = await getMyReports(telegramId);
+
+    if(!reports || reports.length === 0){
+      await ctx.reply(
+        "📋 *My Reports*\n\n" +
+        "You have not submitted any reports yet.",
+        { parse_mode: "Markdown" }
+      );
+      return;
+    }
+    let message = "Your recent reports:\n\n";
+
+    reports.slice(0,10).forEach((report:any)=> {
+      const statusIcon = formatStatus(report.status).split(" ")[0]; //only emoji
+      message += `🆔 #${report.reportId} - ${statusIcon} ${report.status}\n`;
+      message += `📝 ${report.title}\n`;
+      message += `📍 ${report.address}\n`;
+      message += `📅 ${new Date(report.createdAt).toLocaleDateString()}\n`;
+      message += `To see more details use the command /reportstatus <REPORT_ID>\n\n`;
+    })
+    await ctx.reply(message, { parse_mode: "Markdown" });
+  }catch(error:any){
+    console.error("Get my reports error:", error.response?.data || error.message);
+    if (error.response?.status === 404) {
+      await ctx.reply(
+        "⚠️ *Account not linked*\n\n" +
+        "To view your reports, you must first link your Telegram account through the Participium website.",
+        { parse_mode: "Markdown" }
+      );
+    } else {
+      await ctx.reply("❌ An error occurred while retrieving your reports.");
+    }
   }
 });
 
