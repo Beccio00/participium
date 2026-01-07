@@ -368,6 +368,87 @@ const seedDatabase = async () => {
       preferredRole: Role.ROAD_MAINTENANCE,
       status: ReportStatus.ASSIGNED,
       photos: ["report6.jpg"]
+    },
+    {
+      // Report 11: Playground equipment damage
+      title: "Broken swing set in public playground",
+      description: "Children's swing with broken chain and damaged seat. Safety hazard for kids. Metal parts are rusty and sharp edges exposed.",
+      category: ReportCategory.PUBLIC_GREEN_AREAS_PLAYGROUNDS,
+      preferredRole: Role.GREENSPACES_AND_ANIMAL_PROTECTION,
+      status: ReportStatus.PENDING_APPROVAL,
+      photos: ["report12.jpg"]
+    },
+    {
+      // Report 12: Water pipe leak
+      title: "Underground water leak creating large puddle",
+      description: "Continuous water flow from underground pipe creating permanent puddle on sidewalk. Water pressure seems strong, possible main water line rupture.",
+      category: ReportCategory.WATER_SUPPLY_DRINKING_WATER,
+      preferredRole: Role.INFRASTRUCTURES,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report13.jpg"]
+    },
+    {
+      // Report 13: Graffiti on public building
+      title: "Vandalism on historical building facade",
+      description: "Large graffiti tags covering historic building entrance. Damages cultural heritage appearance and requires specialized cleaning.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+      status: ReportStatus.IN_PROGRESS,
+      photos: ["report14.jpg"]
+    },
+    {
+      // Report 14: Tree blocking sidewalk
+      title: "Fallen tree branch obstructing pedestrian path",
+      description: "Large branch from old tree has fallen across sidewalk. Completely blocks wheelchair and stroller access. Needs immediate removal.",
+      category: ReportCategory.PUBLIC_GREEN_AREAS_PLAYGROUNDS,
+      preferredRole: Role.GREENSPACES_AND_ANIMAL_PROTECTION,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report15.jpg"]
+    },
+    {
+      // Report 15: Bus stop damage
+      title: "Vandalized bus stop with broken glass",
+      description: "Bus shelter with shattered glass panels and damaged seating. Creates safety risk for public transport users.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.MUNICIPAL_BUILDING_MAINTENANCE,
+      status: ReportStatus.PENDING_APPROVAL,
+      photos: ["report16.jpg"]
+    },
+    {
+      // Report 16: Illegal dumping
+      title: "Illegal waste dumping near residential area",
+      description: "Large pile of construction debris and household waste illegally dumped in public area. Environmental hazard and attracts rodents.",
+      category: ReportCategory.WASTE,
+      preferredRole: Role.WASTE_MANAGEMENT,
+      status: ReportStatus.ASSIGNED,
+      photos: ["report17.jpg", "report17.2.jpg"]
+    },
+    {
+      // Report 17: School building issue
+      title: "Damaged entrance door at public school",
+      description: "Main entrance door with broken lock and damaged frame. Security concern for students and staff. Weather is getting through gaps.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.EDUCATION_SERVICES,
+      status: ReportStatus.RESOLVED,
+      photos: ["report18.jpg"]
+    },
+    {
+      // Report 18: Sports facility damage
+      title: "Basketball court with cracked surface",
+      description: "Public basketball court with deep cracks in concrete surface. Dangerous for players, ball bounces unpredictably. Needs resurfacing.",
+      category: ReportCategory.PUBLIC_GREEN_AREAS_PLAYGROUNDS,
+      preferredRole: Role.CULTURE_EVENTS_TOURISM_SPORTS,
+      status: ReportStatus.PENDING_APPROVAL,
+      photos: ["report19.jpg"]
+    },
+    {
+      // Report 19: Public housing issue
+      title: "Broken intercom system in social housing",
+      description: "Main building intercom non-functional. Residents cannot receive visitors or deliveries. Multiple units affected in building.",
+      category: ReportCategory.ROADS_URBAN_FURNISHINGS,
+      preferredRole: Role.PUBLIC_RESIDENTIAL_HOUSING,
+      status: ReportStatus.IN_PROGRESS,
+      photos: ["report20.jpg"]
     }
   ];
 
@@ -387,6 +468,17 @@ const seedDatabase = async () => {
     { lat: 45.0645, lng: 7.6925, address: "Corso Vittorio Emanuele II 75, 10128 Torino" },      // Report 8: San Salvario - Traffic light
     { lat: 45.0815, lng: 7.6655, address: "Corso Lecce 33, 10149 Torino" },                     // Report 9: Vallette - Faded crosswalk
     { lat: 45.0588, lng: 7.6777, address: "Via San Francesco da Paola 15, 10123 Torino" },      // Report 10: Centro - Damaged sidewalk
+    { lat: 45.0784, lng: 7.6425, address: "Via Venaria 45, 10148 Torino" },                     // Report 11: Parella - Playground
+    { lat: 45.0521, lng: 7.6912, address: "Via Madama Cristina 89, 10125 Torino" },             // Report 12: San Salvario - Water leak
+    { lat: 45.0622, lng: 7.6758, address: "Via Po 25, 10124 Torino" },                          // Report 13: Vanchiglia - Graffiti
+    { lat: 45.0865, lng: 7.7035, address: "Corso Vercelli 230, 10155 Torino" },                 // Report 14: Aurora - Fallen tree
+    { lat: 45.0456, lng: 7.6598, address: "Corso Unità d'Italia 56, 10127 Torino" },            // Report 15: Millefonti - Bus stop
+    { lat: 45.0758, lng: 7.6928, address: "Corso San Maurizio 12, 10124 Torino" },              // Report 16: Borgo Po - Illegal dumping
+    { lat: 45.0692, lng: 7.6645, address: "Via Duchessa Jolanda 15, 10138 Torino" },            // Report 17: Santa Rita - School
+    { lat: 45.0598, lng: 7.7125, address: "Via Plava 78, 10135 Torino" },                       // Report 18: Cenisia - Sports facility
+    { lat: 45.0789, lng: 7.6512, address: "Corso Peschiera 156, 10149 Torino" },                // Report 19: Dora - Public housing
+    { lat: 45.0734, lng: 7.6812, address: "Piazza Solferino 8, 10121 Torino" },                 // Report 20: Centro - Tourist info panel
+    { lat: 45.0658, lng: 7.6598, address: "Corso Marconi 45, 10125 Torino" },                    // Report 21: Santa Rita - Broken road sign
   ];
 
   // Create reports with staggered creation dates (from 7 days ago to today)
@@ -409,6 +501,17 @@ const seedDatabase = async () => {
     daysAgo(1),  // Report 8: 1 day ago - Traffic light
     daysAgo(0),  // Report 9: Today - Faded crosswalk
     daysAgo(1),  // Report 10: 1 day ago - Damaged sidewalk for AMIAT
+    daysAgo(12), // Report 11: 12 days ago - Playground
+    daysAgo(11), // Report 12: 11 days ago - Water leak
+    daysAgo(10), // Report 13: 10 days ago - Graffiti
+    daysAgo(6),  // Report 14: 6 days ago - Fallen tree
+    daysAgo(5),  // Report 15: 5 days ago - Bus stop
+    daysAgo(4),  // Report 16: 4 days ago - Illegal dumping
+    daysAgo(3),  // Report 17: 3 days ago - School
+    daysAgo(2),  // Report 18: 2 days ago - Sports facility
+    daysAgo(1),  // Report 19: 1 day ago - Public housing
+    daysAgo(0),  // Report 20: Today - Tourist info panel
+    daysAgo(3),  // Report 21: 3 days ago - Broken road sign
   ];
 
   for (let i = 0; i < reportTemplates.length; i++) {
@@ -669,6 +772,7 @@ const seedDatabase = async () => {
 
   console.log("\n✅ Database seed completed successfully!");
   console.log(`\nCreated ${users.length} sample users with hashed passwords`);
+  console.log(`Created ${reportTemplates.length} sample reports with photos and messages`);
   console.log(
     `Created 3 external companies (1 with platform access: Enel X, 2 without: IREN Ambiente & AMIAT)`
   );
