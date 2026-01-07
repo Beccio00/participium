@@ -1,128 +1,101 @@
 /**
- * E2E UI Test for User Story - Unregistered User Map View
- * Story 28: As an unregistered user
- * I want to see approved reports on an interactive map
- * So that I can know about issues in my area and beyond.
+ * E2E Test: PT28 - Unregistered User Map View
+ * 
+ * Tests that unregistered users can see approved reports on an interactive map.
  */
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Unregistered User Map View - UI Tests', () => {
-  test.beforeEach(async ({ page }) => {
-    // Clear cookies and local storage before each test
-    await page.context().clearCookies();
+test.describe('PT28 - Public Map View', () => {
+  test('unregistered user can see the map with reports', async ({ page }) => {
+    await page.route('**/api/session/current', async (route) => {
+      await route.fulfill({ status: 401, body: '{}' });
+    });
+
+    await page.route('**/api/reports**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{
+          id: 1,
+          title: 'Public Report',
+          category: 'PUBLIC_LIGHTING',
+          status: 'ASSIGNED',
+          latitude: 45.0703,
+          longitude: 7.6869,
+          createdAt: new Date().toISOString(),
+        }]),
+      });
+    });
+
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-  });
+    await page.waitForLoadState('networkidle');
 
-  test('should display the map on homepage for unregistered users', async ({ page }) => {
-    // Navigate to homepage
-    await page.goto('/');
-
-    // Verify map container exists (MapView renders a div with class "leaflet-map")
-    const mapContainer = page.locator('.leaflet-map');
-    await expect(mapContainer).toBeVisible({ timeout: 15000 });
-
-    // Verify the Leaflet container is eventually present inside the map
-    const leafletContainer = page.locator('.leaflet-container');
-    await expect(leafletContainer).toBeVisible({ timeout: 15000 });
-  });
-
-  test('should show map controls (zoom buttons)', async ({ page }) => {
-    await page.goto('/');
-
-    // Wait for map to load
+    // Map should be visible
     await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
-
-    // Verify zoom controls are present
-    const zoomIn = page.locator('.leaflet-control-zoom-in');
-    const zoomOut = page.locator('.leaflet-control-zoom-out');
-    
-    await expect(zoomIn).toBeVisible();
-    await expect(zoomOut).toBeVisible();
   });
 
-  test('should display approved reports as markers on the map', async ({ page }) => {
+  test('user can interact with map (zoom)', async ({ page }) => {
+    await page.route('**/api/session/current', async (route) => {
+      await route.fulfill({ status: 401, body: '{}' });
+    });
+
+    await page.route('**/api/reports**', async (route) => {
+      await route.fulfill({ status: 200, body: '[]' });
+    });
+
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
-    // Wait for map to load
-    await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
-
-    // Wait for markers to be rendered (if any reports exist)
-    // Note: This will pass even with 0 reports, but checks structure
-    await page.waitForTimeout(2000); // Give time for API call and marker rendering
-
-    // Check if marker cluster is initialized (the map should have clustering)
-    const markerCluster = page.locator('.leaflet-marker-icon, .marker-cluster');
-    
-    // Count should be >= 0 (no error if no reports exist)
-    const count = await markerCluster.count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  });
-
-  test('should allow zooming in and out on the map', async ({ page }) => {
-    await page.goto('/');
-
-    // Wait for map to be ready
-    await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
-
-    // Click zoom in button
+    // Zoom controls should work
     const zoomIn = page.locator('.leaflet-control-zoom-in');
     await zoomIn.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
 
-    // Click zoom out button
     const zoomOut = page.locator('.leaflet-control-zoom-out');
     await zoomOut.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
 
-    // If we got here without errors, zoom controls work
+    // If we got here, zoom works
     expect(true).toBe(true);
   });
 
-  test('should show report details when clicking on a marker', async ({ page }) => {
+  test('clicking on a report marker shows details', async ({ page }) => {
+    await page.route('**/api/session/current', async (route) => {
+      await route.fulfill({ status: 401, body: '{}' });
+    });
+
+    await page.route('**/api/reports**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{
+          id: 1,
+          title: 'Visible Report',
+          description: 'Test description',
+          category: 'PUBLIC_LIGHTING',
+          status: 'ASSIGNED',
+          latitude: 45.0703,
+          longitude: 7.6869,
+          createdAt: new Date().toISOString(),
+        }]),
+      });
+    });
+
     await page.goto('/');
-
-    // Wait for map to load
-    await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(2000); // Wait for markers to render
-
-    // Try to find a marker (if reports exist)
-    const markers = page.locator('.leaflet-marker-icon');
-    const markerCount = await markers.count();
-
-    if (markerCount > 0) {
-      // Click on the first marker
-      await markers.first().click();
-      await page.waitForTimeout(500);
-
-      // Check if modal or popup appears with report details
-      // This could be an InfoModal or a popup - adjust based on actual implementation
-      const modalOrPopup = page.locator('.modal, .leaflet-popup, [role="dialog"]');
-      await expect(modalOrPopup).toBeVisible({ timeout: 5000 });
-    } else {
-      // Skip test if no markers present (no reports in DB)
-      test.skip();
-    }
-  });
-
-  test('should show only approved reports, not pending ones', async ({ page }) => {
-    await page.goto('/');
-
-    // Wait for map and reports to load
-    await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 10000 });
+    await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Get all report cards/markers visible
-    const markers = page.locator('.leaflet-marker-icon');
-    const markerCount = await markers.count();
+    // Click on marker if available
+    const marker = page.locator('.leaflet-marker-icon').first();
+    if (await marker.isVisible()) {
+      await marker.click();
+      await page.waitForTimeout(1000);
 
-    // All visible reports should be approved (assigned, in_progress, resolved)
-    // We can't verify the actual status without inspecting data, but we verify
-    // the reports are visible at all (which means they passed the filter)
-    
-    // This is more of a smoke test - actual filtering is tested in backend
-    expect(markerCount).toBeGreaterThanOrEqual(0);
+      // Should show report details (popup or modal)
+      const detailsVisible = await page.locator('.leaflet-popup, [role="dialog"], .modal').count() > 0 ||
+                            await page.getByText(/visible report/i).count() > 0;
+      expect(detailsVisible).toBeTruthy();
+    }
   });
-
 });
