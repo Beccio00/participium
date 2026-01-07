@@ -208,6 +208,15 @@ export async function getApprovedReports(
   return reports.map(toReportDTO);
 }
 
+/**
+ * Get all reports created by a specific user (includes anonymous reports)
+ * This endpoint is used for the "My Reports" page
+ */
+export async function getReportsByUserId(userId: number): Promise<ReportDTO[]> {
+  const reports = await reportRepository.findByUserId(userId);
+  return reports.map(toReportDTO);
+}
+
 // =========================
 // REPORT PR SERVICES
 // =========================

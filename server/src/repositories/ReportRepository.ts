@@ -174,7 +174,16 @@ export class ReportRepository {
   async findByUserId(userId: number): Promise<Report[]> {
     return await this.repository.find({
       where: { userId }, 
-      relations: ["photos"],
+      relations: [
+        "user",
+        "assignedOfficer",
+        "photos",
+        "messages",
+        "messages.user",
+        "externalMaintainer",
+        "externalMaintainer.externalCompany",
+        "externalCompany"
+      ],
       order: { createdAt: "DESC" } 
     });
   }

@@ -6,7 +6,7 @@ import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import AccessRestricted from "../../components/AccessRestricted";
 import SearchAndFilterBar from "../../components/ui/SearchAndFilterBar";
 import EmptyState from "../../components/ui/EmptyState";
-import { getReports } from "../../api/api";
+import { getMyReports } from "../../api/api";
 import { userHasRole } from "../../utils/roles";
 import type { Report as AppReport } from "../../types/report.types";
 import ReportCard from "./ReportCard";
@@ -61,12 +61,8 @@ export default function MyReportsPage() {
     try {
       setLoading(true);
       setError(null);
-      const allReports = (await getReports()) as AppReport[];
-      
-      // Filter reports created by the current user
-      const myReports = allReports.filter((r: any) => {
-        return r.user && user && r.user.email === (user as any).email;
-      });
+      // Use dedicated endpoint that returns all user's reports (including anonymous)
+      const myReports = (await getMyReports()) as AppReport[];
       
       // Sort by creation date (newest first)
       const sorted = myReports.sort((a, b) => {

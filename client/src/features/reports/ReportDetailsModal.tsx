@@ -6,6 +6,7 @@ import { userHasRole, TECHNICIAN_ROLES } from "../../utils/roles";
 import ReportChat from "./ReportChat";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { getSession, getReportById, getReports, getReportMessages, sendReportMessage } from "../../api/api";
 
 interface Props {
   show: boolean;
@@ -71,9 +72,7 @@ export default function ReportDetailsModal({
     let ignore = false;
     async function getUser() {
       try {
-        const session = await import("../../api/api").then((api) =>
-          api.getSession()
-        );
+        const session = await getSession();
         if (!ignore) {
           const user = session?.user as { id?: string | number };
           setCurrentUserId(
@@ -95,14 +94,21 @@ export default function ReportDetailsModal({
     let mounted = true;
     async function fetchUpdatedReport() {
       try {
-        const allReports = await import("../../api/api").then((api) =>
-          api.getReports()
-        );
-        const updated = allReports.find((r) => r.id === report.id);
+        // Use getReportById for authenticated users to get full data (not masked)
+        const updated = await getReportById(report.id);
         if (updated && onReportUpdate && mounted) {
           onReportUpdate(updated);
         }
-      } catch {}
+      } catch {
+        // Fallback: if getReportById fails (e.g. not authorized), try public API
+        try {
+          const allReports = await getReports();
+          const updated = allReports.find((r) => r.id === report.id);
+          if (updated && onReportUpdate && mounted) {
+            onReportUpdate(updated);
+          }
+        } catch {}
+      }
     }
     if (show && report?.id) {
       fetchUpdatedReport();
@@ -124,10 +130,7 @@ export default function ReportDetailsModal({
       if (showLoading) setMessagesLoading(true);
       setMessagesError("");
       try {
-        // @ts-ignore
-        const msgs = await import("../../api/api").then((api) =>
-          api.getReportMessages(report.id)
-        );
+        const msgs = await getReportMessages(report.id);
         if (isMounted) {
           setMessages(msgs);
           // Scroll to bottom if there are new messages
@@ -162,16 +165,11 @@ export default function ReportDetailsModal({
     setMessageLoading(true);
     setMessageError("");
     try {
-      // @ts-ignore
-      await import("../../api/api").then((api) =>
-        api.sendReportMessage(display.id, messageText)
-      );
+      await sendReportMessage(display.id, messageText);
       setMessageText("");
       // Ricarica messaggi
       setMessagesLoading(true);
-      const msgs = await import("../../api/api").then((api) =>
-        api.getReportMessages(display.id)
-      );
+      const msgs = await getReportMessages(display.id);
       setMessages(msgs);
     } catch (err: any) {
       setMessageError(err?.message || "Errore invio messaggio");
@@ -204,9 +202,7 @@ export default function ReportDetailsModal({
   useEffect(() => {
     async function checkAuth() {
       try {
-        const session = await import("../../api/api").then((api) =>
-          api.getSession()
-        );
+        const session = await getSession();
         const user = session?.user;
         // Cittadino autore
         if (

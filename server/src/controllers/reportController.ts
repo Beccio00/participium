@@ -11,6 +11,7 @@ import {
   getAssignedReportsService,
   getAssignedReportsForExternalMaintainer,
   getReportById as getReportByIdService,
+  getReportsByUserId as getReportsByUserIdService,
 } from "../services/reportService";
 import { ReportCategory, ReportStatus } from "../../../shared/ReportTypes";
 import { calculateAddress } from "../utils/addressFinder";
@@ -283,6 +284,24 @@ export async function getReports(req: Request, res: Response): Promise<void> {
   });
   
   res.status(200).json(publicReports);
+}
+
+/**
+ * Get all reports created by the authenticated user (including anonymous ones)
+ */
+export async function getMyReports(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const authReq = req as Request & { user?: any };
+  const user = authReq.user;
+
+  if (!user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  const reports = await getReportsByUserIdService(user.id);
+  res.status(200).json(reports);
 }
 
 export async function getReportById(

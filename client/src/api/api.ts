@@ -307,6 +307,22 @@ export async function getReports(): Promise<Report[]> {
   return handleResponse<Report[]>(res);
 }
 
+export async function getMyReports(): Promise<Report[]> {
+  const res = await fetch(`${API_PREFIX}/reports/mine`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<Report[]>(res);
+}
+
+export async function getReportById(reportId: number): Promise<Report> {
+  const res = await fetch(`${API_PREFIX}/reports/${reportId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return handleResponse<Report>(res);
+}
+
 // CITIZEN PROFILE API
 export async function getCitizenProfile() {
   const res = await fetch(`${API_PREFIX}/citizen/me`, {
@@ -505,6 +521,7 @@ export default {
   listMunicipalityUsers,
   createReport,
   getReports,
+  getMyReports,
   getPendingReports,
   getAssignableTechnicals,
   approveReport,

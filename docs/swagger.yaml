@@ -3170,6 +3170,97 @@ paths:
                 error: "InternalServerError"
                 message: "Failed to reject report"
 
+  /reports/mine:
+    get:
+      tags:
+        - Reports
+      summary: Get all reports created by the authenticated citizen
+      description: |
+        Retrieve all reports created by the authenticated citizen, including anonymous reports.
+        This endpoint returns the full report data without masking, allowing citizens to see
+        and manage all their own reports regardless of the anonymous flag.
+        
+        Only available for users with CITIZEN role.
+        Reports are sorted by creation date (newest first).
+      operationId: getMyReports
+      security:
+        - SessionAuth: []
+      responses:
+        "200":
+          description: List of user's reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportResponse"
+              example:
+                - id: 1024
+                  title: "Pothole on Via Roma"
+                  description: "Large pothole near the pedestrian crossing"
+                  category: ROADS_URBAN_FURNISHINGS
+                  latitude: 45.070339
+                  longitude: 7.686864
+                  status: ASSIGNED
+                  isAnonymous: false
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    roles: CITIZEN
+                  photos:
+                    - id: 301
+                      url: "https://cdn.example.com/reports/1024/photo1.jpg"
+                      filename: "photo1.jpg"
+                  createdAt: "2025-11-11T10:12:34Z"
+                - id: 1025
+                  title: "Anonymous report"
+                  description: "Issue reported anonymously"
+                  category: PUBLIC_LIGHTING
+                  latitude: 45.071
+                  longitude: 7.6875
+                  status: PENDING_APPROVAL
+                  isAnonymous: true
+                  user:
+                    id: 201
+                    firstName: Mario
+                    lastName: Rossi
+                    email: mario.rossi@example.com
+                    roles: CITIZEN
+                  photos: []
+                  createdAt: "2025-11-10T09:00:00Z"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 401
+                error: "Unauthorized"
+                message: "Authentication required"
+        "403":
+          description: Insufficient permissions (Citizen role required)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 403
+                error: "Forbidden"
+                message: "Citizen privileges required"
+        "500":
+          description: Unable to retrieve reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: "InternalServerError"
+                message: "Failed to retrieve reports"
+
   /reports/assigned:
     get:
       tags:
