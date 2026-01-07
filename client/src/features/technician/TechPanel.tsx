@@ -128,7 +128,7 @@ export default function TechPanel() {
     return reports.filter(report => {
       // Search by title
       const matchesSearch = searchTerm === "" || 
-        (report.title && report.title.toLowerCase().includes(searchTerm.toLowerCase()));
+        report.title?.toLowerCase().includes(searchTerm.toLowerCase());
       
       // Filter by status
       const matchesStatus = filterStatus === "" || report.status === filterStatus;

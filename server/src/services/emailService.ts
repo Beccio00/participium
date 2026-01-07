@@ -13,7 +13,7 @@ function buildFrom() {
     if (smtpFromEnv) {
         const m = smtpFromEnv.match(/^([^<]*)<([^>]+)>\s*$/);
         if (m) {
-            return { name: m[1].trim().replace(/^"|"$/g, ""), address: m[2].trim() };
+            return { name: m[1].trim().replace(/(^"|"$)/g, ""), address: m[2].trim() };
         }
         if (smtpFromEnv.includes("@")) {
             return { name: smtpFromName || "Participium", address: smtpFromEnv };

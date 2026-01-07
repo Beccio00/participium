@@ -3,7 +3,7 @@ import { AppDataSource } from "../utils/AppDataSource";
 import { TelegramLinkToken } from "../entities/TelegramLinkToken";
 
 export class TelegramLinkTokenRepository {
-  private repository: Repository<TelegramLinkToken>;
+  private readonly repository: Repository<TelegramLinkToken>;
 
   constructor() {
     this.repository = AppDataSource.getRepository(TelegramLinkToken);
@@ -22,7 +22,6 @@ export class TelegramLinkTokenRepository {
   }
 
   async findValidByToken(token: string): Promise<TelegramLinkToken | null> {
-    const now = new Date();
     return await this.repository.findOne({
       where: {
         token,

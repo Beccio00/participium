@@ -35,7 +35,7 @@ export function getRoleLabel(role: string | string[]): string {
 
 //helper function to verify usre role
 export function userHasRole(user: any, role: string): boolean {
-  if (!user || !user.role) return false;
+  if (!user?.role) return false;
   if (Array.isArray(user.role)) {
     return user.role.includes(role);
   }
@@ -44,7 +44,7 @@ export function userHasRole(user: any, role: string): boolean {
 
 //helper function to verify if user has at least one role of the list
 export function userHasAnyRole(user: any, roles: string[]): boolean {
-  if (!user || !user.role) return false;
+  if (!user?.role) return false;
   if (Array.isArray(user.role)) {
     return user.role.some((r: string) => roles.includes(r));
   }

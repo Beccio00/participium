@@ -101,6 +101,29 @@ export default function TechPanelModals({
   processingId,
   selectedReportId,
 }: TechPanelModalsProps) {
+  // Helper function to render notes history - avoids nested ternary
+  const renderNotesHistory = () => {
+    if (loadingNotes) {
+      return <div className="text-center py-3"><LoadingSpinner /></div>;
+    }
+    if (internalNotes.length === 0) {
+      return <p className="text-muted small fst-italic">No internal notes found for this report.</p>;
+    }
+    return (
+      <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px', backgroundColor: '#f8f9fa' }}>
+        {internalNotes.map((note) => (
+          <div key={note.id} className="mb-3 pb-3 border-bottom last-child-no-border">
+            <div className="d-flex justify-content-between align-items-start mb-1">
+              <strong>{note.authorName} <span className="text-muted" style={{ fontSize: '0.85em', fontWeight: 'normal' }}>({getRoleLabel(note.authorRole)})</span></strong>
+              <span className="text-muted small" style={{ fontSize: '0.8em' }}>{formatDate(note.createdAt)}</span>
+            </div>
+            <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{note.content}</p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* 1. REJECT MODAL */}
@@ -173,7 +196,7 @@ export default function TechPanelModals({
                 </Form.Group>
               )}
 
-              {selectedCompany && selectedCompany.hasPlatformAccess && 
+              {selectedCompany?.hasPlatformAccess && 
                Array.isArray(selectedCompany.users) && selectedCompany.users.length > 0 && (
                 <Form.Group className="mb-3">
                   <Form.Label>Select a company technician:</Form.Label>
@@ -284,23 +307,7 @@ export default function TechPanelModals({
           )}
           <div className="mb-4">
             <h6 className="mb-3">History</h6>
-            {loadingNotes ? (
-              <div className="text-center py-3"><LoadingSpinner /></div>
-            ) : internalNotes.length === 0 ? (
-              <p className="text-muted small fst-italic">No internal notes found for this report.</p>
-            ) : (
-              <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px', backgroundColor: '#f8f9fa' }}>
-                {internalNotes.map((note) => (
-                  <div key={note.id} className="mb-3 pb-3 border-bottom last-child-no-border">
-                    <div className="d-flex justify-content-between align-items-start mb-1">
-                      <strong>{note.authorName} <span className="text-muted" style={{ fontSize: '0.85em', fontWeight: 'normal' }}>({getRoleLabel(note.authorRole)})</span></strong>
-                      <span className="text-muted small" style={{ fontSize: '0.8em' }}>{formatDate(note.createdAt)}</span>
-                    </div>
-                    <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{note.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+            {renderNotesHistory()}
           </div>
 
           <hr />

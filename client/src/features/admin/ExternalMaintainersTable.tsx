@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { Trash, Building } from 'react-bootstrap-icons';
 import DataTable, { type Column } from '../../components/ui/DataTable';
 import type { ExternalMaintainerResponse } from '../../types';
@@ -64,13 +65,18 @@ const columns: Column<ExternalMaintainerResponse>[] = [
 ];
 
 export default function ExternalMaintainersTable({ users, onDelete }: ExternalMaintainersTableProps) {
+  const renderActions = useCallback(
+    (user: ExternalMaintainerResponse) => <DeleteButton userId={user.id} onDelete={onDelete} />,
+    [onDelete]
+  );
+
   return (
     <DataTable
       data={users}
       columns={columns}
       keyExtractor={(user) => user.id}
       emptyMessage="No external maintainers found."
-      actions={(user) => <DeleteButton userId={user.id} onDelete={onDelete} />}
+      actions={renderActions}
     />
   );
 }

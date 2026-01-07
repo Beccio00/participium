@@ -227,7 +227,7 @@ export async function getExternalMaintainerById(id: number): Promise<ExternalMai
  */
 export async function deleteExternalMaintainer(id: number): Promise<boolean> {
   const maintainer = await userRepository.findById(id);
-  if (!maintainer || !maintainer.role.includes(Role.EXTERNAL_MAINTAINER)) {
+  if (!maintainer?.role.includes(Role.EXTERNAL_MAINTAINER)) {
     return false;
   }
 

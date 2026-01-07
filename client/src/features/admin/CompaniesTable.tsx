@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { Badge } from 'react-bootstrap';
 import { Trash } from 'react-bootstrap-icons';
 import DataTable, { type Column } from '../../components/ui/DataTable';
@@ -66,13 +67,18 @@ function DeleteButton({ companyId, onDelete }: { companyId: number; onDelete: (i
 }
 
 export default function CompaniesTable({ companies, onDelete }: CompaniesTableProps) {
+  const renderActions = useCallback(
+    (company: ExternalCompanyResponse) => <DeleteButton companyId={company.id} onDelete={onDelete} />,
+    [onDelete]
+  );
+
   return (
     <DataTable
       data={companies}
       columns={columns}
       keyExtractor={(company) => company.id}
       emptyMessage="No companies found."
-      actions={(company) => <DeleteButton companyId={company.id} onDelete={onDelete} />}
+      actions={renderActions}
     />
   );
 }

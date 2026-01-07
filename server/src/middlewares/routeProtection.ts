@@ -29,7 +29,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || !authReq.user.role.includes(Role.ADMINISTRATOR)) {
+  if (!authReq.user?.role.includes(Role.ADMINISTRATOR)) {
     throw new ForbiddenError("Administrator privileges required");
   }
 
@@ -50,7 +50,7 @@ export function requireCitizen(
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || !authReq.user.role.includes(Role.CITIZEN)) {
+  if (!authReq.user?.role.includes(Role.CITIZEN)) {
     throw new ForbiddenError("Only citizens can create reports");
   }
 
@@ -139,7 +139,7 @@ export function requireExternalMaintainer(
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (!authReq.user || !authReq.user.role.includes(Role.EXTERNAL_MAINTAINER)) {
+  if (!authReq.user?.role.includes(Role.EXTERNAL_MAINTAINER)) {
     throw new ForbiddenError("External maintainer privileges required");
   }
 

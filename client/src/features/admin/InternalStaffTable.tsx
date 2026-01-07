@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { Badge } from "react-bootstrap";
 import { Trash } from "react-bootstrap-icons";
 import DataTable, { type Column } from "../../components/ui/DataTable";
@@ -91,13 +92,18 @@ export default function InternalStaffTable({
   onDelete,
   onEdit,
 }: InternalStaffTableProps) {
+  const renderActions = useCallback(
+    (user: MunicipalityUserResponse) => <ActionButtons user={user} onEdit={onEdit} onDelete={onDelete} />,
+    [onEdit, onDelete]
+  );
+
   return (
     <DataTable
       data={users}
       columns={columns}
       keyExtractor={(user) => user.id}
       emptyMessage="No staff found."
-      actions={(user) => <ActionButtons user={user} onEdit={onEdit} onDelete={onDelete} />}
+      actions={renderActions}
     />
   );
 }
