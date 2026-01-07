@@ -557,7 +557,6 @@ const seedDatabase = async () => {
     { lat: 45.0842, lng: 7.6796, address: "Via Cigna 45, 10155 Torino" },                       // Report 8: Regio Parco - Broken barrier
     { lat: 45.0645, lng: 7.6732, address: "Corso Vittorio Emanuele II 75, 10128 Torino" },      // Report 8: San Salvario - Traffic light
     { lat: 45.0815, lng: 7.6655, address: "Corso Lecce 33, 10149 Torino" },                     // Report 9: Vallette - Faded crosswalk
-<<<<<<< HEAD
     { lat: 45.0588, lng: 7.6777, address: "Via San Francesco da Paola 15, 10123 Torino" },      // Report 10: Centro - Damaged sidewalk
     { lat: 45.0784, lng: 7.6425, address: "Via Venaria 45, 10148 Torino" },                     // Report 11: Parella - Playground
     { lat: 45.0521, lng: 7.6912, address: "Via Madama Cristina 89, 10125 Torino" },             // Report 12: San Salvario - Water leak
@@ -579,20 +578,6 @@ const seedDatabase = async () => {
     { lat: 45.0745, lng: 7.6905, address: "Via Po 50, 10123 Torino" },                          // Report 28: Centro - Infrastructure
     { lat: 45.0605, lng: 7.6855, address: "Via Nizza 180, 10126 Torino" },                      // Report 29: Crocetta - Street maintenance
     { lat: 45.0725, lng: 7.6825, address: "Piazza Carlo Alberto 5, 10123 Torino" },              // Report 30: Centro - Public facility
-=======
-    { lat: 45.0660, lng: 7.6872, address: "Via San Francesco da Paola 15, 10123 Torino" },      // Report 10: Centro - Damaged sidewalk
-    { lat: 45.1085, lng: 7.6608, address: "Via Venaria 45, 10148 Torino" },                     // Report 11: Parella - Playground
-    { lat: 45.0505, lng: 7.6779, address: "Via Madama Cristina 89, 10125 Torino" },             // Report 12: San Salvario - Water leak
-    { lat: 45.0687, lng: 7.6896, address: "Via Po 25, 10124 Torino" },                          // Report 13: Vanchiglia - Graffiti
-    { lat: 45.1074, lng: 7.6972, address: "Corso Vercelli 230, 10155 Torino" },                 // Report 14: Aurora - Fallen tree
-    { lat: 45.0307, lng: 7.6733, address: "Corso Unità d'Italia 56, 10127 Torino" },            // Report 15: Millefonti - Bus stop
-    { lat: 45.0705, lng: 7.6934, address: "Corso San Maurizio 12, 10124 Torino" },              // Report 16: Borgo Po - Illegal dumping
-    { lat: 45.0737, lng: 7.6626, address: "Via Duchessa Jolanda 15, 10138 Torino" },            // Report 17: Santa Rita - School
-    { lat: 45.0208, lng: 7.6145, address: "Via Plava 78, 10135 Torino" },                       // Report 18: Cenisia - Sports facility
-    { lat: 45.0640, lng: 7.6520, address: "Corso Peschiera 156, 10149 Torino" },                // Report 19: Dora - Public housing
-    { lat: 45.0700, lng: 7.6769, address: "Piazza Solferino 8, 10121 Torino" },                 // Report 20: Centro - Tourist info panel
-    { lat: 45.0553, lng: 7.6840, address: "Corso Marconi 45, 10125 Torino" },                    // Report 21: Santa Rita - Broken road sign
->>>>>>> 8c1104465564f6f7625a03f58f6c2cee2f96d95d
   ];
 
   // Create reports with staggered creation dates (from 7 days ago to today)
