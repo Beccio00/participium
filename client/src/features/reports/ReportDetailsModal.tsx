@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import type { Report } from "../../types/report.types";
 import { userHasRole, TECHNICIAN_ROLES } from "../../utils/roles";
+import { formatReportStatus } from "../../utils/reportStatus";
 import ReportChat from "./ReportChat";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -526,7 +527,7 @@ export default function ReportDetailsModal({
                 wordBreak: "break-word",
               }}
             >
-              {statusText}
+              {formatReportStatus(statusText as any)}
             </Badge>
             <span
               style={{

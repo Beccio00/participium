@@ -27,6 +27,7 @@ import {
   userHasRole,
   userHasAnyRole 
 } from "../../utils/roles";
+import { formatReportStatus } from "../../utils/reportStatus";
 import type { Report as AppReport, InternalNote } from "../../types/report.types";
 import { Role } from "../../../../shared/RoleTypes";
 import { ReportStatus } from "../../../../shared/ReportTypes";
@@ -118,9 +119,9 @@ export default function TechPanel() {
   };
 
   const TECHNICAL_ALLOWED_STATUSES = [
-    { value: ReportStatus.IN_PROGRESS.toString(), label: "In Progress" },
-    { value: ReportStatus.RESOLVED.toString(), label: "Resolved" },
-    { value: ReportStatus.SUSPENDED.toString(), label: "Work suspended" },
+    { value: ReportStatus.IN_PROGRESS.toString(), label: formatReportStatus(ReportStatus.IN_PROGRESS) },
+    { value: ReportStatus.RESOLVED.toString(), label: formatReportStatus(ReportStatus.RESOLVED) },
+    { value: ReportStatus.SUSPENDED.toString(), label: formatReportStatus(ReportStatus.SUSPENDED) },
   ];
 
   // Filter function

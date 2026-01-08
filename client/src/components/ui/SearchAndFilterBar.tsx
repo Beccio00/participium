@@ -1,6 +1,7 @@
 import React from "react";
 import { Row, Col, InputGroup, Form } from "react-bootstrap";
 import { Search, FunnelFill } from "react-bootstrap-icons";
+import { formatReportStatus } from "../../utils/reportStatus";
 
 interface SearchAndFilterBarProps {
   searchTerm: string;
@@ -59,7 +60,7 @@ function SearchAndFilterBar({
               >
                 <option value="">All Statuses</option>
                 {availableStatuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
+                  <option key={status} value={status}>{formatReportStatus(status as any)}</option>
                 ))}
               </Form.Select>
             </InputGroup>
@@ -115,7 +116,7 @@ function SearchAndFilterBar({
             >
               <option value="">All Statuses</option>
               {availableStatuses.map(status => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status} value={status}>{formatReportStatus(status as any)}</option>
               ))}
             </Form.Select>
           </InputGroup>

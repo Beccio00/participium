@@ -1,5 +1,6 @@
 import { Badge } from "react-bootstrap";
 import type { Report } from "../../types";
+import { formatReportStatus } from "../../utils/reportStatus";
 // onOpenDetails prop allows parent to open the shared details modal
 
 interface ReportCardProps {
@@ -124,7 +125,7 @@ export default function ReportCard({
                 color: "#fff",
               }}
             >
-              {statusText}
+              {formatReportStatus(statusText as any)}
             </Badge>
           </div>
           <small style={{ color: "#9ca3af", fontSize: "0.8rem" }}>
