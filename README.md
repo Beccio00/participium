@@ -19,7 +19,7 @@ Participium is a civic engagement platform that enables citizens to report urban
 
 ### 1.2 User Roles
 
-- **Citizen**: Registers, submits reports, tracks report status, and configures in-app notification preferences.
+- **Citizen**: Registers, submits reports, tracks report status, and configures notification preferences (in-app and Telegram).
 - **Administrator**: Creates municipality user accounts and assigns roles. Can also manage external companies and external maintainers.
 - **Public Relations**: Reviews incoming reports and approves or rejects them with explanations. Can assign reports to external companies.
 - **External Maintainer**: Works for an external company contracted by the municipality. Can view and manage reports assigned to their company.
@@ -103,6 +103,7 @@ This single command launches:
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:4000
 - **MinIO Console**: http://localhost:9001 (credentials in `docker-compose.yml`)
+- **Telegram Bot**: Automatically started (requires `BOT_TOKEN` in `.env`)
 
 #### 2.2.3 Test Accounts
 
@@ -140,31 +141,55 @@ The documentation is generated from `docs/swagger.yaml` and allows you to:
 - Test API calls directly from the browser
 - Understand authentication requirements
 
-### 2.4 Running Tests
+### 2.4 Telegram Bot Integration
 
-#### Frontend Tests (Vitest)
+Participium includes a **Telegram Bot** that allows citizens to interact with the platform directly from Telegram, making it even easier to report issues and receive notifications.
+
+#### Features
+
+- **Link Account**: Connect your Telegram account to your Participium citizen account using a secure one-time code
+- **Create Reports**: Submit new reports with photos and location directly from Telegram
+- **Track Reports**: View all your submitted reports and their current status
+
+#### Setup
+
+1. Create a Telegram bot using [@BotFather](https://t.me/BotFather)
+2. Get your bot token and username
+3. Add to `.env` file:
+
+```env
+BOT_TOKEN=your_telegram_bot_token
+BOT_USERNAME=your_bot_username
+```
+
+4. Restart services: `docker compose restart`
+
+### 2.5 Running Tests
+
+#### Frontend Unit Tests (Vitest)
 
 ```bash
 cd client
 npm test              # Run once
 npm run test:watch    # Watch mode
-
 ```
 
-# E2E UI Tests
+Frontend unit tests use **Vitest** + **Testing Library** for fast, user-centric testing.
+
+#### Frontend E2E UI Tests (Playwright)
 
 ```bash
 cd client
 npm install
-npm run install:browsers
+npm run install:browsers  # Install Playwright browsers (first time only)
+npm run test:e2e-ui       # Run all E2E UI tests
+npm run test:e2e-ui:headed # Run with visible browser
+npm run test:e2e-ui:debug  # Debug mode
+npm run test:e2e-ui:ui     # Interactive UI mode
+npm run test:e2e-ui:report # View HTML report
 ```
 
-### run all test ui
-
-```bash
-npm run test:e2e-ui
-```
-Frontend tests use **Vitest** + **Testing Library** for fast, user-centric testing.
+E2E UI tests use **Playwright** for automated browser testing, covering complete user workflows.
 
 #### Backend Tests (Jest)
 
@@ -176,6 +201,53 @@ npm run test:coverage # With coverage report
 ```
 
 Backend tests use **Jest** for unit and integration testing of services, controllers, and middleware.
+
+#### Running Tests from Root
+
+```bash
+npm run test:e2e          # Backend E2E tests
+npm run test:e2e-ui       # Frontend E2E UI tests
+```
+
+### 2.6 Environment Variables
+
+Participium uses environment variables for configuration. When using Docker Compose, create a `.env` file in the project root:
+
+```env
+# Database
+POSTGRES_USER=participium
+POSTGRES_PASSWORD=participium_password
+POSTGRES_DB=participium
+POSTGRES_PORT=5432
+
+# MinIO Object Storage
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_PORT=9000
+MINIO_CONSOLE_PORT=9001
+MINIO_BUCKET_NAME=reports-photos
+
+# Server
+SERVER_PORT=4000
+SESSION_SECRET=your-secret-key-change-in-production
+
+# Email (SMTP)
+SMTP_HOST=mail.gmx.com
+SMTP_PORT=587
+SMTP_USER=participium.turin@gmx.com
+SMTP_PASS=your_smtp_password
+SMTP_FROM_NAME=Participium
+SMTP_FROM_ADDRESS=participium.turin@gmx.com
+
+# Telegram Bot (optional)
+BOT_TOKEN=your_telegram_bot_token
+BOT_USERNAME=your_bot_username
+
+# Client
+CLIENT_PORT=3000
+```
+
+**Note**: Default values are provided in `docker-compose.yml`. The `.env` file is optional but recommended for customization and production deployments.
 
 ---
 
@@ -204,8 +276,8 @@ participium/
 │   │   ├── types/           # Frontend type definitions
 │   │   ├── validators/      # Form validation logic
 │   │   └── main.tsx
-│   └──test/                 # Frontend tests
-|
+│   └── test/                # Frontend tests (Vitest + Playwright)
+│
 ├── server/                  # Express + TypeORM backend
 │   ├── src/
 │   │   ├── config/
@@ -219,7 +291,13 @@ participium/
 │   │   └── index.ts         # Server entry point
 │   ├── seed/
 │   │   └── seed.ts          # Seed script for test data
-│   └── test/                # Backend tests
+│   └── test/                # Backend tests (Jest)
+│
+├── telegram-bot/            # Telegram bot integration
+│   └── src/
+│       ├── index.ts         # Bot entry point
+│       ├── apiClient.ts     # Backend API integration
+│       └── turinBoundaries.ts
 │
 ├── shared/                  # Shared TypeScript types
 └── docs/                    # API documentation (Swagger, Docker, etc.)
@@ -250,6 +328,10 @@ Photos are an important part of reporting urban issues, but storing images direc
 #### 3.2.6 Map
 
 The interactive map, built with the open-source libraries **Leaflet** and **React-Leaflet**, is a key part of the user experience. These libraries were chosen because they are free, widely used, and do not require any API keys or subscriptions, ensuring that the platform is accessible to everyone without hidden costs. The map uses open, community-maintained data and is designed to be fast, intuitive, and highly customizable for urban reporting needs. Even as the number of reports grows, the map remains clear and easy to navigate by automatically grouping nearby reports, so users can quickly explore and understand the distribution of issues across the city.
+
+#### 3.2.7 Telegram Integration
+
+Participium includes a **Telegram bot** built with the **Telegraf** framework to provide citizens with an alternative, mobile-friendly way to interact with the platform. The bot offers a conversational interface that makes reporting urban issues quick and accessible directly from a messaging app that many citizens already use daily. The integration is designed to complement the web interface, not replace it, giving users flexibility in how they engage with the platform. The bot validates all inputs, enforces location boundaries (ensuring reports are within Turin), and provides real-time status updates through Telegram notifications. This multi-channel approach increases accessibility and encourages greater civic participation by meeting citizens where they are.
 
 ---
 
