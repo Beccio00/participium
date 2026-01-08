@@ -14,7 +14,7 @@ sections:
 
 - Number of stories committed vs done : 8 stories committed --- 8 stories done
 - Total points committed vs done : 33 points committed --- 33 points done
-- Nr of hours planned vs spent (as a team) : 96h planned --- 96h28m spent
+- Nr of hours planned vs spent (as a team) : 96h05m planned --- 96h20m spent
 
 **Remember**  a story is done ONLY if it fits the Definition of Done:
  
@@ -28,14 +28,18 @@ sections:
 
 ### Detailed statistics
 
-| Story | # Tasks | Points | Hours est. | Hours actual |
-|-------|--------:|-------:|-----------:|-------------:|
-| _Uncategorized_ | 16 | - | 33h20m | 34h25m |
-| PT24  | 9       | 3 | 9h40m | 10h55m |
-| PT25 | 11 | 8 | 20h10m | 18h45m |
-| PT26 | 10 | 5 | 16h10m | 15h43m |
-| PT27 | 11 | 5 | 16h40m | 16h40m |
-| **Total** | 57 | 21 | **96** | **96h28m** |
+| Story           | # Tasks | Points | Hours est.  | Hours actual |
+|-------          |--------:|-------:|-----------: |-------------:|
+| _Uncategorized_ | 12     | -       | 20h35m      | 20h35m       |
+| PT28            | 8      | 1       | 4h          | 4h02m        |
+| PT15            | 9      | 1       | 4h05m       | 4h46m        |
+| PT30            | 9      | 5       | 1d5h35m     | 1d5h42m      |
+| PT10            | 9      | 2       | 5h25m       | 5h41m        |
+| PT11            | 6      | 8       | 2d5h10m     | 2d3h25m      |
+| PT12            | 10     | 8       | 2d35m       | 2d44m        |
+| PT13            | 9      | 5       | 1d6h05m     | 1d5h30m      |
+| PT14            | 10     | 3       | 1d2h10m     | 1d2h05m      |
+| **Total**       | 82     | 33      | **96h05m**  | **96h20m**   |
    
 
 > place technical tasks corresponding to story `#0` and leave out story points (not applicable in this case)
