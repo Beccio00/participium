@@ -502,7 +502,7 @@ export default function ReportForm() {
                     </FormField>
                     <Form.Group className="mb-4 mt-4">
                       <Form.Label className="fw-semibold">
-                        Foto (Min 1, Max 3)
+                        Photos (Min 1, Max 3)
                       </Form.Label>
 
                       {/*D&D*/}
@@ -549,7 +549,7 @@ export default function ReportForm() {
                         }}
                       >
                         <div style={photoLabelStyle}>
-                          {files.length} / 3 foto
+                          {files.length} / 3 photos
                         </div>
                         <div style={photoCounterStyle} aria-hidden>
                           <div
