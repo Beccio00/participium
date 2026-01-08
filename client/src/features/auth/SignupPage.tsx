@@ -11,6 +11,9 @@ interface ExtendedSignupFormData extends SignupFormData {
   confirmPassword: string;
 }
 
+// Error messages constants
+const PASSWORD_MISMATCH_ERROR = "Passwords do not match";
+
 export default function SignupPage() {
   const navigate = useNavigate();
   const { signup } = useAuth();
@@ -64,9 +67,8 @@ export default function SignupPage() {
               Record<keyof ExtendedSignupFormData, string>
             >);
 
-      // NOSONAR - This is password field comparison, not a hard-coded password
       if (values.confirmPassword && values.password !== values.confirmPassword) {
-        errors.confirmPassword = "Passwords do not match";
+        errors.confirmPassword = PASSWORD_MISMATCH_ERROR;
       }
       return errors;
     },
