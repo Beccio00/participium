@@ -48,71 +48,74 @@ sections:
 
 |            | Mean | StDev |
 |------------|------|-------|
-| Estimation | 1h41m | 39m | 
-| Actual     | 1h41m30s | 41m |
+| Estimation | 1h10m18s | 47m48s | 
+| Actual     | 1h10m30s | 47m25s |
 
 - Total estimation error ratio: sum of total hours spent / sum of total hours effort - 1
 
     $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1$$
   
-  **Total Error Ratio = 0.0049**
+  **Total Error Ratio = 0.0026**
     
 - Absolute relative task estimation error: sum( abs( spent-task-i / estimation-task-i - 1))/n
 
     $$\frac{1}{n}\sum_i^n \left| \frac{spent_{task_i}}{estimation_{task_i}}-1 \right| $$
 
-  **Absolute Relative Error = 0,0588**
+  **Absolute Relative Error = 0,0623**
 
   
 ## QUALITY MEASURES 
 
 - Unit Testing:
-  - Total hours estimated: 7h55m
-  - Total hours spent: 7h55m
-  - Nr of automated unit test cases: 599
+  - Total hours estimated: 
+  - Total hours spent: 
+  - Nr of automated unit test cases: 
   - Coverage (if available): 
-    - Statements: 84.25 %
-    - Branches: 72.33 %
-    - Functions: 71.09 %
-    - Lines: 83.85 %
+    - Statements: 
+    - Branches: 
+    - Functions: 
+    - Lines: 
 - Integration testing:
-  - Total hours estimated: 7h55m
-  - Total hours spent: 8h5m
+  - Total hours estimated: 
+  - Total hours spent: 
 - E2E testing:
-  - Total hours estimated: 4h
-  - Total hours spent: 4h25m
+  - Total hours estimated: 
+  - Total hours spent: 
 - Code review: 
-  - Total hours estimated: 15h
-  - Total hours spent: 13h25m
+  - Total hours estimated: 
+  - Total hours spent: 
 - Technical Debt management
-  - Strategy adopted: We aimed to bring our codebase closer to the established quality standards. We successfully maintained this approach up to Sprint 2. For Sprint 3, however, the code quality ended up slightly above the expected technical debt threshold. We plan to pay off this debt in the next sprint.
-  - Total hours estimated at sprint planning: 3h
-  - Total hours spent: 3h
+  - Strategy adopted: 
+  - Total hours estimated at sprint planning: 
+  - Total hours spent: 
   
 
 
 ## ASSESSMENT
 
 - What caused your errors in estimation (if any)?
-
-    There were no major errors in estimation, the only task with a significant gap between estimated and spent time is the one related to the update of the database of story#25, which took less time than expected.
+There were no significant estimation errors. In fact, we successfully reduced our total error ratio despite an increase in the volume of tasks, demonstrating improved estimation accuracy and consistency.
+    
 
 - What lessons did you learn (both positive and negative) in this sprint?
     
-    **Positive**: We confirmed that our overall time estimation for the sprint was very precise, almost perfect.
-    **Negative**: We learned that we need to improve our task management on YouTrack.
+    **Positive**: We improved our YouTrack task management, which increased overall transparency and effectively eliminated the need for manual status updates between team members.
+
+    **Negative**: Holiday schedules led to temporary team member unavailability, which created bottlenecks and occasionally blocked progress for other members.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
     
-    We were able to achieve both improvement goals set in the previous retrospective without issues.
+    We successfully met both improvement goals established in the previous retrospective, which resulted in a more efficient workflow throughout this sprint.
+
 - Which ones you were not able to achieve? Why?
 
     None.
 
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
-  - Improve task management on YouTrack: we need to be quicker on assigning spent time to tasks and on moving them to the "To Verify" state, in order to let our colleagues know immediately when they can start working.
-  - Improve Technical Debt Management: we need to improve our techniques to pay off Technical Debt, since we had some problems when merging different branches
+  -  Increase the frequency of Scrum meetings: at the moment we do 2 scrum meetings per sprint. We want to increase this number since they are fundamental for a good team coordination.
+  - Improve task prioritization: we should assign the priority to task more frequently, in order to establish a clearer roadmap for the sprint and ensure the team is always focused on the most high-impact work.
+
   
 - One thing you are proud of as a Team!!
 
-  We are really proud of the improvements we have made since the first sprint, especially we were able to spread the amount of work evenly through all the sprint, without having to rush in the last days.
+  We are proud of the team work that our group showed during all four sprints, always having a positive attitude and collaborative spirit, even when facing critical challenges.
