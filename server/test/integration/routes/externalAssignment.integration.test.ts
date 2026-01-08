@@ -115,7 +115,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const mockUser = {
         id: 1,
         email: "marco.bianchi@enelx.com",
-        role: "EXTERNAL_MAINTAINER",
+        role: ["EXTERNAL_MAINTAINER"],
         first_name: "Marco",
         last_name: "Bianchi",
       };
@@ -133,7 +133,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const externalUser = await mockCreateUserInDatabase({
         email: "marco.bianchi@enelx.com",
         password: "External123!",
-        role: "EXTERNAL_MAINTAINER",
+        role: ["EXTERNAL_MAINTAINER"],
         first_name: "Marco",
         last_name: "Bianchi",
       });
@@ -148,7 +148,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       expect(mockCreateUserInDatabase).toHaveBeenCalledWith({
         email: "marco.bianchi@enelx.com",
         password: "External123!",
-        role: "EXTERNAL_MAINTAINER",
+        role: ["EXTERNAL_MAINTAINER"],
         first_name: "Marco",
         last_name: "Bianchi",
       });
@@ -162,8 +162,8 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
     });
 
     it("should create assigned reports with external assignment capability", async () => {
-      const mockCitizen = { id: 1, email: "citizen@example.com", role: "CITIZEN" };
-      const mockTechUser = { id: 2, email: "tech@example.com", role: "MUNICIPAL_BUILDING_MAINTENANCE" };
+      const mockCitizen = { id: 1, email: "citizen@example.com", role: ["CITIZEN"] };
+      const mockTechUser = { id: 2, email: "tech@example.com", role: ["MUNICIPAL_BUILDING_MAINTENANCE"] };
       
       const mockReport = {
         id: 1,
@@ -191,13 +191,13 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const citizen = await mockCreateUserInDatabase({
         email: "citizen@example.com",
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const techUser = await mockCreateUserInDatabase({
         email: "tech@example.com",
         password: "Tech123!",
-        role: "MUNICIPAL_BUILDING_MAINTENANCE",
+        role: ["MUNICIPAL_BUILDING_MAINTENANCE"],
       });
 
       // Test report creation
@@ -407,7 +407,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
 
       const externalUserStructure = {
         email: "external@company.com",
-        role: "EXTERNAL_MAINTAINER",
+        role: ["EXTERNAL_MAINTAINER"],
         first_name: "External",
         last_name: "User",
       };
@@ -435,8 +435,8 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
           categories: [ReportCategory.PUBLIC_LIGHTING],
           hasPlatformAccess: true,
           users: [
-            { id: 501, firstName: "Marco", lastName: "Bianchi", email: "marco.bianchi@enelx.com", role: "EXTERNAL_MAINTAINER" },
-            { id: 502, firstName: "Giulia", lastName: "Ferrari", email: "giulia.ferrari@enelx.com", role: "EXTERNAL_MAINTAINER" }
+            { id: 501, firstName: "Marco", lastName: "Bianchi", email: "marco.bianchi@enelx.com", role: ["EXTERNAL_MAINTAINER"] },
+            { id: 502, firstName: "Giulia", lastName: "Ferrari", email: "giulia.ferrari@enelx.com", role: ["EXTERNAL_MAINTAINER"] }
           ]
         },
         {
@@ -476,8 +476,8 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
           categories: [ReportCategory.PUBLIC_LIGHTING],
           hasPlatformAccess: true,
           users: [
-            { id: 501, firstName: "Marco", lastName: "Bianchi", email: "marco.bianchi@enelx.com", role: "EXTERNAL_MAINTAINER" },
-            { id: 502, firstName: "Giulia", lastName: "Ferrari", email: "giulia.ferrari@enelx.com", role: "EXTERNAL_MAINTAINER" }
+            { id: 501, firstName: "Marco", lastName: "Bianchi", email: "marco.bianchi@enelx.com", role: ["EXTERNAL_MAINTAINER"] },
+            { id: 502, firstName: "Giulia", lastName: "Ferrari", email: "giulia.ferrari@enelx.com", role: ["EXTERNAL_MAINTAINER"] }
           ]
         }
       ];
@@ -696,7 +696,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const techOfficerUser = {
         id: 2,
         email: "tech@municipality.com",
-        role: "MUNICIPAL_BUILDING_MAINTENANCE",
+        role: ["MUNICIPAL_BUILDING_MAINTENANCE"],
         firstName: "Tech",
         lastName: "Officer"
       };
@@ -704,7 +704,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const publicRelationsUser = {
         id: 3,
         email: "pr@municipality.com", 
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
         firstName: "PR",
         lastName: "Officer"
       };
@@ -712,7 +712,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const citizenUser = {
         id: 4,
         email: "citizen@example.com",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
         firstName: "Test",
         lastName: "Citizen"
       };
@@ -738,7 +738,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const externalMaintainer = {
         id: 501,
         email: "marco.bianchi@enelx.com",
-        role: "EXTERNAL_MAINTAINER",
+        role: ["EXTERNAL_MAINTAINER"],
         firstName: "Marco",
         lastName: "Bianchi"
       };
@@ -764,7 +764,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       const unauthorizedUser = {
         user: {
           id: 4,
-          role: "CITIZEN"
+          role: ["CITIZEN"]
         }
       };
 

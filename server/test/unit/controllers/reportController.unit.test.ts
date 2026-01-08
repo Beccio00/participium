@@ -1187,7 +1187,7 @@ describe("reportController", () => {
   // =========================
   describe("getReports", () => {
     it("should return all approved reports without filters", async () => {
-      const mockReports = [
+      const mockReports: any[] = [
         {
           id: 1,
           title: "Report 1",
@@ -1199,7 +1199,7 @@ describe("reportController", () => {
         {
           id: 2,
           title: "Report 2",
-          category: ReportCategory.WASTE_MANAGEMENT,
+          category: ReportCategory.WASTE,
           status: ReportStatus.IN_PROGRESS,
           latitude: 45.0745,
           longitude: 7.6875,
@@ -1220,7 +1220,7 @@ describe("reportController", () => {
 
     it("should filter reports by category", async () => {
       mockReq.query = { category: ReportCategory.WATER_SUPPLY_DRINKING_WATER };
-      const mockReports = [
+      const mockReports: any[] = [
         {
           id: 1,
           title: "Broken water pipe",
@@ -1243,7 +1243,7 @@ describe("reportController", () => {
 
     it("should filter reports by bounding box", async () => {
       mockReq.query = { bbox: "7.5,45.0,7.8,45.2" };
-      const mockReports = [
+      const mockReports: any[] = [
         {
           id: 1,
           title: "Report in area",
@@ -1268,14 +1268,14 @@ describe("reportController", () => {
 
     it("should filter reports by both category and bounding box", async () => {
       mockReq.query = {
-        category: ReportCategory.ROAD_MAINTENANCE,
+        category: ReportCategory.ROADS_URBAN_FURNISHINGS,
         bbox: "7.5,45.0,7.8,45.2",
       };
-      const mockReports = [
+      const mockReports: any[] = [
         {
           id: 1,
           title: "Pothole on Via Roma",
-          category: ReportCategory.ROAD_MAINTENANCE,
+          category: ReportCategory.ROADS_URBAN_FURNISHINGS,
           latitude: 45.1,
           longitude: 7.65,
         },
@@ -1286,7 +1286,7 @@ describe("reportController", () => {
       await getReports(mockReq as Request, mockRes as Response);
 
       expect(mockGetApprovedReportsService).toHaveBeenCalledWith(
-        ReportCategory.ROAD_MAINTENANCE,
+        ReportCategory.ROADS_URBAN_FURNISHINGS,
         {
           minLon: 7.5,
           minLat: 45.0,
@@ -1298,7 +1298,7 @@ describe("reportController", () => {
     });
 
     it("should return empty array when no reports match filters", async () => {
-      mockReq.query = { category: ReportCategory.WASTE_MANAGEMENT };
+      mockReq.query = { category: ReportCategory.WASTE };
       mockGetApprovedReportsService.mockResolvedValue([]);
 
       await getReports(mockReq as Request, mockRes as Response);
@@ -1341,7 +1341,7 @@ describe("reportController", () => {
 
     it("should handle bbox with whitespace in parameters", async () => {
       mockReq.query = { bbox: " 7.5 , 45.0 , 7.8 , 45.2 " };
-      const mockReports = [];
+      const mockReports: any[] = [];
 
       mockGetApprovedReportsService.mockResolvedValue(mockReports);
 
@@ -1357,7 +1357,7 @@ describe("reportController", () => {
 
     it("should handle multiple reports in search area", async () => {
       mockReq.query = { bbox: "7.5,45.0,7.8,45.2" };
-      const mockReports = [
+      const mockReports: any[] = [
         {
           id: 1,
           title: "Report 1",
@@ -1388,7 +1388,7 @@ describe("reportController", () => {
 
     it("should handle reports with negative coordinates", async () => {
       mockReq.query = { bbox: "-0.5,-45.0,0.8,45.2" };
-      const mockReports = [];
+      const mockReports: any[] = [];
 
       mockGetApprovedReportsService.mockResolvedValue(mockReports);
 

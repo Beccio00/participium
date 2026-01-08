@@ -16,6 +16,7 @@ const mockReportFindPending = jest.fn();
 const mockReportUpdate = jest.fn();
 const mockReportFindAssignedToUser = jest.fn(); // Added
 const mockReportFindAssignedToExternalMaintainer = jest.fn(); // Added
+const mockFindByStatusCategoryAndBounds = jest.fn(); // Added for getApprovedReports
 const mockUserFindById = jest.fn();
 const mockUserFindByRoles = jest.fn();
 
@@ -32,6 +33,7 @@ jest.mock("../../../src/repositories/ReportRepository", () => ({
     findAssignedToUser: mockReportFindAssignedToUser, // Added
     findAssignedToExternalMaintainer:
       mockReportFindAssignedToExternalMaintainer, // Added
+    findByStatusCategoryAndBounds: mockFindByStatusCategoryAndBounds, // Added
   })),
 }));
 
@@ -74,6 +76,9 @@ import {
   getAssignableTechnicalsForReport,
   updateReportStatus,
   TechnicalType,
+  getReportById,
+  getAssignedReportsService,
+  getAssignedReportsForExternalMaintainer,
 } from "../../../src/services/reportService";
 import * as notificationService from "../../../src/services/notificationService";
 
@@ -106,6 +111,8 @@ describe("reportService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default mock returns for repository methods
+    mockFindByStatusCategoryAndBounds.mockResolvedValue([]);
   });
 
   // --- 1. Create Report ---
@@ -148,9 +155,9 @@ describe("reportService", () => {
   // --- 2. Get Lists ---
   describe("getApprovedReports", () => {
     it("should filter by category if provided", async () => {
-      mockReportFindByStatusAndCategory.mockResolvedValue([]);
+      mockFindByStatusCategoryAndBounds.mockResolvedValue([]);
       await getApprovedReports(ReportCategory.WASTE);
-      expect(mockReportFindByStatusAndCategory).toHaveBeenCalled();
+      expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalled();
     });
   });
 
@@ -261,7 +268,7 @@ describe("reportService", () => {
       );
       mockUserFindById.mockResolvedValue({
         id: 99,
-        role: TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE,
+        role: [TechnicalType.MUNICIPAL_BUILDING_MAINTENANCE],
       });
       mockReportUpdate.mockResolvedValue(null); // Simulate DB failure
 
@@ -790,7 +797,7 @@ describe("reportService", () => {
           messages: [],
         };
 
-        mockReportFindByStatusAndCategory.mockResolvedValue([mockReport]);
+        mockFindByStatusCategoryAndBounds.mockResolvedValue([mockReport]);
 
         const reports = await getApprovedReports();
 
@@ -968,16 +975,8 @@ describe("reportService", () => {
   // getApprovedReports tests
   // =========================
   describe("getApprovedReports", () => {
-    const mockFindByStatusCategoryAndBounds = jest.fn();
-
     beforeEach(() => {
       jest.clearAllMocks();
-      // Mock the repository method
-      const ReportRepository =
-        require("../../../src/repositories/ReportRepository")
-          .ReportRepository as jest.MockedClass<any>;
-      ReportRepository.prototype.findByStatusCategoryAndBounds =
-        mockFindByStatusCategoryAndBounds;
     });
 
     it("should return all approved reports without filters", async () => {
@@ -996,7 +995,7 @@ describe("reportService", () => {
         {
           id: 2,
           title: "Report 2",
-          category: ReportCategory.WASTE_MANAGEMENT,
+          category: ReportCategory.WASTE,
           status: ReportStatus.IN_PROGRESS,
           latitude: 45.0745,
           longitude: 7.6875,
@@ -1086,8 +1085,8 @@ describe("reportService", () => {
         bbox
       );
       expect(result).toHaveLength(1);
-      expect(result[0].latitude).toBe(45.1);
-      expect(result[0].longitude).toBe(7.65);
+      expect(result[0].latitude).toBe("45.1");
+      expect(result[0].longitude).toBe("7.65");
     });
 
     it("should filter approved reports by both category and bounding box", async () => {
@@ -1102,7 +1101,7 @@ describe("reportService", () => {
         {
           id: 1,
           title: "Road maintenance issue",
-          category: ReportCategory.ROAD_MAINTENANCE,
+          category: ReportCategory.ROADS_URBAN_FURNISHINGS,
           latitude: 45.1,
           longitude: 7.65,
           status: ReportStatus.IN_PROGRESS,
@@ -1115,24 +1114,24 @@ describe("reportService", () => {
       mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
 
       const result = await getApprovedReports(
-        ReportCategory.ROAD_MAINTENANCE,
+        ReportCategory.ROADS_URBAN_FURNISHINGS,
         bbox
       );
 
       expect(mockFindByStatusCategoryAndBounds).toHaveBeenCalledWith(
         expect.any(Array),
-        ReportCategory.ROAD_MAINTENANCE,
+        ReportCategory.ROADS_URBAN_FURNISHINGS,
         bbox
       );
       expect(result).toHaveLength(1);
-      expect(result[0].category).toBe(ReportCategory.ROAD_MAINTENANCE);
-      expect(result[0].latitude).toBe(45.1);
+      expect(result[0].category).toBe(ReportCategory.ROADS_URBAN_FURNISHINGS);
+      expect(result[0].latitude).toBe("45.1");
     });
 
     it("should return empty array when no reports match filters", async () => {
       mockFindByStatusCategoryAndBounds.mockResolvedValue([]);
 
-      const result = await getApprovedReports(ReportCategory.WASTE_MANAGEMENT);
+      const result = await getApprovedReports(ReportCategory.WASTE);
 
       expect(result).toEqual([]);
       expect(result).toHaveLength(0);
@@ -1197,7 +1196,7 @@ describe("reportService", () => {
         maxLat: 45.1234567,
       };
 
-      const mockReports = [];
+      const mockReports: any[] = [];
       mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
 
       await getApprovedReports(undefined, bbox);
@@ -1217,7 +1216,7 @@ describe("reportService", () => {
         maxLat: 45.2,
       };
 
-      const mockReports = [];
+      const mockReports: any[] = [];
       mockFindByStatusCategoryAndBounds.mockResolvedValue(mockReports);
 
       await getApprovedReports(undefined, bbox);
@@ -1265,8 +1264,8 @@ describe("reportService", () => {
       const result = await getApprovedReports(undefined, bbox);
 
       expect(result).toHaveLength(2);
-      expect(result[0].latitude).toBe(45.15);
-      expect(result[1].latitude).toBe(45.05);
+      expect(result[0].latitude).toBe("45.15");
+      expect(result[1].latitude).toBe("45.05");
     });
 
     it("should convert reports from entity format to DTO format", async () => {

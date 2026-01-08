@@ -3,6 +3,7 @@ jest.mock("../../../src/controllers/reportController", () => ({
   createReport: jest.fn((req: any, res: any) => res.status(201).json({})),
   getReports: jest.fn((req: any, res: any) => res.json([])),
   getReportById: jest.fn((req: any, res: any) => res.json({})),
+  getMyReports: jest.fn((req: any, res: any) => res.json([])),
   getPendingReports: jest.fn((req: any, res: any) => res.json([])),
   getAssignedReports: jest.fn((req: any, res: any) => res.json([])),
   approveReport: jest.fn((req: any, res: any) => res.json({})),

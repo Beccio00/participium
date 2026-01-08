@@ -107,7 +107,7 @@ export async function createUserInDatabase(data: {
   firstName?: string;
   lastName?: string;
   password?: string;
-  role?: Role | string;
+  role?: Role | Role[] | string | string[];
   isVerified?: boolean;
   externalCompanyId?: number | null;
 }): Promise<User> {

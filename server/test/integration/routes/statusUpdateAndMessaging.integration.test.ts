@@ -707,7 +707,7 @@ describe("Story 11: Report Status Updates and Messaging Integration Tests", () =
       const reportRes = await citizen1Agent
         .post("/api/reports")
         .field("title", "Streetlight Out")
-        .field("description", "No light")
+        .field("description", "No light on the street corner")
         .field("category", "PUBLIC_LIGHTING")
         .field("latitude", "45.0703")
         .field("longitude", "7.6869")

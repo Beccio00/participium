@@ -86,7 +86,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -131,7 +131,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -171,7 +171,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -210,7 +210,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -249,7 +249,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -288,7 +288,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -327,7 +327,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -360,7 +360,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -425,7 +425,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -456,7 +456,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -491,7 +491,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -515,7 +515,7 @@ describe("Report Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);

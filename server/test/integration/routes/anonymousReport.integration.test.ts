@@ -48,7 +48,7 @@ async function createPublicRelationsAgent(app: any) {
   const user = await AppDataSource.getRepository(User).findOne({ where: { email } });
   await AppDataSource.getRepository(User).update(
     { email }, 
-    { role: "PUBLIC_RELATIONS" as any, isVerified: true }
+    { role: ["PUBLIC_RELATIONS"] as any, isVerified: true }
   );
   
   const agent = await createAuthenticatedAgent(app, email, password);
@@ -69,7 +69,7 @@ async function createTechnicalAgent(app: any) {
   const user = await AppDataSource.getRepository(User).findOne({ where: { email } });
   await AppDataSource.getRepository(User).update(
     { email }, 
-    { role: "INFRASTRUCTURES" as any, isVerified: true }
+    { role: ["INFRASTRUCTURES"] as any, isVerified: true }
   );
   
   const agent = await createAuthenticatedAgent(app, email, password);
@@ -85,7 +85,7 @@ async function createCitizenWithUser(app: any) {
     firstName: "Test",
     lastName: "Citizen",
     password,
-    role: "CITIZEN",
+    role: ["CITIZEN"],
     isVerified: true,
   });
   
@@ -233,7 +233,7 @@ describe("Story #15: Anonymous Report Feature - Integration Tests", () => {
         firstName: "anonymous",
         lastName: "",
         email: "",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Public report should show user details
@@ -244,7 +244,7 @@ describe("Story #15: Anonymous Report Feature - Integration Tests", () => {
         firstName: citizen2User.first_name, // Database field name
         lastName: citizen2User.last_name,   // Database field name
         email: citizen2User.email,
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
     });
 
@@ -397,32 +397,32 @@ describe("Story #15: Anonymous Report Feature - Integration Tests", () => {
   });
 
   describe("Edge Cases and Validation", () => {
-    it("should handle string 'true' for isAnonymous parameter", async () => {
+    it("should handle string 'true' for isAnonymous parameter in form data", async () => {
       // Arrange
       const { agent } = await createCitizenWithUser(app);
 
-      // Act
+      // Act - FormData always sends strings, so "true" should be accepted
       const response = await createReportViaForm(agent, {
         title: "Test",
-        description: "Test",
+        description: "Test description that is long enough",
         category: "OTHER",
-        isAnonymous: "true", // String "true"
+        isAnonymous: "true", // String "true" in form data
       }).expect(201);
 
       // Assert
       expect(response.body.report.isAnonymous).toBe(true);
     });
 
-    it("should handle string 'false' for isAnonymous parameter", async () => {
+    it("should handle string 'false' for isAnonymous parameter in form data", async () => {
       // Arrange
       const { agent } = await createCitizenWithUser(app);
 
-      // Act
+      // Act - FormData always sends strings, so "false" should be accepted
       const response = await createReportViaForm(agent, {
         title: "Test",
-        description: "Test",
+        description: "Test description that is long enough",
         category: "OTHER",
-        isAnonymous: "false", // String "false"
+        isAnonymous: "false", // String "false" in form data
       }).expect(201);
 
       // Assert
@@ -433,15 +433,15 @@ describe("Story #15: Anonymous Report Feature - Integration Tests", () => {
       // Arrange
       const { agent } = await createCitizenWithUser(app);
 
-      // Act
+      // Act - Invalid value should default to false
       const response = await agent
         .post("/api/reports")
         .field("title", "Test Report")
-        .field("description", "Test")
+        .field("description", "Test description that is long enough")
         .field("category", "OTHER")
         .field("latitude", "45.0703")
         .field("longitude", "7.6869")
-        .field("isAnonymous", "invalid-value") // Invalid value
+        .field("isAnonymous", "invalid-value") // Invalid value defaults to false
         .attach("photos", Buffer.from("fake-image"), "test.jpg")
         .expect(201);
 

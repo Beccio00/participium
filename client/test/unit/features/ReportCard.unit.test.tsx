@@ -10,7 +10,7 @@ const mockReport = {
   title: "Broken Street Light",
   description: "The street light on Main St is not working",
   category: "PUBLIC_LIGHTING" as ReportCategory,
-  status: "Pending" as const,
+  status: "PENDING_APPROVAL" as const,
   address: "Main St, 123",
   latitude: 45.0703,
   longitude: 7.6869,
@@ -24,8 +24,8 @@ describe("ReportCard", () => {
     expect(
       screen.getByText("The street light on Main St is not working")
     ).toBeInTheDocument();
-    expect(screen.getByText("Pending")).toBeInTheDocument();
-    expect(screen.getByText("📍 45.070300, 7.686900")).toBeInTheDocument();
+    expect(screen.getByText("Pending Approval")).toBeInTheDocument();
+    expect(screen.getByText("Main St, 123")).toBeInTheDocument();
     expect(screen.getByText("01/10/2023")).toBeInTheDocument();
   });
 
@@ -46,20 +46,20 @@ describe("ReportCard", () => {
 
   it("shows correct status badge color", () => {
     const { rerender } = render(
-      <ReportCard report={{ ...mockReport, status: "Resolved" }} />
+      <ReportCard report={{ ...mockReport, status: "RESOLVED" }} />
     );
     expect(screen.getByText("Resolved")).toHaveStyle({
       backgroundColor: "#10b981",
     });
 
-    rerender(<ReportCard report={{ ...mockReport, status: "In Progress" }} />);
+    rerender(<ReportCard report={{ ...mockReport, status: "IN_PROGRESS" }} />);
     expect(screen.getByText("In Progress")).toHaveStyle({
-      backgroundColor: "#f59e0b",
+      backgroundColor: "#06b6d4",
     });
 
-    rerender(<ReportCard report={{ ...mockReport, status: "Pending" }} />);
-    expect(screen.getByText("Pending")).toHaveStyle({
-      backgroundColor: "#3b82f6",
+    rerender(<ReportCard report={{ ...mockReport, status: "PENDING_APPROVAL" }} />);
+    expect(screen.getByText("Pending Approval")).toHaveStyle({
+      backgroundColor: "#f59e0b",
     });
   });
 

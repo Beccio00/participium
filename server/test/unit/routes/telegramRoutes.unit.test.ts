@@ -6,6 +6,8 @@ jest.mock("../../../src/controllers/telegramController", () => ({
   unlink: jest.fn((req: any, res: any) => res.status(200).json({})),
   createReport: jest.fn((req: any, res: any) => res.status(201).json({})),
   checkLinked: jest.fn((req: any, res: any) => res.status(200).json({})),
+  getMyReports: jest.fn((req: any, res: any) => res.status(200).json([])),
+  getReportStatus: jest.fn((req: any, res: any) => res.status(200).json({})),
 }));
 
 jest.mock("../../../src/middlewares/routeProtection", () => ({
@@ -183,7 +185,7 @@ describe("telegramRoutes", () => {
   describe("Route handler tests", () => {
     it("should have correct number of routes", () => {
       const routes = stack.filter((layer: any) => layer.route);
-      expect(routes).toHaveLength(6);
+      expect(routes).toHaveLength(8);
     });
 
     it("should handle all HTTP methods correctly", () => {
@@ -198,7 +200,7 @@ describe("telegramRoutes", () => {
       );
 
       expect(postRoutes).toHaveLength(4); // generate-token, link, reports, check-linked
-      expect(getRoutes).toHaveLength(1);   // status
+      expect(getRoutes).toHaveLength(3);   // status, /:telegramId/reports, /:telegramId/reports/:reportId
       expect(deleteRoutes).toHaveLength(1); // unlink
     });
 
@@ -238,7 +240,7 @@ describe("telegramRoutes", () => {
         .map((layer: any) => layer.route.path);
 
       const parametrizedRoutes = routePaths.filter((path: string) => path.includes(":"));
-      expect(parametrizedRoutes).toHaveLength(0);
+      expect(parametrizedRoutes).toHaveLength(2); // /:telegramId/reports and /:telegramId/reports/:reportId
     });
   });
 

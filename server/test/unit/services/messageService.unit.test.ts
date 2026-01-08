@@ -177,7 +177,7 @@ describe("messageService", () => {
           reportId: 1,
           senderId: 100,
         });
-        expect(result.senderRole).toBe(Role.CITIZEN);
+        expect(result.senderRoles).toContain(Role.CITIZEN);
       });
     });
 
@@ -201,7 +201,7 @@ describe("messageService", () => {
           content: "Test content",
           createdAt: mockDate.toISOString(),
           senderId: 50,
-          senderRole: Role.LOCAL_PUBLIC_SERVICES,
+          senderRoles: [Role.LOCAL_PUBLIC_SERVICES],
         });
       });
 
@@ -462,14 +462,14 @@ describe("messageService", () => {
           content: "First message",
           createdAt: "2025-12-30T10:00:00.000Z",
           senderId: 50,
-          senderRole: Role.LOCAL_PUBLIC_SERVICES,
+          senderRoles: [Role.LOCAL_PUBLIC_SERVICES],
         });
         expect(result[1]).toEqual({
           id: 2,
           content: "Second message",
           createdAt: "2025-12-30T11:00:00.000Z",
           senderId: 100,
-          senderRole: Role.CITIZEN,
+          senderRoles: [Role.CITIZEN],
         });
       });
 
@@ -508,7 +508,7 @@ describe("messageService", () => {
         const result = await getReportMessages(1, 100);
 
         expect(result).toHaveLength(4);
-        expect(result.map((m) => m.senderRole)).toEqual([
+        expect(result.map((m) => m.senderRoles[0])).toEqual([
           Role.LOCAL_PUBLIC_SERVICES,
           Role.CITIZEN,
           Role.LOCAL_PUBLIC_SERVICES,
@@ -534,7 +534,7 @@ describe("messageService", () => {
 
         const result = await getReportMessages(1, 60);
 
-        expect(result[0].senderRole).toBe(Role.EXTERNAL_MAINTAINER);
+        expect(result[0].senderRoles).toContain(Role.EXTERNAL_MAINTAINER);
       });
     });
   });

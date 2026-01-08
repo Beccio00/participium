@@ -34,7 +34,7 @@ describe("Internal Notes Integration Tests", () => {
     const maintainer = await createUserInDatabase({
       email: `ext-${Date.now()}@example.com`,
       password: "External123!",
-      role: "EXTERNAL_MAINTAINER",
+      role: ["EXTERNAL_MAINTAINER"],
       firstName: "Ext",
       lastName: "Maint",
     });
@@ -51,7 +51,7 @@ describe("Internal Notes Integration Tests", () => {
     const tech = await createUserInDatabase({
       email: `tech-${Date.now()}@example.com`,
       password: "Tech123!",
-      role: "WASTE_MANAGEMENT",
+      role: ["WASTE_MANAGEMENT"],
       firstName: "Tech",
       lastName: "One",
     });
@@ -60,7 +60,7 @@ describe("Internal Notes Integration Tests", () => {
     const citizen = await createUserInDatabase({
       email: `cit-${Date.now()}@example.com`,
       password: "Citizen123!",
-      role: "CITIZEN",
+      role: ["CITIZEN"],
     });
 
     // create report assigned to tech
@@ -102,7 +102,7 @@ describe("Internal Notes Integration Tests", () => {
     const citizen = await createUserInDatabase({
       email: `cit2-${Date.now()}@example.com`,
       password: "Citizen123!",
-      role: "CITIZEN",
+      role: ["CITIZEN"],
     });
 
     const reportRepo = AppDataSource.getRepository(Report);
@@ -138,13 +138,13 @@ describe("Internal Notes Integration Tests", () => {
     const tech = await createUserInDatabase({
       email: `tech-na-${Date.now()}@example.com`,
       password: "Tech123!",
-      role: "WASTE_MANAGEMENT",
+      role: ["WASTE_MANAGEMENT"],
     });
 
     const citizen = await createUserInDatabase({
       email: `cit3-${Date.now()}@example.com`,
       password: "Citizen123!",
-      role: "CITIZEN",
+      role: ["CITIZEN"],
     });
 
     const reportRepo = AppDataSource.getRepository(Report);
@@ -175,7 +175,7 @@ describe("Internal Notes Integration Tests", () => {
     const citizen = await createUserInDatabase({
       email: `cit4-${Date.now()}@example.com`,
       password: "Citizen123!",
-      role: "CITIZEN",
+      role: ["CITIZEN"],
     });
 
     const reportRepo = AppDataSource.getRepository(Report);

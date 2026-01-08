@@ -28,12 +28,12 @@ describe("GET /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -61,7 +61,7 @@ describe("GET /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -107,7 +107,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -145,7 +145,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -174,7 +174,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -206,7 +206,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -267,12 +267,12 @@ describe("GET /api/admin/municipality-users/:id", () => {
     const munUser = await createUserInDatabase({
       email: `mun-${Date.now()}@comune.torino.it`,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -298,7 +298,7 @@ describe("GET /api/admin/municipality-users/:id", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -333,7 +333,7 @@ describe("GET /api/admin/roles", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -375,12 +375,12 @@ describe("DELETE /api/admin/municipality-users/:id", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const munUser = await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -409,7 +409,7 @@ describe("DELETE /api/admin/municipality-users/:id", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -467,7 +467,7 @@ describe("Authentication error handling", () => {
     const municipalityUser = await createUserInDatabase({
       email: `auth-test-${Date.now()}@comune.torino.it`,
       password: "Municipal123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const wrongPasswordResponse = await request(app)
@@ -522,7 +522,7 @@ describe("Error scenarios coverage tests", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -553,7 +553,7 @@ describe("Error scenarios coverage tests", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -590,12 +590,12 @@ describe("Service coverage integration tests", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -628,12 +628,12 @@ describe("Service coverage integration tests", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const citizen = await createUserInDatabase({
       email: citizenEmail,
       password: "Citizen123!",
-      role: "CITIZEN",
+      role: ["CITIZEN"],
     });
 
     const agent = request.agent(app);
@@ -659,12 +659,12 @@ describe("Service coverage integration tests", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const citizen = await createUserInDatabase({
       email: citizenEmail,
       password: "Citizen123!",
-      role: "CITIZEN",
+      role: ["CITIZEN"],
     });
 
     const agent = request.agent(app);
@@ -701,12 +701,12 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const munUser = await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -739,12 +739,12 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const munUser = await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -783,7 +783,7 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     // Create user via API to have multiple roles
@@ -832,12 +832,12 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const munUser = await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -873,12 +873,12 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const munUser = await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -906,12 +906,12 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const munUser = await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);
@@ -937,7 +937,7 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -947,17 +947,16 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
       .expect(200);
 
     // Act & Assert
-    // Note: The OpenAPI spec for PATCH municipality-users doesn't define a 404 response,
-    // so when the user doesn't exist, the application logic handles it and likely returns 500
+    // The application returns 404 when the user doesn't exist
     const response = await agent
       .patch("/api/admin/municipality-users/999999")
       .send({
         roles: ["PUBLIC_RELATIONS"],
       })
-      .expect(500);
+      .expect(404);
 
-    // The response structure might vary depending on how the error is handled
-    expect(response.status).toBe(500);
+    // The response structure indicates the user was not found
+    expect(response.status).toBe(404);
   });
 
   it("should return 401 when not authenticated", async () => {
@@ -980,12 +979,12 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
     await createUserInDatabase({
       email: adminEmail,
       password: "Admin1234!",
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
     const munUser = await createUserInDatabase({
       email: munUserEmail,
       password: "Mun123!",
-      role: "PUBLIC_RELATIONS",
+      role: ["PUBLIC_RELATIONS"],
     });
 
     const agent = request.agent(app);

@@ -162,7 +162,6 @@ describe("citizenService", () => {
         email: "e",
         password: "p",
         salt: "s",
-        telegramUsername: "t",
         emailNotificationsEnabled: true,
       };
       mockUpdate.mockResolvedValue({});
@@ -173,7 +172,6 @@ describe("citizenService", () => {
         email: "e",
         password: "p",
         salt: "s",
-        telegram_username: "t",
         email_notifications_enabled: true,
       });
     });

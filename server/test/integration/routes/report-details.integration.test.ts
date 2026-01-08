@@ -278,11 +278,11 @@ describe('Story 5 - Report Details Integration Tests', () => {
       // Arrange
       const imageBuffer = Buffer.from('fake-image-data');
 
-      // Act
+      // Act - API requires minimum 10 characters for description
       const response = await citizenAgent
         .post('/api/reports')
         .field('title', 'Valid Title')
-        .field('description', 'X') // Single character description
+        .field('description', 'X'.repeat(10)) // Exactly 10 characters (minimum)
         .field('category', ReportCategory.OTHER)
         .field('latitude', '45.0703')
         .field('longitude', '7.6869')
@@ -318,7 +318,7 @@ describe('Story 5 - Report Details Integration Tests', () => {
     it('should accept report with long description', async () => {
       // Arrange
       const imageBuffer = Buffer.from('fake-image-data');
-      const longDescription = 'This is a very detailed description. '.repeat(50); // ~1750 characters
+      const longDescription = 'A'.repeat(1000); // Exactly 1000 characters (maximum allowed)
 
       // Act
       const response = await citizenAgent

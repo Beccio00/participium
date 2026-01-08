@@ -44,7 +44,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
     const user = await createUserInDatabase({
       email,
       password: "External123!",
-      role: "EXTERNAL_MAINTAINER",
+      role: ["EXTERNAL_MAINTAINER"],
       firstName: "External",
       lastName: "Maintainer",
     });
@@ -136,7 +136,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Create report assigned to external maintainer
@@ -175,7 +175,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -205,7 +205,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -237,14 +237,14 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const techUser = await createUserInDatabase({
         email: techEmail,
         password: "Tech123!",
-        role: "LOCAL_PUBLIC_SERVICES",
+        role: ["LOCAL_PUBLIC_SERVICES"],
       });
 
       const citizenEmail = `citizen-${Date.now()}@test.com`;
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Create report assigned to technical officer
@@ -290,7 +290,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const agent = request.agent(app);
@@ -315,7 +315,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       await createUserInDatabase({
         email: prEmail,
         password: "PR123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       });
 
       const agent = request.agent(app);
@@ -340,7 +340,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       await createUserInDatabase({
         email: adminEmail,
         password: "Admin123!",
-        role: "ADMINISTRATOR",
+        role: ["ADMINISTRATOR"],
       });
 
       const agent = request.agent(app);
@@ -369,7 +369,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Create report assigned to external maintainer 1
@@ -451,7 +451,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -481,7 +481,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -512,7 +512,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -542,7 +542,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -572,7 +572,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -608,7 +608,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Report is in EXTERNAL_ASSIGNED status
@@ -639,7 +639,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Create report and set to IN_PROGRESS
@@ -672,7 +672,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Create report and set to SUSPENDED
@@ -705,7 +705,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Create report and set to IN_PROGRESS
@@ -738,7 +738,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       // Create report and set to RESOLVED
@@ -777,7 +777,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -814,7 +814,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -852,7 +852,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);
@@ -892,7 +892,7 @@ describe("Story PT25 - External Maintainer Report Status Update Integration Test
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const report = await createReportAssignedToExternal(citizen.id, externalUser.id);

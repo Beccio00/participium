@@ -55,7 +55,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         const prUser = await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         // Create a citizen and a pending report
@@ -63,7 +63,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         await createPendingReport(citizen.id);
@@ -92,7 +92,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const agent = request.agent(app);
@@ -127,7 +127,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const agent = request.agent(app);
@@ -154,14 +154,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const techEmail = `tech-${Date.now()}@example.com`;
         const techUser = await createUserInDatabase({
           email: techEmail,
           password: "Tech123!",
-          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+          role: ["INFRASTRUCTURES"], // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
         });
 
         // Create a citizen and a pending report
@@ -169,7 +169,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -206,21 +206,21 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         const prUser = await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const techEmail = `tech-${Date.now()}@example.com`;
         const techUser = await createUserInDatabase({
           email: techEmail,
           password: "Tech123!",
-          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+          role: ["INFRASTRUCTURES"], // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -251,7 +251,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const agent = request.agent(app);
@@ -275,14 +275,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const techEmail = `tech-${Date.now()}@example.com`;
         const techUser = await createUserInDatabase({
           email: techEmail,
           password: "Tech123!",
-          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+          role: ["INFRASTRUCTURES"], // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
         });
 
         const agent = request.agent(app);
@@ -306,21 +306,21 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const techEmail = `tech-${Date.now()}@example.com`;
         const techUser = await createUserInDatabase({
           email: techEmail,
           password: "Tech123!",
-          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+          role: ["INFRASTRUCTURES"], // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         // Create report in ASSIGNED status (already approved)
@@ -369,21 +369,21 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const techEmail = `tech-${Date.now()}@example.com`;
         const techUser = await createUserInDatabase({
           email: techEmail,
           password: "Tech123!",
-          role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+          role: ["INFRASTRUCTURES"], // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         // Create report in REJECTED status
@@ -441,7 +441,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -555,14 +555,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         const prUser = await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -594,14 +594,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -633,14 +633,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -670,14 +670,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -707,14 +707,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -742,14 +742,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -784,7 +784,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const agent = request.agent(app);
@@ -810,7 +810,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const agent = request.agent(app);
@@ -836,14 +836,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         await createUserInDatabase({
           email: prEmail,
           password: "PR123!",
-          role: "PUBLIC_RELATIONS",
+          role: ["PUBLIC_RELATIONS"],
         });
 
         const citizenEmail = `citizen-${Date.now()}@example.com`;
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         // Create report in ASSIGNED status
@@ -966,7 +966,7 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
         const citizen = await createUserInDatabase({
           email: citizenEmail,
           password: "Citizen123!",
-          role: "CITIZEN",
+          role: ["CITIZEN"],
         });
 
         const report = await createPendingReport(citizen.id);
@@ -1033,21 +1033,21 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const prEmail = `pr-${Date.now()}@example.com`;
       await createUserInDatabase({
         email: prEmail,
         password: "PR123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       });
 
       const techEmail = `tech-${Date.now()}@example.com`;
       const techUser = await createUserInDatabase({
         email: techEmail,
         password: "Tech123!",
-        role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+        role: ["INFRASTRUCTURES"], // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
       });
 
       // Step 1: Create a pending report
@@ -1083,14 +1083,14 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const prEmail = `pr-${Date.now()}@example.com`;
       await createUserInDatabase({
         email: prEmail,
         password: "PR123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       });
 
       // Step 1: Create a pending report
@@ -1124,21 +1124,21 @@ describe("Story 6 - Report Review and Approval Integration Tests", () => {
       const citizen = await createUserInDatabase({
         email: citizenEmail,
         password: "Citizen123!",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
 
       const prEmail = `pr-${Date.now()}@example.com`;
       await createUserInDatabase({
         email: prEmail,
         password: "PR123!",
-        role: "PUBLIC_RELATIONS",
+        role: ["PUBLIC_RELATIONS"],
       });
 
       const techEmail = `tech-${Date.now()}@example.com`;
       const techUser = await createUserInDatabase({
         email: techEmail,
         password: "Tech123!",
-        role: "INFRASTRUCTURES", // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
+        role: ["INFRASTRUCTURES"], // PUBLIC_LIGHTING requires INFRASTRUCTURES or LOCAL_PUBLIC_SERVICES
       });
 
       // Create 3 pending reports

@@ -35,6 +35,7 @@ jest.mock("../../../src/controllers/reportController", () => ({
   createReport: (req: any, res: any) => res.status(201).json({ id: 1 }),
   getReports: (req: any, res: any) => res.status(200).json([]),
   getReportById: (req: any, res: any) => res.status(200).json({ id: 1 }),
+  getMyReports: (req: any, res: any) => res.status(200).json([]),
   getPendingReports: (req: any, res: any) => res.status(200).json([]),
   approveReport: (req: any, res: any) =>
     res.status(200).json({ success: true }),

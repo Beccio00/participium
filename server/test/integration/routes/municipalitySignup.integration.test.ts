@@ -26,7 +26,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: adminPassword,
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     // Login using agent to persist session cookie
@@ -79,7 +79,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: userEmail,
       password: userPassword,
-      role: "CITIZEN",
+      role: ["CITIZEN"],
     });
 
     const agent = request.agent(app);
@@ -107,7 +107,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: adminPassword,
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);
@@ -141,7 +141,7 @@ describe("POST /api/admin/municipality-users", () => {
     await createUserInDatabase({
       email: adminEmail,
       password: adminPassword,
-      role: "ADMINISTRATOR",
+      role: ["ADMINISTRATOR"],
     });
 
     const agent = request.agent(app);

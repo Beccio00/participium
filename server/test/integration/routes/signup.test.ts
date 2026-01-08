@@ -44,7 +44,7 @@ describe("POST /api/citizen/signup", () => {
         firstName: "TestFirst",
         lastName: "TestLast",
         email: userData.email,
-        role: "CITIZEN",
+        role: ["CITIZEN"],
       });
       expect(response.body).toHaveProperty("telegramUsername", null);
       expect(response.body).toHaveProperty("emailNotificationsEnabled", true);

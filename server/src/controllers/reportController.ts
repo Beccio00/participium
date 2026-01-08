@@ -273,7 +273,7 @@ export async function getReports(req: Request, res: Response): Promise<void> {
         firstName: "anonymous",
         lastName: "",
         email: "",
-        role: "CITIZEN",
+        role: ["CITIZEN"],
         isVerified: false,
         telegramUsername: null,
         emailNotificationsEnabled: false
