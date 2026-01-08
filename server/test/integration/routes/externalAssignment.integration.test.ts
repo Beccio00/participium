@@ -158,7 +158,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       });
       expect(mockRepository.save).toHaveBeenCalled();
       expect(externalUser.email).toBe("marco.bianchi@enelx.com");
-      expect(externalUser.role).toBe("EXTERNAL_MAINTAINER");
+      expect(externalUser.role).toContain("EXTERNAL_MAINTAINER");
     });
 
     it("should create assigned reports with external assignment capability", async () => {
@@ -421,7 +421,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       expect(reportWithExternalFields.externalMaintainerId).toBeNull();
       expect(reportWithExternalFields.externalAssignedAt).toBeNull();
       
-      expect(externalUserStructure.role).toBe("EXTERNAL_MAINTAINER");
+      expect(externalUserStructure.role).toContain("EXTERNAL_MAINTAINER");
     });
   });
 
@@ -718,7 +718,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
       };
 
       // Validate role-based access
-      const isTechnicalStaff = (role: string) => {
+      const isTechnicalStaff = (roles: string[]) => {
         const technicalRoles = [
           "MUNICIPAL_BUILDING_MAINTENANCE",
           "ROAD_MAINTENANCE", 
@@ -726,7 +726,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
           "GREENSPACES_AND_ANIMAL_PROTECTION",
           "WASTE_MANAGEMENT"
         ];
-        return technicalRoles.includes(role);
+        return technicalRoles.some(role => roles.includes(role));
       };
 
       expect(isTechnicalStaff(techOfficerUser.role)).toBe(true);
@@ -743,7 +743,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
         lastName: "Bianchi"
       };
 
-      const isExternalMaintainer = (role: string) => role === "EXTERNAL_MAINTAINER";
+      const isExternalMaintainer = (roles: string[]) => roles.includes("EXTERNAL_MAINTAINER");
       expect(isExternalMaintainer(externalMaintainer.role)).toBe(true);
     });
   });
@@ -768,7 +768,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
         }
       };
 
-      const isTechnicalStaff = (role: string) => {
+      const isTechnicalStaff = (roles: string[]) => {
         const technicalRoles = [
           "MUNICIPAL_BUILDING_MAINTENANCE",
           "ROAD_MAINTENANCE", 
@@ -776,7 +776,7 @@ describe("Story PT24 - External Maintainer Assignment Integration Tests", () => 
           "GREENSPACES_AND_ANIMAL_PROTECTION",
           "WASTE_MANAGEMENT"
         ];
-        return technicalRoles.includes(role);
+        return technicalRoles.some(role => roles.includes(role));
       };
 
       expect(isTechnicalStaff(unauthorizedUser.user.role)).toBe(false);

@@ -776,7 +776,8 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
   });
 
   it("should support role cancellation (removing specific roles)", async () => {
-    // Arrange - Create user with multiple roles
+    // Arrange - Create user with multiple technical roles
+    // Note: Multiple roles are only allowed if all are technical roles
     const adminEmail = `admin-${Date.now()}@example.com`;
     const munUserEmail = `role-removal-${Date.now()}@comune.torino.it`;
 
@@ -786,7 +787,7 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
       role: ["ADMINISTRATOR"],
     });
 
-    // Create user via API to have multiple roles
+    // Create user via API with multiple technical roles
     const agent = request.agent(app);
     await agent
       .post("/api/session")
@@ -801,27 +802,27 @@ describe("PATCH /api/admin/municipality-users/:userId - Story 10: Role Modificat
         email: munUserEmail,
         password: "Test123!",
         role: [
-          "PUBLIC_RELATIONS",
           "MUNICIPAL_BUILDING_MAINTENANCE",
           "INFRASTRUCTURES",
+          "ROAD_MAINTENANCE",
         ],
       })
       .expect(201);
 
     const userId = createResponse.body.id;
 
-    // Act - Remove some roles, keep others
+    // Act - Remove some technical roles, keep one
     const response = await agent
       .patch(`/api/admin/municipality-users/${userId}`)
       .send({
-        roles: ["PUBLIC_RELATIONS"], // Remove technical roles, keep administrative
+        roles: ["MUNICIPAL_BUILDING_MAINTENANCE"], // Remove other technical roles, keep one
       })
       .expect(200);
 
     // Assert
-    expect(response.body.role).toEqual(["PUBLIC_RELATIONS"]);
-    expect(response.body.role).not.toContain("MUNICIPAL_BUILDING_MAINTENANCE");
+    expect(response.body.role).toEqual(["MUNICIPAL_BUILDING_MAINTENANCE"]);
     expect(response.body.role).not.toContain("INFRASTRUCTURES");
+    expect(response.body.role).not.toContain("ROAD_MAINTENANCE");
   });
 
   it("should update roles combined with other user data", async () => {
