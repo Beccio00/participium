@@ -275,12 +275,12 @@ export async function approveReport(
   );
   const validRoles = validTechnicalTypes.map((t) => t as unknown as any);
   const assignedTechnical = await userRepository.findById(assignedTechnicalId);
-  
+
   // Controlla se l'utente ha almeno uno dei ruoli validi (role è un array)
-  const hasValidRole = assignedTechnical?.role?.some(userRole => 
+  const hasValidRole = assignedTechnical?.role?.some((userRole) =>
     validRoles.includes(userRole)
   );
-  
+
   if (!assignedTechnical || !hasValidRole) {
     throw new UnprocessableEntityError(
       "Assigned technical is not valid for this report category"
@@ -402,9 +402,15 @@ export async function getAssignedReportsForExternalMaintainer(
     statusFilter = [status as ReportStatus];
   }
 
+  console.log(
+    `[getAssignedReportsForExternalMaintainer] Searching for externalMaintainerId: ${externalMaintainerId}, statuses: ${statusFilter}`
+  );
   const reports = await reportRepository.findAssignedToExternalMaintainer(
     externalMaintainerId,
     statusFilter
+  );
+  console.log(
+    `[getAssignedReportsForExternalMaintainer] Found ${reports.length} reports`
   );
   return reports.map(toReportDTO);
 }

@@ -3,11 +3,20 @@ import { useEffect, useState, useRef } from "react";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import type { Report } from "../../types/report.types";
 import { userHasRole, TECHNICIAN_ROLES } from "../../utils/roles";
-import { formatReportStatus } from "../../utils/reportStatus";
+import {
+  formatReportStatus,
+  formatReportCategory,
+} from "../../utils/reportStatus";
 import ReportChat from "./ReportChat";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { getSession, getReportById, getReports, getReportMessages, sendReportMessage } from "../../api/api";
+import {
+  getSession,
+  getReportById,
+  getReports,
+  getReportMessages,
+  sendReportMessage,
+} from "../../api/api";
 
 interface Props {
   show: boolean;
@@ -45,7 +54,7 @@ export default function ReportDetailsModal({
 }: Props) {
   // Ref for the chat container
   const chatRef = useRef<HTMLDivElement>(null);
-  
+
   // Ref per la mini mappa
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -127,7 +136,7 @@ export default function ReportDetailsModal({
     async function fetchMessages(showLoading = false) {
       // Skip if user is not authorized to see chat
       if (!canSeeChat) return;
-      
+
       if (showLoading) setMessagesLoading(true);
       setMessagesError("");
       try {
@@ -238,9 +247,14 @@ export default function ReportDetailsModal({
           user &&
           "id" in user &&
           user.id === display.assignedOfficer.id &&
-          user.role && (Array.isArray(user.role) 
-              ? user.role.some((r: string) => r.startsWith("MUNICIPAL") || TECHNICIAN_ROLES.includes(r))
-              : (user.role as string).startsWith("MUNICIPAL") || TECHNICIAN_ROLES.includes(user.role as string))
+          user.role &&
+          (Array.isArray(user.role)
+            ? user.role.some(
+                (r: string) =>
+                  r.startsWith("MUNICIPAL") || TECHNICIAN_ROLES.includes(r)
+              )
+            : (user.role as string).startsWith("MUNICIPAL") ||
+              TECHNICIAN_ROLES.includes(user.role as string))
         ) {
           setCanSeeChat(true);
           return;
@@ -273,9 +287,9 @@ export default function ReportDetailsModal({
 
     // Pulisci il container completamente
     if (mapRef.current) {
-      mapRef.current.innerHTML = '';
+      mapRef.current.innerHTML = "";
       // Rimuovi eventuali classi aggiunte da Leaflet
-      mapRef.current.className = '';
+      mapRef.current.className = "";
     }
 
     // Aspetta un po' per essere sicuri che il DOM sia pronto
@@ -292,15 +306,19 @@ export default function ReportDetailsModal({
         });
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(map);
 
         // Aggiungi marker alla posizione
         L.marker([display.latitude, display.longitude], {
           icon: L.icon({
-            iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-            iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+            iconUrl:
+              "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+            iconRetinaUrl:
+              "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+            shadowUrl:
+              "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
             iconSize: [25, 41],
             iconAnchor: [12, 41],
             popupAnchor: [1, -34],
@@ -329,7 +347,7 @@ export default function ReportDetailsModal({
       }
       // Pulisci anche il container al cleanup
       if (mapRef.current) {
-        mapRef.current.innerHTML = '';
+        mapRef.current.innerHTML = "";
       }
     };
   }, [show, display?.latitude, display?.longitude, display?.id]);
@@ -525,6 +543,7 @@ export default function ReportDetailsModal({
                 minWidth: 0,
                 overflowWrap: "anywhere",
                 wordBreak: "break-word",
+                textTransform: "uppercase",
               }}
             >
               {formatReportStatus(statusText as any)}
@@ -542,9 +561,10 @@ export default function ReportDetailsModal({
                 overflowWrap: "anywhere",
                 wordBreak: "break-word",
                 maxWidth: "100%",
+                textTransform: "uppercase",
               }}
             >
-              {display.category}
+              {formatReportCategory(display.category)}
             </span>
           </div>
 

@@ -1,6 +1,9 @@
 import { Badge } from "react-bootstrap";
 import type { Report } from "../../types";
-import { formatReportStatus } from "../../utils/reportStatus";
+import {
+  formatReportStatus,
+  formatReportCategory,
+} from "../../utils/reportStatus";
 // onOpenDetails prop allows parent to open the shared details modal
 
 interface ReportCardProps {
@@ -113,7 +116,7 @@ export default function ReportCard({
               wordBreak: "break-word",
             }}
           >
-            {report.category}
+            {formatReportCategory(report.category)}
           </small>
           <div>
             <Badge
@@ -123,6 +126,7 @@ export default function ReportCard({
                 fontSize: "0.72rem",
                 fontWeight: 700,
                 color: "#fff",
+                textTransform: "uppercase",
               }}
             >
               {formatReportStatus(statusText as any)}
@@ -148,13 +152,20 @@ export default function ReportCard({
         </p>
 
         {/* Created by: ... */}
-        <div style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
+        <div
+          style={{
+            margin: "0.25rem 0 0",
+            fontSize: "0.85rem",
+            color: "#6b7280",
+          }}
+        >
           <span style={{ fontStyle: "italic" }}>
-            Created by: {report.isAnonymous
+            Created by:{" "}
+            {report.isAnonymous
               ? "Anonymous"
               : report.user && report.user.firstName
-                ? `${report.user.firstName} ${report.user.lastName || ""}`.trim()
-                : ""}
+              ? `${report.user.firstName} ${report.user.lastName || ""}`.trim()
+              : ""}
           </span>
         </div>
 
@@ -208,14 +219,22 @@ export default function ReportCard({
               gap: "0.4rem",
             }}
           >
-            <i className="bi bi-geo-alt" style={{ marginRight: "0.25rem" }} aria-hidden></i>
-            <span style={{ fontFamily: "monospace" }}>
-              {report.address}
-            </span>
+            <i
+              className="bi bi-geo-alt"
+              style={{ marginRight: "0.25rem" }}
+              aria-hidden
+            ></i>
+            <span style={{ fontFamily: "monospace" }}>{report.address}</span>
           </span>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.75rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: "0.75rem",
+          }}
+        >
           <button
             onClick={(e) => {
               e.stopPropagation();
