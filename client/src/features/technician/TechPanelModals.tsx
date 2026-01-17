@@ -2,7 +2,10 @@ import { Modal, Form, Alert, Toast, ToastContainer } from "react-bootstrap";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import ReportDetailsModal from "../reports/ReportDetailsModal";
-import type { Report as AppReport, InternalNote } from "../../types/report.types";
+import type {
+  Report as AppReport,
+  InternalNote,
+} from "../../types/report.types";
 import { getRoleLabel } from "../../utils/roles";
 
 interface TechPanelModalsProps {
@@ -12,7 +15,7 @@ interface TechPanelModalsProps {
   rejectionReason: string;
   onRejectionReasonChange: (value: string) => void;
   onConfirmReject: () => void;
-  
+
   // Assign Modal
   showAssignModal: boolean;
   onCloseAssignModal: () => void;
@@ -25,7 +28,7 @@ interface TechPanelModalsProps {
   onTechnicalIdChange: (id: number | null) => void;
   selectedCompany: any;
   onConfirmAssign: () => void;
-  
+
   // Status Modal
   showStatusModal: boolean;
   onCloseStatusModal: () => void;
@@ -33,7 +36,7 @@ interface TechPanelModalsProps {
   onTargetStatusChange: (value: string) => void;
   availableStatusOptions: Array<{ value: string; label: string }>;
   onConfirmStatus: () => void;
-  
+
   // Internal Note Modal
   showInternalNoteModal: boolean;
   onCloseInternalNoteModal: () => void;
@@ -45,16 +48,16 @@ interface TechPanelModalsProps {
   onCloseNoteModalError: () => void;
   onSubmitInternalNote: () => void;
   formatDate: (date: Date | string) => string;
-  
+
   // Details Modal
   showDetailsModal: boolean;
   onCloseDetailsModal: () => void;
   selectedReport: AppReport | null;
-  
+
   // Toast
   toast: { show: boolean; message: string; variant: string };
   onCloseToast: () => void;
-  
+
   // Common
   processingId: number | null;
   selectedReportId: number | null;
@@ -104,20 +107,52 @@ export default function TechPanelModals({
   // Helper function to render notes history - avoids nested ternary
   const renderNotesHistory = () => {
     if (loadingNotes) {
-      return <div className="text-center py-3"><LoadingSpinner /></div>;
+      return (
+        <div className="text-center py-3">
+          <LoadingSpinner />
+        </div>
+      );
     }
     if (internalNotes.length === 0) {
-      return <p className="text-muted small fst-italic">No internal notes found for this report.</p>;
+      return (
+        <p className="text-muted small fst-italic">
+          No internal notes found for this report.
+        </p>
+      );
     }
     return (
-      <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px', backgroundColor: '#f8f9fa' }}>
+      <div
+        style={{
+          maxHeight: "300px",
+          overflowY: "auto",
+          border: "1px solid #dee2e6",
+          borderRadius: "4px",
+          padding: "10px",
+          backgroundColor: "#f8f9fa",
+        }}
+      >
         {internalNotes.map((note) => (
-          <div key={note.id} className="mb-3 pb-3 border-bottom last-child-no-border">
+          <div
+            key={note.id}
+            className="mb-3 pb-3 border-bottom last-child-no-border"
+          >
             <div className="d-flex justify-content-between align-items-start mb-1">
-              <strong>{note.authorName} <span className="text-muted" style={{ fontSize: '0.85em', fontWeight: 'normal' }}>({getRoleLabel(note.authorRole)})</span></strong>
-              <span className="text-muted small" style={{ fontSize: '0.8em' }}>{formatDate(note.createdAt)}</span>
+              <strong>
+                {note.authorName}{" "}
+                <span
+                  className="text-muted"
+                  style={{ fontSize: "0.85em", fontWeight: "normal" }}
+                >
+                  ({getRoleLabel(note.authorRole)})
+                </span>
+              </strong>
+              <span className="text-muted small" style={{ fontSize: "0.8em" }}>
+                {formatDate(note.createdAt)}
+              </span>
             </div>
-            <p className="mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>{note.content}</p>
+            <p className="mb-0 small" style={{ whiteSpace: "pre-wrap" }}>
+              {note.content}
+            </p>
           </div>
         ))}
       </div>
@@ -196,23 +231,26 @@ export default function TechPanelModals({
                 </Form.Group>
               )}
 
-              {selectedCompany?.hasPlatformAccess && 
-               Array.isArray(selectedCompany.users) && selectedCompany.users.length > 0 && (
-                <Form.Group className="mb-3">
-                  <Form.Label>Select a company technician:</Form.Label>
-                  <Form.Select
-                    value={selectedTechnicalId ?? ""}
-                    onChange={(e) => onTechnicalIdChange(Number(e.target.value))}
-                  >
-                    <option value="">-- Select technical --</option>
-                    {selectedCompany.users.map((tech: any) => (
-                      <option key={tech.id} value={tech.id}>
-                        {tech.firstName} {tech.lastName} ({tech.email})
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              )}
+              {selectedCompany?.hasPlatformAccess &&
+                Array.isArray(selectedCompany.users) &&
+                selectedCompany.users.length > 0 && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Select a company technician:</Form.Label>
+                    <Form.Select
+                      value={selectedTechnicalId ?? ""}
+                      onChange={(e) =>
+                        onTechnicalIdChange(Number(e.target.value))
+                      }
+                    >
+                      <option value="">-- Select technical --</option>
+                      {selectedCompany.users.map((tech: any) => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.firstName} {tech.lastName} ({tech.email})
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                )}
             </>
           ) : (
             <>
@@ -225,7 +263,7 @@ export default function TechPanelModals({
                   <option value="">-- Select technical --</option>
                   {assignableTechnicals.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.first_name} {t.last_name} ({t.role})
+                      {t.first_name} {t.last_name} ({getRoleLabel(t.role)})
                     </option>
                   ))}
                 </Form.Select>
@@ -240,7 +278,9 @@ export default function TechPanelModals({
           <Button
             variant="primary"
             onClick={onConfirmAssign}
-            disabled={!isPublicRelations ? !selectedExternalId : !selectedTechnicalId}
+            disabled={
+              !isPublicRelations ? !selectedExternalId : !selectedTechnicalId
+            }
             isLoading={processingId !== null}
           >
             Confirm Assignment
@@ -295,7 +335,12 @@ export default function TechPanelModals({
       )}
 
       {/* 5. INTERNAL NOTE MODAL */}
-      <Modal show={showInternalNoteModal} onHide={onCloseInternalNoteModal} centered size="lg">
+      <Modal
+        show={showInternalNoteModal}
+        onHide={onCloseInternalNoteModal}
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Internal Notes</Modal.Title>
         </Modal.Header>
@@ -314,11 +359,12 @@ export default function TechPanelModals({
 
           <h6 className="mb-3">Add New Note</h6>
           <p className="text-muted small">
-            This note will be visible to other technicians and admins, but <strong>not</strong> to the citizen.
+            This note will be visible to other technicians and admins, but{" "}
+            <strong>not</strong> to the citizen.
           </p>
           <Form.Group>
             <Form.Label>Note Content *</Form.Label>
-            <Form.Control 
+            <Form.Control
               as="textarea"
               rows={3}
               value={internalNoteContent}
@@ -328,11 +374,13 @@ export default function TechPanelModals({
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={onCloseInternalNoteModal}>Close</Button>
-          <Button 
-            variant="primary" 
-            onClick={onSubmitInternalNote} 
-            disabled={!internalNoteContent.trim() || processingId !== null} 
+          <Button variant="secondary" onClick={onCloseInternalNoteModal}>
+            Close
+          </Button>
+          <Button
+            variant="primary"
+            onClick={onSubmitInternalNote}
+            disabled={!internalNoteContent.trim() || processingId !== null}
             isLoading={processingId !== null}
           >
             Save Note
@@ -341,15 +389,27 @@ export default function TechPanelModals({
       </Modal>
 
       {/* 6. TOAST */}
-      <ToastContainer position="top-center" className="p-3" style={{ zIndex: 9999, position: 'fixed' }}>
-        <Toast 
-          onClose={onCloseToast} 
-          show={toast.show} 
-          delay={3000} 
-          autohide 
+      <ToastContainer
+        position="top-center"
+        className="p-3"
+        style={{ zIndex: 9999, position: "fixed" }}
+      >
+        <Toast
+          onClose={onCloseToast}
+          show={toast.show}
+          delay={3000}
+          autohide
           bg={toast.variant}
         >
-          <Toast.Body className={toast.variant === 'dark' || toast.variant === 'danger' || toast.variant === 'success' ? 'text-white' : ''}>
+          <Toast.Body
+            className={
+              toast.variant === "dark" ||
+              toast.variant === "danger" ||
+              toast.variant === "success"
+                ? "text-white"
+                : ""
+            }
+          >
             {toast.message}
           </Toast.Body>
         </Toast>

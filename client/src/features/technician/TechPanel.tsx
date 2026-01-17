@@ -21,14 +21,17 @@ import {
   createInternalNote,
   getInternalNotes,
 } from "../../api/api";
-import { 
-  MUNICIPALITY_AND_EXTERNAL_ROLES, 
-  TECHNICIAN_ROLES, 
+import {
+  MUNICIPALITY_AND_EXTERNAL_ROLES,
+  TECHNICIAN_ROLES,
   userHasRole,
-  userHasAnyRole 
+  userHasAnyRole,
 } from "../../utils/roles";
 import { formatReportStatus } from "../../utils/reportStatus";
-import type { Report as AppReport, InternalNote } from "../../types/report.types";
+import type {
+  Report as AppReport,
+  InternalNote,
+} from "../../types/report.types";
 import { Role } from "../../../../shared/RoleTypes";
 import { ReportStatus } from "../../../../shared/ReportTypes";
 import "../../styles/TechPanelstyle.css";
@@ -42,16 +45,23 @@ function normalizeReports(reports: any[]): AppReport[] {
   }));
 }
 
-function filterExternalMaintainerReports(reports: any[], userId: number): any[] {
+function filterExternalMaintainerReports(
+  reports: any[],
+  userId: number
+): any[] {
   return reports.filter((r: any) => {
     const handlerUserId = r.externalHandler?.user?.id;
     return handlerUserId != null && handlerUserId === userId;
   });
 }
 
-function filterTechnicalPendingReports(reports: any[], allowedStatuses: string[]): any[] {
+function filterTechnicalPendingReports(
+  reports: any[],
+  allowedStatuses: string[]
+): any[] {
   return reports.filter((r: any) => {
-    const hasAllowedStatus = r.status === ReportStatus.ASSIGNED.toString() ||
+    const hasAllowedStatus =
+      r.status === ReportStatus.ASSIGNED.toString() ||
       allowedStatuses.includes(r.status);
     const hasNoExternalHandler = !Boolean(r.externalHandler);
     return hasAllowedStatus && hasNoExternalHandler;
@@ -103,40 +113,63 @@ export default function TechPanel() {
   // Search and filter states - separate for each accordion section
   const [searchTermSection1, setSearchTermSection1] = useState("");
   const [filterStatusSection1, setFilterStatusSection1] = useState<string>("");
-  const [filterCategorySection1, setFilterCategorySection1] = useState<string>("");
-  
+  const [filterCategorySection1, setFilterCategorySection1] =
+    useState<string>("");
+
   const [searchTermSection2, setSearchTermSection2] = useState("");
   const [filterStatusSection2, setFilterStatusSection2] = useState<string>("");
-  const [filterCategorySection2, setFilterCategorySection2] = useState<string>("");
+  const [filterCategorySection2, setFilterCategorySection2] =
+    useState<string>("");
 
   const isPublicRelations = userHasRole(user, Role.PUBLIC_RELATIONS);
   const isExternalMaintainer = userHasRole(user, Role.EXTERNAL_MAINTAINER);
 
   const [noteModalError, setNoteModalError] = useState<string | null>(null);
-  const [toast, setToast] = useState({show: false, message: "", variant: "success" });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    variant: "success",
+  });
   const showToastMessage = (message: string, variant = "success") => {
     setToast({ show: true, message, variant });
   };
 
   const TECHNICAL_ALLOWED_STATUSES = [
-    { value: ReportStatus.IN_PROGRESS.toString(), label: formatReportStatus(ReportStatus.IN_PROGRESS) },
-    { value: ReportStatus.RESOLVED.toString(), label: formatReportStatus(ReportStatus.RESOLVED) },
-    { value: ReportStatus.SUSPENDED.toString(), label: formatReportStatus(ReportStatus.SUSPENDED) },
+    {
+      value: ReportStatus.IN_PROGRESS.toString(),
+      label: formatReportStatus(ReportStatus.IN_PROGRESS),
+    },
+    {
+      value: ReportStatus.RESOLVED.toString(),
+      label: formatReportStatus(ReportStatus.RESOLVED),
+    },
+    {
+      value: ReportStatus.SUSPENDED.toString(),
+      label: formatReportStatus(ReportStatus.SUSPENDED),
+    },
   ];
 
   // Filter function
-  const filterReports = (reports: AppReport[], searchTerm: string, filterStatus: string, filterCategory: string) => {
-    return reports.filter(report => {
+  const filterReports = (
+    reports: AppReport[],
+    searchTerm: string,
+    filterStatus: string,
+    filterCategory: string
+  ) => {
+    return reports.filter((report) => {
       // Search by title
-      const matchesSearch = searchTerm === "" || 
+      const matchesSearch =
+        searchTerm === "" ||
         report.title?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       // Filter by status
-      const matchesStatus = filterStatus === "" || report.status === filterStatus;
-      
+      const matchesStatus =
+        filterStatus === "" || report.status === filterStatus;
+
       // Filter by category
-      const matchesCategory = filterCategory === "" || report.category === filterCategory;
-      
+      const matchesCategory =
+        filterCategory === "" || report.category === filterCategory;
+
       return matchesSearch && matchesStatus && matchesCategory;
     });
   };
@@ -145,7 +178,7 @@ export default function TechPanel() {
   const availableCategoriesSection1 = useMemo(() => {
     const categories = new Set<string>();
     const reportsToCheck = isPublicRelations ? otherReports : pendingReports;
-    reportsToCheck.forEach(report => {
+    reportsToCheck.forEach((report) => {
       if (report.category) categories.add(report.category);
     });
     return Array.from(categories).sort((a, b) => a.localeCompare(b));
@@ -154,7 +187,7 @@ export default function TechPanel() {
   const availableStatusesSection1 = useMemo(() => {
     const statuses = new Set<string>();
     const reportsToCheck = isPublicRelations ? otherReports : pendingReports;
-    reportsToCheck.forEach(report => {
+    reportsToCheck.forEach((report) => {
       if (report.status) statuses.add(report.status);
     });
     return Array.from(statuses).sort((a, b) => a.localeCompare(b));
@@ -163,7 +196,7 @@ export default function TechPanel() {
   const availableCategoriesSection2 = useMemo(() => {
     const categories = new Set<string>();
     const reportsToCheck = isPublicRelations ? pendingReports : otherReports;
-    reportsToCheck.forEach(report => {
+    reportsToCheck.forEach((report) => {
       if (report.category) categories.add(report.category);
     });
     return Array.from(categories).sort((a, b) => a.localeCompare(b));
@@ -172,25 +205,61 @@ export default function TechPanel() {
   const availableStatusesSection2 = useMemo(() => {
     const statuses = new Set<string>();
     const reportsToCheck = isPublicRelations ? pendingReports : otherReports;
-    reportsToCheck.forEach(report => {
+    reportsToCheck.forEach((report) => {
       if (report.status) statuses.add(report.status);
     });
     return Array.from(statuses).sort((a, b) => a.localeCompare(b));
   }, [isPublicRelations, pendingReports, otherReports]);
 
   // Filtered reports for each section
-  const filteredSection1Reports = useMemo(() => 
-    isPublicRelations 
-      ? filterReports(otherReports, searchTermSection1, filterStatusSection1, filterCategorySection1)
-      : filterReports(pendingReports, searchTermSection1, filterStatusSection1, filterCategorySection1),
-    [isPublicRelations, otherReports, pendingReports, searchTermSection1, filterStatusSection1, filterCategorySection1]
+  const filteredSection1Reports = useMemo(
+    () =>
+      isPublicRelations
+        ? filterReports(
+            otherReports,
+            searchTermSection1,
+            filterStatusSection1,
+            filterCategorySection1
+          )
+        : filterReports(
+            pendingReports,
+            searchTermSection1,
+            filterStatusSection1,
+            filterCategorySection1
+          ),
+    [
+      isPublicRelations,
+      otherReports,
+      pendingReports,
+      searchTermSection1,
+      filterStatusSection1,
+      filterCategorySection1,
+    ]
   );
-  
-  const filteredSection2Reports = useMemo(() => 
-    isPublicRelations
-      ? filterReports(pendingReports, searchTermSection2, filterStatusSection2, filterCategorySection2)
-      : filterReports(otherReports, searchTermSection2, filterStatusSection2, filterCategorySection2),
-    [isPublicRelations, pendingReports, otherReports, searchTermSection2, filterStatusSection2, filterCategorySection2]
+
+  const filteredSection2Reports = useMemo(
+    () =>
+      isPublicRelations
+        ? filterReports(
+            pendingReports,
+            searchTermSection2,
+            filterStatusSection2,
+            filterCategorySection2
+          )
+        : filterReports(
+            otherReports,
+            searchTermSection2,
+            filterStatusSection2,
+            filterCategorySection2
+          ),
+    [
+      isPublicRelations,
+      pendingReports,
+      otherReports,
+      searchTermSection2,
+      filterStatusSection2,
+      filterCategorySection2,
+    ]
   );
 
   // Computed values with useMemo for performance and correct reactivity
@@ -207,7 +276,8 @@ export default function TechPanel() {
   const currentReportStatus = selectedReport?.status;
 
   const availableStatusOptions = useMemo(
-    () => TECHNICAL_ALLOWED_STATUSES.filter((s) => s.value !== currentReportStatus),
+    () =>
+      TECHNICAL_ALLOWED_STATUSES.filter((s) => s.value !== currentReportStatus),
     [currentReportStatus]
   );
 
@@ -216,7 +286,10 @@ export default function TechPanel() {
     [assignableExternals, selectedExternalId]
   );
 
-  const hasAccess = isAuthenticated && user && userHasAnyRole(user, MUNICIPALITY_AND_EXTERNAL_ROLES);
+  const hasAccess =
+    isAuthenticated &&
+    user &&
+    userHasAnyRole(user, MUNICIPALITY_AND_EXTERNAL_ROLES);
 
   useEffect(() => {
     if (hasAccess) {
@@ -229,8 +302,10 @@ export default function TechPanel() {
     const message = !isAuthenticated
       ? "You need to be logged in to access this page."
       : "You don't have permission to access the reports management panel.";
-    
-    return <AccessRestricted message={message} showLoginButton={!isAuthenticated} />;
+
+    return (
+      <AccessRestricted message={message} showLoginButton={!isAuthenticated} />
+    );
   }
 
   const fetchReportsForPublicRelations = async () => {
@@ -256,7 +331,10 @@ export default function TechPanel() {
   const fetchReportsForTechnicalOffice = async () => {
     const assignedData = (await getAssignedReports()) as AppReport[];
     const allowedStatuses = TECHNICAL_ALLOWED_STATUSES.map((s) => s.value);
-    const pending = filterTechnicalPendingReports(assignedData, allowedStatuses);
+    const pending = filterTechnicalPendingReports(
+      assignedData,
+      allowedStatuses
+    );
     const external = filterExternalAssignedReports(assignedData);
     setPendingReports(normalizeReports(pending));
     setOtherReports(normalizeReports(external));
@@ -288,7 +366,7 @@ export default function TechPanel() {
       let technicals = [];
       let externals = [];
 
-      if (user && userHasRole(user,Role.PUBLIC_RELATIONS)) {
+      if (user && userHasRole(user, Role.PUBLIC_RELATIONS)) {
         try {
           technicals = await getAssignableTechnicals(id);
         } catch (err) {
@@ -336,28 +414,41 @@ export default function TechPanel() {
     setSelectedReportId(reportId);
     setShowDetailsModal(true);
     setTimeout(() => {
-      const reportCard = document.querySelector(`[data-report-id="${reportId}"]`) as HTMLElement;
-      if (reportCard) reportCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      const reportCard = document.querySelector(
+        `[data-report-id="${reportId}"]`
+      ) as HTMLElement;
+      if (reportCard)
+        reportCard.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
   };
 
-  const assignToPublicRelations = async (reportId: number, technicalId: number) => {
+  const assignToPublicRelations = async (
+    reportId: number,
+    technicalId: number
+  ) => {
     const res = await approveReport(reportId, technicalId);
     return res?.report || null;
   };
 
-  const assignToExternal = async (reportId: number, externalId: number, technicalId: number | null) => {
+  const assignToExternal = async (
+    reportId: number,
+    externalId: number,
+    technicalId: number | null
+  ) => {
     const res = await assignReportToExternal(reportId, externalId, technicalId);
     return res?.report || null;
   };
 
-  const shouldAssignWithTechnician = (company: any, technicalId: number | null): boolean => {
+  const shouldAssignWithTechnician = (
+    company: any,
+    technicalId: number | null
+  ): boolean => {
     return Boolean(
       company &&
-      company.hasPlatformAccess &&
-      Array.isArray(company.users) &&
-      company.users.length > 0 &&
-      technicalId
+        company.hasPlatformAccess &&
+        Array.isArray(company.users) &&
+        company.users.length > 0 &&
+        technicalId
     );
   };
 
@@ -367,16 +458,30 @@ export default function TechPanel() {
       setProcessingId(selectedReportId);
       let updatedReport = null;
 
-      if (user && userHasRole(user, Role.PUBLIC_RELATIONS) && selectedTechnicalId) {
-        updatedReport = await assignToPublicRelations(selectedReportId, selectedTechnicalId);
+      if (
+        user &&
+        userHasRole(user, Role.PUBLIC_RELATIONS) &&
+        selectedTechnicalId
+      ) {
+        updatedReport = await assignToPublicRelations(
+          selectedReportId,
+          selectedTechnicalId
+        );
       } else if (user && selectedExternalId) {
         const selectedCompany = assignableExternals.find(
           (ext) => ext.id === selectedExternalId
         );
-        const techId = shouldAssignWithTechnician(selectedCompany, selectedTechnicalId)
+        const techId = shouldAssignWithTechnician(
+          selectedCompany,
+          selectedTechnicalId
+        )
           ? selectedTechnicalId
           : null;
-        updatedReport = await assignToExternal(selectedReportId, selectedExternalId, techId);
+        updatedReport = await assignToExternal(
+          selectedReportId,
+          selectedExternalId,
+          techId
+        );
       }
 
       if (updatedReport) {
@@ -501,14 +606,14 @@ export default function TechPanel() {
     } finally {
       setLoadingNotes(false);
     }
-  }
+  };
 
-  const handleInternalNoteSubmit = async () =>{
+  const handleInternalNoteSubmit = async () => {
     if (!selectedReportId || !internalNoteContent.trim()) return;
 
-    try{
+    try {
       setProcessingId(selectedReportId);
-       await createInternalNote(selectedReportId, {
+      await createInternalNote(selectedReportId, {
         reportId: selectedReportId,
         content: internalNoteContent,
         authorId: user!.id,
@@ -516,45 +621,57 @@ export default function TechPanel() {
 
       setShowInternalNoteModal(false);
       showToastMessage("Internal note created successfully", "success");
-    }catch(e){
+    } catch (e) {
       console.error("Failed to create internal note", e);
       setNoteModalError("Failed to create internal note.");
-    }finally{
+    } finally {
       setProcessingId(null);
     }
-  }
-  
+  };
 
   const formatDate = (dateString: Date | string) => {
     if (!dateString) return "";
     return new Date(dateString).toLocaleString();
   };
-  
 
   // statusVariant is now implemented in ReportCard; TechPanel no longer needs it
 
-  if (loading) return <div className="loading-container"><LoadingSpinner /></div>;
+  if (loading)
+    return (
+      <div className="loading-container">
+        <LoadingSpinner />
+      </div>
+    );
 
   return (
     <Container className="py-4 tech-panel-container">
       <div className="mb-4 text-center">
-        <h2 style={{ color: "var(--text)", fontWeight: 700 }}>Reports Management</h2>
-        <p className="text-muted">
-          View and manage reports assigned to you
-        </p>
+        <h2 style={{ color: "var(--text)", fontWeight: 700 }}>
+          Reports Management
+        </h2>
+        <p className="text-muted">View and manage reports assigned to you</p>
       </div>
 
       {/* Quick Stats Cards */}
       <div className="row g-3 mb-4">
         <div className="col-md-6">
-          <div style={{
-            background: "linear-gradient(135deg, color-mix(in srgb, var(--navbar-accent) 85%, var(--primary) 15%) 0%, color-mix(in srgb, var(--navbar-accent) 60%, var(--stone) 40%) 60%)",
-            borderRadius: "12px",
-            padding: "1.5rem",
-            color: "white",
-            boxShadow: "0 4px 12px rgba(200, 110, 98, 0.2)"
-          }}>
-            <div style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.5rem" }}>
+          <div
+            style={{
+              background:
+                "linear-gradient(135deg, color-mix(in srgb, var(--navbar-accent) 85%, var(--primary) 15%) 0%, color-mix(in srgb, var(--navbar-accent) 60%, var(--stone) 40%) 60%)",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              color: "white",
+              boxShadow: "0 4px 12px rgba(200, 110, 98, 0.2)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "0.9rem",
+                opacity: 0.9,
+                marginBottom: "0.5rem",
+              }}
+            >
               {isPublicRelations ? "All Reports" : "Assigned to me"}
             </div>
             <div style={{ fontSize: "2.5rem", fontWeight: 700 }}>
@@ -564,18 +681,30 @@ export default function TechPanel() {
         </div>
         {!isExternalMaintainer && (
           <div className="col-md-6">
-            <div style={{
-              background: "var(--stone)",
-              borderRadius: "12px",
-              padding: "1.5rem",
-              color: "white",
-              boxShadow: "0 4px 12px rgba(133, 122, 116, 0.2)"
-            }}>
-              <div style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.5rem" }}>
-                {isPublicRelations ? "Pending Approval" : "Assigned to External"}
+            <div
+              style={{
+                background: "var(--stone)",
+                borderRadius: "12px",
+                padding: "1.5rem",
+                color: "white",
+                boxShadow: "0 4px 12px rgba(133, 122, 116, 0.2)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.9rem",
+                  opacity: 0.9,
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {isPublicRelations
+                  ? "Pending Approval"
+                  : "Assigned to External"}
               </div>
               <div style={{ fontSize: "2.5rem", fontWeight: 700 }}>
-                {isPublicRelations ? pendingReports.length : otherReports.length}
+                {isPublicRelations
+                  ? pendingReports.length
+                  : otherReports.length}
               </div>
             </div>
           </div>
@@ -591,7 +720,9 @@ export default function TechPanel() {
 
             {/* Accordion Item 1: All Reports */}
             <Accordion.Item eventKey="0">
-              <Accordion.Header>All Reports ({otherReports.length})</Accordion.Header>
+              <Accordion.Header>
+                All Reports ({otherReports.length})
+              </Accordion.Header>
               <Accordion.Body>
                 <SearchAndFilterBar
                   searchTerm={searchTermSection1}
@@ -606,8 +737,16 @@ export default function TechPanel() {
                 {filteredSection1Reports.length === 0 ? (
                   <EmptyState
                     icon={<FileText size={64} />}
-                    title={otherReports.length === 0 ? "No non-pending reports available" : "No reports match your search criteria"}
-                    description={otherReports.length === 0 ? "Reports will appear here once they are processed." : "Try adjusting your filters or search term."}
+                    title={
+                      otherReports.length === 0
+                        ? "No non-pending reports available"
+                        : "No reports match your search criteria"
+                    }
+                    description={
+                      otherReports.length === 0
+                        ? "Reports will appear here once they are processed."
+                        : "Try adjusting your filters or search term."
+                    }
                   />
                 ) : (
                   <ReportsList
@@ -622,7 +761,9 @@ export default function TechPanel() {
 
             {/* Accordion Item 2: Pending Reports */}
             <Accordion.Item eventKey="1">
-              <Accordion.Header>Pending Reports ({pendingReports.length})</Accordion.Header>
+              <Accordion.Header>
+                Pending Reports ({pendingReports.length})
+              </Accordion.Header>
               <Accordion.Body>
                 <SearchAndFilterBar
                   searchTerm={searchTermSection2}
@@ -638,8 +779,16 @@ export default function TechPanel() {
                 {filteredSection2Reports.length === 0 ? (
                   <EmptyState
                     icon={<Clipboard size={64} />}
-                    title={pendingReports.length === 0 ? "No pending reports" : "No reports match your search criteria"}
-                    description={pendingReports.length === 0 ? "New reports awaiting approval will appear here." : "Try adjusting your filters or search term."}
+                    title={
+                      pendingReports.length === 0
+                        ? "No pending reports"
+                        : "No reports match your search criteria"
+                    }
+                    description={
+                      pendingReports.length === 0
+                        ? "New reports awaiting approval will appear here."
+                        : "Try adjusting your filters or search term."
+                    }
                   />
                 ) : (
                   <ReportsList
@@ -660,7 +809,9 @@ export default function TechPanel() {
 
             {/* Accordion Item 1: Assigned to me */}
             <Accordion.Item eventKey="0">
-              <Accordion.Header>Assigned to me ({pendingReports.length})</Accordion.Header>
+              <Accordion.Header>
+                Assigned to me ({pendingReports.length})
+              </Accordion.Header>
               <Accordion.Body>
                 <SearchAndFilterBar
                   searchTerm={searchTermSection1}
@@ -675,8 +826,16 @@ export default function TechPanel() {
                 {filteredSection1Reports.length === 0 ? (
                   <EmptyState
                     icon={<Clipboard size={64} />}
-                    title={pendingReports.length === 0 ? "No reports assigned to you" : "No reports match your search criteria"}
-                    description={pendingReports.length === 0 ? "Reports will appear here once assigned by public relations." : "Try adjusting your filters or search term."}
+                    title={
+                      pendingReports.length === 0
+                        ? "No reports assigned to you"
+                        : "No reports match your search criteria"
+                    }
+                    description={
+                      pendingReports.length === 0
+                        ? "Reports will appear here once assigned by public relations."
+                        : "Try adjusting your filters or search term."
+                    }
                   />
                 ) : (
                   <ReportsList
@@ -697,7 +856,9 @@ export default function TechPanel() {
             {/* Accordion Item 2: Assigned by me to External (only for Technical Office) */}
             {!isExternalMaintainer && (
               <Accordion.Item eventKey="1">
-                <Accordion.Header>Assigned by me to External ({otherReports.length})</Accordion.Header>
+                <Accordion.Header>
+                  Assigned by me to External ({otherReports.length})
+                </Accordion.Header>
                 <Accordion.Body>
                   <SearchAndFilterBar
                     searchTerm={searchTermSection2}
@@ -712,8 +873,16 @@ export default function TechPanel() {
                   {filteredSection2Reports.length === 0 ? (
                     <EmptyState
                       icon={<BoxSeam size={64} />}
-                      title={otherReports.length === 0 ? "No reports assigned to externals yet" : "No reports match your search criteria"}
-                      description={otherReports.length === 0 ? "External assignments will appear here when you delegate reports." : "Try adjusting your filters or search term."}
+                      title={
+                        otherReports.length === 0
+                          ? "No reports assigned to externals yet"
+                          : "No reports match your search criteria"
+                      }
+                      description={
+                        otherReports.length === 0
+                          ? "External assignments will appear here when you delegate reports."
+                          : "Try adjusting your filters or search term."
+                      }
                     />
                   ) : (
                     <ReportsList

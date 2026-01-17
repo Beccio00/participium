@@ -20,8 +20,16 @@ import { BadRequestError, UnauthorizedError } from "../utils";
 import { createInternalNote as createInternalNoteService } from "../services/internalNoteService";
 import { Role } from "../../../shared/RoleTypes";
 import { getInternalNotes } from "../services/internalNoteService";
-import { forwardGeocode, validateAddress, validateZoom, parseBoundingBox } from "../services/geocodingService";
-import { validateTurinBoundaries, isWithinTurinBoundaries } from "../middlewares/validateTurinBoundaries";
+import {
+  forwardGeocode,
+  validateAddress,
+  validateZoom,
+  parseBoundingBox,
+} from "../services/geocodingService";
+import {
+  validateTurinBoundaries,
+  isWithinTurinBoundaries,
+} from "../middlewares/validateTurinBoundaries";
 
 // Helper functions for validation
 function validateRequiredFields(
@@ -64,15 +72,19 @@ function validateCategory(category: string): void {
 }
 
 function validateDescription(description: any): void {
-  if (typeof description !== 'string') {
-    throw new BadRequestError('Description must be a string');
+  if (typeof description !== "string") {
+    throw new BadRequestError("Description must be a string");
   }
   const len = description.trim().length;
   if (len < 10) {
-    throw new BadRequestError('Description is too short. Please provide at least 10 characters');
+    throw new BadRequestError(
+      "Description is too short. Please provide at least 10 characters"
+    );
   }
   if (len > 1000) {
-    throw new BadRequestError('Description is too long. Please keep it under 1000 characters');
+    throw new BadRequestError(
+      "Description is too long. Please keep it under 1000 characters"
+    );
   }
 }
 
@@ -254,8 +266,11 @@ export async function getReports(req: Request, res: Response): Promise<void> {
     }
   }
 
-  const reports = await getApprovedReportsService(category as ReportCategory, boundingBox);
-  
+  const reports = await getApprovedReportsService(
+    category as ReportCategory,
+    boundingBox
+  );
+
   // Story #15: Hide user information for anonymous reports in public listings
   // This is a public API, so we mask personal information for anonymous reports
   const publicReports = reports.map((report: any) => {
@@ -263,8 +278,8 @@ export async function getReports(req: Request, res: Response): Promise<void> {
       // Clone the report and replace user with masked version
       // Must return full UserInfo structure to satisfy Swagger validation
       const maskedReport: any = {};
-      Object.keys(report).forEach(key => {
-        if (key !== 'user') {
+      Object.keys(report).forEach((key) => {
+        if (key !== "user") {
           maskedReport[key] = report[key];
         }
       });
@@ -276,23 +291,20 @@ export async function getReports(req: Request, res: Response): Promise<void> {
         role: ["CITIZEN"],
         isVerified: false,
         telegramUsername: null,
-        emailNotificationsEnabled: false
+        emailNotificationsEnabled: false,
       };
       return maskedReport;
     }
     return report;
   });
-  
+
   res.status(200).json(publicReports);
 }
 
 /**
  * Get all reports created by the authenticated user (including anonymous ones)
  */
-export async function getMyReports(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function getMyReports(req: Request, res: Response): Promise<void> {
   const authReq = req as Request & { user?: any };
   const user = authReq.user;
 
@@ -324,7 +336,10 @@ export async function getReportById(
   res.status(200).json(report);
 }
 
-export async function geocodeAddress(req: Request, res: Response): Promise<void> {
+export async function geocodeAddress(
+  req: Request,
+  res: Response
+): Promise<void> {
   const { address, zoom = 16 } = req.query;
 
   try {
@@ -337,7 +352,9 @@ export async function geocodeAddress(req: Request, res: Response): Promise<void>
 
     // Check if coordinates are within Turin boundaries
     if (!isWithinTurinBoundaries(result.latitude, result.longitude)) {
-      throw new BadRequestError('Address is outside Turin municipality boundaries');
+      throw new BadRequestError(
+        "Address is outside Turin municipality boundaries"
+      );
     }
 
     res.status(200).json({
@@ -345,16 +362,16 @@ export async function geocodeAddress(req: Request, res: Response): Promise<void>
       latitude: result.latitude,
       longitude: result.longitude,
       bbox: result.bbox,
-      zoom: result.zoom
+      zoom: result.zoom,
     });
   } catch (error: any) {
-    if (error.message.includes('Address not found')) {
-      throw new BadRequestError('Address not found by geocoding service');
-    } else if (error.message.includes('service temporarily unavailable')) {
+    if (error.message.includes("Address not found")) {
+      throw new BadRequestError("Address not found by geocoding service");
+    } else if (error.message.includes("service temporarily unavailable")) {
       res.status(500).json({
         code: 500,
-        error: 'InternalServerError',
-        message: 'Geocoding service temporarily unavailable'
+        error: "InternalServerError",
+        message: "Geocoding service temporarily unavailable",
       });
       return;
     } else if (error instanceof BadRequestError) {
@@ -362,8 +379,8 @@ export async function geocodeAddress(req: Request, res: Response): Promise<void>
     } else {
       res.status(500).json({
         code: 500,
-        error: 'InternalServerError',
-        message: 'Geocoding service error'
+        error: "InternalServerError",
+        message: "Geocoding service error",
       });
       return;
     }
@@ -497,10 +514,11 @@ export async function getAssignedReports(
   req: Request,
   res: Response
 ): Promise<void> {
-  const user = req.user as { id: number; role: string };
+  const user = req.user as { id: number; role: Role[] };
   if (!user || !user.id) {
     throw new UnauthorizedError("Authentication required");
   }
+  console.log(`[getAssignedReports] User ID: ${user.id}, Role: ${user.role}`);
   const status =
     typeof req.query.status === "string" ? req.query.status : undefined;
   const sortBy =
@@ -528,7 +546,10 @@ export async function getAssignedReports(
 
   // Call appropriate service based on user role
   let reports;
-  if (user.role === Role.EXTERNAL_MAINTAINER) {
+  if (user.role.includes(Role.EXTERNAL_MAINTAINER)) {
+    console.log(
+      `[getAssignedReports] Calling getAssignedReportsForExternalMaintainer with externalMaintainerId: ${user.id}`
+    );
     reports = await getAssignedReportsForExternalMaintainer(
       user.id,
       statusFilter,
@@ -537,6 +558,9 @@ export async function getAssignedReports(
     );
   } else {
     // For internal staff
+    console.log(
+      `[getAssignedReports] Calling getAssignedReportsService for internal staff`
+    );
     reports = await getAssignedReportsService(
       user.id,
       statusFilter,
@@ -545,6 +569,7 @@ export async function getAssignedReports(
     );
   }
 
+  console.log(`[getAssignedReports] Returning ${reports.length} reports`);
   res.status(200).json(reports);
 }
 

@@ -1,6 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router";
-import { Clipboard, Pencil, List, FileEarmarkText, Search, FunnelFill } from "react-bootstrap-icons";
+import {
+  Clipboard,
+  Pencil,
+  List,
+  FileEarmarkText,
+  Search,
+  FunnelFill,
+} from "react-bootstrap-icons";
 import { Offcanvas } from "react-bootstrap";
 
 import { useAuth } from "../../hooks";
@@ -11,7 +24,8 @@ import AddressSearchBar from "../../components/AddressSearchBar";
 import InfoModal from "../../components/InfoModal";
 import { geocodeAddress, getReportsByBbox } from "../../api/api";
 import ReportDetailsModal from "./ReportDetailsModal";
-import  EmptyState  from "../../components/ui/EmptyState.tsx";
+import EmptyState from "../../components/ui/EmptyState.tsx";
+import { formatReportCategory } from "../../utils/reportStatus";
 
 import type { Report } from "../../types";
 import { getReports as getReportsApi } from "../../api/api";
@@ -32,12 +46,20 @@ function getRecentReports(reports: Report[]): Report[] {
     .slice(0, 10);
 }
 
-function isUserOwnReport(report: Report, isAuthenticated: boolean, user: any): boolean {
-  return Boolean(isAuthenticated && user && report.user && user.email === report.user.email);
+function isUserOwnReport(
+  report: Report,
+  isAuthenticated: boolean,
+  user: any
+): boolean {
+  return Boolean(
+    isAuthenticated && user && report.user && user.email === report.user.email
+  );
 }
 
 function saveSidebarScroll(sidebarScrollRef: React.MutableRefObject<number>) {
-  const sidebar = document.querySelector(".reports-sidebar-scroll") as HTMLElement | null;
+  const sidebar = document.querySelector(
+    ".reports-sidebar-scroll"
+  ) as HTMLElement | null;
   if (sidebar) sidebarScrollRef.current = sidebar.scrollTop;
 }
 
@@ -93,8 +115,10 @@ export default function HomePage() {
 
   // Active filters (actually applied)
   const [sidebarActiveSearchTerm, setSidebarActiveSearchTerm] = useState("");
-  const [sidebarActiveFilterStatus, setSidebarActiveFilterStatus] = useState("");
-  const [sidebarActiveFilterCategory, setSidebarActiveFilterCategory] = useState("");
+  const [sidebarActiveFilterStatus, setSidebarActiveFilterStatus] =
+    useState("");
+  const [sidebarActiveFilterCategory, setSidebarActiveFilterCategory] =
+    useState("");
   const [isSearchActive, setIsSearchActive] = useState(false);
 
   // Memoize sidebar handlers
@@ -128,50 +152,58 @@ export default function HomePage() {
       setSidebarActiveFilterCategory(sidebarFilterCategory);
       setIsSearchActive(true);
     }
-  }, [isSearchActive, sidebarSearchTerm, sidebarFilterStatus, sidebarFilterCategory]);
+  }, [
+    isSearchActive,
+    sidebarSearchTerm,
+    sidebarFilterStatus,
+    sidebarFilterCategory,
+  ]);
 
   // Address search handler
-  const handleAddressSearch = useCallback(async (address: string, zoom: number) => {
-    setSearchLoading(true);
-    setSearchError(null);
-    try {
-      const geo = await geocodeAddress(address, zoom);
-      setSearchCenter([geo.latitude, geo.longitude]);
-      setSearchZoom(geo.zoom);
-      // Parse bbox string into array of numbers: "minLon,minLat,maxLon,maxLat"
-      const bboxParts = geo.bbox.split(",").map(Number) as [
-        number,
-        number,
-        number,
-        number
-      ];
-      setSearchAreaBbox(bboxParts);
-      // Load reports in the area
-      const reportsInArea = await getReportsByBbox(geo.bbox);
-      setReports(
-        (reportsInArea || []).map((r: any) => ({
-          ...r,
-          latitude: Number(r.latitude),
-          longitude: Number(r.longitude),
-        }))
-      );
-    } catch (err: any) {
-      // Custom error for out-of-Turin or geocoding errors
-      if (
-        err?.message?.toLowerCase().includes("not in turin") ||
-        err?.message?.toLowerCase().includes("not in allowed area") ||
-        err?.message?.toLowerCase().includes("geocoding error")
-      ) {
-        setSearchError(
-          "Invalid address: please enter a location within Turin."
+  const handleAddressSearch = useCallback(
+    async (address: string, zoom: number) => {
+      setSearchLoading(true);
+      setSearchError(null);
+      try {
+        const geo = await geocodeAddress(address, zoom);
+        setSearchCenter([geo.latitude, geo.longitude]);
+        setSearchZoom(geo.zoom);
+        // Parse bbox string into array of numbers: "minLon,minLat,maxLon,maxLat"
+        const bboxParts = geo.bbox.split(",").map(Number) as [
+          number,
+          number,
+          number,
+          number
+        ];
+        setSearchAreaBbox(bboxParts);
+        // Load reports in the area
+        const reportsInArea = await getReportsByBbox(geo.bbox);
+        setReports(
+          (reportsInArea || []).map((r: any) => ({
+            ...r,
+            latitude: Number(r.latitude),
+            longitude: Number(r.longitude),
+          }))
         );
-      } else {
-        setSearchError(err.message || "Error in address search.");
+      } catch (err: any) {
+        // Custom error for out-of-Turin or geocoding errors
+        if (
+          err?.message?.toLowerCase().includes("not in turin") ||
+          err?.message?.toLowerCase().includes("not in allowed area") ||
+          err?.message?.toLowerCase().includes("geocoding error")
+        ) {
+          setSearchError(
+            "Invalid address: please enter a location within Turin."
+          );
+        } else {
+          setSearchError(err.message || "Error in address search.");
+        }
+      } finally {
+        setSearchLoading(false);
       }
-    } finally {
-      setSearchLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
@@ -196,7 +228,10 @@ export default function HomePage() {
 
   const hasRole = (role: Role | string) => roles.includes(String(role));
 
-  const isCitizen = useMemo(() => isAuthenticated && hasRole(Role.CITIZEN), [isAuthenticated, roles]);
+  const isCitizen = useMemo(
+    () => isAuthenticated && hasRole(Role.CITIZEN),
+    [isAuthenticated, roles]
+  );
   const isPublicRelations = useMemo(
     () => isAuthenticated && hasRole(Role.PUBLIC_RELATIONS),
     [isAuthenticated, roles]
@@ -205,17 +240,26 @@ export default function HomePage() {
   const isTechnicalOfficer = useMemo(() => {
     if (!isAuthenticated) return false;
     // "Tecnico" = qualsiasi ruolo che NON sia citizen/admin/public_relations
-    const blocked = [String(Role.CITIZEN), String(Role.ADMINISTRATOR), String(Role.PUBLIC_RELATIONS)];
+    const blocked = [
+      String(Role.CITIZEN),
+      String(Role.ADMINISTRATOR),
+      String(Role.PUBLIC_RELATIONS),
+    ];
     return roles.length > 0 && !roles.some((r) => blocked.includes(r));
   }, [isAuthenticated, roles]);
 
   // --- Report handlers -----------------------------------------------------
 
   const handleReportUpdate = useCallback((updatedReport: Report) => {
-    setReports((prev) => prev.map((r) => (r.id === updatedReport.id ? updatedReport : r)));
+    setReports((prev) =>
+      prev.map((r) => (r.id === updatedReport.id ? updatedReport : r))
+    );
   }, []);
 
-  const refreshReports = useCallback(() => setRefreshTrigger((prev) => prev + 1), []);
+  const refreshReports = useCallback(
+    () => setRefreshTrigger((prev) => prev + 1),
+    []
+  );
 
   const handleAddReport = useCallback(() => {
     navigate("/report/new");
@@ -259,7 +303,8 @@ export default function HomePage() {
 
         const visible = (data || []).filter((r: any) => {
           if (approvedStatuses.has(String(r.status))) return true;
-          if (isAuthenticated && user?.email && r?.user?.email === user.email) return true;
+          if (isAuthenticated && user?.email && r?.user?.email === user.email)
+            return true;
           return false;
         });
 
@@ -281,35 +326,57 @@ export default function HomePage() {
 
   // Ripristina scroll sidebar quando cambi selezione
   useEffect(() => {
-    const sidebar = document.querySelector(".reports-sidebar-scroll") as HTMLElement | null;
-    if (sidebar && sidebarScrollRef.current > 0) sidebar.scrollTop = sidebarScrollRef.current;
+    const sidebar = document.querySelector(
+      ".reports-sidebar-scroll"
+    ) as HTMLElement | null;
+    if (sidebar && sidebarScrollRef.current > 0)
+      sidebar.scrollTop = sidebarScrollRef.current;
   }, [selectedReportId]);
 
   // --- Derived data --------------------------------------------------------
 
   // Filter function for sidebar - uses active filters only
-  const filterSidebarReports = useCallback((reportsList: Report[]) => {
-    return reportsList.filter((report) => {
-      const matchesSearch = !sidebarActiveSearchTerm || 
-        report.title?.toLowerCase().includes(sidebarActiveSearchTerm.toLowerCase());
-      const matchesStatus = !sidebarActiveFilterStatus || report.status === sidebarActiveFilterStatus;
-      const matchesCategory = !sidebarActiveFilterCategory || report.category === sidebarActiveFilterCategory;
-      return matchesSearch && matchesStatus && matchesCategory;
-    });
-  }, [sidebarActiveSearchTerm, sidebarActiveFilterStatus, sidebarActiveFilterCategory]);
+  const filterSidebarReports = useCallback(
+    (reportsList: Report[]) => {
+      return reportsList.filter((report) => {
+        const matchesSearch =
+          !sidebarActiveSearchTerm ||
+          report.title
+            ?.toLowerCase()
+            .includes(sidebarActiveSearchTerm.toLowerCase());
+        const matchesStatus =
+          !sidebarActiveFilterStatus ||
+          report.status === sidebarActiveFilterStatus;
+        const matchesCategory =
+          !sidebarActiveFilterCategory ||
+          report.category === sidebarActiveFilterCategory;
+        return matchesSearch && matchesStatus && matchesCategory;
+      });
+    },
+    [
+      sidebarActiveSearchTerm,
+      sidebarActiveFilterStatus,
+      sidebarActiveFilterCategory,
+    ]
+  );
 
   const recentReports = useMemo(() => {
     const recent = getRecentReports(reports);
     return filterSidebarReports(recent);
-  }, [reports, sidebarActiveSearchTerm, sidebarActiveFilterStatus, sidebarActiveFilterCategory]);
+  }, [
+    reports,
+    sidebarActiveSearchTerm,
+    sidebarActiveFilterStatus,
+    sidebarActiveFilterCategory,
+  ]);
 
   // Extract available statuses and categories from reports
   const availableStatuses = useMemo(() => {
-    return Array.from(new Set(reports.map(r => r.status).filter(Boolean)));
+    return Array.from(new Set(reports.map((r) => r.status).filter(Boolean)));
   }, [reports]);
 
   const availableCategories = useMemo(() => {
-    return Array.from(new Set(reports.map(r => r.category).filter(Boolean)));
+    return Array.from(new Set(reports.map((r) => r.category).filter(Boolean)));
   }, [reports]);
 
   const selectedReport = useMemo(() => {
@@ -324,31 +391,47 @@ export default function HomePage() {
   }, []);
 
   // Helper functions for conditional rendering
-  
+
   // Memoize helper functions to prevent re-renders
   const renderSidebarHeader = useCallback(() => {
     const title = searchCenter ? "Reports in Selected Area" : "Recent Reports";
-    const subtitle = searchCenter 
-      ? "Showing reports in the searched location" 
+    const subtitle = searchCenter
+      ? "Showing reports in the searched location"
       : "Showing the 10 most recent reports";
-    
+
     return (
       <div>
-        <h3 style={{ color: "var(--text)", margin: 0, fontSize: "1.3rem", fontWeight: 700 }}>
+        <h3
+          style={{
+            color: "var(--text)",
+            margin: 0,
+            fontSize: "1.3rem",
+            fontWeight: 700,
+          }}
+        >
           {title}
         </h3>
-        <small style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}>
+        <small
+          style={{ color: "#6c757d", display: "block", marginTop: "0.25rem" }}
+        >
           {subtitle}
         </small>
       </div>
     );
   }, [searchCenter]);
 
-  // Memoize sidebar reports content  
+  // Memoize sidebar reports content
   const renderSidebarReportsContent = useCallback(() => {
     if (loadingReports) {
       return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2rem",
+          }}
+        >
           Loading reports...
         </div>
       );
@@ -415,10 +498,24 @@ export default function HomePage() {
             border: "2px dashed #dee2e6",
           }}
         >
-          <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.5, color: "#6c757d" }}>
+          <div
+            style={{
+              fontSize: "3rem",
+              marginBottom: "1rem",
+              opacity: 0.5,
+              color: "#6c757d",
+            }}
+          >
             <Clipboard />
           </div>
-          <p style={{ fontSize: "1.1rem", margin: "0 0 0.5rem 0", color: "#6c757d", fontWeight: 500 }}>
+          <p
+            style={{
+              fontSize: "1.1rem",
+              margin: "0 0 0.5rem 0",
+              color: "#6c757d",
+              fontWeight: 500,
+            }}
+          >
             No matching reports
           </p>
           <small style={{ fontSize: "0.95rem", color: "#adb5bd" }}>
@@ -429,21 +526,48 @@ export default function HomePage() {
     }
 
     return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <EmptyState
           icon={<Clipboard />}
           title="No reports available"
-          description={searchCenter ? "No reports in this area" : "There are no reports in the system yet. Reports will appear here once submitted by citizens."}
+          description={
+            searchCenter
+              ? "No reports in this area"
+              : "There are no reports in the system yet. Reports will appear here once submitted by citizens."
+          }
         />
       </div>
     );
-  }, [loadingReports, reportsError, recentReports, reports.length, searchCenter, isAuthenticated, user, selectedReportId, handleReportCardClick, handleReportDetailsClick]);
+  }, [
+    loadingReports,
+    reportsError,
+    recentReports,
+    reports.length,
+    searchCenter,
+    isAuthenticated,
+    user,
+    selectedReportId,
+    handleReportCardClick,
+    handleReportDetailsClick,
+  ]);
 
   // Memoize sidebar action buttons
   const renderSidebarActionButtons = useCallback(() => {
     if (isPublicRelations) {
       return (
-        <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
+        <Button
+          onClick={() => navigate("/assign-reports")}
+          variant="primary"
+          fullWidth
+        >
           <Pencil className="me-2" />
           Manage reports
         </Button>
@@ -452,7 +576,11 @@ export default function HomePage() {
 
     if (isTechnicalOfficer) {
       return (
-        <Button onClick={() => navigate("/assign-reports")} variant="primary" fullWidth>
+        <Button
+          onClick={() => navigate("/assign-reports")}
+          variant="primary"
+          fullWidth
+        >
           <Pencil className="me-2" />
           My Reports
         </Button>
@@ -461,8 +589,14 @@ export default function HomePage() {
 
     if (isCitizen) {
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <Button onClick={() => navigate("/my-reports")} variant="secondary" fullWidth>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        >
+          <Button
+            onClick={() => navigate("/my-reports")}
+            variant="secondary"
+            fullWidth
+          >
             <FileEarmarkText className="me-2" />
             My Reports
           </Button>
@@ -475,7 +609,13 @@ export default function HomePage() {
     }
 
     return null;
-  }, [isPublicRelations, isTechnicalOfficer, isCitizen, navigate, handleAddReport]);
+  }, [
+    isPublicRelations,
+    isTechnicalOfficer,
+    isCitizen,
+    navigate,
+    handleAddReport,
+  ]);
 
   // Sidebar content riusabile
   const sidebarContent = (
@@ -495,11 +635,16 @@ export default function HomePage() {
 
       {/* Search and Filter Bar */}
       <div style={{ padding: "0 1.5rem", paddingTop: "1rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+        <div
+          style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}
+        >
           {/* Search input */}
           <div style={{ flex: 1 }}>
             <div className="input-group input-group-sm">
-              <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+              <span
+                className="input-group-text"
+                style={{ padding: "0.25rem 0.5rem" }}
+              >
                 <Search size={14} />
               </span>
               <input
@@ -508,54 +653,66 @@ export default function HomePage() {
                 placeholder="Search by title..."
                 value={sidebarSearchTerm}
                 onChange={(e) => handleSidebarSearchChange(e.target.value)}
-                style={{ fontSize: '0.875rem' }}
+                style={{ fontSize: "0.875rem" }}
               />
             </div>
           </div>
           {/* Search/Cancel button */}
           <button
-            className={`btn btn-sm ${isSearchActive ? 'btn-secondary' : 'btn-primary'}`}
+            className={`btn btn-sm ${
+              isSearchActive ? "btn-secondary" : "btn-primary"
+            }`}
             onClick={handleSearchToggle}
-            style={{ minWidth: '70px', fontSize: '0.8rem' }}
+            style={{ minWidth: "70px", fontSize: "0.8rem" }}
           >
-            {isSearchActive ? 'Cancel' : 'Search'}
+            {isSearchActive ? "Cancel" : "Search"}
           </button>
         </div>
-        
+
         {/* Filter dropdowns */}
         <div className="row g-2">
           <div className="col-6">
             <div className="input-group input-group-sm">
-              <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+              <span
+                className="input-group-text"
+                style={{ padding: "0.25rem 0.5rem" }}
+              >
                 <FunnelFill size={12} />
               </span>
               <select
                 className="form-select"
                 value={sidebarFilterStatus}
                 onChange={(e) => handleSidebarStatusChange(e.target.value)}
-                style={{ fontSize: '0.8rem' }}
+                style={{ fontSize: "0.8rem" }}
               >
                 <option value="">All Statuses</option>
-                {availableStatuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
+                {availableStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
           <div className="col-6">
             <div className="input-group input-group-sm">
-              <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+              <span
+                className="input-group-text"
+                style={{ padding: "0.25rem 0.5rem" }}
+              >
                 <FunnelFill size={12} />
               </span>
               <select
                 className="form-select"
                 value={sidebarFilterCategory}
                 onChange={(e) => handleSidebarCategoryChange(e.target.value)}
-                style={{ fontSize: '0.8rem' }}
+                style={{ fontSize: "0.8rem" }}
               >
                 <option value="">All Categories</option>
-                {availableCategories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                {availableCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {formatReportCategory(category)}
+                  </option>
                 ))}
               </select>
             </div>
@@ -656,7 +813,9 @@ export default function HomePage() {
 
   return (
     <>
-      <div style={{ height: "100%", background: "var(--bg)", overflow: "hidden" }}>
+      <div
+        style={{ height: "100%", background: "var(--bg)", overflow: "hidden" }}
+      >
         <main style={{ height: "100%", display: "flex", position: "relative" }}>
           {/* Map Section */}
           <div
@@ -776,19 +935,37 @@ export default function HomePage() {
           placement="end"
           style={{ width: "90%", maxWidth: "400px" }}
         >
-          <Offcanvas.Header closeButton style={{ borderBottom: "2px solid #f8f9fa", background: "#fdfdfd" }}>
-            <Offcanvas.Title style={{ color: "var(--text)", fontSize: "1.3rem", fontWeight: 700 }}>
+          <Offcanvas.Header
+            closeButton
+            style={{ borderBottom: "2px solid #f8f9fa", background: "#fdfdfd" }}
+          >
+            <Offcanvas.Title
+              style={{
+                color: "var(--text)",
+                fontSize: "1.3rem",
+                fontWeight: 700,
+              }}
+            >
               {searchCenter ? "Reports in Selected Area" : "Recent Reports"}
             </Offcanvas.Title>
           </Offcanvas.Header>
 
           {/* Search and Filter Bar */}
           <div style={{ padding: "1rem 1.5rem 0.5rem 1.5rem" }}>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                marginBottom: "0.75rem",
+              }}
+            >
               {/* Search input */}
               <div style={{ flex: 1 }}>
                 <div className="input-group input-group-sm">
-                  <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                  <span
+                    className="input-group-text"
+                    style={{ padding: "0.25rem 0.5rem" }}
+                  >
                     <Search size={14} />
                   </span>
                   <input
@@ -797,62 +974,78 @@ export default function HomePage() {
                     placeholder="Search by title..."
                     value={sidebarSearchTerm}
                     onChange={(e) => handleSidebarSearchChange(e.target.value)}
-                    style={{ fontSize: '0.875rem' }}
+                    style={{ fontSize: "0.875rem" }}
                   />
                 </div>
               </div>
               {/* Search/Cancel button */}
               <button
-                className={`btn btn-sm ${isSearchActive ? 'btn-secondary' : 'btn-primary'}`}
+                className={`btn btn-sm ${
+                  isSearchActive ? "btn-secondary" : "btn-primary"
+                }`}
                 onClick={handleSearchToggle}
-                style={{ minWidth: '70px', fontSize: '0.8rem' }}
+                style={{ minWidth: "70px", fontSize: "0.8rem" }}
               >
-                {isSearchActive ? 'Cancel' : 'Search'}
+                {isSearchActive ? "Cancel" : "Search"}
               </button>
             </div>
-            
+
             {/* Filter dropdowns */}
             <div className="row g-2">
               <div className="col-6">
                 <div className="input-group input-group-sm">
-                  <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                  <span
+                    className="input-group-text"
+                    style={{ padding: "0.25rem 0.5rem" }}
+                  >
                     <FunnelFill size={12} />
                   </span>
                   <select
                     className="form-select"
                     value={sidebarFilterStatus}
                     onChange={(e) => handleSidebarStatusChange(e.target.value)}
-                    style={{ fontSize: '0.8rem' }}
+                    style={{ fontSize: "0.8rem" }}
                   >
                     <option value="">All Statuses</option>
-                    {availableStatuses.map(status => (
-                      <option key={status} value={status}>{status}</option>
+                    {availableStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="col-6">
                 <div className="input-group input-group-sm">
-                  <span className="input-group-text" style={{ padding: '0.25rem 0.5rem' }}>
+                  <span
+                    className="input-group-text"
+                    style={{ padding: "0.25rem 0.5rem" }}
+                  >
                     <FunnelFill size={12} />
                   </span>
                   <select
                     className="form-select"
                     value={sidebarFilterCategory}
-                    onChange={(e) => handleSidebarCategoryChange(e.target.value)}
-                    style={{ fontSize: '0.8rem' }}
+                    onChange={(e) =>
+                      handleSidebarCategoryChange(e.target.value)
+                    }
+                    style={{ fontSize: "0.8rem" }}
                   >
                     <option value="">All Categories</option>
-                    {availableCategories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                    {availableCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {formatReportCategory(category)}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
             </div>
           </div>
-          
-          <Offcanvas.Body style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+
+          <Offcanvas.Body
+            style={{ padding: 0, display: "flex", flexDirection: "column" }}
+          >
             <div
               className="reports-sidebar-scroll"
               style={{

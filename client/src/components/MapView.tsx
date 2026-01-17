@@ -9,6 +9,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 // Types
 import type { Report } from "../types/report.types";
+import { formatReportCategory } from "../utils/reportStatus";
 // Styles
 import "../styles/MapView.css";
 
@@ -272,7 +273,7 @@ export default function MapView({
           <div style="margin-top: 0.5rem;">
             <div>
               <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; display: inline-block; max-width: 100%;">${
-                report.category
+                formatReportCategory(report.category)
               }</span>
             </div>
             <div style="margin-top: 6px;">
@@ -437,9 +438,9 @@ export default function MapView({
           <div class="report-popup-description">${report.description}</div>
           <div style="margin-top: 0.5rem;">
             <div>
-              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; display: inline-block; max-width: 100%;">${
+              <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; display: inline-block; max-width: 100%;">${formatReportCategory(
                 report.category
-              }</span>
+              )}</span>
             </div>
             <div style="margin-top: 6px;">
               <span class="report-status-pill" style="background:${getStatusColor(

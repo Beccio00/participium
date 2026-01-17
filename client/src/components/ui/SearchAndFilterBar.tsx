@@ -1,7 +1,10 @@
 import React from "react";
 import { Row, Col, InputGroup, Form } from "react-bootstrap";
 import { Search, FunnelFill } from "react-bootstrap-icons";
-import { formatReportStatus } from "../../utils/reportStatus";
+import {
+  formatReportStatus,
+  formatReportCategory,
+} from "../../utils/reportStatus";
 
 interface SearchAndFilterBarProps {
   searchTerm: string;
@@ -35,7 +38,7 @@ function SearchAndFilterBar({
         <Row className="g-2">
           <Col md={12}>
             <InputGroup size="sm">
-              <InputGroup.Text style={{ padding: '0.25rem 0.5rem' }}>
+              <InputGroup.Text style={{ padding: "0.25rem 0.5rem" }}>
                 <Search size={14} />
               </InputGroup.Text>
               <Form.Control
@@ -43,41 +46,45 @@ function SearchAndFilterBar({
                 placeholder="Search by title..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                style={{ fontSize: '0.875rem', padding: '0.25rem 0.5rem' }}
+                style={{ fontSize: "0.875rem", padding: "0.25rem 0.5rem" }}
               />
             </InputGroup>
           </Col>
           <Col md={6}>
             <InputGroup size="sm">
-              <InputGroup.Text style={{ padding: '0.25rem 0.5rem' }}>
+              <InputGroup.Text style={{ padding: "0.25rem 0.5rem" }}>
                 <FunnelFill size={12} />
               </InputGroup.Text>
               <Form.Select
                 value={lockedStatus || filterStatus}
                 onChange={(e) => onStatusChange(e.target.value)}
                 disabled={!!lockedStatus}
-                style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+                style={{ fontSize: "0.8rem", padding: "0.25rem 0.5rem" }}
               >
                 <option value="">All Statuses</option>
-                {availableStatuses.map(status => (
-                  <option key={status} value={status}>{formatReportStatus(status as any)}</option>
+                {availableStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {formatReportStatus(status as any)}
+                  </option>
                 ))}
               </Form.Select>
             </InputGroup>
           </Col>
           <Col md={6}>
             <InputGroup size="sm">
-              <InputGroup.Text style={{ padding: '0.25rem 0.5rem' }}>
+              <InputGroup.Text style={{ padding: "0.25rem 0.5rem" }}>
                 <FunnelFill size={12} />
               </InputGroup.Text>
               <Form.Select
                 value={filterCategory}
                 onChange={(e) => onCategoryChange(e.target.value)}
-                style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+                style={{ fontSize: "0.8rem", padding: "0.25rem 0.5rem" }}
               >
                 <option value="">All Categories</option>
-                {availableCategories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                {availableCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {formatReportCategory(category)}
+                  </option>
                 ))}
               </Form.Select>
             </InputGroup>
@@ -89,7 +96,10 @@ function SearchAndFilterBar({
 
   // Regular version for TechPanel and MyReportsPage
   return (
-    <div className="mb-3" style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '0.5rem' }}>
+    <div
+      className="mb-3"
+      style={{ padding: "1rem", background: "#f8f9fa", borderRadius: "0.5rem" }}
+    >
       <Row className="g-3">
         <Col md={12}>
           <InputGroup>
@@ -115,8 +125,10 @@ function SearchAndFilterBar({
               disabled={!!lockedStatus}
             >
               <option value="">All Statuses</option>
-              {availableStatuses.map(status => (
-                <option key={status} value={status}>{formatReportStatus(status as any)}</option>
+              {availableStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {formatReportStatus(status as any)}
+                </option>
               ))}
             </Form.Select>
           </InputGroup>
@@ -131,8 +143,10 @@ function SearchAndFilterBar({
               onChange={(e) => onCategoryChange(e.target.value)}
             >
               <option value="">All Categories</option>
-              {availableCategories.map(category => (
-                <option key={category} value={category}>{category}</option>
+              {availableCategories.map((category) => (
+                <option key={category} value={category}>
+                  {formatReportCategory(category)}
+                </option>
               ))}
             </Form.Select>
           </InputGroup>
